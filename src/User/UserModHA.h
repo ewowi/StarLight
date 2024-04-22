@@ -101,6 +101,7 @@ public:
     // SysModule::loop();
     mqtt->loop();
     light->setCurrentBrightness(mdl->getValue("bri"));
+    light->setCurrentState(mdl->getValue("on"));
   }
 
   private:
