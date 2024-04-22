@@ -30,12 +30,7 @@ public:
   static void onStateCommand(bool state, HALight* sender) {
       ppf("State: %s\n", state?"true":"false");
 
-      if(state) {
-        mdl->setValue("bri", 255);
-      }
-      else {
-        mdl->setValue("bri", 0);
-      }
+      mdl->setValue("on", state);
 
       sender->setState(state); // report state back to the Home Assistant
   }
@@ -61,7 +56,7 @@ public:
   }
 
   void connectedChanged() {
-    ppf("connectedChanged");
+    ppf("connectedChanged\n");
     if (mdls->isConnected) {
       // set device's details (optional)
       device.setName(_INIT(TOSTRING(APP)));
