@@ -69,6 +69,15 @@ public:
     // configure light (optional)
     light->setName("LEDs");
 
+    String options = "Solid";
+    // for(int i = 0; i < eff->effects.effects.size(); i++) {
+    //   options += ";";
+    //   options += eff->effects.effects.at(i)->name();
+    // }
+    fxSelect->setOptions(options.c_str());
+
+    ppf("Options: %s\n", options.c_str());
+
     // Optionally you can set retain flag for the HA commands
     // light.setRetain(true);
 
@@ -102,6 +111,8 @@ public:
     mqtt->loop();
     light->setCurrentBrightness(mdl->getValue("bri"));
     light->setCurrentState(mdl->getValue("on"));
+    int8_t fx = mdl->getValue("fx");
+    fxSelect->setState(fx + 1);
   }
 
   private:
@@ -109,6 +120,7 @@ public:
     HADevice device;
     HAMqtt* mqtt = new HAMqtt(client, device);
     HALight* light = new HALight(_INIT(TOSTRING(APP)), HALight::BrightnessFeature | HALight::RGBFeature);
+    HASelect* fxSelect = new HASelect("fx");
 };
 
 extern UserModHA *hamod;
