@@ -43,10 +43,12 @@ void SysModFiles::setup() {
     case f_DelRow:
       if (rowNr != UINT8_MAX && rowNr < fileList.size()) {
         const char * fileName = fileList[rowNr].name;
-        ppf("chFun delRow %s[%d] = %s %s\n", mdl->varID(var), rowNr, var["value"].as<String>().c_str(), fileName);
+        // ppf("chFun delRow %s[%d] = %s %s\n", mdl->varID(var), rowNr, var["value"].as<String>().c_str(), fileName);
         this->removeFiles(fileName, false);
+
+        // print->printVar(var);
+        // ppf("\n");
       }
-      print->printJson(" ", var);
       return true;
     default: return false;
   }});

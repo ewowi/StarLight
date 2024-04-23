@@ -56,7 +56,8 @@ void SysModPrint::setup() {
 
   parentVar = ui->initSysMod(parentVar, name, 2302);
 
-  ui->initSelect(parentVar, "pOut", 1, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  //default to UI
+  ui->initSelect(parentVar, "pOut", 2, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_UIFun:
     {
       ui->setLabel(var, "Output");

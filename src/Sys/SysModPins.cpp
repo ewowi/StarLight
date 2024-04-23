@@ -16,8 +16,9 @@
 
 SysModPins::SysModPins() :SysModule("Pins") {
   //start with no pins allocated
-  for (int i=0; i<NUM_DIGITAL_PINS; i++) {
-    deallocatePin(i, pinObjects[i].owner);
+  for (int pinNr=0; pinNr<NUM_DIGITAL_PINS; pinNr++) {
+    strcpy(pinObjects[pinNr].owner, "");  
+    strcpy(pinObjects[pinNr].details, "");  
   }
 };
 

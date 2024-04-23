@@ -391,17 +391,17 @@ public:
 
       //check if post init added: parent is already >=0
       if (varOrder(var) >= 0) {
-        // for (JsonArray::iterator childVar=varChildren(var).begin(); childVar!=varChildren(var).end(); ++childVar) { //use iterator to make .remove work!!!
-        for (JsonObject childVar: varChildren(var)) { //use iterator to make .remove work!!!
-          JsonArray valArray = varValArray(childVar);
+        for (JsonArray::iterator childVar=varChildren(var).begin(); childVar!=varChildren(var).end(); ++childVar) { //use iterator to make .remove work!!!
+        // for (JsonObject &childVar: varChildren(var)) { //use iterator to make .remove work!!!
+          JsonArray valArray = varValArray(*childVar);
           if (!valArray.isNull())
           {
-            if (varOrder(childVar) < 0) { //if not updated
+            if (varOrder(*childVar) < 0) { //if not updated
               valArray[rowNr] = (char*)0; // set element in valArray to 0
 
-              ppf("varPostDetails %s.%s[%d] <- null\n", varID(var), varID(childVar), rowNr);
+              ppf("varPostDetails %s.%s[%d] <- null\n", varID(var), varID(*childVar), rowNr);
               // setValue(var, -99, rowNr); //set value -99
-              varOrder(childVar, -varOrder(childVar)); //make positive again
+              varOrder(*childVar, -varOrder(*childVar)); //make positive again
               //if some values in array are not -99
             }
 
@@ -412,12 +412,12 @@ public:
                 allNull = false;
             }
             if (allNull) {
-              print->printJson("remove allnulls", childVar);
+              print->printJson("remove allnulls", *childVar);
               varChildren(var).remove(childVar);
             }
           }
           else {
-            print->printJson("remove non valArray", childVar);
+            print->printJson("remove non valArray", *childVar);
             varChildren(var).remove(childVar);
           }
 

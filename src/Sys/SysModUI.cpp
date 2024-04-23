@@ -174,12 +174,12 @@ void SysModUI::processJson(JsonVariant json) {
           JsonObject command = value;
           JsonObject var = mdl->findVar(command["id"]);
           stackUnsigned8 rowNr = command["rowNr"];
-          ppf("processJson %s - %s [%d]\n", key, value.as<String>().c_str(), rowNr);
+          ppf("processJson %s - %s[%d]\n", key, mdl->varID(var), rowNr);
 
           //first remove the deleted row both on server and on client(s)
           if (pair.key() == "delRow") {
+            ppf("delRow remove values\n");
             mdl->varRemoveValuesForRow(var, rowNr);
-            print->printJson("deleted rows", var);
             web->sendResponseObject(); //async response //trigger receiveData->delRow
           }
 
