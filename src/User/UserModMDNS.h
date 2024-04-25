@@ -20,7 +20,6 @@ public:
   UserModMDNS() :SysModule("MDNS") {
   };
 
-  //setup filesystem
   void setup() {
     SysModule::setup();
 

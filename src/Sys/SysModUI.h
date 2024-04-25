@@ -219,10 +219,8 @@ public:
           // if (!var["value"].isNull() && 
           if (funType != f_ValueFun) {
             ppf("%sFun %s", funType==f_ValueFun?"val":funType==f_UIFun?"ui":funType==f_ChangeFun?"ch":funType==f_AddRow?"add":funType==f_DelRow?"del":"other", mdl->varID(var));
-            if (rowNr != UINT8_MAX)
-              ppf("[%d] = %s\n", rowNr, var["value"][rowNr].as<String>().c_str());
-            else
-              ppf(" = %s\n", var["value"].as<String>().c_str());
+            if (rowNr != UINT8_MAX) ppf("[%d]", rowNr);
+            ppf(" (%s)\n", var["value"].as<String>().c_str());
           }
         }
       }

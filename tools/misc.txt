@@ -1,3 +1,11 @@
+Copy System Modules from MoonModules/StarModLeds to upstream
+(as should only be modified in upstream)
+============================================================
+cd /Users/ewoudwijma/Developer/GitHub/MoonModules/StarModLeds
+ls ../../ewowi/StarMod/src/Sys
+cp ./src/Sys/* ../../ewowi/StarMod/src/Sys
+cp ./tools/* ../../ewowi/StarMod/tools
+
 
 search range-based for loop
 ===========================

@@ -88,13 +88,13 @@ struct Coord3D {
     return result;
   }
   Coord3D operator+(Coord3D rhs) {
-    return Coord3D{unsigned16(x + rhs.x), unsigned16(y + rhs.y), unsigned16(z + rhs.z)};
+    return Coord3D{x + rhs.x, y + rhs.y, z + rhs.z};
   }
   Coord3D operator/(Coord3D rhs) {
-    return Coord3D{unsigned16(x / rhs.x), unsigned16(y / rhs.y), unsigned16(z / rhs.z)};
+    return Coord3D{x / rhs.x, y / rhs.y, z / rhs.z};
   }
   Coord3D operator%(Coord3D rhs) {
-    return Coord3D{unsigned16(x % rhs.x), unsigned16(y % rhs.y), unsigned16(z % rhs.z)};
+    return Coord3D{x % rhs.x, y % rhs.y, z % rhs.z};
   }
   Coord3D minimum(Coord3D rhs) {
     return Coord3D{min(x, rhs.x), min(y, rhs.y), min(z, rhs.z)};
@@ -103,16 +103,16 @@ struct Coord3D {
     return Coord3D{max(x, rhs.x), max(y, rhs.y), max(z, rhs.z)};
   }
   Coord3D operator*(unsigned8 rhs) {
-    return Coord3D{unsigned16(x * rhs), unsigned16(y * rhs), unsigned16(z * rhs)};
+    return Coord3D{x * rhs, y * rhs, z * rhs};
   }
   Coord3D operator/(unsigned8 rhs) {
-    return Coord3D{unsigned16(x / rhs), unsigned16(y / rhs), unsigned16(z / rhs)};
+    return Coord3D{x / rhs, y / rhs, z / rhs};
   }
   //move the coordinate one step closer to the goal, if difference in coordinates (used in GenFix)
-  Coord3D advance(Coord3D goal) {
-    if (x != goal.x) x += (x<goal.x)?1:-1;
-    if (y != goal.y) y += (y<goal.y)?1:-1;
-    if (z != goal.z) z += (z<goal.z)?1:-1;
+  Coord3D advance(Coord3D goal, uint8_t step) {
+    if (x != goal.x) x += (x<goal.x)?step:-step;
+    if (y != goal.y) y += (y<goal.y)?step:-step;
+    if (z != goal.z) z += (z<goal.z)?step:-step;
     return *this;
   }
   unsigned distance(Coord3D rhs) {

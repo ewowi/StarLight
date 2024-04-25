@@ -25,7 +25,6 @@ SysModFiles::SysModFiles() :SysModule("Files") {
   }
 };
 
-//setup filesystem
 void SysModFiles::setup() {
   SysModule::setup();
   parentVar = ui->initSysMod(parentVar, name, 2101);

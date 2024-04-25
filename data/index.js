@@ -50,6 +50,30 @@ function onLoad() {
   d.addEventListener("visibilitychange", handleVisibilityChange, false);
 }
 
+function consolelog() {
+  let logNode = gId("log");
+  let sep = "";
+  if (logNode) {
+    // console.log("conslog", theArgs);
+    for (var i = 0; i < arguments.length; i++) {
+      // console.log(arguments[i]);
+      if (Object.keys(arguments[i]))
+        logNode.value += sep + JSON.stringify(arguments[i]);
+      else
+        logNode.value += sep + arguments[i];
+      sep = " ";
+      // "WS receive createHTML " + module.id + "\n";
+    }
+    logNode.value += "\n";
+    // for (const arg of theArgs) {
+    //   console.log(arg);
+    // }
+    logNode.scrollTop = logNode.scrollHeight;
+  }
+  else 
+    console.log(arguments);
+}
+
 function makeWS() {
   if (ws) return;
   let url = (window.location.protocol == "https:"?"wss":"ws")+'://'+window.location.hostname+'/ws';
@@ -93,6 +117,7 @@ function makeWS() {
             let module = json;
             model.push((module)); //this is the model
             console.log("WS receive createHTML", module);
+            consolelog("WS receive createHTML", module.id);
             createHTML(module); //no parentNode
 
             if (module.id == "System") {
@@ -231,7 +256,8 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
 
       varNode = cE("div");
       let mdlName = findVar("mdlName");
-      if (mdlName) {
+      if (mdlName && mdlName.value) { //sometimes value not set yet
+        // console.log("createModule", variable, mdlName);
         let index = mdlName.value.indexOf(variable.id); //find this module
         if (index != -1) {
           let mdlEnabled = findVar("mdlEnabled");
@@ -588,24 +614,24 @@ function receiveData(json) {
 
       //special commands
       if (key == "uiFun") {
-        console.log("receiveData no action", key, value); //should not happen anymore
+        consolelog("receiveData no action", key, value); //should not happen anymore
       }
       else if (key == "view") {
-        console.log("receiveData", key, value);
+        consolelog("receiveData", key, value);
         changeHTMLView(value);
       }
       else if (key == "theme") {
-        console.log("receiveData", key, value);
+        consolelog("receiveData", key, value);
         changeHTMLTheme(value);
       }
       else if (key == "canvasData") {
-        console.log("receiveData no action", key, value);
+        consolelog("receiveData no action", key, value);
       } else if (key == "details") {
         let variable = value.var;
         let rowNr = value.rowNr == null?UINT8_MAX:value.rowNr;
         let nodeId = variable.id + ((rowNr != UINT8_MAX)?"#" + rowNr:"");
         //if var object with .n, create .n (e.g. see setEffect and fixtureGenChFun, tbd: )
-        console.log("receiveData details", key, variable, nodeId, rowNr);
+        consolelog("receiveData details", key, variable.id, nodeId, rowNr);
         if (gId(nodeId + "_n")) gId(nodeId + "_n").remove(); //remove old ndiv
 
         let modelVar = findVar(variable.id);
@@ -622,7 +648,7 @@ function receiveData(json) {
         flushUIFunCommands(); //make sure uiFuns of new elements are called
       }
       else if (key == "addRow") { //update the row of a table
-        console.log("receiveData", key, value);
+        consolelog("receiveData", key, value);
 
         if (value.id && value.rowNr != null) {
           let tableId = value.id;
@@ -632,18 +658,18 @@ function receiveData(json) {
           let tableNode = gId(tableId);
           let tbodyNode = tableNode.querySelector("tbody");
 
-          console.log("addRow ", tableVar, tableNode, rowNr);
+          consolelog("addRow ", tableVar, tableNode, rowNr);
 
           let newRowNr = tbodyNode.querySelectorAll("tr").length;
 
           genTableRowHTML(tableVar, tableNode, newRowNr);
         }
         else 
-          console.log("dev receiveData addRow no id and/or rowNr specified", key, value);
+          consolelog("dev receiveData addRow no id and/or rowNr specified", key, value);
 
       } else if (key == "delRow") { //update the row of a table
 
-        console.log("receiveData", key, value);
+        consolelog("receiveData", key, value);
         let tableId = value.id;
         let tableVar = findVar(tableId);
         let rowNr = value.rowNr;
@@ -656,7 +682,7 @@ function receiveData(json) {
 
         varRemoveValuesForRow(tableVar, rowNr);
 
-        console.log("delRow ", tableVar, tableNode, rowNr);
+        consolelog("delRow ", tableVar, tableNode, rowNr);
 
       } else if (key == "updRow") { //update the row of a table
 
@@ -665,19 +691,19 @@ function receiveData(json) {
         let rowNr = value.rowNr;
         let tableRow = value.value;
 
-        // console.log("receiveData updRow", key, tableId, rowNr, tableRow);
-        // console.log("updRow main", tableId, tableRows, tableNode, tableVar);
+        // consolelog("receiveData updRow", key, tableId, rowNr, tableRow);
+        // consolelog("updRow main", tableId, tableRows, tableNode, tableVar);
 
         let colNr = 0;
         for (let colVar of tableVar.n) {
           let colValue = tableRow[colNr];
-          // console.log("    col", colNr, colVar, colValue);
+          // consolelog("    col", colNr, colVar, colValue);
           changeHTML(colVar, {"value":colValue, "chk":"updRow"}, rowNr);
           colNr++;
         }
 
       } else if (key == "sysInfo") { //update the row of a table
-        console.log("receiveData", key, value);
+        consolelog("receiveData", key, value);
         sysInfo = value;
       } else { //{variable:{label:value:options:comment:}}
 
@@ -686,19 +712,19 @@ function receiveData(json) {
         if (variable) {
           let rowNr = value.rowNr == null?UINT8_MAX:value.rowNr;
           // if (variable.id == "fxEnd" || variable.id == "fxSize" || variable.id == "point")
-          //   console.log("receiveData ", variable, value);
+          //   consolelog("receiveData ", variable, value);
           variable.fun = -2; // request processed
 
           value.chk = "uiFun";
           changeHTML(variable, value, rowNr); //changeHTML will find the rownumbers if needed
         }
         else
-          console.log("receiveData key is no variable", key, value);
+          consolelog("receiveData key is no variable", key, value);
       }
     } //for keys
   } //isObject
   else
-    console.log("receiveData no Object", object);
+    consolelog("receiveData no Object", object);
 } //receiveData
 
 //do something with an existing (variable) node, key is an existing node, json is what to do with it

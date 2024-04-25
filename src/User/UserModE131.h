@@ -22,7 +22,6 @@ public:
     isEnabled = false; //default not enabled
   };
 
-  //setup filesystem
   void setup() {
     SysModule::setup();
 
