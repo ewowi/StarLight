@@ -129,11 +129,11 @@ public:
 
   //utility
   unsigned u_abs(int x) {
-    if (x <0) return -x;
+    if (x < 0) return -x;
     else return x;
   }
 
-  void matrix(Coord3D first, Coord3D rowEnd, Coord3D colEnd, unsigned8 ip, unsigned8 pin) {
+  void matrix(Coord3D first, Coord3D rowEnd, Coord3D colEnd, unsigned8 ip, unsigned8 pin, uint16_t pan = 0, uint16_t tilt = 0, uint16_t roll = 0) {
 
     openPin(pin);
 
@@ -148,13 +148,22 @@ public:
 
     // Coord3D pixel = first;
 
+    //middle is (max(rowEnd, colEnd) + first) / 2
+    Coord3D middle = rowEnd;
+    if (colEnd.x > middle.x) middle.x = colEnd.x;
+    if (colEnd.y > middle.y) middle.y = colEnd.y;
+    if (colEnd.z > middle.z) middle.z = colEnd.z;
+    middle = (middle + first) / 2;
+
+    ppf("middle %d,%d,%d", middle.x, middle.y, middle.z);
+
     stackUnsigned8 rowDimension; //in what dimension the row will advance (x=0, y=1, z=2), now only one should differ
     if (first.x != rowEnd.x) rowDimension = 0;
-    if (first.y != rowEnd.y) rowDimension = 1; //
+    if (first.y != rowEnd.y) rowDimension = 1;
     if (first.z != rowEnd.z) rowDimension = 2;
 
     stackUnsigned8 colDimension; //in what dimension the col will advance, not the rowDimension
-    if (first.x != colEnd.x && rowDimension != 0) colDimension = 0; //
+    if (first.x != colEnd.x && rowDimension != 0) colDimension = 0;
     if (first.y != colEnd.y && rowDimension != 1) colDimension = 1;
     if (first.z != colEnd.z && rowDimension != 2) colDimension = 2;
 
@@ -171,6 +180,8 @@ public:
       else if (rowDimension == 2)
         colEnd.z = rowEnd.z;
     }
+
+    Trigo trigo;
 
     Coord3D colPixel = Coord3D{(rowDimension==0)?colEnd.x:first.x, (rowDimension==1)?colEnd.y:first.y, (rowDimension==2)?colEnd.z:first.z};
     stackUnsigned8 colNr = 0;
@@ -189,16 +200,18 @@ public:
       Coord3D rowPixel = cRowStart;
       while (true) {
         ppf(" %d,%d,%d", rowPixel.x, rowPixel.y, rowPixel.z);
-        write3D(rowPixel.x*10, rowPixel.y*10, rowPixel.z*10);
+        // write3D(rowPixel.x*10, rowPixel.y*10, rowPixel.z*10);
+        write3D(trigo.rotate(rowPixel, middle, pan, tilt, roll, 360));
+
         
         if (rowPixel == cRowEnd) break; //end condition row
-        rowPixel.advance(cRowEnd);
+        rowPixel.advance(cRowEnd, 10);
       }
 
       ppf("\n");
 
       if (colPixel == colEnd) break; //end condition columns
-      colPixel.advance(colEnd);
+      colPixel.advance(colEnd, 10);
       colNr++;
     }
 
@@ -367,31 +380,31 @@ public:
 
     //first pin (red)
     openPin(pin);
-    y = 150; for (int x = 530; x >= 0; x-=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
-    y = 110; for (int x = 90; x <= 510; x+=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
-    y = 70; for (int x = 400; x >= 110; x-=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
+    y = 150; for (int x = 530; x >= 0; x-=10) write3D(x+first.x, y+first.y, first.z);
+    y = 110; for (int x = 90; x <= 510; x+=10) write3D(x+first.x, y+first.y, first.z);
+    y = 70; for (int x = 400; x >= 110; x-=10) write3D(x+first.x, y+first.y, first.z);
     closePin();
     //second pin (green)
     openPin(pin);
-    y = 140; for (int x = 530; x >= 0; x-=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
-    y = 100; for (int x = 90; x <= 510; x+=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
-    y = 60; for (int x = 390; x >= 120; x-=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
+    y = 140; for (int x = 530; x >= 0; x-=10) write3D(x+first.x, y+first.y, first.z);
+    y = 100; for (int x = 90; x <= 510; x+=10) write3D(x+first.x, y+first.y, first.z);
+    y = 60; for (int x = 390; x >= 120; x-=10) write3D(x+first.x, y+first.y, first.z);
     closePin();
     //third pin (blue)
     openPin(pin);
-    y = 130; for (int x = 520; x >= 10; x-=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
-    y = 90; for (int x = 100; x <= 500; x+=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
-    y = 50; for (int x = 390; x >= 140; x-=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
+    y = 130; for (int x = 520; x >= 10; x-=10) write3D(x+first.x, y+first.y, first.z);
+    y = 90; for (int x = 100; x <= 500; x+=10) write3D(x+first.x, y+first.y, first.z);
+    y = 50; for (int x = 390; x >= 140; x-=10) write3D(x+first.x, y+first.y, first.z);
     closePin();
     //fourth pin (yellow)
     openPin(pin);
-    y = 120; for (int x = 520; x >= 30; x-=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
-    y = 80; for (int x = 100; x <= 480; x+=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
-    y = 40; for (int x = 380; x >= 240; x-=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
-    y = 30; for (int x = 250; x <= 370; x+=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
-    y = 20; for (int x = 360; x >= 260; x-=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
-    y = 10; for (int x = 270; x <= 350; x+=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
-    y = 00; for (int x = 330; x >= 290; x-=10) write3D(x+first.x*10, y+first.y*10, first.z*10);
+    y = 120; for (int x = 520; x >= 30; x-=10) write3D(x+first.x, y+first.y, first.z);
+    y = 80; for (int x = 100; x <= 480; x+=10) write3D(x+first.x, y+first.y, first.z);
+    y = 40; for (int x = 380; x >= 240; x-=10) write3D(x+first.x, y+first.y, first.z);
+    y = 30; for (int x = 250; x <= 370; x+=10) write3D(x+first.x, y+first.y, first.z);
+    y = 20; for (int x = 360; x >= 260; x-=10) write3D(x+first.x, y+first.y, first.z);
+    y = 10; for (int x = 270; x <= 350; x+=10) write3D(x+first.x, y+first.y, first.z);
+    y = 00; for (int x = 330; x >= 290; x-=10) write3D(x+first.x, y+first.y, first.z);
     closePin();
   }
 
@@ -416,13 +429,15 @@ public:
   // https://stackoverflow.com/questions/17705621/algorithm-for-a-geodesic-sphere
   //https://opengl.org.ru/docs/pg/0208.html
   void geodesicDome(Coord3D first, unsigned16 radius, unsigned8 ip, unsigned8 pin) {
+
+    //radius unused (tbd)
  
-    stackUnsigned8 tindices[20][3] = {    {0,4,1}, {0,9,4}, {9,5,4}, {4,5,8}, {4,8,1},       {8,10,1}, {8,3,10}, {5,3,8}, {5,2,3}, {2,7,3},       {7,10,3}, {7,6,10}, {7,11,6}, {11,0,6}, {0,1,6},    {6,1,10}, {9,0,11}, {9,11,2}, {9,2,5}, {7,2,11} };
+    stackUnsigned8 tindices[20][3] = {    {0,40,10}, {0,90,40}, {90,50,40}, {40,50,80}, {40,80,10},       {80,100,10}, {80,30,100}, {50,30,80}, {50,20,30}, {20,70,30},       {70,100,30}, {70,60,100}, {70,110,60}, {110,0,60}, {0,10,60},    {60,10,100}, {90,0,110}, {90,110,20}, {90,20,50}, {70,20,110} };
 
     openPin(pin);
 
     for (int i=0; i<20; i++) {
-      write3D(tindices[i][0]*10 + first.x*10, tindices[i][1]*10 + first.y*10, tindices[i][2]*10 + first.z*10);
+      write3D(tindices[i][0] + first.x, tindices[i][1] + first.y, tindices[i][2] + first.z);
     }
 
     closePin();
@@ -442,11 +457,13 @@ enum Fixtures
   f_Cone,
   f_Cloud,
   f_Wall,
+  f_Star,
   f_6Rings,
   f_SpaceStation,
   f_Human,
   f_Globe,
   f_GeodesicDome,
+  f_Curtain,
   fixtureCount
 };
 
@@ -477,11 +494,13 @@ public:
         options.add("Cone");
         options.add("Cloud");
         options.add("Wall");
+        options.add("Star");
         options.add("6Rings");
         options.add("SpaceStation");
         options.add("Human");
         options.add("Globe");
         options.add("GeodesicDome WIP");
+        options.add("Curtain");
         return true;
       }
       case f_ChangeFun:
@@ -731,15 +750,15 @@ public:
       ui->initNumber(parentVar, "radius", 100, 1, 1000);
     }
     else if (fgValue == f_Helix) {
-      ui->initNumber(parentVar, "fixLeds", 64, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      ui->initNumber(parentVar, "fixLeds", 100, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case f_UIFun:
           ui->setLabel(var, "Leds");
           return true;
         default: return false; 
       }});
       ui->initNumber(parentVar, "radius", 60, 1, 600);
-      ui->initNumber(parentVar, "pitch", 10, 1, 100);
-      ui->initNumber(parentVar, "deltaLed", 10, 1, 100);
+      ui->initNumber(parentVar, "pitch", 30, 1, 100);
+      ui->initNumber(parentVar, "deltaLed", 30, 1, 100);
     }
     else if (fgValue == f_Wheel) {
       ui->initNumber(parentVar, "nrOfSpokes", 36, 1, 360);
@@ -804,8 +823,25 @@ public:
     else if (fgValue == f_Globe) {
       ui->initNumber(parentVar, "width", 24, 1, 48);
     }
+    else if (fgValue == f_GeodesicDome) {
+      ui->initNumber(parentVar, "radius", 100, 1, 1000);
+    }
+    else if (fgValue == f_Curtain) {
+      ui->initNumber(parentVar, "width", 20, 1, 100);
+      ui->initNumber(parentVar, "height", 20, 1, 100);
+    }
 
+    //general variables
 
+    if (fgValue == f_Matrix || fgValue == f_Rings241) { //tbd: the rest
+      ui->initCoord3D(parentVar, "fixRotate", {0,0,0}, 0, 359, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        case f_UIFun:
+          ui->setLabel(var, "Rotate");
+          ui->setComment(var, "Pan, Tilt, Roll");
+          return true;
+        default: return false;
+      }});
+    }
 
     ui->initNumber(parentVar, "fixIP", WiFi.localIP()[3], 1, 256, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun:
@@ -900,7 +936,10 @@ public:
       print->fFormat(fileName, 31, "F_Matrix%d%d%d", size.x, size.y, size.z);
 
       getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
-        genFix->matrix(pnlFirst, mdl->getValue("mrxRowEnd", rowNr), mdl->getValue("mrxColEnd", rowNr), fixIP, fixPin);
+        Coord3D fixRotate = mdl->getValue("fixRotate", rowNr);
+        Coord3D mrxRowEnd = mdl->getValue("mrxRowEnd", rowNr);
+        Coord3D mrxColEnd = mdl->getValue("mrxColEnd", rowNr);
+        genFix->matrix(pnlFirst * 10, mrxRowEnd * 10, mrxColEnd * 10, fixIP, fixPin, fixRotate.x, fixRotate.y, fixRotate.z);
       });
 
     } else if (fgValue == f_Ring) {
@@ -924,12 +963,13 @@ public:
 
       getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint16_t nrOfLeds = mdl->getValue("fixLeds", rowNr);
+        Coord3D fixRotate = mdl->getValue("fixRotate", rowNr);
         //first to middle (in mm)
         Coord3D middle = pnlFirst;
         uint8_t radius = 10 * 60 / M_TWOPI; //in mm
         middle.x = middle.x*10 + radius;
         middle.y = middle.y*10 + radius;
-        genFix->rings241(middle, mdl->getValue("nrOfRings", rowNr), mdl->getValue("in2out", rowNr), fixIP, fixPin);
+        genFix->rings241(middle, mdl->getValue("nrOfRings", rowNr), mdl->getValue("in2out", rowNr), fixIP, fixPin, fixRotate.x, fixRotate.y, fixRotate.z);
       });
 
     } else if (fgValue == f_Spiral) {
@@ -1014,7 +1054,7 @@ public:
 
       strcpy(fileName, "F_Cloud5416");
       getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
-        genFix->cloud(pnlFirst, fixIP, fixPin);
+        genFix->cloud(pnlFirst*10, fixIP, fixPin);
       });
 
     } else if (fgValue == f_Wall) {
@@ -1023,12 +1063,34 @@ public:
       getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
         genFix->rings241(Coord3D{110,110,0}, 9, true, fixIP, fixPin);
 
-        genFix->matrix(Coord3D{19,0,0}, Coord3D{19,8,0}, Coord3D{27,0,0}, fixIP, fixPin);
-        genFix->matrix(Coord3D{0,19,0}, Coord3D{0,25,0}, Coord3D{50,19,0}, fixIP, fixPin);
+        genFix->matrix(Coord3D{190,0,0}, Coord3D{190,80,0}, Coord3D{270,0,0}, fixIP, fixPin);
+        genFix->matrix(Coord3D{0,190,0}, Coord3D{0,250,0}, Coord3D{500,190,0}, fixIP, fixPin);
 
         genFix->ring(Coord3D{190+80,80+80,0}, 48, fixIP, fixPin);
 
         // genFix.spiral(240, 0, 0, 48);
+      });
+
+    } else if (fgValue == f_Star) {
+
+      strcpy(fileName, "F_Star");
+      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+
+        uint8_t ringsCentre = 170;
+        uint8_t sateliteRadius = 130;
+
+        genFix->rings241(Coord3D{ringsCentre,ringsCentre,0}, 9, true, fixIP, fixPin); //middle in mm
+
+        Trigo trigo;
+
+        for (int degrees = 0; degrees < 360; degrees+=45) {
+          Coord3D middle;
+          middle.x = ringsCentre + trigo.sin(sateliteRadius, degrees);
+          middle.y = ringsCentre + trigo.cos(sateliteRadius, degrees);
+          middle.z = 0;
+          genFix->matrix(middle + Coord3D{-35,-35,0}, middle + Coord3D{-35,35,0}, middle + Coord3D{+35,-35,0}, fixIP, fixPin, 0, 0, degrees);
+        }
+
       });
 
     } else if (fgValue == f_6Rings) {
@@ -1063,20 +1125,20 @@ public:
 
         //total dimensions width: 10 + 18 + 10
         // height 18 + 5 + 
-        Coord3D headSize = {18, 18, 1};
-        Coord3D armSize = {12, 5, 1};
-        Coord3D legSize = {5, 20, 1};
+        Coord3D headSize = {180, 180, 10};
+        Coord3D armSize = {120, 50, 10};
+        Coord3D legSize = {50, 200, 10};
 
         // head
         genFix->rings241({190,110,0}, 9, true, fixIP, fixPin);
 
         //arms
-        genFix->matrix(Coord3D{0,headSize.y + 2,0}, Coord3D{0,headSize.y + 2 + armSize.y,0}, Coord3D{armSize.x,headSize.y + 2,0}, fixIP, fixPin);
-        genFix->matrix(Coord3D{armSize.x + 14,headSize.y + 2,0}, Coord3D{armSize.x + 14,headSize.y + 2 + armSize.y,0}, Coord3D{38,headSize.y + 2,0}, fixIP, fixPin);
+        genFix->matrix(Coord3D{0,headSize.y + 20,0}, Coord3D{0,headSize.y + 20 + armSize.y,0}, Coord3D{armSize.x,headSize.y + 20,0}, fixIP, fixPin);
+        genFix->matrix(Coord3D{armSize.x + 140,headSize.y + 20,0}, Coord3D{armSize.x + 140,headSize.y + 20 + armSize.y,0}, Coord3D{380,headSize.y + 20,0}, fixIP, fixPin);
 
         //legs
-        genFix->matrix(Coord3D{10, 28, 0}, Coord3D{10, 50, 0}, Coord3D{15,28,0}, fixIP, fixPin);
-        genFix->matrix(Coord3D{23, 28, 0}, Coord3D{23, 50, 0}, Coord3D{28,28,0}, fixIP, fixPin);
+        genFix->matrix(Coord3D{100, 280, 0}, Coord3D{100, 500, 0}, Coord3D{150,280,0}, fixIP, fixPin);
+        genFix->matrix(Coord3D{230, 280, 0}, Coord3D{230, 500, 0}, Coord3D{280,280,0}, fixIP, fixPin);
 
 
       });
@@ -1102,6 +1164,26 @@ public:
 
       getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
         genFix->geodesicDome(pnlFirst, mdl->getValue("radius", rowNr), fixIP, fixPin);
+      });
+
+    } else if (fgValue == f_Curtain) {
+
+      uint16_t width = mdl->getValue("width");
+      uint16_t height = mdl->getValue("height");
+      print->fFormat(fileName, 31, "F_Curtain%dx%d", width, height);
+
+      getPanels(fileName, [width, height](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+        genFix->openPin(fixPin);
+
+        uint8_t offX;
+        for (int y=0; y<width; y++) {
+          for (int x=0; x<height; x++) {
+            offX = (y%2 == 1)?5:0;
+            genFix->write3D(x*10 + offX + pnlFirst.x, y*10 + pnlFirst.y, pnlFirst.z);
+          }
+        }
+
+        genFix->closePin();
       });
 
     }

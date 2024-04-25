@@ -59,13 +59,13 @@ struct Trigo {
   float cosValue[3]; uint16_t cosAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of cosValue=cos(cosAngle) for pan, tilt and roll
   virtual float sinBase(uint16_t angle) {return sinf(M_TWOPI * angle / period);}
   virtual float cosBase(uint16_t angle) {return cosf(M_TWOPI * angle / period);}
-  int16_t sin(int16_t factor, uint16_t angle, uint8_t index = 0) {
-    if (sinAngle[index] != angle) {sinAngle[index] = angle; sinValue[index] = sinBase(angle);trigoUnCached++;} else trigoCached++;
-    return factor * sinValue[index];
+  int16_t sin(int16_t factor, uint16_t angle, uint8_t cache012 = 0) {
+    if (sinAngle[cache012] != angle) {sinAngle[cache012] = angle; sinValue[cache012] = sinBase(angle);trigoUnCached++;} else trigoCached++;
+    return factor * sinValue[cache012];
   };
-  int16_t cos(int16_t factor, uint16_t angle, uint8_t index = 0) {
-    if (cosAngle[index] != angle) {cosAngle[index] = angle; cosValue[index] = cosBase(angle);trigoUnCached++;} else trigoCached++;
-    return factor * cosValue[index];
+  int16_t cos(int16_t factor, uint16_t angle, uint8_t cache012 = 0) {
+    if (cosAngle[cache012] != angle) {cosAngle[cache012] = angle; cosValue[cache012] = cosBase(angle);trigoUnCached++;} else trigoCached++;
+    return factor * cosValue[cache012];
   };
   // https://msl.cs.uiuc.edu/planning/node102.html
   Coord3D pan(Coord3D in, Coord3D middle, uint16_t angle) {
