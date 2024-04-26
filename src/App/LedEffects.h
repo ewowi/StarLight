@@ -309,7 +309,7 @@ class BouncingBalls: public Effect {
 
       int pos = roundf(balls[i].height * (leds.nrOfLeds - 1));
 
-      CRGB color = ColorFromPalette(pal, i*(256/max(numBalls, (stackUnsigned8)8)), 255);
+      CRGB color = ColorFromPalette(pal, i*(256/max(numBalls, (stackUnsigned8)8)), 255); //error: no matching function for call to 'max(uint8_t&, int)'
 
       leds[pos] = color;
       // if (leds.nrOfLeds<32) leds.setPixelColor(indexToVStrip(pos, stripNr), color); // encode virtual strip into index
@@ -714,6 +714,42 @@ class PopCorn: public Effect {
     ui->initCheckBox(parentVar, "useaudio", false);
   }
 }; //PopCorn
+
+class NoiseMeter: public Effect {
+  const char * name() {return "NoiseMeter";}
+  unsigned8 dim() {return _1D;}
+  const char * tags() {return "♪💡";}
+
+  void loop(Leds &leds) {
+    CRGBPalette16 pal = getPalette();
+    stackUnsigned8 fadeRate = mdl->getValue("fadeRate");
+    stackUnsigned8 width = mdl->getValue("width");
+
+    unsigned8 *aux0 = leds.sharedData.bind(aux0);
+    unsigned8 *aux1 = leds.sharedData.bind(aux1);
+
+    leds.fadeToBlackBy(fadeRate);
+
+    float tmpSound2 = wledAudioMod->sync.volumeRaw * 2.0 * (float)width / 255.0;
+    int maxLen = map(tmpSound2, 0, 255, 0, leds.nrOfLeds); // map to pixels availeable in current segment              // Still a bit too sensitive.
+    // if (maxLen <0) maxLen = 0;
+    // if (maxLen >leds.nrOfLeds) maxLen = leds.nrOfLeds;
+
+    for (int i=0; i<maxLen; i++) {                                    // The louder the sound, the wider the soundbar. By Andrew Tuline.
+      uint8_t index = inoise8(i*wledAudioMod->sync.volumeSmth+*aux0, *aux1+i*wledAudioMod->sync.volumeSmth);  // Get a value from the noise function. I'm using both x and y axis.
+      leds.setPixelColor(i, ColorFromPalette(pal, index));//, 255, PALETTE_SOLID_WRAP));
+    }
+
+    *aux0+=beatsin8(5,0,10);
+    *aux1+=beatsin8(4,0,10);
+  }
+  
+  void controls(JsonObject parentVar) {
+    addPalette(parentVar, 4);
+    ui->initSlider(parentVar, "fadeRate", 248, 200, 254);
+    ui->initSlider(parentVar, "width");
+  }
+}; //NoiseMeter
 
 class AudioRings: public RingEffect {
   const char * name() {return "AudioRings";}
@@ -1542,6 +1578,7 @@ public:
       //1D Volume
       effects.push_back(new FreqMatrix);
       effects.push_back(new PopCorn);
+      effects.push_back(new NoiseMeter);
       //1D frequency
       effects.push_back(new AudioRings);
       effects.push_back(new DJLight);

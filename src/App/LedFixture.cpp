@@ -59,9 +59,9 @@ void Fixture::projectAndMap() {
     unsigned16 currPin; //lookFor needs u16
 
     //what to deserialize
-    starModJson.lookFor("width", (unsigned16 *)&size.x);
-    starModJson.lookFor("height", (unsigned16 *)&size.y);
-    starModJson.lookFor("depth", (unsigned16 *)&size.z);
+    starModJson.lookFor("width", (unsigned16 *)&fixSize.x);
+    starModJson.lookFor("height", (unsigned16 *)&fixSize.y);
+    starModJson.lookFor("depth", (unsigned16 *)&fixSize.z);
     starModJson.lookFor("nrOfLeds", &nrOfLeds);
     starModJson.lookFor("pin", &currPin);
 
@@ -79,11 +79,13 @@ void Fixture::projectAndMap() {
 
         stackUnsigned8 rowNr = 0;
         for (Leds *leds: projections) {
+
+          if (leds->projectionNr != p_Random && leds->projectionNr != p_None)
           if (leds->doMap) { //add pixel in leds mappingtable
 
             //set start and endPos between bounderies of fixture
-            Coord3D startPosAdjusted = (leds->startPos).minimum(size - Coord3D{1,1,1}) * 10;
-            Coord3D endPosAdjusted = (leds->endPos).minimum(size - Coord3D{1,1,1}) * 10;
+            Coord3D startPosAdjusted = (leds->startPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
+            Coord3D endPosAdjusted = (leds->endPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
 
             // mdl->setValue("fxStart", startPosAdjusted/10, rowNr); //rowNr
             // mdl->setValue("fxEnd", endPosAdjusted/10, rowNr); //rowNr
@@ -336,6 +338,7 @@ void Fixture::projectAndMap() {
         } //projections
         indexP++; //also increase if no buffer created
       } //if 1D-3D pixel
+
       else { // end of leds array
 
         if (doAllocPins) {
@@ -386,8 +389,9 @@ void Fixture::projectAndMap() {
           if (leds->projectionNr == p_Random || leds->projectionNr == p_None) {
 
             //defaults
-            leds->size = size;
+            leds->size = fixSize;
             leds->nrOfLeds = nrOfLeds;
+            nrOfPixels = nrOfLeds;
 
           } else {
 
@@ -435,16 +439,16 @@ void Fixture::projectAndMap() {
           mdl->setValue("fxSize", JsonString(buf, JsonString::Copied), rowNr);
           // web->sendResponseObject();
 
-          ppf("leds[%d].size = %d + %d\n", rowNr, sizeof(Leds), leds->mappingTable.size()); //44
+          ppf("projectAndMap leds[%d].size = %d + %d\n", rowNr, sizeof(Leds), leds->mappingTable.size()); //44
 
           leds->doMap = false;
         } //leds->doMap
         rowNr++;
       } // leds
 
-      ppf("projectAndMap fixture P:%dx%dx%d -> %d\n", size.x, size.y, size.z, nrOfLeds);
+      ppf("projectAndMap fixture P:%dx%dx%d -> %d\n", fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
 
-      mdl->setValue("fixSize", size);
+      mdl->setValue("fixSize", fixSize);
       mdl->setValue("fixCount", nrOfLeds);
 
     } // if deserialize

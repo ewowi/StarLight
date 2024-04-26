@@ -28,7 +28,7 @@ unsigned16 Leds::XYZ(unsigned16 x, unsigned16 y, unsigned16 z) {
     if (proPanSpeed) result = trigoPanTiltRoll.pan(result, size/2, millis() * 5 / (255 - proPanSpeed));
     if (proTiltSpeed) result = trigoPanTiltRoll.tilt(result, size/2, millis() * 5 / (255 - proTiltSpeed));
     if (proRollSpeed) result = trigoPanTiltRoll.roll(result, size/2, millis() * 5 / (255 - proRollSpeed));
-    if (fixture->size.z == 1) result.z = 0; // 3d effects will be flattened on 2D fixtures
+    if (fixture->fixSize.z == 1) result.z = 0; // 3d effects will be flattened on 2D fixtures
     if (result >= 0 && result < size)
       return result.x + result.y * size.x + result.z * size.x * size.y;
     else 

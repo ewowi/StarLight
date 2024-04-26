@@ -157,9 +157,9 @@ public:
       default: return false; 
     }}); //fixture
 
-    ui->initCoord3D(currentVar, "fixSize", eff->fixture.size, 0, NUM_LEDS_Max, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(currentVar, "fixSize", eff->fixture.fixSize, 0, NUM_LEDS_Max, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
-        mdl->setValue(var, eff->fixture.size);
+        mdl->setValue(var, eff->fixture.fixSize);
         return true;
       case f_UIFun:
         ui->setLabel(var, "Size");

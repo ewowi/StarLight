@@ -41,7 +41,7 @@ public:
 
   unsigned16 nrOfLeds = 64; //amount of physical leds
   unsigned8 fixtureNr = -1;
-  Coord3D size = {8,8,1};
+  Coord3D fixSize = {8,8,1};
 
   std::vector<Leds *> projections; //virtual leds
 
