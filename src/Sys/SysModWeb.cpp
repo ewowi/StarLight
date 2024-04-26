@@ -680,16 +680,17 @@ void SysModWeb::serveJson(WebRequest *request) {
     deserializeJson(docState, jsonState);
     root["state"] = docState;
 
+    //tbd:  //StarMod has no idea about leds so this should be led independent
     root["state"]["bri"] = mdl->getValue("bri");
     root["state"]["on"] = mdl->getValue("on").as<bool>();
     root["info"]["name"] = mdl->getValue("instanceName");
     root["info"]["arch"] = "esp32"; //platformName
 
     root["info"]["rel"] = _INIT(TOSTRING(APP));
-    root["info"]["ver"] = "0.0.1";
+    root["info"]["ver"] = _INIT(TOSTRING(VERSION));
     root["info"]["vid"] = VERSION; //WLED-native needs int otherwise status offline!!!
-    root["info"]["leds"]["count"] = 999;
-    root["info"]["leds"]["countP"] = 998;
+    root["info"]["leds"]["count"] = 999; //StarMod has no idea about leds
+    root["info"]["leds"]["countP"] = 998;  //StarMod has no idea about leds
     root["info"]["leds"]["fps"] = mdl->getValue("fps"); //tbd: should be realFps but is ro var
     root["info"]["wifi"]["rssi"] = WiFi.RSSI();// mdl->getValue("rssi"); (ro)
 

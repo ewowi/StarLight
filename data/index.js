@@ -50,7 +50,7 @@ function onLoad() {
   d.addEventListener("visibilitychange", handleVisibilityChange, false);
 }
 
-function consolelog() {
+function ppf() {
   let logNode = gId("log");
   let sep = "";
   if (logNode) {
@@ -117,7 +117,7 @@ function makeWS() {
             let module = json;
             model.push((module)); //this is the model
             console.log("WS receive createHTML", module);
-            consolelog("WS receive createHTML", module.id);
+            ppf("WS receive createHTML", module.id);
             createHTML(module); //no parentNode
 
             if (module.id == "System") {
@@ -614,24 +614,24 @@ function receiveData(json) {
 
       //special commands
       if (key == "uiFun") {
-        consolelog("receiveData no action", key, value); //should not happen anymore
+        ppf("receiveData no action", key, value); //should not happen anymore
       }
       else if (key == "view") {
-        consolelog("receiveData", key, value);
+        ppf("receiveData", key, value);
         changeHTMLView(value);
       }
       else if (key == "theme") {
-        consolelog("receiveData", key, value);
+        ppf("receiveData", key, value);
         changeHTMLTheme(value);
       }
       else if (key == "canvasData") {
-        consolelog("receiveData no action", key, value);
+        ppf("receiveData no action", key, value);
       } else if (key == "details") {
         let variable = value.var;
         let rowNr = value.rowNr == null?UINT8_MAX:value.rowNr;
         let nodeId = variable.id + ((rowNr != UINT8_MAX)?"#" + rowNr:"");
         //if var object with .n, create .n (e.g. see setEffect and fixtureGenChFun, tbd: )
-        consolelog("receiveData details", key, variable.id, nodeId, rowNr);
+        ppf("receiveData details", key, variable.id, nodeId, rowNr);
         if (gId(nodeId + "_n")) gId(nodeId + "_n").remove(); //remove old ndiv
 
         let modelVar = findVar(variable.id);
@@ -648,7 +648,7 @@ function receiveData(json) {
         flushUIFunCommands(); //make sure uiFuns of new elements are called
       }
       else if (key == "addRow") { //update the row of a table
-        consolelog("receiveData", key, value);
+        ppf("receiveData", key, value);
 
         if (value.id && value.rowNr != null) {
           let tableId = value.id;
@@ -658,18 +658,18 @@ function receiveData(json) {
           let tableNode = gId(tableId);
           let tbodyNode = tableNode.querySelector("tbody");
 
-          consolelog("addRow ", tableVar, tableNode, rowNr);
+          ppf("addRow ", tableVar, tableNode, rowNr);
 
           let newRowNr = tbodyNode.querySelectorAll("tr").length;
 
           genTableRowHTML(tableVar, tableNode, newRowNr);
         }
         else 
-          consolelog("dev receiveData addRow no id and/or rowNr specified", key, value);
+          ppf("dev receiveData addRow no id and/or rowNr specified", key, value);
 
       } else if (key == "delRow") { //update the row of a table
 
-        consolelog("receiveData", key, value);
+        ppf("receiveData", key, value);
         let tableId = value.id;
         let tableVar = findVar(tableId);
         let rowNr = value.rowNr;
@@ -682,7 +682,7 @@ function receiveData(json) {
 
         varRemoveValuesForRow(tableVar, rowNr);
 
-        consolelog("delRow ", tableVar, tableNode, rowNr);
+        ppf("delRow ", tableVar, tableNode, rowNr);
 
       } else if (key == "updRow") { //update the row of a table
 
@@ -691,19 +691,19 @@ function receiveData(json) {
         let rowNr = value.rowNr;
         let tableRow = value.value;
 
-        // consolelog("receiveData updRow", key, tableId, rowNr, tableRow);
-        // consolelog("updRow main", tableId, tableRows, tableNode, tableVar);
+        // ppf("receiveData updRow", key, tableId, rowNr, tableRow);
+        // ppf("updRow main", tableId, tableRows, tableNode, tableVar);
 
         let colNr = 0;
         for (let colVar of tableVar.n) {
           let colValue = tableRow[colNr];
-          // consolelog("    col", colNr, colVar, colValue);
+          // ppf("    col", colNr, colVar, colValue);
           changeHTML(colVar, {"value":colValue, "chk":"updRow"}, rowNr);
           colNr++;
         }
 
       } else if (key == "sysInfo") { //update the row of a table
-        consolelog("receiveData", key, value);
+        ppf("receiveData", key, value.board);
         sysInfo = value;
       } else { //{variable:{label:value:options:comment:}}
 
@@ -712,19 +712,19 @@ function receiveData(json) {
         if (variable) {
           let rowNr = value.rowNr == null?UINT8_MAX:value.rowNr;
           // if (variable.id == "fxEnd" || variable.id == "fxSize" || variable.id == "point")
-          //   consolelog("receiveData ", variable, value);
+          //   ppf("receiveData ", variable, value);
           variable.fun = -2; // request processed
 
           value.chk = "uiFun";
           changeHTML(variable, value, rowNr); //changeHTML will find the rownumbers if needed
         }
         else
-          consolelog("receiveData key is no variable", key, value);
+          ppf("receiveData key is no variable", key, value);
       }
     } //for keys
   } //isObject
   else
-    consolelog("receiveData no Object", object);
+    ppf("receiveData no Object", object);
 } //receiveData
 
 //do something with an existing (variable) node, key is an existing node, json is what to do with it

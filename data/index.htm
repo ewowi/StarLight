@@ -14,12 +14,22 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>StarMod💫 LEDs 🎨 by MoonModules 🌔</title>
+	<meta content="yes" name="apple-mobile-web-app-capable">
+  <meta name="author" content="MoonModules ☾ and it's contributors">
+  <link rel="icon" href="https://ewowi.github.io/StarDocs/assets/images/ui/starmod/favicon-16x16.png">
+  <!-- <link rel="icon" type="image/x-icon" href="favicon-16x16.png"> currently only works in chrome -->
+  <!-- <link rel="mask-icon" type="image/x-icon" href="favicon-16x16.png"> for safari tabs? -->
+  <!-- <link rel="shortcut icon" type="image/x-icon" href="favicon-16x16.png">  found in wled... -->
   <link rel="stylesheet" href="index.css">
   <script src="app.js"></script>
   <script src="index.js"></script>
+  <title>StarMod💫 LEDs 🎨 by MoonModules 🌔</title>
 
-   <!-- tbd: add max-age=86400 to imports -->
+  <!-- favicon in safari not working. see: -->
+  <!-- https://stackoverflow.com/questions/68885882/favicon-not-displaying-on-safari -->
+  <!-- test: rm /Users/ewoudwijma/Library/Safari/Favicon\ Cache also from trash bin -->
+
+  <!-- tbd: add max-age=86400 to imports -->
  
   <!-- https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Modules -->
   <script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
