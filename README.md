@@ -12,5 +12,5 @@ See [StarDocs](https://ewowi.github.io/StarDocs/)
 
 Build using StarMod:
 
-* [ewowi/StarMod](https://github.com/ewowi/StarMod)
+* [ewowi/StarBase](https://github.com/ewowi/StarBase)
 
