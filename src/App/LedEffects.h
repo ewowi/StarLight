@@ -1,18 +1,18 @@
 /*
-   @title     StarMod
+   @title     StarLeds
    @file      LedEffects.h
    @date      20240228
-   @repo      https://github.com/ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/MoonModules/StarLeds
+   @Authors   https://github.com/MoonModules/StarLeds/commits/main
+   @Copyright © 2024 Github StarLeds Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
-#ifdef STARMOD_USERMOD_WLEDAUDIO
+#ifdef STARLEDS_USERMOD_WLEDAUDIO
   #include "../User/UserModWLEDAudio.h"
 #endif
-#ifdef STARMOD_USERMOD_E131
+#ifdef STARBASE_USERMOD_E131
   #include "../User/UserModE131.h"
 #endif
 
@@ -1243,7 +1243,7 @@ class ScrollingText: public Effect {
   }
   
   void controls(JsonObject parentVar) {
-    ui->initText(parentVar, "text", "StarMod");
+    ui->initText(parentVar, "text", "StarLeds");
     ui->initSlider(parentVar, "speed", 128);
     ui->initSelect(parentVar, "font", 0, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun: {
@@ -1261,7 +1261,7 @@ class ScrollingText: public Effect {
 };
 
 
-#ifdef STARMOD_USERMOD_WLEDAUDIO
+#ifdef STARLEDS_USERMOD_WLEDAUDIO
 
 class Waverly: public Effect {
   const char * name() {return "Waverly";}
@@ -1410,7 +1410,7 @@ class GEQEffect: public Effect {
 
     // Nice an effect can register it's own DMX channel, but not a fan of repeating the range and type of the param
 
-    // #ifdef STARMOD_USERMOD_E131
+    // #ifdef STARBASE_USERMOD_E131
 
     //   if (e131mod->isEnabled) {
     //     e131mod->patchChannel(3, "fadeOut", 255); // TODO: add constant for name
@@ -1565,7 +1565,7 @@ public:
     effects.push_back(new ConfettiEffect);
     effects.push_back(new BPMEffect);
     effects.push_back(new JuggleEffect);
-    //1D StarMod
+    //1D StarLeds
     effects.push_back(new RunningEffect);
     effects.push_back(new RingRandomFlow);
     // 1D WLED
@@ -1574,7 +1574,7 @@ public:
     effects.push_back(new DripEffect);
     effects.push_back(new HeartBeatEffect);
 
-    #ifdef STARMOD_USERMOD_WLEDAUDIO
+    #ifdef STARLEDS_USERMOD_WLEDAUDIO
       //1D Volume
       effects.push_back(new FreqMatrix);
       effects.push_back(new PopCorn);
@@ -1584,7 +1584,7 @@ public:
       effects.push_back(new DJLight);
     #endif
 
-    //2D StarMod
+    //2D StarLeds
     effects.push_back(new Lines);
     //2D WLED
     effects.push_back(new BlackHole);
@@ -1594,7 +1594,7 @@ public:
     effects.push_back(new Lissajous);
     effects.push_back(new Frizzles);
     effects.push_back(new ScrollingText);
-    #ifdef STARMOD_USERMOD_WLEDAUDIO
+    #ifdef STARLEDS_USERMOD_WLEDAUDIO
       //2D WLED
       effects.push_back(new Waverly);
       effects.push_back(new GEQEffect);
@@ -1626,7 +1626,7 @@ public:
     // ppf("Size of %s is %d\n", "Lissajous", sizeof(Lissajous));
     // ppf("Size of %s is %d\n", "BouncingBalls", sizeof(BouncingBalls));
     // ppf("Size of %s is %d\n", "RingRandomFlow", sizeof(RingRandomFlow));
-    // #ifdef STARMOD_USERMOD_WLEDAUDIO
+    // #ifdef STARLEDS_USERMOD_WLEDAUDIO
     //   ppf("Size of %s is %d\n", "GEQEffect", sizeof(GEQEffect));
     //   ppf("Size of %s is %d\n", "AudioRings", sizeof(AudioRings));
     // #endif

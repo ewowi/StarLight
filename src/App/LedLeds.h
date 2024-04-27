@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarLeds
    @file      LedLeds.h
    @date      20240227
-   @repo      https://github.com/ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/MoonModules/StarLeds
+   @Authors   https://github.com/MoonModules/StarLeds/commits/main
+   @Copyright © 2024 Github StarLeds Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -115,7 +115,7 @@ class Fixture; //forward
 
 
 
-//StarMod implementation of segment.data
+//StarLeds implementation of segment.data
 class SharedData {
 
   private:

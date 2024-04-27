@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarLeds
    @file      LedModEffects.h
    @date      20240228
-   @repo      https://github.com/ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/MoonModules/StarLeds
+   @Authors   https://github.com/MoonModules/StarLeds/commits/main
+   @Copyright © 2024 Github StarLeds Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -315,7 +315,7 @@ public:
       default: return false;
     }});
 
-    #ifdef STARMOD_USERMOD_E131
+    #ifdef STARBASE_USERMOD_E131
       // if (e131mod->isEnabled) {
           e131mod->patchChannel(0, "bri", 255); //should be 256??
           e131mod->patchChannel(1, "fx", effects.effects.size());
@@ -362,7 +362,7 @@ public:
         }
       }
 
-      #ifdef STARMOD_USERMOD_WLEDAUDIO
+      #ifdef STARLEDS_USERMOD_WLEDAUDIO
 
         if (mdl->getValue("viewRot")  == 2) {
           fixture.head.x = wledAudioMod->fftResults[3];

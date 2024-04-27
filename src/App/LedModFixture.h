@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarLeds
    @file      LedModFixture.h
    @date      20240228
-   @repo      https://github.com/ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/MoonModules/StarLeds
+   @Authors   https://github.com/MoonModules/StarLeds/commits/main
+   @Copyright © 2024 Github StarLeds Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -113,7 +113,7 @@ public:
         options.add("Pan");
         options.add("Tilt");
         options.add("Roll");
-        #ifdef STARMOD_USERMOD_WLEDAUDIO
+        #ifdef STARLEDS_USERMOD_WLEDAUDIO
           options.add("Moving heads GEQ");
         #endif
         return true; }

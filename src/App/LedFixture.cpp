@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarLeds
    @file      LedFixture.cpp
    @date      20240228
-   @repo      https://github.com/ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/MoonModules/StarLeds
+   @Authors   https://github.com/MoonModules/StarLeds/commits/main
+   @Copyright © 2024 Github StarLeds Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -12,7 +12,7 @@
 #include "LedFixture.h"
 
 #include "../Sys/SysModFiles.h"
-#include "../Sys/SysStarModJson.h"
+#include "../Sys/SysStarJson.h"
 #include "../Sys/SysModPins.h"
 
 
@@ -21,7 +21,7 @@ void Fixture::projectAndMap() {
   char fileName[32] = "";
 
   if (files->seqNrToName(fileName, fixtureNr)) { // get the fixture.json
-    StarModJson starModJson(fileName); //open fileName for deserialize
+    StarJson starJson(fileName); //open fileName for deserialize
 
     // reset leds
     stackUnsigned8 rowNr = 0;
@@ -59,14 +59,14 @@ void Fixture::projectAndMap() {
     unsigned16 currPin; //lookFor needs u16
 
     //what to deserialize
-    starModJson.lookFor("width", (unsigned16 *)&fixSize.x);
-    starModJson.lookFor("height", (unsigned16 *)&fixSize.y);
-    starModJson.lookFor("depth", (unsigned16 *)&fixSize.z);
-    starModJson.lookFor("nrOfLeds", &nrOfLeds);
-    starModJson.lookFor("pin", &currPin);
+    starJson.lookFor("width", (unsigned16 *)&fixSize.x);
+    starJson.lookFor("height", (unsigned16 *)&fixSize.y);
+    starJson.lookFor("depth", (unsigned16 *)&fixSize.z);
+    starJson.lookFor("nrOfLeds", &nrOfLeds);
+    starJson.lookFor("pin", &currPin);
 
     //lookFor leds array and for each item in array call lambdo to make a projection
-    starModJson.lookFor("leds", [this, &prevIndexP, &indexP, &currPin](std::vector<unsigned16> uint16CollectList) { //this will be called for each tuple of coordinates!
+    starJson.lookFor("leds", [this, &prevIndexP, &indexP, &currPin](std::vector<unsigned16> uint16CollectList) { //this will be called for each tuple of coordinates!
 
       if (uint16CollectList.size()>=1) { // process one pixel
 
@@ -372,9 +372,9 @@ void Fixture::projectAndMap() {
           prevIndexP = indexP;
         }
       }
-    }); //starModJson.lookFor("leds" (create the right type, otherwise crash)
+    }); //starJson.lookFor("leds" (create the right type, otherwise crash)
 
-    if (starModJson.deserialize(false)) { //this will call above function parameter for each led
+    if (starJson.deserialize(false)) { //this will call above function parameter for each led
 
       //after processing each led
       stackUnsigned8 rowNr = 0;
