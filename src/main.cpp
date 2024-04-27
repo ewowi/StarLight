@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      main.cpp
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -48,11 +48,11 @@ UserModMDNS *mdns;
     UserModDDP *ddpmod;
   #endif
 #endif
-#ifdef STARMOD_USERMOD_E131
+#ifdef STARBASE_USERMOD_E131
   #include "User/UserModE131.h"
   UserModE131 *e131mod;
 #endif
-#ifdef STARMOD_USERMOD_HA
+#ifdef STARBASE_USERMOD_HA
   #include "User/UserModHA.h"
   UserModHA *hamod;
 #endif
@@ -86,10 +86,10 @@ void setup() {
       ddpmod = new UserModDDP();
     #endif
   #endif
-  #ifdef STARMOD_USERMOD_E131
+  #ifdef STARBASE_USERMOD_E131
     e131mod = new UserModE131();
   #endif
-  #ifdef STARMOD_USERMOD_HA
+  #ifdef STARBASE_USERMOD_HA
     hamod = new UserModHA();
   #endif
   #ifdef STARMOD_USERMOD_WLEDAUDIO
@@ -118,10 +118,10 @@ void setup() {
       mdls->add(artnetmod);
     #endif
   #endif
-  #ifdef STARMOD_USERMOD_E131
+  #ifdef STARBASE_USERMOD_E131
     mdls->add(e131mod);
   #endif
-  #ifdef STARMOD_USERMOD_HA
+  #ifdef STARBASE_USERMOD_HA
     mdls->add(hamod); //no ui
   #endif
   mdls->add(mdl);

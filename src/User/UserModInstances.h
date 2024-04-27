@@ -1,17 +1,17 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      UserModInstances.h
    @date      20240411
-   @repo      https://github.com/ewoudwijma/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewoudwijma/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewoudwijma/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewoudwijma/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
 #pragma once
 
-#ifdef STARMOD_USERMOD_E131
+#ifdef STARBASE_USERMOD_E131
   #include "UserModE131.h"
 #endif
 // #include "Sys/SysModSystem.h" //for sys->version
@@ -126,7 +126,7 @@ struct UDPWLEDMessage {
 }; //total 44 bytes!
 
 //compatible with WLED instances as it only interprets first 44 bytes
-struct UDPStarModMessage {
+struct UDPStarMessage {
   UDPWLEDMessage header; // 44 bytes fixed!
   SysData sys;
   AppData app;
@@ -178,7 +178,7 @@ public:
   //   row.add(JsonString(instance->ip.toString().c_str(), JsonString::Copied));
   //   // row.add(instance->timeStamp / 1000);
 
-  //   row.add(instance->sys.type?"StarMod":"WLED");
+  //   row.add(instance->sys.type?"StarBase":"WLED");
 
   //   row.add(instance->version);
   //   row.add(instance->sys.upTime);
@@ -244,7 +244,7 @@ public:
     ui->initText(tableVar, "insType", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
         for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, instances[rowNrL].sys.type?"StarMod":"WLED", rowNrL);
+          mdl->setValue(var, instances[rowNrL].sys.type?"StarBase":"WLED", rowNrL);
         return true;
       case f_UIFun:
         ui->setLabel(var, "Type");
@@ -379,14 +379,14 @@ public:
       // ppf("udpMessage size %d = %d + %d + %d + ...\n", sizeof(UDPWLEDMessage), sizeof(udpMessage.ip0), sizeof(udpMessage.version), sizeof(udpMessage.name));
       success = false;
     }
-    if (sizeof(UDPStarModMessage) != 1460) { //size of UDP Packet
+    if (sizeof(UDPStarMessage) != 1460) { //size of UDP Packet
       // one udp frame should be 1460, not 1472 (then split by network in 1460 and 12)
-      ppf("Program error: Size of UDP message is not 44: %d\n", sizeof(UDPStarModMessage));
+      ppf("Program error: Size of UDP message is not 44: %d\n", sizeof(UDPStarMessage));
       // ppf("udpMessage size %d = %d + %d + %d + ...\n", sizeof(UDPWLEDMessage), sizeof(udpMessage.ip0), sizeof(udpMessage.version), sizeof(udpMessage.name));
       success = false;
     }
 
-    ppf("UDPWLEDSyncMessage %d %d %d\n", sizeof(UDPWLEDMessage), sizeof(UDPStarModMessage), sizeof(UDPWLEDSyncMessage));
+    ppf("UDPWLEDSyncMessage %d %d %d\n", sizeof(UDPWLEDMessage), sizeof(UDPStarMessage), sizeof(UDPWLEDSyncMessage));
   }
 
   void onOffChanged() {
@@ -485,31 +485,31 @@ public:
 
       if (packetSize > 0) {
         IPAddress remoteIp = instanceUDP.remoteIP();
-        // ppf("handleNotifications instances ...%d %d check %d or %d\n", remoteIp[3], packetSize, sizeof(UDPWLEDMessage), sizeof(UDPStarModMessage));
+        // ppf("handleNotifications instances ...%d %d check %d or %d\n", remoteIp[3], packetSize, sizeof(UDPWLEDMessage), sizeof(UDPStarMessage));
 
         if (packetSize == sizeof(UDPWLEDMessage)) { //WLED instance
-          UDPStarModMessage starModMessage;
-          byte *udpIn = (byte *)&starModMessage.header;
+          UDPStarMessage starMessage;
+          byte *udpIn = (byte *)&starMessage.header;
           instanceUDP.read(udpIn, packetSize);
 
-          starModMessage.sys.type = 0; //WLED
+          starMessage.sys.type = 0; //WLED
 
-          updateInstance(starModMessage);
+          updateInstance(starMessage);
         }
-        else if (packetSize == sizeof(UDPStarModMessage)) {
-          UDPStarModMessage starModMessage;
-          byte *udpIn = (byte *)&starModMessage;
+        else if (packetSize == sizeof(UDPStarMessage)) {
+          UDPStarMessage starMessage;
+          byte *udpIn = (byte *)&starMessage;
           instanceUDP.read(udpIn, packetSize);
-          starModMessage.sys.type = 1; //Starmod
+          starMessage.sys.type = 1; //StarBase
 
-          updateInstance(starModMessage);
+          updateInstance(starMessage);
         }
         else {
           //read the rest of the data (flush)
           byte udpIn[1472+1];
           notifierUdp.read(udpIn, packetSize);
 
-          ppf("packetSize %d not equal to %d or %d\n", packetSize, sizeof(UDPWLEDMessage), sizeof(UDPStarModMessage));
+          ppf("packetSize %d not equal to %d or %d\n", packetSize, sizeof(UDPWLEDMessage), sizeof(UDPStarMessage));
         }
         web->recvUDPCounter++;
         web->recvUDPBytes+=packetSize;
@@ -545,58 +545,58 @@ public:
     IPAddress localIP = WiFi.localIP();
     if (!localIP || localIP == IPAddress(255,255,255,255)) localIP = IPAddress(4,3,2,1);
 
-    UDPStarModMessage starModMessage;
-    starModMessage.header.token = 255; //WLED only accepts 255
-    starModMessage.header.id = 1; //WLED only accepts 1
-    starModMessage.header.ip0 = localIP[0];
-    starModMessage.header.ip1 = localIP[1];
-    starModMessage.header.ip2 = localIP[2];
-    starModMessage.header.ip3 = localIP[3];
+    UDPStarMessage starMessage;
+    starMessage.header.token = 255; //WLED only accepts 255
+    starMessage.header.id = 1; //WLED only accepts 1
+    starMessage.header.ip0 = localIP[0];
+    starMessage.header.ip1 = localIP[1];
+    starMessage.header.ip2 = localIP[2];
+    starMessage.header.ip3 = localIP[3];
     const char * instanceName = mdl->getValue("instanceName");
-    strncpy(starModMessage.header.name, instanceName?instanceName:_INIT(TOSTRING(APP)), sizeof(starModMessage.header.name)-1);
-    starModMessage.header.type = 32; //esp32 tbd: CONFIG_IDF_TARGET_ESP32S3 etc
-    starModMessage.header.insId = localIP[3]; //WLED: used in map of instances as index!
-    starModMessage.header.version = VERSION;
-    starModMessage.sys.type = 1; //StarMod
-    starModMessage.sys.upTime = millis()/1000;
-    starModMessage.sys.syncMaster = mdl->getValue("sma");
-    starModMessage.sys.dmx.universe = 0;
-    starModMessage.sys.dmx.start = 0;
-    starModMessage.sys.dmx.count = 0;
-    #ifdef STARMOD_USERMOD_E131
+    strncpy(starMessage.header.name, instanceName?instanceName:_INIT(TOSTRING(APP)), sizeof(starMessage.header.name)-1);
+    starMessage.header.type = 32; //esp32 tbd: CONFIG_IDF_TARGET_ESP32S3 etc
+    starMessage.header.insId = localIP[3]; //WLED: used in map of instances as index!
+    starMessage.header.version = VERSION;
+    starMessage.sys.type = 1; //StarBase
+    starMessage.sys.upTime = millis()/1000;
+    starMessage.sys.syncMaster = mdl->getValue("sma");
+    starMessage.sys.dmx.universe = 0;
+    starMessage.sys.dmx.start = 0;
+    starMessage.sys.dmx.count = 0;
+    #ifdef STARBASE_USERMOD_E131
       if (e131mod->isEnabled) {
-        starModMessage.sys.dmx.universe = mdl->getValue("dun");
-        starModMessage.sys.dmx.start = mdl->getValue("dch");
-        starModMessage.sys.dmx.count = 3;//e131->varsToWatch.size();
+        starMessage.sys.dmx.universe = mdl->getValue("dun");
+        starMessage.sys.dmx.start = mdl->getValue("dch");
+        starMessage.sys.dmx.count = 3;//e131->varsToWatch.size();
       }
     #endif
 
     //dash values default 0
-    starModMessage.app.initVars();
+    starMessage.app.initVars();
 
     //send dash values
-    mdl->findVars("dash", true, [&starModMessage](JsonObject var) { //varFun
+    mdl->findVars("dash", true, [&starMessage](JsonObject var) { //varFun
       // print->printJson("setVar", var);
       JsonArray valArray = mdl->varValArray(var);
       if (valArray.isNull())
-        starModMessage.app.setVar(var["id"], var["value"]);
+        starMessage.app.setVar(var["id"], var["value"]);
       else if (valArray.size())
-        starModMessage.app.setVar(var["id"], valArray[0].as<byte>()); //set the first value (tbd: add multiple)
+        starMessage.app.setVar(var["id"], valArray[0].as<byte>()); //set the first value (tbd: add multiple)
     });
 
-    updateInstance(starModMessage); //temp? to show own instance in list as instance is not catching it's own udp message...
+    updateInstance(starMessage); //temp? to show own instance in list as instance is not catching it's own udp message...
 
     IPAddress broadcastIP(255, 255, 255, 255);
     if (0 != instanceUDP.beginPacket(broadcastIP, instanceUDPPort)) {  // WLEDMM beginPacket == 0 --> error
-      // ppf("sendSysInfoUDP %s s:%d p:%d i:...%d\n", starModMessage.header.name, sizeof(UDPStarModMessage), instanceUDPPort, localIP[3]);
+      // ppf("sendSysInfoUDP %s s:%d p:%d i:...%d\n", starMessage.header.name, sizeof(UDPStarMessage), instanceUDPPort, localIP[3]);
       // for (size_t x = 0; x < sizeof(UDPWLEDMessage) + sizeof(SysData) + sizeof(AppData); x++) {
-      //   char * xx = (char *)&starModMessage;
+      //   char * xx = (char *)&starMessage;
       //   Serial.printf("%d: %d - %c\n", x, xx[x], xx[x]);
       // }
 
-      instanceUDP.write((byte*)&starModMessage, sizeof(UDPStarModMessage));
+      instanceUDP.write((byte*)&starMessage, sizeof(UDPStarMessage));
       web->sendUDPCounter++;
-      web->sendUDPBytes+=sizeof(UDPStarModMessage);
+      web->sendUDPBytes+=sizeof(UDPStarMessage);
       instanceUDP.endPacket();
     }
     else {
@@ -604,7 +604,7 @@ public:
     }
   }
 
-  void updateInstance( UDPStarModMessage udpStarMessage) {
+  void updateInstance( UDPStarMessage udpStarMessage) {
     IPAddress messageIP = IPAddress(udpStarMessage.header.ip0, udpStarMessage.header.ip1, udpStarMessage.header.ip2, udpStarMessage.header.ip3);
 
     bool instanceFound = false;
@@ -641,7 +641,7 @@ public:
         instance.timeStamp = millis(); //update timestamp
         strncpy(instance.name, udpStarMessage.header.name, sizeof(instance.name)-1);
         instance.version = udpStarMessage.header.version;
-        if (udpStarMessage.sys.type == 1) {//StarMod only
+        if (udpStarMessage.sys.type == 1) {//StarBase only
           instance.sys = udpStarMessage.sys;
 
           //check for syncing
@@ -754,7 +754,7 @@ public:
     unsigned16 notifierUDPPort = 21324;
     bool udpConnected = false;
 
-    //instances (WLED and StarMod)
+    //instances (WLED and StarBase)
     WiFiUDP instanceUDP;
     unsigned16 instanceUDPPort = 65506;
     bool udp2Connected = false;

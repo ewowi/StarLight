@@ -397,7 +397,7 @@
         "ro": false,
         "o": 42,
         "max": 32,
-        "value": "StarMod16MB"
+        "value": "StarBase16MB"
       },
       {
         "id": "upTime",

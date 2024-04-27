@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      SysModNetwork.cpp
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -128,7 +128,7 @@ void SysModNetwork::initConnection() {
     for (int i = 0; i < strlen(password); i++) strncat(passXXX, "*", sizeof(passXXX)-1);
     ppf("Connecting to WiFi %s / %s\n", ssid, passXXX);
     WiFi.begin(ssid, password);
-    #if defined(STARMOD_LOLIN_WIFI_FIX )
+    #if defined(STARBASE_LOLIN_WIFI_FIX )
       WiFi.setTxPower(WIFI_POWER_8_5dBm );
     #endif
     WiFi.setSleep(false);
@@ -145,7 +145,7 @@ void SysModNetwork::initAP() {
   ppf("Opening access point %s\n", apSSID);
   WiFi.softAPConfig(IPAddress(4, 3, 2, 1), IPAddress(4, 3, 2, 1), IPAddress(255, 255, 255, 0));
   WiFi.softAP(apSSID, NULL, apChannel, false); //no password!!!
-  #if defined(STARMOD_LOLIN_WIFI_FIX )
+  #if defined(STARBASE_LOLIN_WIFI_FIX )
     WiFi.setTxPower(WIFI_POWER_8_5dBm );
   #endif
   if (!apActive) // start captive portal if AP active

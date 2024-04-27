@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      SysModWeb.h
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -13,14 +13,14 @@
 #include "SysModule.h"
 #include "SysModPrint.h"
 
-#ifdef STARMOD_USE_Psychic
+#ifdef STARBASE_USE_Psychic
   #include <PsychicHttp.h>
 #else
   #include <ESPAsyncWebServer.h>
 #endif
 
 
-#ifdef STARMOD_USE_Psychic
+#ifdef STARBASE_USE_Psychic
   #define WebRequest PsychicRequest
   #define WebClient PsychicWebSocketClient
   #define WebServer PsychicHttpServer
@@ -37,7 +37,7 @@
 class SysModWeb:public SysModule {
 
 public:
-  #ifdef STARMOD_USE_Psychic
+  #ifdef STARBASE_USE_Psychic
     WebSocket ws = WebSocket();
     WebServer server = WebServer();
   #else
@@ -81,7 +81,7 @@ public:
 
   // curl -F 'data=@fixture1.json' 192.168.8.213/upload
   void serveUpload(WebRequest *request, const String& filename, size_t index, byte *data, size_t len, bool final);
-  // curl -s -F "update=@/Users/ewoudwijma/Developer/GitHub/ewowi/StarMod/.pio/build/esp32dev/firmware.bin" 192.168.8.102/update /dev/null &
+  // curl -s -F "update=@/Users/ewoudwijma/Developer/GitHub/ewowi/StarBase/.pio/build/esp32dev/firmware.bin" 192.168.8.102/update /dev/null &
   void serveUpdate(WebRequest *request, const String& filename, size_t index, byte *data, size_t len, bool final);
   void serveFiles(WebRequest *request);
 

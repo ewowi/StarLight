@@ -1,10 +1,11 @@
-Copy System Modules from MoonModules/StarModLeds to upstream
+Copy System Modules from MoonModules/StarLeds to upstream
 (as should only be modified in upstream)
 ============================================================
-cd /Users/ewoudwijma/Developer/GitHub/MoonModules/StarModLeds
-ls ../../ewowi/StarMod/src/Sys
-cp ./src/Sys/* ../../ewowi/StarMod/src/Sys
-cp ./tools/* ../../ewowi/StarMod/tools
+cd /Users/ewoudwijma/Developer/GitHub/MoonModules/StarLeds
+ls ../../ewowi/StarBase/src/Sys
+cp ./src/Sys/* ../../ewowi/StarBase/src/Sys
+cp ./tools/* ../../ewowi/StarBase/tools
+cp ./data/index* ../../ewowi/StarBase/data
 
 
 search range-based for loop
@@ -34,7 +35,7 @@ for f in (*.png|sort -n) ; do ffmpeg -loop 1 -i $f -c:v libx264 -t 1 -pix_fmt yu
 for f in (*.mov|sort -n) ; do ffmpeg -i $f -r 10 -t 0.5 $f._%04d.png; done
 
 5) Encode frames into movie (from 10 to 30fps)
-ffmpeg -framerate 30 -pattern_type glob -i '*.png' -c:v libx264 -pix_fmt yuv420p StarMod.mp4
+ffmpeg -framerate 30 -pattern_type glob -i '*.png' -c:v libx264 -pix_fmt yuv420p StarBase.mp4
 
 6) Go to a video editor and add soundtrack
 
@@ -63,7 +64,7 @@ remove sound
 for f in (I*.mov|sort -d) ; do ffmpeg -i $PWD/$f -c copy -an $PWD/$f.nosound.mov; done
 
 Update instance
-curl -s -F "update=@/Users/ewoudwijma/Developer/GitHub/ewowi/StarMod/.pio/build/esp32dev/firmware.bin" 192.168.8.189/update
+curl -s -F "update=@/Users/ewoudwijma/Developer/GitHub/ewowi/StarBase/.pio/build/esp32dev/firmware.bin" 192.168.8.189/update
 
 
 

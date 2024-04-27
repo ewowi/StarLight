@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
-   @file      SysStarModJson.h
+   @title     StarBase
+   @file      SysStarJson.h
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -12,19 +12,19 @@
 //Lazy Json Read Deserialize Write Serialize (write / serialize not implemented yet)
 //ArduinoJson won't work on very large fixture.json, this does
 //only support what is currently needed: read / deserialize uint8/16/char var elements (arrays not yet)
-class StarModJson {
+class StarJson {
 
   public:
 
-  StarModJson(const char * path, const char * mode = "r") {
-    // ppf("StarModJson constructing %s %s\n", path, mode);
+  StarJson(const char * path, const char * mode = "r") {
+    // ppf("StarJson constructing %s %s\n", path, mode);
     f = files->open(path, mode);
     if (!f)
-      ppf("StarModJson open %s for %s failed", path, mode);
+      ppf("StarJson open %s for %s failed", path, mode);
   }
 
-  ~StarModJson() {
-    // ppf("StarModJson destructing\n");
+  ~StarJson() {
+    // ppf("StarJson destructing\n");
     f.close();
   }
 
@@ -71,9 +71,9 @@ class StarModJson {
     while (f.available() && (!foundAll || !lazy))
       next();
     if (foundAll)
-      ppf("StarModJson found all what it was looking for %d >= %d\n", foundCounter, varDetails.size());
+      ppf("StarJson found all what it was looking for %d >= %d\n", foundCounter, varDetails.size());
     else
-      ppf("StarModJson Not all vars looked for where found %d < %d\n", foundCounter, varDetails.size());
+      ppf("StarJson Not all vars looked for where found %d < %d\n", foundCounter, varDetails.size());
     f.close();
     return foundAll;
   }
@@ -221,7 +221,7 @@ private:
     for (std::vector<VarDetails>::iterator vd=varDetails.begin(); vd!=varDetails.end(); ++vd) {
       // ppf("check %s %s %s\n", vd->id, varId, value);
       if (strcmp(vd->id, varId)==0) {
-        // ppf("StarModJson found %s:%s %d %s %d %d\n", varId, vd->type, vd->index, value?value:"", uint16CollectList.size(), funList.size());
+        // ppf("StarJson found %s:%s %d %s %d %d\n", varId, vd->type, vd->index, value?value:"", uint16CollectList.size(), funList.size());
         // if (strcmp(vd->type, "uint8") ==0 && value) *uint8List[vd->index] = atoi(value);
         if (strcmp(vd->type, "uint16") ==0 && value) *uint16List[vd->index] = atoi(value);
         if (strcmp(vd->type, "char") ==0 && value) strncpy(charList[vd->index], value, 31); //assuming size 32-1 here
@@ -278,7 +278,7 @@ private:
       f.print("null");      
     }
     else
-      ppf("dev StarModJson write %s not supported\n", variant.as<String>().c_str());
+      ppf("dev StarJson write %s not supported\n", variant.as<String>().c_str());
   }
 
 };

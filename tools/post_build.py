@@ -1,9 +1,9 @@
-# @title     StarMod
+# @title     StarBase
 # @file      post_build.py
 # @date      20240411
-# @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-# @Authors   https://github.com/ewowi/StarMod/commits/main
-# @Copyright © 2024 Github StarMod Commit Authors
+# @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+# @Authors   https://github.com/ewowi/StarBase/commits/main
+# @Copyright © 2024 Github StarBase Commit Authors
 # @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
 # @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 
@@ -14,7 +14,7 @@ import gzip
 
 print("")
 print("******************************************************************************************************************************")
-print("* STARMOD IS LICENSED UNDER GPL-V3. BY INSTALLING STARMOD OR ONE IF ITS FORKS YOU IMPLICITLY ACCEPT THE TERMS AND CONDITIONS *")
+print("* STARBASE IS LICENSED UNDER GPL-V3. BY INSTALLING STARBASE OR ONE IF ITS FORKS YOU IMPLICITLY ACCEPT THE TERMS AND CONDITIONS *")
 print("******************************************************************************************************************************")
 print("")
 
