@@ -90,6 +90,7 @@ public:
       #elif defined(ESP32)
         if (pinNr > 5 && pinNr < 12) pinType = pinTypeReserved; else 
       #else //???
+        prf("dev unknown board\n");
         pinType = pinTypeInvalid; return pinType; 
       #endif
 

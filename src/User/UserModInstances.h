@@ -14,8 +14,6 @@
 #ifdef STARBASE_USERMOD_E131
   #include "UserModE131.h"
 #endif
-// #include "Sys/SysModSystem.h" //for sys->version
-#include <HTTPClient.h> //need to be replaced by udp messages as this is a memory sucker
 
 struct DMX {
   byte universe:3; //3 bits / 8
@@ -105,6 +103,7 @@ struct AppData {
 struct InstanceInfo {
   IPAddress ip;
   char name[32];
+  uint8_t macAddress[6]; // 48 bits
   uint32_t version;
   unsigned long timeStamp; //when was the package received, used to check on aging
   SysData sys;
@@ -170,27 +169,6 @@ public:
   UserModInstances() :SysModule("Instances") {
   };
 
-  // void addTblRow(JsonArray row, std::vector<InstanceInfo>::iterator instance) {
-  //   row.add(JsonString(instance->name, JsonString::Copied));
-  //   char urlString[32] = "http://";
-  //   strncat(urlString, instance->ip.toString().c_str(), sizeof(urlString)-1);
-  //   row.add(JsonString(urlString, JsonString::Copied));
-  //   row.add(JsonString(instance->ip.toString().c_str(), JsonString::Copied));
-  //   // row.add(instance->timeStamp / 1000);
-
-  //   row.add(instance->sys.type?"StarBase":"WLED");
-
-  //   row.add(instance->version);
-  //   row.add(instance->sys.upTime);
-
-  //   mdl->findVars("dash", true, [instance, row](JsonObject var) { //findFun
-  //     //look for value in instance
-  //     int value = instance->app.getVar(var["id"]);
-  //     // ppf("insTbl %s %s: %d\n", instance->name, varID, value);
-  //     row.add(value);
-  //   });
-  // }
-
   void setup() {
     SysModule::setup();
 
@@ -244,7 +222,7 @@ public:
     ui->initText(tableVar, "insType", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
         for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, instances[rowNrL].sys.type?"StarBase":"WLED", rowNrL);
+          mdl->setValue(var, (instances[rowNrL].sys.type==0)?"WLED":(instances[rowNrL].sys.type==1)?"StarBase":(instances[rowNrL].sys.type==2)?"StarLeds":"StarFork", rowNrL);
         return true;
       case f_UIFun:
         ui->setLabel(var, "Type");
@@ -335,28 +313,22 @@ public:
             } else {
               // https://randomnerdtutorials.com/esp32-http-get-post-arduino/
 
-              //this takes 10% of flash size!!! tbd: move to udp calls
-              HTTPClient http;
-              char serverPath[32];
-              print->fFormat(serverPath, sizeof(serverPath)-1, "http://%s/json", instances[rowNr].ip.toString().c_str());
-              http.begin(serverPath);
-              http.addHeader("Content-Type", "application/json");
-              char postMessage[32];
-              print->fFormat(postMessage, sizeof(postMessage)-1, "{\"%s\":%d}", mdl->varID(var), mdl->getValue(insVar, rowNr).as<unsigned8>());
+              if (0 != instanceUDP.beginPacket(instances[rowNr].ip, instanceUDPPort)) {
 
-              ppf("json post %s %s\n", serverPath, postMessage);
+                JsonDocument message;
+                message["id"] = mdl->varID(var);
+                message["value"] = mdl->getValue(insVar, rowNr).as<unsigned8>();
 
-              int httpResponseCode = http.POST(postMessage);
+                char buffer[500];
 
-              if (httpResponseCode>0) {
-                String payload = http.getString();
-                ppf("HTTP Response code: %d %s\n", httpResponseCode, payload);
+                serializeJson(message, buffer);
+
+                instanceUDP.write((byte *)buffer, sizeof(buffer));
+                web->sendUDPCounter++;
+                web->sendUDPBytes+=sizeof(buffer);
+                instanceUDP.endPacket();
+                ppf("StarMod udp json write %s\n", buffer);
               }
-              else {
-                ppf("Error code: %d\n", httpResponseCode);
-              }
-              // Free resources
-              http.end();
             }
           }
           // print->printJson(" ", var);
@@ -496,20 +468,33 @@ public:
 
           updateInstance(starMessage);
         }
-        else if (packetSize == sizeof(UDPStarMessage)) {
+        else if (packetSize == sizeof(UDPStarMessage)) { //StarBase instance
           UDPStarMessage starMessage;
           byte *udpIn = (byte *)&starMessage;
           instanceUDP.read(udpIn, packetSize);
-          starMessage.sys.type = 1; //StarBase
+          starMessage.sys.type = (strcmp(_INIT(TOSTRING(APP)), "StarBase")==0)?1:(strcmp(_INIT(TOSTRING(APP)), "StarLeds")==0)?2:3; //1=StarBase,2=StarLeds, 3=StarFork
 
           updateInstance(starMessage);
+        }
+        else if (packetSize == 500) { //StarBase upp json
+
+            char buffer[packetSize];
+            instanceUDP.read(buffer, packetSize);
+
+            JsonDocument message;
+            deserializeJson(message, buffer);
+
+            mdl->setValue(message["id"].as<const char *>(), message["value"].as<uint8_t>());
+
+            ppf("StarMod udp json read %s\n", buffer);
+
         }
         else {
           //read the rest of the data (flush)
           byte udpIn[1472+1];
-          notifierUdp.read(udpIn, packetSize);
+          instanceUDP.read(udpIn, packetSize);
 
-          ppf("packetSize %d not equal to %d or %d\n", packetSize, sizeof(UDPWLEDMessage), sizeof(UDPStarMessage));
+          ppf("packetSize %d not equal to %d or %d or 500\n", packetSize, sizeof(UDPWLEDMessage), sizeof(UDPStarMessage));
         }
         web->recvUDPCounter++;
         web->recvUDPBytes+=packetSize;
@@ -554,10 +539,21 @@ public:
     starMessage.header.ip3 = localIP[3];
     const char * instanceName = mdl->getValue("instanceName");
     strncpy(starMessage.header.name, instanceName?instanceName:_INIT(TOSTRING(APP)), sizeof(starMessage.header.name)-1);
-    starMessage.header.type = 32; //esp32 tbd: CONFIG_IDF_TARGET_ESP32S3 etc
+    #if defined(CONFIG_IDF_TARGET_ESP32S2)
+      starMessage.header.type = 33;
+    #elif defined(CONFIG_IDF_TARGET_ESP32S3)
+      starMessage.header.type = 34;
+    #elif defined(CONFIG_IDF_TARGET_ESP32C3)
+      starMessage.header.type = 35;
+    #elif defined(ESP32)
+      starMessage.header.type = 32;
+    #else //???
+      prf("dev unknown board\n");
+      starMessage.header.type = 0;
+    #endif
     starMessage.header.insId = localIP[3]; //WLED: used in map of instances as index!
     starMessage.header.version = VERSION;
-    starMessage.sys.type = 1; //StarBase
+    starMessage.sys.type = (strcmp(_INIT(TOSTRING(APP)), "StarBase")==0)?1:(strcmp(_INIT(TOSTRING(APP)), "StarLeds")==0)?2:3; //1=StarBase,2=StarLeds, 3=StarFork
     starMessage.sys.upTime = millis()/1000;
     starMessage.sys.syncMaster = mdl->getValue("sma");
     starMessage.sys.dmx.universe = 0;
@@ -641,7 +637,11 @@ public:
         instance.timeStamp = millis(); //update timestamp
         strncpy(instance.name, udpStarMessage.header.name, sizeof(instance.name)-1);
         instance.version = udpStarMessage.header.version;
-        if (udpStarMessage.sys.type == 1) {//StarBase only
+        if (instance.ip == WiFi.localIP()) {
+          esp_wifi_get_mac((wifi_interface_t)ESP_IF_WIFI_STA, instance.macAddress);
+          // ppf("macaddress %02X:%02X:%02X:%02X:%02X:%02X\n", instance.macAddress[0], instance.macAddress[1], instance.macAddress[2], instance.macAddress[3], instance.macAddress[4], instance.macAddress[5]);
+        }
+        if (udpStarMessage.sys.type >= 1) {//StarBase, StarLeds and forks only
           instance.sys = udpStarMessage.sys;
 
           //check for syncing

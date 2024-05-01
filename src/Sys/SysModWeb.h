@@ -76,6 +76,8 @@ public:
   //add an url to the webserver to listen to
   void serveIndex(WebRequest *request);
   //mdl and WLED style state and info
+  void serializeState(JsonObject root);
+  void serializeInfo(JsonObject root);
   void serveJson(WebRequest *request);
 
 

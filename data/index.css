@@ -11,6 +11,17 @@
 
 :root,
 	:root.starbase {
+		--bg-color: #121212;
+		--text-color: #cfd096;
+		--th-color: #c27e66;
+		--h-color:#c27e66;
+		--border-color: #cdad6a;
+		--select-color: #1a8aff; /*used for view buttons*/
+		--label-color: #83c5eb;
+		--comment-color: #598a43;
+		--font-size: 10px;
+	}
+	:root.starLeds {
 		--bg-color: linear-gradient(to bottom, #ffbe33 0%, #b60f62 100%);
 		--text-color: #030303;
 		--th-color: #b60f6281;

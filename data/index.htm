@@ -2,12 +2,11 @@
   @title     StarBase
   @file      index.htm
   @date      20240411
-  @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+  @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to StarBase
   @Authors   https://github.com/ewowi/StarBase/commits/main
   @Copyright © 2024 Github StarBase Commit Authors
   @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
   @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
-*/
  -->
 
 <!DOCTYPE html>
@@ -15,15 +14,15 @@
 <head>
   <meta charset="utf-8">
 	<meta content="yes" name="apple-mobile-web-app-capable">
-  <meta name="author" content="MoonModules ☾ and it's contributors">
-  <link rel="icon" href="https://ewowi.github.io/StarDocs/assets/images/ui/StarBase/favicon-16x16.png">
+  <meta name="author" content="MoonModules and its contributors">
+  <title>Star💫LEDs🎨 by MoonModules🌔</title>
+  <link rel="icon" href="https://ewowi.github.io/StarDocs/assets/images/ui/starbase/favicon-16x16.png">
   <!-- <link rel="icon" type="image/x-icon" href="favicon-16x16.png"> currently only works in chrome -->
   <!-- <link rel="mask-icon" type="image/x-icon" href="favicon-16x16.png"> for safari tabs? -->
-  <!-- <link rel="shortcut icon" type="image/x-icon" href="favicon-16x16.png">  found in wled... -->
+  <!-- <link rel="shortcut icon" href="https://ewowi.github.io/StarDocs/assets/images/ui/StarBase/favicon-16x16.png"> -->
   <link rel="stylesheet" href="index.css">
   <script src="app.js"></script>
   <script src="index.js"></script>
-  <title>Star💫LEDs🎨 by MoonModules🌔</title>
 
   <!-- favicon in safari not working. see: -->
   <!-- https://stackoverflow.com/questions/68885882/favicon-not-displaying-on-safari -->
@@ -61,6 +60,7 @@
     <span> | </span>
     <label>Theme</label> <select name="theme-select" id="theme-select" onchange="setTheme(this)">
       <option value="starbase">StarBase</option>
+      <option value="starleds">StarLeds</option>
       <option value="wled">WLED</option>
       <option value="grayeen">Grayeen</option>
       <option value="dev">Dev</option>
@@ -85,7 +85,7 @@
   </div>
   <div id="connind">&#9790;</div>
   <div id="modalView" class="modal"></div>
-  <p style="color:grey;"> © 2024 MoonModules ☾ - Licensed under GPL-v3</p>
+  <p style="color:grey;"> © 2024 MoonModules ☾, StarBase, StarLeds, StarMods - Licensed under GPL-v3</p>
   <div id="canvasMenu" style="position:absolute;display:none"> <!--;background-color:#b60f62-->
     <p><button id="canvasButton1"></button></p>
     <p><button id="canvasButton2"></button></p>
