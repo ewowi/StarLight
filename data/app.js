@@ -230,6 +230,9 @@ function preview3D(canvasNode, buffer) {
                   led.push(0);
                 let geometry;
                 // ppf("size and shape", jsonValues.pview.ledSize, jsonValues.pview.shape, jsonValues.pview.opacity);
+                if (!jsonValues.pview.ledSize) jsonValues.pview.ledSize = 7;
+                if (!jsonValues.pview.opacity) jsonValues.pview.opacity = 100;
+
                 if (jsonValues.pview.shape == 1)
                   geometry = new THREE.TetrahedronGeometry(jsonValues.pview.ledSize / 30); //was 1/factor
                 else // default
