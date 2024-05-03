@@ -364,7 +364,7 @@ public:
 
       #ifdef STARLEDS_USERMOD_WLEDAUDIO
 
-        if (mdl->getValue("viewRot")  == 2) {
+        if (mdl->getValue("viewRot")  == 4) {
           fixture.head.x = wledAudioMod->fftResults[3];
           fixture.head.y = wledAudioMod->fftResults[8];
           fixture.head.z = wledAudioMod->fftResults[13];

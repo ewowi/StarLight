@@ -95,7 +95,7 @@ public:
           } else if (viewRotation == 4) {
             buffer[1] = eff->fixture.head.x;
             buffer[2] = eff->fixture.head.y;
-            buffer[3] = eff->fixture.head.y;
+            buffer[3] = eff->fixture.head.z;
           }
 
         }, eff->fixture.nrOfLeds * 3 + 5, true);

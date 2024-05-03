@@ -180,7 +180,7 @@ public:
 
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
 
-  unsigned8 fx = -1;
+  uint16_t fx = -1;
   unsigned8 projectionNr = -1;
   unsigned8 effectDimension = -1;
 

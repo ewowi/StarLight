@@ -228,13 +228,18 @@ function preview3D(canvasNode, buffer) {
                   led.push(0);
                 if (led.length <= 2) //1D and 2D: maak 3D 
                   led.push(0);
-                const geometry = new THREE.SphereGeometry( 0.2); //was 1/factor
-                const material = new THREE.MeshBasicMaterial({transparent: true, opacity: 0.7});
+                let geometry;
+                // ppf("size and shape", jsonValues.pview.ledSize, jsonValues.pview.shape, jsonValues.pview.opacity);
+                if (jsonValues.pview.shape == 1)
+                  geometry = new THREE.TetrahedronGeometry(jsonValues.pview.ledSize / 30); //was 1/factor
+                else // default
+                  geometry = new THREE.SphereGeometry(jsonValues.pview.ledSize / 30); //was 1/factor
+                const material = new THREE.MeshBasicMaterial({transparent: true, opacity: jsonValues.pview.opacity / 100});
                 // material.color = new THREE.Color(`${x/mW}`, `${y/mH}`, `${z/mD}`);
-                const sphere = new THREE.Mesh( geometry, material );
-                sphere.position.set(offset_x + d*led[0]/factor, -offset_y - d*led[1]/factor, - offset_z - d*led[2]/factor);
-                sphere.name = outputsIndex + " - " + ledsIndex++;
-                scene.add( sphere );
+                const mesh = new THREE.Mesh( geometry, material );
+                mesh.position.set(offset_x + d*led[0]/factor, -offset_y - d*led[1]/factor, - offset_z - d*led[2]/factor);
+                mesh.name = outputsIndex + " - " + ledsIndex++;
+                scene.add( mesh );
               }
             }
             else {
@@ -261,7 +266,7 @@ function preview3D(canvasNode, buffer) {
 
         //light up the cube
         let firstLed = 5;
-        var i = 1;
+        var i = 0;
         if (jsonValues.pview.outputs) {
           // console.log("preview3D jsonValues", jsonValues.pview);
           for (var output of jsonValues.pview.outputs) {

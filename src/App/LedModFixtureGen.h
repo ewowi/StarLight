@@ -32,6 +32,9 @@ public:
 
   Coord3D fixSize = {0,0,0};
   unsigned16 nrOfLeds=0;
+  uint16_t ledSize = 7; //mm
+  uint8_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
+  uint8_t opacity = 100;
   
   File f;
 
@@ -69,9 +72,7 @@ public:
     File g;
 
     char fileName[32] = "/";
-    strncat(fileName, name, sizeof(fileName)-1);
-    strncat(fileName, ".json", sizeof(fileName)-1);
-
+    print->fFormat(fileName, sizeof(fileName)-1, "/%s.json", name);
 
     //create g by merging in f (better solution?)
     g = files->open(fileName, "w");
@@ -82,6 +83,9 @@ public:
     g.printf(",\"width\":%d", (fixSize.x+9)/10+1); //effects run on 1 led is 1 cm mode.
     g.printf(",\"height\":%d", (fixSize.y+9)/10+1); //e.g. (110+9)/10 +1 = 11+1 = 12, (111+9)/10 +1 = 12+1 = 13
     g.printf(",\"depth\":%d", (fixSize.z+9)/10+1);
+    g.printf(",\"ledSize\":%d", ledSize);
+    g.printf(",\"shape\":%d", shape);
+    g.printf(",\"opacity\":%d", opacity);
 
     byte character;
     f.read(&character, sizeof(byte));
@@ -462,6 +466,7 @@ enum Fixtures
   f_SpaceStation,
   f_Human,
   f_Globe,
+  f_LeGlorb,
   f_GeodesicDome,
   f_Curtain,
   fixtureCount
@@ -499,6 +504,7 @@ public:
         options.add("SpaceStation");
         options.add("Human");
         options.add("Globe");
+        options.add("LeGlorb");
         options.add("GeodesicDome WIP");
         options.add("Curtain");
         return true;
@@ -902,6 +908,8 @@ public:
       strncat(text, options[presets], 31);
       removeSpaces(text);
 
+      if (strcmp(text, "F_HumanSizedCube")==0) genFix.ledSize = 2; //hack to make the hcs leds smaller
+
       genFix.openHeader(text);
 
       ui->clearOptions(presetsVar);
@@ -1156,6 +1164,30 @@ public:
         middle.z = pnlFirst.z*10 + 10 * width / 2;
 
         genFix->globe(middle, width, fixIP, fixPin);
+      });
+
+    } else if (fgValue == f_LeGlorb) {
+
+      getPanels("F_LeGlorb", [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+
+        genFix->openPin(fixPin);
+
+        genFix->ledSize = 40;
+        genFix->shape = 1;
+        genFix->opacity = 100;
+
+        char ledsString[] = "[[136,12,159],[96,12,146],[96,12,104],[136,12,91],[160,12,125],[184,49,193],[147,32,192],[118,49,215],[78,49,202],[68,32,167],[37,49,146],[37,49,104],[68,32,83],[78,49,48],[118,49,35],[147,32,58],[184,49,57],[208,49,90],[196,32,125],[208,49,160],[219,106,193],[191,84,214],[160,103,234],[124,84,236],[89,106,236],[60,84,215],[32,103,192],[19,84,159],[8,106,125],[19,84,91],[32,103,58],[60,84,35],[89,106,14],[124,84,14],[160,103,16],[191,84,36],[219,106,57],[230,84,90],[240,103,125],[230,84,160],[218,147,192],[190,166,215],[161,144,236],[126,166,236],[90,147,234],[59,166,214],[31,144,193],[20,166,160],[10,147,125],[20,166,90],[31,144,57],[59,166,36],[90,147,16],[126,166,14],[161,144,14],[190,166,35],[218,147,58],[231,166,91],[242,144,125],[231,166,159],[182,218,167],[172,201,202],[132,201,215],[103,218,192],[66,201,193],[42,201,160],[54,218,125],[42,201,90],[66,201,57],[103,218,58],[132,201,35],[172,201,48],[182,218,83],[213,201,104],[213,201,146],[154,238,146],[114,238,159],[90,238,125],[114,238,91],[154,238,104]]";
+        JsonDocument leds;
+        deserializeJson(leds, ledsString);
+
+        for (JsonArray pixel:leds.as<JsonArray>()) {
+          Coord3D pix = {pixel[0], pixel[1], pixel[2]};
+          genFix->write3D(pix + pnlFirst);
+          ppf("pixel %d %d %d\n", pixel[0], pixel[1], pixel[2]);
+        }
+
+        genFix->closePin();
+
       });
 
     } else if (fgValue == f_GeodesicDome) {
