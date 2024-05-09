@@ -274,17 +274,22 @@ public:
     web->getResponseObject()[mdl->varID(var)].remove("options");
   }
 
-  //find options text in a hierarchy of options (groupName and optionName as pointers? String is already a pointer?)
-  void findOptionsText(JsonObject var, uint8_t value, JsonString *groupName, JsonString *optionName) {
+  //find options text in a hierarchy of options
+  void findOptionsText(JsonObject var, uint8_t value, char * groupName, char * optionName) {
     uint8_t startValue = 0;
     bool optionsExisted = !web->getResponseObject()[mdl->varID(var)]["options"].isNull();
+    JsonString groupNameJS;
+    JsonString optionNameJS;
     JsonArray options = getOptions(var);
-    if (!findOptionsTextRec(options, &startValue, value, groupName, optionName))
-      ppf("findOptions select option not found %d %s %s\n", value, (*groupName).isNull()?"X":(*groupName).c_str(), (*optionName).isNull()?"X":(*optionName).c_str());
+    if (!findOptionsTextRec(options, &startValue, value, &groupNameJS, &optionNameJS))
+      ppf("findOptions select option not found %d %s %s\n", value, groupNameJS.isNull()?"X":groupNameJS.c_str(), optionNameJS.isNull()?"X":optionNameJS.c_str());
+    strcpy(groupName, groupNameJS.c_str());
+    strcpy(optionName, optionNameJS.c_str());
     if (!optionsExisted)
-      clearOptions(var);
+      clearOptions(var); //if created here then also remove 
   }
 
+  // (groupName and optionName as pointers? String is already a pointer?)
   bool findOptionsTextRec(JsonVariant options, uint8_t * startValue, uint8_t value, JsonString *groupName, JsonString *optionName, JsonString parentGroup = JsonString()) {
     if (options.is<JsonArray>()) { //array of options
       for (JsonVariant option : options.as<JsonArray>()) {
