@@ -54,6 +54,7 @@ function ppf() {
   let logNode = gId("log");
   let sep = "";
   if (logNode) {
+    if (logNode.value.length > 64000) logNode.value = ""; //reset if too big
     // console.log("conslog", theArgs);
     for (var i = 0; i < arguments.length; i++) {
       // console.log(arguments[i]);
@@ -606,7 +607,7 @@ function varRemoveValuesForRow(variable, rowNr) {
 function receiveData(json) {
   // console.log("receiveData", json);
 
-  if (Object.keys(json)) {
+  if (isObject(json)) {
     for (let key of Object.keys(json)) {
       let value = json[key];
 
@@ -817,25 +818,61 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
       selectNodes.push(node);
     }
 
+    // console.log("commandJson.options", variable.id, commandJson.options);
     for (let selectNode of selectNodes) {
       //remove all old options first
-      var index = 0;
-      while (selectNode.options && selectNode.options.length > 0) {
-        selectNode.remove(0);
+
+      //remove options
+      for (var i = selectNode.length-1; i > 0; i--) {
+        selectNode.options[i] = null;
       }
-      for (var value of commandJson.options) {
-        let optNode = cE("option");
-        if (Array.isArray(value)) {
-          optNode.value = value[0];
-          optNode.text = value[1];
+      // remove the optgroups and their children if still exists
+      var optgroup=selectNode.getElementsByTagName('optgroup')
+      for (var i=optgroup.length-1;i>=0;i--) selectNode.removeChild(optgroup[i])
+
+      var index = 0;
+
+      //go recursively through the objects
+      function findOptions(group, option, depth = 0) {
+        if (isObject(option)) {
+          for (let key of Object.keys(option)) { // for each group
+            if (depth > 0) {
+              let optNode = cE("option"); // no optgroups in optgroups so create on same level
+              optNode.label = key;
+              group.appendChild(optNode);
+              findOptions(group, option[key], depth+1);
+            }
+            else {
+              let optGroup = cE("optgroup");
+              optGroup.label = key;
+              group.appendChild(optGroup);
+              findOptions(optGroup, option[key], depth+1);
+            }
+          }
+        }
+        else if (Array.isArray(option)) {
+          for (let subOption of option) {
+            if (Array.isArray(subOption)) { //array of arrays:  // for key values like ip nr and name
+              let optNode = cE("option");
+              optNode.value = subOption[0];
+              optNode.text = subOption[1];
+              selectNode.appendChild(optNode);
+            }
+            else
+              findOptions(group, subOption, depth); //recursive call were subOption is object
+          }
         }
         else {
-          optNode.value = index;
-          optNode.text = value;
+          let optNode = cE("option");
+          optNode.value = index++;
+          optNode.text = "---------".substring(0, depth-1) + option;
+          group.appendChild(optNode);
         }
-        selectNode.appendChild(optNode);
-        index++;
       }
+      findOptions(selectNode, commandJson.options); //recursively go through all the options
+
+      // console.log("Select options", selectNode, selectNode.options);
+
     }
       
     variable.options = commandJson.options;
@@ -863,7 +900,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
         //add each row
         let newRowNr = 0;
         for (var row of commandJson.value) {
-          if (row) { //not null, pnlTbl sent value:[null]... tbd: check why
+          if (row) { //not null, e.g. fixTbl sent value:[null]... tbd: check why
             genTableRowHTML(variable, node, newRowNr);
             let colNr = 0;
             for (let columnVar of variable.n) {
@@ -970,7 +1007,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
         if (Array.isArray(commandJson.value) && rowNr != UINT8_MAX)
           value = commandJson.value[rowNr];
 
-        if (Object.keys(value)) { 
+        if (isObject(value)) { 
           if (variable.ro) {
             let sep = "";
             node.textContent = "";
@@ -983,6 +1020,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
             let index = 0;
             for (let key of Object.keys(value)) {
               let childNode = node.childNodes[index++];
+              if (!childNode) console.log("dev Coord3D no child", variable, node, value, key, value[key], index);
               childNode.value = value[key];
               childNode.dispatchEvent(new Event("input")); // triggers addEventListener('input',...). now only used for input type range (slider), needed e.g. for qlc+ input
             }
@@ -1659,4 +1697,14 @@ function previewBoard(canvasNode, buffer) {
       index++;
     }
   }
+}
+
+// Utility function
+//https://stackoverflow.com/questions/8511281/check-if-a-value-is-an-object-in-javascript
+function isObject(val) {
+  if (Array.isArray(val)) return false;
+  if (val === null) { return false;}
+  return ( (typeof val === 'function') || (typeof val === 'object'));
+
+  //or   return obj === Object(obj); //true for arrays.???
 }

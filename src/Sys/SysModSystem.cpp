@@ -226,7 +226,12 @@ void SysModSystem::loop10s() {
   if (psramFound()) {
     ui->callVarFun(mdl->findVar("psram"));
   }
-  ppf("❤️"); //heartbeat
+
+  //heartbeat
+  if (millis() < 60000)
+    ppf("❤️ %s\n", WiFi.localIP().toString().c_str()); // show IP the first minute
+  else
+    ppf("❤️");
 }
 
 //replace code by sentence as soon it occurs, so we know what will happen and what not

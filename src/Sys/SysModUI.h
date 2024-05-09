@@ -271,7 +271,42 @@ public:
     return web->getResponseObject()[mdl->varID(var)]["options"];
   }
   void clearOptions(JsonObject var) {
-    web->getResponseObject().remove(mdl->varID(var));
+    web->getResponseObject()[mdl->varID(var)].remove("options");
+  }
+
+  //find options text in a hierarchy of options (groupName and optionName as pointers? String is already a pointer?)
+  void findOptionsText(JsonObject var, uint8_t value, JsonString *groupName, JsonString *optionName) {
+    uint8_t startValue = 0;
+    bool optionsExisted = !web->getResponseObject()[mdl->varID(var)]["options"].isNull();
+    JsonArray options = getOptions(var);
+    if (!findOptionsTextRec(options, &startValue, value, groupName, optionName))
+      ppf("findOptions select option not found %d %s %s\n", value, (*groupName).isNull()?"X":(*groupName).c_str(), (*optionName).isNull()?"X":(*optionName).c_str());
+    if (!optionsExisted)
+      clearOptions(var);
+  }
+
+  bool findOptionsTextRec(JsonVariant options, uint8_t * startValue, uint8_t value, JsonString *groupName, JsonString *optionName, JsonString parentGroup = JsonString()) {
+    if (options.is<JsonArray>()) { //array of options
+      for (JsonVariant option : options.as<JsonArray>()) {
+        if (findOptionsTextRec(option, startValue, value, groupName, optionName, parentGroup))
+          return true;
+      }
+    }
+    else if (options.is<JsonObject>()) { //group
+      for (JsonPair pair: options.as<JsonObject>()) {
+        if (findOptionsTextRec(pair.value(), startValue, value, groupName, optionName, parentGroup.isNull()?pair.key():parentGroup)) //send the master level group name only
+          return true;
+      }
+    } else { //individual option
+      if (*startValue == value) {
+        *groupName = parentGroup;
+        *optionName = options.as<JsonString>();
+        ppf("Found %d=%d ? %s . %s\n", *startValue, value, (*groupName).isNull()?"":(*groupName).c_str(), (*optionName).isNull()?"":(*optionName).c_str());
+        return true;
+      }
+      (*startValue)++;
+    }
+    return false;
   }
 
 private:

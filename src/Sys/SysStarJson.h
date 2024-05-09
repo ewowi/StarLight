@@ -66,7 +66,7 @@ class StarJson {
 
   //reads from file until all vars have been found (then stops reading)
   //returns false if not all vars to look for are found
-  bool deserialize(bool lazy) {
+  bool deserialize(bool lazy = false) {
     f.read(&character, sizeof(byte));
     while (f.available() && (!foundAll || !lazy))
       next();
