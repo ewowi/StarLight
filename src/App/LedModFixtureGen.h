@@ -32,9 +32,8 @@ public:
 
   Coord3D fixSize = {0,0,0};
   unsigned16 nrOfLeds=0;
-  uint16_t ledSize = 7; //mm
+  uint16_t ledSize = 5; //mm
   uint8_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
-  uint8_t opacity = 100;
   
   File f;
 
@@ -85,7 +84,6 @@ public:
     g.printf(",\"depth\":%d", (fixSize.z+9)/10+1);
     g.printf(",\"ledSize\":%d", ledSize);
     g.printf(",\"shape\":%d", shape);
-    g.printf(",\"opacity\":%d", opacity);
 
     byte character;
     f.read(&character, sizeof(byte));
@@ -375,7 +373,7 @@ public:
 
   }
 
-  void cloud(Coord3D first, unsigned8 ip, unsigned8 pin) {
+  void cloud5416(Coord3D first, unsigned8 ip, unsigned8 pin) {
     //Small RL Alt Test
 
     stackUnsigned8 y;
@@ -459,7 +457,7 @@ enum Fixtures
   f_Wheel,
   f_Hexagon,
   f_Cone,
-  f_Cloud,
+  f_Cloud5416,
   f_Wall,
   f_Star,
   f_6Rings,
@@ -484,73 +482,67 @@ public:
     parentVar = ui->initAppMod(parentVar, name, 6302); //created as a usermod, not an appmod to have it in the usermods tab
     parentVar["s"] = true; //setup
 
-    ui->initSelect(parentVar, "fixtureGen", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    JsonObject currentVar = ui->initSelect(parentVar, "fixtureVar", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun: {
         ui->setLabel(var, "Fixture");
-        ui->setComment(var, "Type of fixture");
-        JsonArray options = ui->setOptions(var); //See enum Fixtures for order of options
-        options.add("Matrix");
-        options.add("Ring");
-        options.add("Rings241");
-        options.add("Spiral");
-        options.add("Helix");
-        options.add("Wheel");
-        options.add("Hexagon");
-        options.add("Cone");
-        options.add("Cloud");
-        options.add("Wall");
-        options.add("Star");
-        options.add("6Rings");
-        options.add("SpaceStation");
-        options.add("Human");
-        options.add("Globe");
-        options.add("LeGlorb");
-        options.add("GeodesicDome WIP");
-        options.add("Curtain");
-        return true;
-      }
+        ui->setComment(var, "Predefined fixture");
+        JsonArray options1 = ui->setOptions(var); //See enum Fixtures for order of options
+
+        //create 3 level select options
+        char jsonString[512] = "";
+        strcat(jsonString, "[ {\"Matrices\": [\"16x16\", \"4x16x16\", \"4x32x8\", \"Human Sized Cube\", \"CubeBox\", \"Cube3D\", \"Sticks\"]}");
+        strcat(jsonString, ", {\"Rings\": [\"Ring\", \"Audi\", \"Olympic\"]}");
+        strcat(jsonString, ", {\"Shapes\": [\"Rings241\", \"Spiral\", \"Helix\", {\"Hexagon\":[\"Hexagon\", \"HexaWall\"]}, \"Cone\", \"Cloud5416\"]}");
+        strcat(jsonString, ", {\"Combinations\": [\"Wall\", \"6Rings\", \"SpaceStation\", \"Star\", \"Wheel\", \"Human\", \"Curtain\"]}");
+        strcat(jsonString, ", {\"Spheres\": [\"Globe\", \"LeGlorb\", \"GeodesicDome WIP\"]}");
+        strcat(jsonString, "]");
+
+        DeserializationError error = deserializeJson(options1, jsonString);
+        if (error)
+          ppf("Error %s %s\n", jsonString, error.c_str());
+        // else
+        //   print->printJson("OPTIONS", options1);
+        return true; }
       case f_ChangeFun:
-        this->fixtureGenChFun();
+        this->fixtureVarChFun();
         return true;
       default: return false; 
-    }}); //fixtureGen
+    }}); //fixtureVar
 
-    ui->initCheckBox(parentVar, "panels", false, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
-        ui->setComment(var, "Show panels");
-        return true;
-      case f_ChangeFun: {
-        this->fixtureGenChFun();
-        return true; }
-      default: return false;
-    }});
+  } //setup
 
-	// gpio2 seems to be a safe choice on all esp32 variants
-//     ui->initText(parentVar, "pinList", "2", 32, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-//       case f_UIFun:
-//         ui->setComment(var, "One or more e.g. 12,13,14");
-//         return true;
-// #if 0		// @ewowi did not get this to work
-//       case f_ValueFun:
-//         #if CONFIG_IDF_TARGET_ESP32 && (defined(BOARD_HAS_PSRAM) || defined(ARDUINO_ESP32_PICO)) // 
-//           ui->setValue(var, "2");  // gpio16 is reserved on pico and on esp32 with PSRAM
-//         #elif CONFIG_IDF_TARGET_ESP32S3
-//           ui->setValue(var, "21");  // gpio21 = builtin neopixel on some -S3 boards
-//         #elif CONFIG_IDF_TARGET_ESP32C3
-//           ui->setValue(var, "10");  // gpio10 = builtin neopixel on some -C3 boards
-//         #else
-//           ui->setValue(var, "16");  // default on universal shield (classic esp32, or esp32-S2)
-//         #endif
-//         return true;
-// #endif
-//       default: return false;
-//     }});
+  void loop() {
+    // SysModule::loop();
+  }
+
+  //generate dynamic html for fixture controls
+  void fixtureVarChFun() {
+
+    JsonObject fixtureVar = mdl->findVar("fixtureVar");
+
+    // JsonObject parentVar = mdl->findVar(var["id"]); //local parentVar
+    stackUnsigned8 fgValue = fixtureVar["value"];
+
+    //find option group and text
+    char fgGroup[32];
+    char fgText[32];
+    ui->findOptionsText(fixtureVar, fgValue, fgGroup, fgText);
+
+    //remove all the variables
+    fixtureVar.remove("n"); //tbd: we should also remove the varFun !!
+
+    JsonObject parentVar = fixtureVar;
 
     ui->initButton(parentVar, "generate", false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case f_UIFun:
+        ui->setComment(var, "Create F_ixture.json");
+        return true;
       case f_ChangeFun: {
 
         char fileName[32]; 
         generateChFun(var, fileName);
+
+        //set fixture in fixture module
         ui->callVarFun("fixture", UINT8_MAX, f_UIFun); //reload fixture select
 
         uint8_t value = ui->selectOptionToValue("fixture", fileName);
@@ -561,32 +553,17 @@ public:
       default: return false;
     }});
 
-  } //setup
+    // mdl->varPreDetails(fixtureVar);
 
-  void loop() {
-    // SysModule::loop();
-  }
+    bool showTable = true;
 
-  //generate dynamic html for fixture controls
-  void fixtureGenChFun() {
+    //default variables - part 1
+    if (showTable) {
 
-    JsonObject fixtureGenVar = mdl->findVar("fixtureGen");
-    JsonObject panelVar = mdl->findVar("panels");
-
-    // JsonObject parentVar = mdl->findVar(var["id"]); //local parentVar
-    stackUnsigned8 fgValue = fixtureGenVar["value"];
-
-    fixtureGenVar.remove("n"); //tbd: we should also remove the varFun !!
-
-    // mdl->varPreDetails(fixtureGenVar);
-
-    JsonObject parentVar = fixtureGenVar;
-    if (panelVar["value"].as<bool>()) {
-
-      parentVar = ui->initTable(fixtureGenVar, "pnlTbl", nullptr, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      parentVar = ui->initTable(fixtureVar, "fixTbl", nullptr, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case f_UIFun:
-          ui->setLabel(var, "Panels");
-          ui->setComment(var, "List of fixtures");
+          ui->setLabel(var, "Fixtures");
+          ui->setComment(var, "Multiple parts");
           return true;
         case f_AddRow:
           web->getResponseObject()["addRow"]["rowNr"] = rowNr;
@@ -597,10 +574,10 @@ public:
         default: return false;
       }});
 
-      ui->initCoord3D(parentVar, "pnlFirst", {0,0,0}, 0, NUM_LEDS_Max, false, [fgValue](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      ui->initCoord3D(parentVar, "fixFirst", {0,0,0}, 0, NUM_LEDS_Max, false, [fgGroup](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case f_UIFun:
           //show Top Left for all fixture except Matrix as it has its own
-          if (fgValue == f_Matrix)
+          if (strcmp(fgGroup, "Matrices") == 0)
             ui->setLabel(var, "First LED");
           else 
             ui->setLabel(var, "Top left");
@@ -608,10 +585,10 @@ public:
         default: return false;
       }});
 
-    } //if panels
+    } //if showTable
 
-
-    if (fgValue == f_Matrix) {
+    //custom variables
+    if (strcmp(fgGroup, "Matrices") == 0) {
 
       ui->initCoord3D(parentVar, "mrxRowEnd", {7,0,0}, 0, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case f_UIFun:
@@ -628,218 +605,73 @@ public:
           return true;
         default: return false;
       }});
-
-      if (panelVar["value"].as<bool>()) {
-
-        ui->initSelect(fixtureGenVar, "fixPreset", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-          case f_UIFun: {
-            ui->setLabel(var, "Preset");
-            JsonArray options = ui->setOptions(var);
-            options.add("None");
-            options.add("16x16");
-            options.add("4x16x16");
-            options.add("4x32x8");
-            options.add("Human Sized Cube");
-            options.add("CubeBox");
-            options.add("Cube3D");
-            options.add("Sticks");
-            return true; }
-          case f_ChangeFun: {
-            stackUnsigned8 optionNr = 1; // 0 is none, maintain the same order here as the options
-            stackUnsigned8 panel = 0;
-            if (var["value"] == optionNr++) { //16x16
-              stackUnsigned8 lengthMinOne = 15;
-              panel = 0; mdl->setValue("pnlFirst", Coord3D{0,0,0}, panel++); 
-              panel = 0; mdl->setValue("mrxRowEnd", Coord3D{0,lengthMinOne,0}, panel++);
-              panel = 0; mdl->setValue("mrxColEnd", Coord3D{lengthMinOne,lengthMinOne,0}, panel++);
-              panel = 0; mdl->setValue("fixPin", 2, panel++); // default per board...
-            }
-            if (var["value"] == optionNr++) { //4x16x16
-              stackUnsigned8 lengthMinOne = 15; stackUnsigned8 size = lengthMinOne + 1;
-              panel = 0; mdl->setValue("pnlFirst", Coord3D{0,0,0}, panel++); mdl->setValue("pnlFirst", Coord3D{16,0,0}, panel++); mdl->setValue("pnlFirst", Coord3D{0,16,0}, panel++); mdl->setValue("pnlFirst", Coord3D{16,16,0}, panel++); 
-              panel = 0; mdl->setValue("mrxRowEnd", Coord3D{0,lengthMinOne,0}, panel++); mdl->setValue("mrxRowEnd", Coord3D{16,lengthMinOne,0}, panel++); mdl->setValue("mrxRowEnd", Coord3D{0,31,0}, panel++); mdl->setValue("mrxRowEnd", Coord3D{16,31,0}, panel++); 
-              panel = 0; mdl->setValue("mrxColEnd", Coord3D{lengthMinOne,lengthMinOne,0}, panel++); mdl->setValue("mrxColEnd", Coord3D{31,lengthMinOne,0}, panel++); mdl->setValue("mrxColEnd", Coord3D{lengthMinOne,31,0}, panel++); mdl->setValue("mrxColEnd", Coord3D{31,31,0}, panel++); 
-              panel = 0; mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); 
-            }
-            if (var["value"] == optionNr++) { //4x32x8
-              stackUnsigned8 lengthMinOne = 31;
-              panel = 0; mdl->setValue("pnlFirst", Coord3D{lengthMinOne,lengthMinOne,0}, panel++); mdl->setValue("pnlFirst", Coord3D{lengthMinOne,23,0}, panel++); mdl->setValue("pnlFirst", Coord3D{lengthMinOne,15,0}, panel++); mdl->setValue("pnlFirst", Coord3D{lengthMinOne,7,0}, panel++);
-              panel = 0; mdl->setValue("mrxRowEnd", Coord3D{lengthMinOne,24,0}, panel++); mdl->setValue("mrxRowEnd", Coord3D{lengthMinOne,16,0}, panel++); mdl->setValue("mrxRowEnd", Coord3D{lengthMinOne,8,0}, panel++); mdl->setValue("mrxRowEnd", Coord3D{lengthMinOne,0,0}, panel++);
-              panel = 0; mdl->setValue("mrxColEnd", Coord3D{0,lengthMinOne,0}, panel++); mdl->setValue("mrxColEnd", Coord3D{0,23,0}, panel++); mdl->setValue("mrxColEnd", Coord3D{0,15,0}, panel++); mdl->setValue("mrxColEnd", Coord3D{0,7,0}, panel++);
-              panel = 0; mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); 
-            }
-            else if (var["value"] == optionNr++) { //Human Sized Cube
-              stackUnsigned8 length = 20; stackUnsigned8 size = length + 1;
-              panel = 0; mdl->setValue("pnlFirst", Coord3D{1,1,size}, panel++); mdl->setValue("pnlFirst", Coord3D{0,1,1}, panel++); mdl->setValue("pnlFirst", Coord3D{1,1,0}, panel++); mdl->setValue("pnlFirst", Coord3D{size,1,1}, panel++); mdl->setValue("pnlFirst", Coord3D{1,0,1}, panel++);
-              panel = 0; mdl->setValue("mrxRowEnd", Coord3D{1,length,size}, panel++); mdl->setValue("mrxRowEnd", Coord3D{0,length,1}, panel++); mdl->setValue("mrxRowEnd", Coord3D{1,length,0}, panel++); mdl->setValue("mrxRowEnd", Coord3D{size,length,1}, panel++); mdl->setValue("mrxRowEnd", Coord3D{1,0,length}, panel++);
-              panel = 0; mdl->setValue("mrxColEnd", Coord3D{length,length,size}, panel++); mdl->setValue("mrxColEnd", Coord3D{0,length,length}, panel++); mdl->setValue("mrxColEnd", Coord3D{length,length,0}, panel++); mdl->setValue("mrxColEnd", Coord3D{size,length,length}, panel++); mdl->setValue("mrxColEnd", Coord3D{length,0,length}, panel++);
-              panel = 0; mdl->setValue("fixPin", 16, panel++); mdl->setValue("fixPin", 14, panel++); mdl->setValue("fixPin", 32, panel++); mdl->setValue("fixPin", 3, panel++); mdl->setValue("fixPin", 15, panel++);
-            }
-            else if (var["value"] == optionNr++) { //Cube 6 x 8 x 8
-              stackUnsigned8 length = 8; stackUnsigned8 size = length + 1;
-              panel = 0; mdl->setValue("pnlFirst", Coord3D{1,1,0}, panel++); mdl->setValue("pnlFirst", Coord3D{length, size, length}, panel++); mdl->setValue("pnlFirst", Coord3D{size, 1, 1}, panel++); mdl->setValue("pnlFirst", Coord3D{0, length, length}, panel++); mdl->setValue("pnlFirst", Coord3D{length, 1, size}, panel++); mdl->setValue("pnlFirst", Coord3D{1, 0, length}, panel++);
-              panel = 0; mdl->setValue("mrxRowEnd", Coord3D{1,length,0}, panel++); mdl->setValue("mrxRowEnd", Coord3D{1, size, length}, panel++); mdl->setValue("mrxRowEnd", Coord3D{size, 1, length}, panel++); mdl->setValue("mrxRowEnd", Coord3D{0, 1, length}, panel++); mdl->setValue("mrxRowEnd", Coord3D{1, 1, size}, panel++); mdl->setValue("mrxRowEnd", Coord3D{length, 0, length}, panel++);
-              panel = 0; mdl->setValue("mrxColEnd", Coord3D{length,length,0}, panel++); mdl->setValue("mrxColEnd", Coord3D{1, size, 1}, panel++); mdl->setValue("mrxColEnd", Coord3D{size, length, length}, panel++); mdl->setValue("mrxColEnd", Coord3D{0, 1, 1}, panel++); mdl->setValue("mrxColEnd", Coord3D{1, length, size}, panel++); mdl->setValue("mrxColEnd", Coord3D{length, 0, 1}, panel++);
-              panel = 0; mdl->setValue("fixPin", 12, panel++); mdl->setValue("fixPin", 12, panel++); mdl->setValue("fixPin", 13, panel++); mdl->setValue("fixPin", 13, panel++); mdl->setValue("fixPin", 14, panel++); mdl->setValue("fixPin", 14, panel++);
-            }
-            else if (var["value"] == optionNr++) { //Cube 3D
-              stackUnsigned8 length = 8; stackUnsigned8 size = length -1;
-              for (forUnsigned8 panel=0; panel < length; panel++) {
-                mdl->setValue("pnlFirst", Coord3D{0,0,(unsigned16)panel}, panel);
-                mdl->setValue("mrxRowEnd", Coord3D{0,size,(unsigned16)panel}, panel);
-                mdl->setValue("mrxColEnd", Coord3D{size,size,(unsigned16)panel}, panel);
-                mdl->setValue("fixPin", 12, panel);
-              }
-            }
-            else if (var["value"] == optionNr++) { //Sticks
-              stackUnsigned8 length = 16;
-              stackUnsigned8 height = 54;
-              for (forUnsigned8 panel=0; panel < length; panel++) {
-                mdl->setValue("pnlFirst", Coord3D{(unsigned16)(panel*5), height, 0}, panel);
-                mdl->setValue("mrxRowEnd", Coord3D{(unsigned16)(panel*5), height, 0}, panel);
-                mdl->setValue("mrxColEnd", Coord3D{(unsigned16)(panel*5), 0, 0}, panel);
-                mdl->setValue("fixPin", 12, panel);
-              }
-            }
-            return true; }
-          default: return false; 
-        }});
-      }
     }
-    else if (fgValue == f_Ring) {
+    else if (strcmp(fgGroup, "Rings") == 0) {
       ui->initNumber(parentVar, "fixLeds", 24, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case f_UIFun:
           ui->setLabel(var, "Leds");
           return true;
         default: return false; 
       }});
-
-      if (panelVar["value"].as<bool>()) {
-
-        ui->initSelect(fixtureGenVar, "fixPreset", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-          case f_UIFun: {
-            ui->setLabel(var, "Preset");
-            JsonArray options = ui->setOptions(var);
-            options.add("None");
-            options.add("Olympic");
-            options.add("Audi");
-            return true; }
-          case f_ChangeFun: {
-            stackUnsigned8 optionNr = 1; // 0 is none, maintain the same order here as the options
-            stackUnsigned8 panel = 0;
-            if (var["value"] == optionNr++) { //Olympic
-              panel = 0; mdl->setValue("pnlFirst", Coord3D{0,0,0}, panel++); mdl->setValue("pnlFirst", Coord3D{10,0,0}, panel++); mdl->setValue("pnlFirst", Coord3D{20,0,0}, panel++); mdl->setValue("pnlFirst", Coord3D{5,3,0}, panel++); mdl->setValue("pnlFirst", Coord3D{15,3,0}, panel++); 
-              panel = 0; mdl->setValue("fixLeds", 24, panel++); mdl->setValue("fixLeds", 24, panel++); mdl->setValue("fixLeds", 24, panel++); mdl->setValue("fixLeds", 24, panel++); mdl->setValue("fixLeds", 24, panel++); 
-              panel = 0; mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); // default per board...
-            }
-            if (var["value"] == optionNr++) { //Audi
-              panel = 0; mdl->setValue("pnlFirst", Coord3D{0,0,0}, panel++); mdl->setValue("pnlFirst", Coord3D{6,0,0}, panel++); mdl->setValue("pnlFirst", Coord3D{12,0,0}, panel++); mdl->setValue("pnlFirst", Coord3D{18  ,0,0}, panel++);
-              panel = 0; mdl->setValue("fixLeds", 24, panel++); mdl->setValue("fixLeds", 24, panel++); mdl->setValue("fixLeds", 24, panel++); mdl->setValue("fixLeds", 24, panel++); 
-              panel = 0; mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); mdl->setValue("fixPin", 2, panel++); // default per board...
-            }
-            return true; }
+    }
+    else if (strcmp(fgGroup, "Shapes") == 0) {
+      if (strcmp(fgText, "Rings241") == 0) {
+        ui->initNumber(parentVar, "nrOfRings", 9, 1, 9);
+        ui->initCheckBox(parentVar, "in2out", true);
+      }
+      else if (strcmp(fgText, "Spiral") == 0) {
+        ui->initNumber(parentVar, "fixLeds", 64, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+          case f_UIFun:
+            ui->setLabel(var, "Leds");
+            return true;
           default: return false; 
         }});
+        ui->initNumber(parentVar, "radius", 100, 1, 1000);
       }
-    }
-    else if (fgValue == f_Rings241) {
-      ui->initNumber(parentVar, "nrOfRings", 9, 1, 9);
-      ui->initCheckBox(parentVar, "in2out", true);
-    }
-    else if (fgValue == f_Spiral) {
-      ui->initNumber(parentVar, "fixLeds", 64, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-        case f_UIFun:
-          ui->setLabel(var, "Leds");
-          return true;
-        default: return false; 
-      }});
-      ui->initNumber(parentVar, "radius", 100, 1, 1000);
-    }
-    else if (fgValue == f_Helix) {
-      ui->initNumber(parentVar, "fixLeds", 100, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-        case f_UIFun:
-          ui->setLabel(var, "Leds");
-          return true;
-        default: return false; 
-      }});
-      ui->initNumber(parentVar, "radius", 60, 1, 600);
-      ui->initNumber(parentVar, "pitch", 30, 1, 100);
-      ui->initNumber(parentVar, "deltaLed", 30, 1, 100);
-    }
-    else if (fgValue == f_Wheel) {
-      ui->initNumber(parentVar, "nrOfSpokes", 36, 1, 360);
-      ui->initNumber(parentVar, "ledsPerSpoke", 24, 1, 360);
-    }
-    else if (fgValue == f_Hexagon) {
-      ui->initNumber(parentVar, "ledsPerSide", 12, 1, 255);
-
-      if (panelVar["value"].as<bool>()) {
-
-        ui->initSelect(fixtureGenVar, "fixPreset", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-          case f_UIFun: {
-            ui->setLabel(var, "Preset");
-            JsonArray options = ui->setOptions(var);
-            options.add("None");
-            options.add("HexaWall");
-            return true; }
-          case f_ChangeFun: {
-            stackUnsigned8 optionNr = 1; // 0 is none, maintain the same order here as the options
-            stackUnsigned8 panel = 0;
-            if (var["value"] == optionNr++) { //HexaWall
-              panel = 0; 
-              mdl->setValue("pnlFirst", Coord3D{0,0,0}, panel++); 
-              mdl->setValue("pnlFirst", Coord3D{10,6,0}, panel++); 
-              mdl->setValue("pnlFirst", Coord3D{10,18,0}, panel++); 
-              mdl->setValue("pnlFirst", Coord3D{20,0,0}, panel++); 
-              mdl->setValue("pnlFirst", Coord3D{30,6,0}, panel++); 
-              mdl->setValue("pnlFirst", Coord3D{40,12,0}, panel++); 
-              mdl->setValue("pnlFirst", Coord3D{40,24,0}, panel++); 
-              mdl->setValue("pnlFirst", Coord3D{50,6,0}, panel++); 
-              mdl->setValue("pnlFirst", Coord3D{60,0,0}, panel++); 
-
-              for (forUnsigned8 panel = 0; panel < 9; panel++) {
-                mdl->setValue("ledsPerSide", 6, panel);
-                mdl->setValue("fixPin", 2, panel);
-              }
-            }
-            return true; }
+      else if (strcmp(fgText, "Helix") == 0) {
+        ui->initNumber(parentVar, "fixLeds", 100, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+          case f_UIFun:
+            ui->setLabel(var, "Leds");
+            return true;
           default: return false; 
         }});
+        ui->initNumber(parentVar, "radius", 60, 1, 600);
+        ui->initNumber(parentVar, "pitch", 30, 1, 100);
+        ui->initNumber(parentVar, "deltaLed", 30, 1, 100);
+      }
+      else if (strcmp(fgText, "Hexagon") == 0) {
+        ui->initNumber(parentVar, "ledsPerSide", 12, 1, 255);
+      } else if (strcmp(fgText, "HexaWall") == 0) {
+        ui->initNumber(parentVar, "ledsPerSide", 12, 1, 255);
+      }
+      else if (strcmp(fgText, "Cone") == 0) {
+        ui->initNumber(parentVar, "nrOfRings", 24, 1, 360);
       }
     }
-    else if (fgValue == f_Human) {
-
-      if (panelVar["value"].as<bool>()) {
-
-        ui->initSelect(fixtureGenVar, "fixPreset", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-          case f_UIFun: {
-            ui->setLabel(var, "Preset");
-            JsonArray options = ui->setOptions(var);
-            options.add("Body1");
-            options.add("Body2");
-            return true; }
-          default: return false; 
-        }});
+    else if (strcmp(fgGroup, "Combinations") == 0) {
+      if (strcmp(fgText, "Wheel") == 0) {
+        ui->initNumber(parentVar, "nrOfSpokes", 36, 1, 360);
+        ui->initNumber(parentVar, "ledsPerSpoke", 24, 1, 360);
       }
+      else if (strcmp(fgText, "Human") == 0) {
+      }
+      else if (strcmp(fgText, "Curtain") == 0) {
+        ui->initNumber(parentVar, "width", 20, 1, 100);
+        ui->initNumber(parentVar, "height", 20, 1, 100);
+      }
+    }
+    else if (strcmp(fgGroup, "Spheres") == 0) {
+      if (strcmp(fgText, "Globe") == 0) {
+        ui->initNumber(parentVar, "width", 24, 1, 48);
+      }
+      else if (strcmp(fgText, "GeodesicDome WIP") == 0) {
+        ui->initNumber(parentVar, "radius", 100, 1, 1000);
+      }
+    }
 
-    }
-    else if (fgValue == f_Cone) {
-      ui->initNumber(parentVar, "nrOfRings", 24, 1, 360);
-    }
-    else if (fgValue == f_Globe) {
-      ui->initNumber(parentVar, "width", 24, 1, 48);
-    }
-    else if (fgValue == f_GeodesicDome) {
-      ui->initNumber(parentVar, "radius", 100, 1, 1000);
-    }
-    else if (fgValue == f_Curtain) {
-      ui->initNumber(parentVar, "width", 20, 1, 100);
-      ui->initNumber(parentVar, "height", 20, 1, 100);
-    }
 
-    //general variables
-
-    if (fgValue == f_Matrix || fgValue == f_Rings241) { //tbd: the rest
+    //default variables - part 2
+    if (strcmp(fgGroup, "Matrices") == 0 || strcmp(fgText, "Rings241") == 0) { //tbd: the rest
       ui->initCoord3D(parentVar, "fixRotate", {0,0,0}, 0, 359, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case f_UIFun:
           ui->setLabel(var, "Rotate");
@@ -876,8 +708,108 @@ public:
       default: return false; 
     }});
 
-    mdl->varPostDetails(fixtureGenVar, UINT8_MAX);
 
+    // predefined options
+    stackUnsigned8 fixNr = 0;
+
+    if (strcmp(fgGroup, "Matrices") == 0) {
+      mdl->findVar("fixFirst").remove("value");
+      mdl->findVar("mrxRowEnd").remove("value");
+      mdl->findVar("mrxColEnd").remove("value");
+      mdl->findVar("fixIP").remove("value");
+      mdl->findVar("fixPin").remove("value");
+
+      if (strcmp(fgText, "16x16") == 0) {
+        stackUnsigned8 lengthMinOne = 15;
+        fixNr = 0; mdl->setValue("fixFirst", Coord3D{0,0,0}, fixNr++); 
+        fixNr = 0; mdl->setValue("mrxRowEnd", Coord3D{0,lengthMinOne,0}, fixNr++);
+        fixNr = 0; mdl->setValue("mrxColEnd", Coord3D{lengthMinOne,lengthMinOne,0}, fixNr++);
+        fixNr = 0; mdl->setValue("fixPin", 2, fixNr++); // default per board...
+      }
+      else if (strcmp(fgText, "4x16x16") == 0) {
+        stackUnsigned8 lengthMinOne = 15; stackUnsigned8 size = lengthMinOne + 1;
+        fixNr = 0; mdl->setValue("fixFirst", Coord3D{0,0,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{16,0,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{0,16,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{16,16,0}, fixNr++); 
+        fixNr = 0; mdl->setValue("mrxRowEnd", Coord3D{0,lengthMinOne,0}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{16,lengthMinOne,0}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{0,31,0}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{16,31,0}, fixNr++); 
+        fixNr = 0; mdl->setValue("mrxColEnd", Coord3D{lengthMinOne,lengthMinOne,0}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{31,lengthMinOne,0}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{lengthMinOne,31,0}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{31,31,0}, fixNr++); 
+        fixNr = 0; mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); 
+
+      }
+      else if (strcmp(fgText, "4x32x8") == 0) {
+        stackUnsigned8 lengthMinOne = 31;
+        fixNr = 0; mdl->setValue("fixFirst", Coord3D{lengthMinOne,lengthMinOne,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{lengthMinOne,23,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{lengthMinOne,15,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{lengthMinOne,7,0}, fixNr++);
+        fixNr = 0; mdl->setValue("mrxRowEnd", Coord3D{lengthMinOne,24,0}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{lengthMinOne,16,0}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{lengthMinOne,8,0}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{lengthMinOne,0,0}, fixNr++);
+        fixNr = 0; mdl->setValue("mrxColEnd", Coord3D{0,lengthMinOne,0}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{0,23,0}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{0,15,0}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{0,7,0}, fixNr++);
+        fixNr = 0; mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); 
+      }
+      else if (strcmp(fgText, "Human Sized Cube") == 0) {
+
+        stackUnsigned8 length = 20; stackUnsigned8 size = length + 1;
+        fixNr = 0; mdl->setValue("fixFirst", Coord3D{1,1,size}, fixNr++); mdl->setValue("fixFirst", Coord3D{0,1,1}, fixNr++); mdl->setValue("fixFirst", Coord3D{1,1,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{size,1,1}, fixNr++); mdl->setValue("fixFirst", Coord3D{1,0,1}, fixNr++);
+        fixNr = 0; mdl->setValue("mrxRowEnd", Coord3D{1,length,size}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{0,length,1}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{1,length,0}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{size,length,1}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{1,0,length}, fixNr++);
+        fixNr = 0; mdl->setValue("mrxColEnd", Coord3D{length,length,size}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{0,length,length}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{length,length,0}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{size,length,length}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{length,0,length}, fixNr++);
+        fixNr = 0; mdl->setValue("fixPin", 16, fixNr++); mdl->setValue("fixPin", 14, fixNr++); mdl->setValue("fixPin", 32, fixNr++); mdl->setValue("fixPin", 3, fixNr++); mdl->setValue("fixPin", 15, fixNr++);
+      }
+      else if (strcmp(fgText, "CubeBox") == 0) {
+        stackUnsigned8 length = 8; stackUnsigned8 size = length + 1;
+        fixNr = 0; mdl->setValue("fixFirst", Coord3D{1,1,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{length, size, length}, fixNr++); mdl->setValue("fixFirst", Coord3D{size, 1, 1}, fixNr++); mdl->setValue("fixFirst", Coord3D{0, length, length}, fixNr++); mdl->setValue("fixFirst", Coord3D{length, 1, size}, fixNr++); mdl->setValue("fixFirst", Coord3D{1, 0, length}, fixNr++);
+        fixNr = 0; mdl->setValue("mrxRowEnd", Coord3D{1,length,0}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{1, size, length}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{size, 1, length}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{0, 1, length}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{1, 1, size}, fixNr++); mdl->setValue("mrxRowEnd", Coord3D{length, 0, length}, fixNr++);
+        fixNr = 0; mdl->setValue("mrxColEnd", Coord3D{length,length,0}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{1, size, 1}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{size, length, length}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{0, 1, 1}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{1, length, size}, fixNr++); mdl->setValue("mrxColEnd", Coord3D{length, 0, 1}, fixNr++);
+        fixNr = 0; mdl->setValue("fixPin", 12, fixNr++); mdl->setValue("fixPin", 12, fixNr++); mdl->setValue("fixPin", 13, fixNr++); mdl->setValue("fixPin", 13, fixNr++); mdl->setValue("fixPin", 14, fixNr++); mdl->setValue("fixPin", 14, fixNr++);
+      }
+      else if (strcmp(fgText, "Cube3D") == 0) {
+        stackUnsigned8 length = 8; stackUnsigned8 size = length -1;
+        for (forUnsigned8 fixNr = 0; fixNr < length; fixNr++) {
+          mdl->setValue("fixFirst", Coord3D{0,0,(unsigned16)fixNr}, fixNr);
+          mdl->setValue("mrxRowEnd", Coord3D{0,size,(unsigned16)fixNr}, fixNr);
+          mdl->setValue("mrxColEnd", Coord3D{size,size,(unsigned16)fixNr}, fixNr);
+          mdl->setValue("fixPin", 12, fixNr);
+        }
+      }
+      else if (strcmp(fgText, "Sticks") == 0) {
+        stackUnsigned8 length = 16;
+        stackUnsigned8 height = 54;
+        for (forUnsigned8 fixNr = 0; fixNr < length; fixNr++) {
+          mdl->setValue("fixFirst", Coord3D{(unsigned16)(fixNr*5), height, 0}, fixNr);
+          mdl->setValue("mrxRowEnd", Coord3D{(unsigned16)(fixNr*5), height, 0}, fixNr);
+          mdl->setValue("mrxColEnd", Coord3D{(unsigned16)(fixNr*5), 0, 0}, fixNr);
+          mdl->setValue("fixPin", 12, fixNr);
+        }
+      }
+    }
+    else if (strcmp(fgGroup, "Rings") == 0) {
+      if (strcmp(fgText, "Olympic") == 0) {
+        fixNr = 0; mdl->setValue("fixFirst", Coord3D{0,0,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{10,0,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{20,0,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{5,3,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{15,3,0}, fixNr++); 
+        fixNr = 0; mdl->setValue("fixLeds", 24, fixNr++); mdl->setValue("fixLeds", 24, fixNr++); mdl->setValue("fixLeds", 24, fixNr++); mdl->setValue("fixLeds", 24, fixNr++); mdl->setValue("fixLeds", 24, fixNr++); 
+        fixNr = 0; mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); // default per board...
+      }
+      else if (strcmp(fgText, "Audi") == 0) {
+        fixNr = 0; mdl->setValue("fixFirst", Coord3D{0,0,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{6,0,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{12,0,0}, fixNr++); mdl->setValue("fixFirst", Coord3D{18  ,0,0}, fixNr++);
+        fixNr = 0; mdl->setValue("fixLeds", 24, fixNr++); mdl->setValue("fixLeds", 24, fixNr++); mdl->setValue("fixLeds", 24, fixNr++); mdl->setValue("fixLeds", 24, fixNr++); 
+        fixNr = 0; mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); mdl->setValue("fixPin", 2, fixNr++); // default per board...
+      }
+
+    }
+    else if (strcmp(fgGroup, "Shapes") == 0) {
+      if (strcmp(fgText, "HexaWall") == 0) {
+        fixNr = 0; 
+        mdl->setValue("fixFirst", Coord3D{0,0,0}, fixNr++); 
+        mdl->setValue("fixFirst", Coord3D{10,6,0}, fixNr++); 
+        mdl->setValue("fixFirst", Coord3D{10,18,0}, fixNr++); 
+        mdl->setValue("fixFirst", Coord3D{20,0,0}, fixNr++); 
+        mdl->setValue("fixFirst", Coord3D{30,6,0}, fixNr++); 
+        mdl->setValue("fixFirst", Coord3D{40,12,0}, fixNr++); 
+        mdl->setValue("fixFirst", Coord3D{40,24,0}, fixNr++); 
+        mdl->setValue("fixFirst", Coord3D{50,6,0}, fixNr++); 
+        mdl->setValue("fixFirst", Coord3D{60,0,0}, fixNr++); 
+
+        for (forUnsigned8 fixNr = 0; fixNr < 9; fixNr++) {
+          mdl->setValue("ledsPerSide", 6, fixNr);
+          mdl->setValue("fixPin", 2, fixNr);
+        }
+      }
+    }
+
+    mdl->varPostDetails(fixtureVar, UINT8_MAX);
   }
 
   //tbd: move to utility functions
@@ -894,70 +826,64 @@ public:
       return str; 
   } 
 
-  void getPanels(const char * fileName, std::function<void(GenFix *, unsigned8, Coord3D, unsigned8, unsigned8)> genFun) {
+  void getFixtures(const char * fixtureName, std::function<void(GenFix *, unsigned8, Coord3D, unsigned8, unsigned8)> genFun) {
     GenFix genFix;
 
-    JsonObject presetsVar = mdl->findVar("fixPreset");
-    stackUnsigned8 presets = mdl->getValue(presetsVar);
+    char fileName[32];
+    print->fFormat(fileName, sizeof(fileName)-1, "F_%s", fixtureName);
+    removeSpaces(fileName);
 
-    //set header and file name
-    if (presets != 0) {
-      JsonArray options = ui->getOptions(presetsVar);
+    if (strstr(fixtureName, "Sized")!=nullptr) genFix.ledSize = 2; //hack to make the hcs leds smaller
 
-      char text[32] = "F_";
-      strncat(text, options[presets], 31);
-      removeSpaces(text);
+    genFix.openHeader(fileName);
 
-      if (strcmp(text, "F_HumanSizedCube")==0) genFix.ledSize = 2; //hack to make the hcs leds smaller
+    JsonVariant fixFirstValue = mdl->findVar("fixFirst")["value"];
 
-      genFix.openHeader(text);
-
-      ui->clearOptions(presetsVar);
-    }
-    else {
-      // stackUnsigned16 ledCount = mdl->getValue("fixLeds");
-      genFix.openHeader(fileName);
-    }
-
-    JsonVariant pnlFirstValue = mdl->findVar("pnlFirst")["value"];
-
-    if (pnlFirstValue.is<JsonArray>()) { //multiple rows
+    if (fixFirstValue.is<JsonArray>()) { //multiple rows
       stackUnsigned8 rowNr = 0;
-      for (JsonVariant firstValueRow: pnlFirstValue.as<JsonArray>()) {
-        genFun(&genFix, rowNr, mdl->getValue("pnlFirst", rowNr), mdl->getValue("fixIP", rowNr), mdl->getValue("fixPin", rowNr));
+      for (JsonVariant firstValueRow: fixFirstValue.as<JsonArray>()) {
+        genFun(&genFix, rowNr, mdl->getValue("fixFirst", rowNr), mdl->getValue("fixIP", rowNr), mdl->getValue("fixPin", rowNr));
         rowNr++;
       }
     } else {
-      genFun(&genFix, UINT8_MAX, mdl->getValue("pnlFirst"), mdl->getValue("fixIP"), mdl->getValue("fixPin"));
+      genFun(&genFix, UINT8_MAX, mdl->getValue("fixFirst"), mdl->getValue("fixIP"), mdl->getValue("fixPin"));
     }
 
     genFix.closeHeader();
   }
  
+  //generate the F-ixture.json file
   void generateChFun(JsonObject var, char * fileName) {
 
-    stackUnsigned8 fgValue = mdl->getValue("fixtureGen");
+    JsonObject fixtureVar = mdl->findVar("fixtureVar");
+    stackUnsigned8 fgValue = fixtureVar["value"];
 
-    if (fgValue == f_Matrix) {
+    //find option group and text
+    char fgGroup[32];
+    char fgText[32];
+    ui->findOptionsText(fixtureVar, fgValue, fgGroup, fgText);
 
-      Coord3D size = (mdl->getValue("mrxColEnd").as<Coord3D>() - mdl->getValue("pnlFirst").as<Coord3D>()) + Coord3D{1,1,1};
-      print->fFormat(fileName, 31, "F_Matrix%d%d%d", size.x, size.y, size.z);
 
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+    if (strcmp(fgGroup, "Matrices") == 0) {
+
+      Coord3D size = (mdl->getValue("mrxColEnd").as<Coord3D>() - mdl->getValue("fixFirst").as<Coord3D>()) + Coord3D{1,1,1};
+      print->fFormat(fileName, 31, "%s%d%d%d", fgText, size.x, size.y, size.z);
+
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         Coord3D fixRotate = mdl->getValue("fixRotate", rowNr);
         Coord3D mrxRowEnd = mdl->getValue("mrxRowEnd", rowNr);
         Coord3D mrxColEnd = mdl->getValue("mrxColEnd", rowNr);
-        genFix->matrix(pnlFirst * 10, mrxRowEnd * 10, mrxColEnd * 10, fixIP, fixPin, fixRotate.x, fixRotate.y, fixRotate.z);
+        genFix->matrix(fixFirst * 10, mrxRowEnd * 10, mrxColEnd * 10, fixIP, fixPin, fixRotate.x, fixRotate.y, fixRotate.z);
       });
 
-    } else if (fgValue == f_Ring) {
+    } else if (strcmp(fgGroup, "Rings") == 0) {
 
-      print->fFormat(fileName, 31, "F_Ring%d", mdl->getValue("fixLeds").as<unsigned16>());
+      print->fFormat(fileName, 31, "%s%d", fgText, mdl->getValue("fixLeds").as<unsigned16>());
 
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint16_t ledCount = mdl->getValue("fixLeds", rowNr);
         //first to middle (in mm)
-        Coord3D middle = pnlFirst;
+        Coord3D middle = fixFirst;
         uint8_t radius = 10 * ledCount / M_TWOPI + 10; //in mm
         middle.x = middle.x*10 + radius;
         middle.y = middle.y*10 + radius;
@@ -965,42 +891,42 @@ public:
         genFix->ring(middle, ledCount, fixIP, fixPin);
       });
 
-    } else if (fgValue == f_Rings241) {
+    } else if (strcmp(fgText, "Rings241") == 0) {
 
-      print->fFormat(fileName, 31, "F_Rings241-%d", mdl->getValue("nrOfRings").as<unsigned8>());
+      print->fFormat(fileName, 31, "%s-%d", fgText, mdl->getValue("nrOfRings").as<unsigned8>());
 
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint16_t nrOfLeds = mdl->getValue("fixLeds", rowNr);
         Coord3D fixRotate = mdl->getValue("fixRotate", rowNr);
         //first to middle (in mm)
-        Coord3D middle = pnlFirst;
+        Coord3D middle = fixFirst;
         uint8_t radius = 10 * 60 / M_TWOPI; //in mm
         middle.x = middle.x*10 + radius;
         middle.y = middle.y*10 + radius;
         genFix->rings241(middle, mdl->getValue("nrOfRings", rowNr), mdl->getValue("in2out", rowNr), fixIP, fixPin, fixRotate.x, fixRotate.y, fixRotate.z);
       });
 
-    } else if (fgValue == f_Spiral) {
+    } else if (strcmp(fgText, "Spiral") == 0) {
 
-      print->fFormat(fileName, 31, "F_Spiral%d", mdl->getValue("fixLeds").as<unsigned16>());
+      print->fFormat(fileName, 31, "%s%d", fgText, mdl->getValue("fixLeds").as<unsigned16>());
 
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint16_t fixLeds = mdl->getValue("fixLeds", rowNr);
         uint16_t radius = mdl->getValue("radius", rowNr);
         //first to middle (in mm)
         Coord3D middle;
-        middle.x = pnlFirst.x*10 + radius;
-        middle.y = pnlFirst.y*10;
-        middle.z = pnlFirst.z*10 + radius;
+        middle.x = fixFirst.x*10 + radius;
+        middle.y = fixFirst.y*10;
+        middle.z = fixFirst.z*10 + radius;
 
         genFix->spiral(middle, fixLeds, radius, fixIP, fixPin);
       });
 
-    } else if (fgValue == f_Helix) {
+    } else if (strcmp(fgText, "Helix") == 0) {
 
-      print->fFormat(fileName, 31, "F_Helix%d", mdl->getValue("fixLeds").as<unsigned16>());
+      print->fFormat(fileName, 31, "%s%d", fgText, mdl->getValue("fixLeds").as<unsigned16>());
 
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint16_t fixLeds = mdl->getValue("fixLeds", rowNr);
         uint16_t radius = mdl->getValue("radius", rowNr);
         uint16_t pitch = mdl->getValue("pitch", rowNr);
@@ -1008,67 +934,67 @@ public:
 
         //first to middle (in mm)
         Coord3D middle;
-        middle.x = pnlFirst.x*10 + radius;
-        middle.y = pnlFirst.y*10;
-        middle.z = pnlFirst.z*10 + radius;
+        middle.x = fixFirst.x*10 + radius;
+        middle.y = fixFirst.y*10;
+        middle.z = fixFirst.z*10 + radius;
 
         genFix->helix(middle, fixLeds, radius, pitch, deltaLed, fixIP, fixPin);
       });
 
-    } else if (fgValue == f_Wheel) {
+    } else if (strcmp(fgText, "Wheel") == 0) {
 
-      print->fFormat(fileName, 31, "F_Wheel%d%d", mdl->getValue("nrOfSpokes").as<unsigned8>(), mdl->getValue("ledsPerSpoke").as<unsigned8>());
+      print->fFormat(fileName, 31, "%s%d%d", fgText, mdl->getValue("nrOfSpokes").as<unsigned8>(), mdl->getValue("ledsPerSpoke").as<unsigned8>());
       
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint8_t ledsPerSpoke = mdl->getValue("ledsPerSpoke", rowNr);
           //first to middle (in mm)
         float size = 50 + 10 * ledsPerSpoke;
         Coord3D middle;
-        middle.x = pnlFirst.x*10 + size;
-        middle.y = pnlFirst.y*10 + size;
-        middle.z = pnlFirst.z*10;
+        middle.x = fixFirst.x*10 + size;
+        middle.y = fixFirst.y*10 + size;
+        middle.z = fixFirst.z*10;
 
         genFix->wheel(middle, mdl->getValue("nrOfSpokes", rowNr), ledsPerSpoke, fixIP, fixPin);
       });
 
-    } else if (fgValue == f_Hexagon) {
+    } else if (strcmp(fgText, "Hexagon") == 0) {
+      strcpy(fileName, fgText);
 
-      strcpy(fileName, "F_Hexagon");
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint8_t ledsPerSide = mdl->getValue("ledsPerSide", rowNr);
         //first to middle (in mm)
-        Coord3D middle = (pnlFirst + Coord3D{ledsPerSide, ledsPerSide, 0})*10; //in mm
+        Coord3D middle = (fixFirst + Coord3D{ledsPerSide, ledsPerSide, 0})*10; //in mm
         genFix->hexagon(middle, ledsPerSide, fixIP, fixPin);
       });
 
-    } else if (fgValue == f_Cone) {
+    } else if (strcmp(fgText, "Cone") == 0) {
 
-      print->fFormat(fileName, 31, "F_Cone%d", mdl->getValue("nrOfRings").as<unsigned8>());
+      print->fFormat(fileName, 31, "%s%d", fgText, mdl->getValue("nrOfRings").as<unsigned8>());
 
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint8_t nrOfRings = mdl->getValue("nrOfRings", rowNr);
 
         //first to middle (in mm)
         float width = nrOfRings * 1.5f / M_PI + 1;
         Coord3D middle;
-        middle.x = pnlFirst.x*10 + width*10;
-        middle.y = pnlFirst.y*10;
-        middle.z = pnlFirst.z*10 + width*10;
+        middle.x = fixFirst.x*10 + width*10;
+        middle.y = fixFirst.y*10;
+        middle.z = fixFirst.z*10 + width*10;
 
         genFix->cone(middle, nrOfRings, fixIP, fixPin);
       });
 
-    } else if (fgValue == f_Cloud) {
+    } else if (strcmp(fgText, "Cloud5416") == 0) {
+      strcpy(fileName, fgText);
 
-      strcpy(fileName, "F_Cloud5416");
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
-        genFix->cloud(pnlFirst*10, fixIP, fixPin);
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+        genFix->cloud5416(fixFirst*10, fixIP, fixPin);
       });
 
-    } else if (fgValue == f_Wall) {
+    } else if (strcmp(fgText, "Wall") == 0) {
+      strcpy(fileName, fgText);
 
-      strcpy(fileName, "F_Wall");
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         genFix->rings241(Coord3D{110,110,0}, 9, true, fixIP, fixPin);
 
         genFix->matrix(Coord3D{190,0,0}, Coord3D{190,80,0}, Coord3D{270,0,0}, fixIP, fixPin);
@@ -1079,10 +1005,10 @@ public:
         // genFix.spiral(240, 0, 0, 48);
       });
 
-    } else if (fgValue == f_Star) {
+    } else if (strcmp(fgText, "Star") == 0) {
+      strcpy(fileName, fgText);
 
-      strcpy(fileName, "F_Star");
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
 
         uint8_t ringsCentre = 170;
         uint8_t sateliteRadius = 130;
@@ -1101,10 +1027,10 @@ public:
 
       });
 
-    } else if (fgValue == f_6Rings) {
+    } else if (strcmp(fgText, "6Rings") == 0) {
+      strcpy(fileName, fgText);
 
-      strcpy(fileName, "F_6Rings");
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         genFix->rings241(Coord3D{110,110,0}, 9, true, fixIP, fixPin);
         genFix->rings241(Coord3D{0,110,110}, 9, true, fixIP, fixPin, 90); //pan 90
         genFix->rings241(Coord3D{110,110,220}, 9, true, fixIP, fixPin);
@@ -1113,10 +1039,10 @@ public:
         genFix->rings241(Coord3D{110,220,110}, 9, true, fixIP, fixPin, 0, 90); // tilt 90
       });
 
-    } else if (fgValue == f_SpaceStation) {
+    } else if (strcmp(fgText, "SpaceStation") == 0) {
+      strcpy(fileName, fgText);
 
-      strcpy(fileName, "F_SpaceStation");
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         Trigo trigo;
         for (int i=0; i<360; i+=20) {
           uint8_t ringRadius = 50;
@@ -1126,10 +1052,10 @@ public:
         }
       });
 
-    } else if (fgValue == f_Human) {
+    } else if (strcmp(fgText, "Human") == 0) {
+      strcpy(fileName, fgText);
 
-      strcpy(fileName, "F_Human");
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
 
         //total dimensions width: 10 + 18 + 10
         // height 18 + 5 + 
@@ -1151,30 +1077,30 @@ public:
 
       });
 
-    } else if (fgValue == f_Globe) {
+    } else if (strcmp(fgText, "Globe") == 0) {
 
-      print->fFormat(fileName, 31, "F_Globe%d", mdl->getValue("width").as<unsigned16>());
+      print->fFormat(fileName, 31, "%s%d", fgText, mdl->getValue("width").as<unsigned16>());
 
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint16_t width = mdl->getValue("width", rowNr);
         //first to middle (in mm)
         Coord3D middle;
-        middle.x = pnlFirst.x*10 + 10 * width / 2;
-        middle.y = pnlFirst.y*10;
-        middle.z = pnlFirst.z*10 + 10 * width / 2;
+        middle.x = fixFirst.x*10 + 10 * width / 2;
+        middle.y = fixFirst.y*10;
+        middle.z = fixFirst.z*10 + 10 * width / 2;
 
         genFix->globe(middle, width, fixIP, fixPin);
       });
 
-    } else if (fgValue == f_LeGlorb) {
+    } else if (strcmp(fgText, "LeGlorb") == 0) {
+      strcpy(fileName, fgText);
 
-      getPanels("F_LeGlorb", [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
 
         genFix->openPin(fixPin);
 
         genFix->ledSize = 40;
         genFix->shape = 1;
-        genFix->opacity = 100;
 
         char ledsString[] = "[[136,12,159],[96,12,146],[96,12,104],[136,12,91],[160,12,125],[184,49,193],[147,32,192],[118,49,215],[78,49,202],[68,32,167],[37,49,146],[37,49,104],[68,32,83],[78,49,48],[118,49,35],[147,32,58],[184,49,57],[208,49,90],[196,32,125],[208,49,160],[219,106,193],[191,84,214],[160,103,234],[124,84,236],[89,106,236],[60,84,215],[32,103,192],[19,84,159],[8,106,125],[19,84,91],[32,103,58],[60,84,35],[89,106,14],[124,84,14],[160,103,16],[191,84,36],[219,106,57],[230,84,90],[240,103,125],[230,84,160],[218,147,192],[190,166,215],[161,144,236],[126,166,236],[90,147,234],[59,166,214],[31,144,193],[20,166,160],[10,147,125],[20,166,90],[31,144,57],[59,166,36],[90,147,16],[126,166,14],[161,144,14],[190,166,35],[218,147,58],[231,166,91],[242,144,125],[231,166,159],[182,218,167],[172,201,202],[132,201,215],[103,218,192],[66,201,193],[42,201,160],[54,218,125],[42,201,90],[66,201,57],[103,218,58],[132,201,35],[172,201,48],[182,218,83],[213,201,104],[213,201,146],[154,238,146],[114,238,159],[90,238,125],[114,238,91],[154,238,104]]";
         JsonDocument leds;
@@ -1182,7 +1108,7 @@ public:
 
         for (JsonArray pixel:leds.as<JsonArray>()) {
           Coord3D pix = {pixel[0], pixel[1], pixel[2]};
-          genFix->write3D(pix + pnlFirst);
+          genFix->write3D(pix + fixFirst);
           ppf("pixel %d %d %d\n", pixel[0], pixel[1], pixel[2]);
         }
 
@@ -1190,34 +1116,33 @@ public:
 
       });
 
-    } else if (fgValue == f_GeodesicDome) {
+    } else if (strcmp(fgText, "GeodesicDome WIP") == 0) {
 
-      print->fFormat(fileName, 31, "F_GeodesicDome%d", mdl->getValue("radius").as<unsigned16>());
+      print->fFormat(fileName, 31, "%s%d", fgText, mdl->getValue("radius").as<unsigned16>());
 
-      getPanels(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
-        genFix->geodesicDome(pnlFirst, mdl->getValue("radius", rowNr), fixIP, fixPin);
+      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+        genFix->geodesicDome(fixFirst, mdl->getValue("radius", rowNr), fixIP, fixPin);
       });
 
-    } else if (fgValue == f_Curtain) {
+    } else if (strcmp(fgText, "Curtain") == 0) {
 
       uint16_t width = mdl->getValue("width");
       uint16_t height = mdl->getValue("height");
-      print->fFormat(fileName, 31, "F_Curtain%dx%d", width, height);
+      print->fFormat(fileName, 31, "%s%dx%d", fgText, width, height);
 
-      getPanels(fileName, [width, height](GenFix * genFix, unsigned8 rowNr, Coord3D pnlFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [width, height](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         genFix->openPin(fixPin);
 
         uint8_t offX;
         for (int y=0; y<width; y++) {
           for (int x=0; x<height; x++) {
             offX = (y%2 == 1)?5:0;
-            genFix->write3D(x*10 + offX + pnlFirst.x, y*10 + pnlFirst.y, pnlFirst.z);
+            genFix->write3D(x*10 + offX + fixFirst.x, y*10 + fixFirst.y, fixFirst.z);
           }
         }
 
         genFix->closePin();
       });
-
     }
 
     files->filesChanged = true;
@@ -1230,7 +1155,7 @@ public:
 
   //   File f = files->open(fileName, "w");
   //   if (!f)
-  //     ppf("fixtureGen Could not open file %s for writing\n", fileName);
+  //     ppf("fixtureVar Could not open file %s for writing\n", fileName);
 
   //   return f;
   // }

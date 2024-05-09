@@ -66,13 +66,8 @@ public:
 
           buffer = wsBuf->get();
 
-          // send leds preview to clients
-          for (size_t i = 0; i < eff->fixture.nrOfLeds; i++)
-          {
-            buffer[i*3+5] = eff->fixture.ledsP[i].red;
-            buffer[i*3+5+1] = eff->fixture.ledsP[i].green;
-            buffer[i*3+5+2] = eff->fixture.ledsP[i].blue;
-          }
+          #define headerBytes 4
+
           //new values
           buffer[0] = 1; //userFun id
           //rotations
@@ -98,7 +93,15 @@ public:
             buffer[3] = eff->fixture.head.z;
           }
 
-        }, eff->fixture.nrOfLeds * 3 + 5, true);
+          // send leds preview to clients
+          for (size_t i = 0; i < eff->fixture.nrOfLeds; i++)
+          {
+            buffer[headerBytes + i*3] = eff->fixture.ledsP[i].red;
+            buffer[headerBytes + i*3+1] = eff->fixture.ledsP[i].green;
+            buffer[headerBytes + i*3+2] = eff->fixture.ledsP[i].blue;
+          }
+
+        }, headerBytes + eff->fixture.nrOfLeds * 3, true);
         return true;
       }
       default: return false;

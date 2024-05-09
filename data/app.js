@@ -228,16 +228,16 @@ function preview3D(canvasNode, buffer) {
                   led.push(0);
                 if (led.length <= 2) //1D and 2D: maak 3D 
                   led.push(0);
-                let geometry;
-                // ppf("size and shape", jsonValues.pview.ledSize, jsonValues.pview.shape, jsonValues.pview.opacity);
-                if (!jsonValues.pview.ledSize) jsonValues.pview.ledSize = 7;
-                if (!jsonValues.pview.opacity) jsonValues.pview.opacity = 100;
 
+                // ppf("size and shape", jsonValues.pview.ledSize, jsonValues.pview.shape);
+                if (!jsonValues.pview.ledSize) jsonValues.pview.ledSize = 7;
+                  
+                let geometry;
                 if (jsonValues.pview.shape == 1)
                   geometry = new THREE.TetrahedronGeometry(jsonValues.pview.ledSize / 30); //was 1/factor
                 else // default
                   geometry = new THREE.SphereGeometry(jsonValues.pview.ledSize / 30); //was 1/factor
-                const material = new THREE.MeshBasicMaterial({transparent: true, opacity: jsonValues.pview.opacity / 100});
+                const material = new THREE.MeshBasicMaterial({transparent: true, opacity: 1.0});
                 // material.color = new THREE.Color(`${x/mW}`, `${y/mH}`, `${z/mD}`);
                 const mesh = new THREE.Mesh( geometry, material );
                 mesh.position.set(offset_x + d*led[0]/factor, -offset_y - d*led[1]/factor, - offset_z - d*led[2]/factor);
@@ -268,7 +268,7 @@ function preview3D(canvasNode, buffer) {
         }
 
         //light up the cube
-        let firstLed = 5;
+        let headerBytes = 4;
         var i = 0;
         if (jsonValues.pview.outputs) {
           // console.log("preview3D jsonValues", jsonValues.pview);
@@ -276,9 +276,11 @@ function preview3D(canvasNode, buffer) {
             if (output.leds) {
               for (var led of output.leds) {
                 if (i < scene.children.length) {
-                  scene.children[i].visible = buffer[i*3 + firstLed] + buffer[i*3 + firstLed + 1] + buffer[i*3 + firstLed+2] > 10; //do not show blacks
-                  if (scene.children[i].visible)
-                    scene.children[i].material.color = new THREE.Color(`${buffer[i*3 + firstLed]/255}`, `${buffer[i*3 + firstLed + 1]/255}`, `${buffer[i*3 + firstLed + 2]/255}`);
+                  // scene.children[i].visible = buffer[headerBytes + i*3] + buffer[headerBytes + i*3 + 1] + buffer[headerBytes + i*3 + 2] > 10; //do not show blacks
+                  // if (scene.children[i].visible) {
+                    scene.children[i].material.color = new THREE.Color(`${buffer[headerBytes + i*3]/255}`, `${buffer[headerBytes + i*3 + 1]/255}`, `${buffer[headerBytes + i*3 + 2]/255}`);
+                    // scene.children[i].geometry.setAtttribute("radius", buffer[4] / 30);
+                  // }
                 }
                 i++;
               }

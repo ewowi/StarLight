@@ -374,7 +374,7 @@ void Fixture::projectAndMap() {
       }
     }); //starJson.lookFor("leds" (create the right type, otherwise crash)
 
-    if (starJson.deserialize(false)) { //this will call above function parameter for each led
+    if (starJson.deserialize()) { //this will call above function parameter for each led
 
       //after processing each led
       stackUnsigned8 rowNr = 0;
