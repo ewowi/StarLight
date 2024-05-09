@@ -32,7 +32,7 @@ enum Projections
 {
   p_Default,
   p_Multiply,
-  p_PanTiltRoll,
+  p_TiltPanRoll,
   p_DistanceFromPoint,
   p_Preset1,
   p_None,
@@ -55,8 +55,8 @@ static unsigned trigoUnCached = 1;
 struct Trigo {
   uint16_t period = 360; //default period 360
   Trigo(uint16_t period = 360) {this->period = period;}
-  float sinValue[3]; uint16_t sinAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of sinValue=sin(sinAngle) for pan, tilt and roll
-  float cosValue[3]; uint16_t cosAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of cosValue=cos(cosAngle) for pan, tilt and roll
+  float sinValue[3]; uint16_t sinAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of sinValue=sin(sinAngle) for tilt, pan and roll
+  float cosValue[3]; uint16_t cosAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of cosValue=cos(cosAngle) for tilt, pan and roll
   virtual float sinBase(uint16_t angle) {return sinf(M_TWOPI * angle / period);}
   virtual float cosBase(uint16_t angle) {return cosf(M_TWOPI * angle / period);}
   int16_t sin(int16_t factor, uint16_t angle, uint8_t cache012 = 0) {
@@ -92,9 +92,9 @@ struct Trigo {
     out.z = inM.z;
     return out + middle;
   }
-  Coord3D rotate(Coord3D in, Coord3D middle, uint16_t panAngle, uint16_t tiltAngle, uint16_t rollAngle, uint16_t period = 360) {
+  Coord3D rotate(Coord3D in, Coord3D middle, uint16_t tiltAngle, uint16_t panAngle, uint16_t rollAngle, uint16_t period = 360) {
     this->period = period;
-    return roll(tilt(pan(in, middle, panAngle), middle, tiltAngle), middle, rollAngle);
+    return roll(pan(tilt(in, middle, tiltAngle), middle, panAngle), middle, rollAngle);
   }
 };
 
@@ -109,7 +109,7 @@ struct Trigo16: Trigo { //FastLed sin16 and cos16
   float cosBase(uint16_t angle) {return cos16(65536.0f * angle / period) / 32645.0f;}
 };
 
-static Trigo trigoPanTiltRoll(255); // Trigo8 is hardly any faster (27 vs 28 fps) (spanXY=28)
+static Trigo trigoTiltPanRoll(255); // Trigo8 is hardly any faster (27 vs 28 fps) (spanXY=28)
 
 class Fixture; //forward
 
@@ -185,8 +185,8 @@ public:
   unsigned8 effectDimension = -1;
 
   Coord3D startPos = {0,0,0}, endPos = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
-  unsigned8 proPanSpeed = 128;
   unsigned8 proTiltSpeed = 128;
+  unsigned8 proPanSpeed = 128;
   unsigned8 proRollSpeed = 128;
 
   SharedData sharedData;

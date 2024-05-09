@@ -1258,7 +1258,32 @@ class ScrollingText: public Effect {
       default: return false;
     }});
   }
-};
+}; //ScrollingText
+
+class Noise2D: public Effect {
+  const char * name() {return "Noise2D";}
+  unsigned8 dim() {return _2D;}
+  const char * tags() {return "💡";}
+
+  void loop(Leds &leds) {
+    CRGBPalette16 pal = getPalette();
+    stackUnsigned8 speed = mdl->getValue("speed");
+    stackUnsigned8 scale = mdl->getValue("scale");
+
+    for (int y = 0; y < leds.size.y; y++) {
+      for (int x = 0; x < leds.size.x; x++) {
+        uint8_t pixelHue8 = inoise8(x * scale, y * scale, now / (16 - speed));
+        leds.setPixelColor(leds.XY(x, y), ColorFromPalette(pal, pixelHue8));
+      }
+    }
+  }
+  
+  void controls(JsonObject parentVar) {
+    addPalette(parentVar, 4);
+    ui->initSlider(parentVar, "speed", 8, 0, 15);
+    ui->initSlider(parentVar, "scale", 128, 2, 255);
+  }
+}; //Noise2D
 
 
 #ifdef STARLEDS_USERMOD_WLEDAUDIO
@@ -1594,6 +1619,7 @@ public:
     effects.push_back(new Lissajous);
     effects.push_back(new Frizzles);
     effects.push_back(new ScrollingText);
+    effects.push_back(new Noise2D);
     #ifdef STARLEDS_USERMOD_WLEDAUDIO
       //2D WLED
       effects.push_back(new Waverly);

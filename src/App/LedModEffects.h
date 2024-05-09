@@ -120,7 +120,7 @@ public:
         JsonArray options = ui->setOptions(var); // see enum Projections in LedFixture.h and keep the same order !
         options.add("Default");
         options.add("Multiply");
-        options.add("PanTiltRoll");
+        options.add("TiltPanRoll");
         options.add("Distance ⌛");
         options.add("Preset 1");
         options.add("None");
@@ -181,14 +181,7 @@ public:
               default: return false;
             }});
           }
-          if (proValue == p_PanTiltRoll || proValue == p_Preset1) {
-            ui->initSlider(var, "proPan", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-              case f_ChangeFun:
-                if (rowNr < fixture.projections.size())
-                  fixture.projections[rowNr]->proPanSpeed = mdl->getValue(var, rowNr);
-                return true;
-              default: return false;
-            }});
+          if (proValue == p_TiltPanRoll || proValue == p_Preset1) {
             ui->initSlider(var, "proTilt", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
               case f_ChangeFun:
                 if (rowNr < fixture.projections.size())
@@ -196,8 +189,15 @@ public:
                 return true;
               default: return false;
             }});
+            ui->initSlider(var, "proPan", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+              case f_ChangeFun:
+                if (rowNr < fixture.projections.size())
+                  fixture.projections[rowNr]->proPanSpeed = mdl->getValue(var, rowNr);
+                return true;
+              default: return false;
+            }});
           }
-          if (proValue == p_Preset1 || proValue == p_PanTiltRoll) {
+          if (proValue == p_Preset1 || proValue == p_TiltPanRoll) {
             ui->initSlider(var, "proRoll", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
               case f_UIFun:
                 ui->setLabel(var, "Roll speed");
@@ -357,7 +357,7 @@ public:
           mdl->getValueRowNr = rowNr++;
           effects.loop(*leds);
           mdl->getValueRowNr = UINT8_MAX;
-          if (leds->projectionNr == p_PanTiltRoll || leds->projectionNr == p_Preset1)
+          if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
             leds->fadeToBlackBy(50);
         }
       }
