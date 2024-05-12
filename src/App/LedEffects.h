@@ -1340,11 +1340,11 @@ class GameOfLife: public Effect {
     CRGB backgroundColor = CRGB::Black;
     CRGB color;
 
-    if (call== 0) leds.fill_solid(CRGB::Black, true); //no blend, make sure it is done if effect is started
+    // if (call== 0) leds.fill_solid(CRGB::Black, true); //no blend, make sure it is done if effect is started
 
     //start new game of life
     if ((call == 0 || *generation == 0) && *pauseFrames == 0) {
-      leds.fill_solid(CRGB::Black, true); //no blend
+      // leds.fill_solid(CRGB::Black, true); //no blend
       *step = now; // .step = previous call time
       *generation = 1;
       *pauseFrames = 75; // show initial state for longer
@@ -1356,13 +1356,13 @@ class GameOfLife: public Effect {
           setBitValue(cells, y * leds.size.x + x, false);
           setBitValue(futureCells, y * leds.size.x + x, false);
           // if (SEGMENT.check2) continue;
-          leds.setPixelColor(leds.XY(x,y), !allColors?backgroundColor : CRGB(backgroundColor.r, backgroundColor.g, backgroundColor.b));
+          leds.setPixelColor(leds.XY(x,y), backgroundColor);
         }
         else {
           setBitValue(cells, y * leds.size.x + x, true);
           setBitValue(futureCells, y * leds.size.x + x, true);
           color = ColorFromPalette(pal, random(8));// SEGMENT.color_from_palette(random8(), false, PALETTE_SOLID_WRAP, 0);
-          leds.setPixelColor(leds.XY(x,y),!allColors?color : CRGB(color.r, color.g, color.b));
+          leds.setPixelColor(leds.XY(x,y), color);
         }
       }
 
@@ -1393,7 +1393,7 @@ class GameOfLife: public Effect {
     //   }
     // }
 
-    #define FRAMETIME_FIXED 24 // or 12 or 24? tbd
+    #define FRAMETIME_FIXED 12 // or 12 or 24? tbd
     if (*pauseFrames || now - *step < FRAMETIME_FIXED * (uint32_t)map(speed,0,255,64,2)) {
       if(*pauseFrames) (*pauseFrames)--;
       return;// FRAMETIME; //skip if not enough time has passed
@@ -1437,7 +1437,8 @@ class GameOfLife: public Effect {
         // Loneliness or overpopulation
         cellChanged = true;
         setBitValue(futureCells, y * leds.size.x + x, false);
-        // if (!SEGMENT.check2) leds.setPixelColor(leds.XY(x,y), !allColors?backgroundColor : CRGB(backgroundColor.r, backgroundColor.g, backgroundColor.b));
+        // if (!SEGMENT.check2) 
+        leds.setPixelColor(leds.XY(x,y), backgroundColor);
       } 
       else if (!(cellValue) && (neighbors == 3)) { 
         // Reproduction
@@ -1457,15 +1458,15 @@ class GameOfLife: public Effect {
         // mutate color chance
         if (random8() < mutation) dominantColor = !allColors?ColorFromPalette(pal, random(8)): random16()*random16(); // SEGMENT.color_from_palette(random8(), false, PALETTE_SOLID_WRAP, 0)
 
-        if (allColors) dominantColor = CRGB(dominantColor.r, dominantColor.g, dominantColor.b); //WLEDMM support all colors)
+        // if (allColors) dominantColor = CRGB(dominantColor.r, dominantColor.g, dominantColor.b); //WLEDMM support all colors)
         leds.setPixelColor(leds.XY(x,y), dominantColor);
       } 
     }
     //update cell values
-    memcpy(cells, futureCells, dataSize * sizeof(byte));
+    memcpy(cells, futureCells, dataSize);
 
     // Get current crc value
-    uint16_t crc = crc16((const unsigned char*)cells, dataSize * sizeof(byte));
+    uint16_t crc = crc16((const unsigned char*)cells, dataSize);
 
     bool repetition = false;
     if (!cellChanged || crc == *oscillatorCRC || crc == *spaceshipCRC) repetition = true; //check if cell changed this gen and compare previous stored crc values
