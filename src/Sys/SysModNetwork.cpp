@@ -141,7 +141,7 @@ void SysModNetwork::initConnection() {
 }
 
 void SysModNetwork::initAP() {
-  const char * apSSID = mdl->getValue("instanceName");
+  const char * apSSID = mdl->getValue("name");
   ppf("Opening access point %s\n", apSSID);
   WiFi.softAPConfig(IPAddress(4, 3, 2, 1), IPAddress(4, 3, 2, 1), IPAddress(255, 255, 255, 0));
   WiFi.softAP(apSSID, NULL, apChannel, false); //no password!!!

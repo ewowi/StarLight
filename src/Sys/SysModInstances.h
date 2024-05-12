@@ -1,6 +1,6 @@
 /*
    @title     StarBase
-   @file      UserModInstances.h
+   @file      SysModInstances.h
    @date      20240411
    @repo      https://github.com/ewoudwijma/StarBase, submit changes to this file as PRs to ewowi/StarBase
    @Authors   https://github.com/ewoudwijma/StarBase/commits/main
@@ -12,7 +12,7 @@
 #pragma once
 
 #ifdef STARBASE_USERMOD_E131
-  #include "UserModE131.h"
+  #include "../User/UserModE131.h"
 #endif
 
 struct DMX {
@@ -25,9 +25,8 @@ struct DMX {
 struct SysData {
   unsigned long upTime;
   byte type;
-  byte syncMaster;
   DMX dmx;
-  uint8_t macAddress[6]; // 48 bits
+  uint8_t macAddress[6]; // 48 bits WIP
 };
 
 struct VarData {
@@ -94,13 +93,13 @@ struct UDPWLEDSyncMessage { //see notify( in WLED
   char body[1193 - 37]; //41 +(32*36)+0 = 1193
 };
 
-class UserModInstances:public SysModule {
+class SysModInstances:public SysModule {
 
 public:
 
   std::vector<InstanceInfo> instances;
 
-  UserModInstances() :SysModule("Instances") {
+  SysModInstances() :SysModule("Instances") {
   };
 
   void setup() {
@@ -117,7 +116,7 @@ public:
       default: return false;
     }});
     
-    ui->initText(tableVar, "insName", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initText(tableVar, "insName", nullptr, 32, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
         for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
           mdl->setValue(var, JsonString(instances[rowNrL].name, JsonString::Copied), rowNrL);
@@ -125,10 +124,14 @@ public:
       case f_UIFun:
         ui->setLabel(var, "Name");
         return true;
+      case f_ChangeFun: {
+        strcpy(instances[rowNr].name, mdl->getValue(var, rowNr));
+        sendMessageUDP(instances[rowNr].ip, "name", mdl->getValue(var, rowNr));
+        return true; }
       default: return false;
     }});
 
-    ui->initURL(tableVar, "insLink", nullptr, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initURL(tableVar, "insShow", nullptr, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
         for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++) {
           char urlString[32] = "http://";
@@ -138,6 +141,17 @@ public:
         return true;
       case f_UIFun:
         ui->setLabel(var, "Show");
+        return true;
+      default: return false;
+    }});
+
+    ui->initNumber(tableVar, "insLink", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case f_ValueFun:
+        for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
+          mdl->setValue(var, calcGroup(instances[rowNrL].name), rowNrL);
+        return true;
+      case f_UIFun:
+        ui->setLabel(var, "Link");
         return true;
       default: return false;
     }});
@@ -187,30 +201,6 @@ public:
 
     JsonObject currentVar;
 
-    //default is 0 / None
-    currentVar = ui->initIP(parentVar, "sma", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun: {
-        ui->setLabel(var, "Sync Master");
-        ui->setComment(var, "Instance to sync from");
-        JsonArray options = ui->setOptions(var);
-        JsonArray instanceObject = options.add<JsonArray>();
-        instanceObject.add(0);
-        instanceObject.add("no sync");
-        for (InstanceInfo &instance : instances) {
-          char option[64] = { 0 };
-          strncpy(option, instance.name, sizeof(option)-1);
-          strncat(option, " ", sizeof(option)-1);
-          strncat(option, instance.ip.toString().c_str(), sizeof(option)-1);
-          instanceObject = options.add<JsonArray>();
-          instanceObject.add(instance.ip[3]);
-          instanceObject.add(option);
-        }
-        return true;
-      }
-      default: return false;
-    }}); //syncMaster
-    currentVar["dash"] = true;
-
     //find dash variables and add them to the table
     mdl->findVars("dash", true, [tableVar, this](JsonObject var) { //findFun
 
@@ -246,29 +236,11 @@ public:
             if (instances[rowNr].ip == WiFi.localIP()) {
               mdl->setValue(var, mdl->getValue(insVar, rowNr).as<unsigned8>()); //this will call sendDataWS (tbd...), do not set for rowNr
             } else {
-              // https://randomnerdtutorials.com/esp32-http-get-post-arduino/
-
-              if (0 != instanceUDP.beginPacket(instances[rowNr].ip, instanceUDPPort)) {
-
-                JsonDocument message;
-                message["id"] = mdl->varID(var);
-                message["value"] = mdl->getValue(insVar, rowNr).as<unsigned8>();
-
-                char buffer[500];
-
-                serializeJson(message, buffer);
-
-                instanceUDP.write((byte *)buffer, sizeof(buffer));
-                web->sendUDPCounter++;
-                web->sendUDPBytes+=sizeof(buffer);
-                instanceUDP.endPacket();
-                ppf("udp json write %s\n", buffer);
-              }
+              sendMessageUDP(instances[rowNr].ip, mdl->varID(var), mdl->getValue(insVar, rowNr));
             }
           }
           // print->printJson(" ", var);
-          return true;
-        }
+          return true; }
         default: return false;
       }});
 
@@ -327,6 +299,39 @@ public:
     sendSysInfoUDP(); 
   }
 
+  //distract the groupName of an instance name
+  bool groupOfName(const char *name, char *group = nullptr) {
+    char copy[32];
+    strcpy(copy, name);
+
+    char * token = strtok(copy, "-"); //before minus
+
+    //check if group
+    if (token != NULL) {
+      // ppf("calcGroup 1:%s 2:%s 3:%s 4:%s 5:%s\n",name, strstr(name, "-"), name, strtok(name, "-"), name?name:"X"); 
+      token = strtok(NULL, "-"); //after -
+      if (token != NULL) {
+        // ppf("calcGroup g:%s i:%s\n", copy, token); 
+        if (group) strcpy(group, copy);
+        return true;
+      }
+    }
+    return false;
+
+  }
+
+  // identify if an instance belongs to a group
+  uint8_t calcGroup(const char * insName) {
+    uint8_t calc = 0;
+    for (InstanceInfo &instance: instances) {
+      char group1[32];
+      char group2[32];
+      if (groupOfName(instance.name, group1) && groupOfName(insName, group2) && strcmp(group1, group2) == 0)
+        calc++;
+    }
+    return calc++;
+  }
+
   void handleNotifications()
   {
     if(!mdls->isConnected) return;
@@ -340,9 +345,9 @@ public:
       int packetSize = notifierUdp.parsePacket();
 
       if (packetSize > 0) {
-        IPAddress remoteIp = notifierUdp.remoteIP();
+        // IPAddress remoteIp = notifierUdp.remoteIP();
 
-        // ppf("handleNotifications sync ...%d %d\n", remoteIp[3], packetSize);
+        // ppf("handleNotifications sync ...%d %d\n", notifierUdp.remoteIP()[3], packetSize);
 
         UDPWLEDSyncMessage wledSyncMessage;
         byte *udpIn = (byte *)&wledSyncMessage;
@@ -354,17 +359,10 @@ public:
 
         ppf("   %d %d p:%d\n", wledSyncMessage.bri, wledSyncMessage.mainsegMode, packetSize);
 
-        InstanceInfo *instance = findInstance(remoteIp); //if not exist, created
+        InstanceInfo *instance = findInstance(notifierUdp.remoteIP()); //if not exist, created
 
         instance->sysData.upTime = (wledSyncMessage.timebase[0] * 256*256*256 + 256*256*wledSyncMessage.timebase[1] + 256*wledSyncMessage.timebase[2] + wledSyncMessage.timebase[3]) / 1000;
-        instance->sysData.syncMaster = wledSyncMessage.syncGroups; //tbd: change
         
-        stackUnsigned8 syncMaster = mdl->getValue("sma");
-        if (syncMaster == remoteIp[3]) {
-          if (instance->jsonData["bri"] != wledSyncMessage.bri) mdl->setValue("bri", wledSyncMessage.bri);
-          //only set brightness
-        }
-
         instance->jsonData["bri"] = wledSyncMessage.bri;
         instance->jsonData["fx"] = wledSyncMessage.mainsegMode; //tbd: rowNr
         instance->jsonData["pal"] = wledSyncMessage.palette; //tbd: rowNr
@@ -375,7 +373,7 @@ public:
         // }
         // Serial.println();
 
-        ppf("insTbl handleNotifications %d\n", remoteIp[3]);
+        ppf("insTbl handleNotifications %d\n", notifierUdp.remoteIP()[3]);
         for (JsonObject childVar: mdl->varChildren("insTbl"))
           ui->callVarFun(childVar, UINT8_MAX, f_ValueFun); //rowNr //instance - instances.begin()
 
@@ -391,8 +389,8 @@ public:
       packetSize = instanceUDP.parsePacket();
 
       if (packetSize > 0) {
-        IPAddress remoteIp = instanceUDP.remoteIP();
-        // ppf("handleNotifications instances ...%d %d check %d or %d\n", remoteIp[3], packetSize, sizeof(UDPWLEDMessage), sizeof(UDPStarMessage));
+        // IPAddress remoteIp = instanceUDP.remoteIP();
+        // ppf("handleNotifications instances ...%d %d check %d or %d\n", instanceUDP.remoteIP()[3], packetSize, sizeof(UDPWLEDMessage), sizeof(UDPStarMessage));
 
         if (packetSize == sizeof(UDPWLEDMessage)) { //WLED instance
           UDPStarMessage starMessage;
@@ -419,9 +417,21 @@ public:
             JsonDocument message;
             deserializeJson(message, buffer);
 
-            mdl->setValue(message["id"].as<const char *>(), message["value"].as<uint8_t>());
+            //see also processJson for same code (function?)
+            if (message["value"].is<const char *>())
+              mdl->setValue(message["id"].as<const char *>(), JsonString(message["value"], JsonString::Copied));
+            else if (message["value"].is<Coord3D>()) //otherwise it will be treated as JsonObject and toJson / fromJson will not be triggered!!!
+              mdl->setValue(message["id"].as<const char *>(), message["value"].as<Coord3D>());
+            else if (message["value"].is<int>())
+              mdl->setValue(message["id"].as<const char *>(), message["value"].as<int>());
+            else if (message["value"].is<bool>())
+              mdl->setValue(message["id"].as<const char *>(), message["value"].as<bool>());
+            else
+              ppf("dev handleNotifications type unknown %s", buffer);
+            // else
+            //   mdl->setValue(message["id"].as<const char *>(), message["value"]);
 
-            ppf("udp json read %s\n", buffer);
+            ppf("handleNotifications i:%d json message %s\n", instanceUDP.remoteIP()[3], buffer);
 
         }
         else {
@@ -450,7 +460,6 @@ public:
 
         ui->callVarFun("ddpInst", UINT8_MAX, f_UIFun);
         ui->callVarFun("artInst", UINT8_MAX, f_UIFun);
-        ui->callVarFun("sma", UINT8_MAX, f_UIFun);
       }
       else
         ++instance;
@@ -472,8 +481,8 @@ public:
     starMessage.header.ip1 = localIP[1];
     starMessage.header.ip2 = localIP[2];
     starMessage.header.ip3 = localIP[3];
-    const char * instanceName = mdl->getValue("instanceName");
-    strncpy(starMessage.header.name, instanceName?instanceName:_INIT(TOSTRING(APP)), sizeof(starMessage.header.name)-1);
+    const char * name = mdl->getValue("name");
+    strncpy(starMessage.header.name, name?name:_INIT(TOSTRING(APP)), sizeof(starMessage.header.name)-1);
     #if defined(CONFIG_IDF_TARGET_ESP32S2)
       starMessage.header.type = 33;
     #elif defined(CONFIG_IDF_TARGET_ESP32S3)
@@ -490,7 +499,6 @@ public:
     starMessage.header.version = VERSION;
     starMessage.sysData.type = (strcmp(_INIT(TOSTRING(APP)), "StarBase")==0)?1:(strcmp(_INIT(TOSTRING(APP)), "StarLeds")==0)?2:3; //1=StarBase,2=StarLeds, 3=StarFork
     starMessage.sysData.upTime = millis()/1000;
-    starMessage.sysData.syncMaster = mdl->getValue("sma");
     starMessage.sysData.dmx.universe = 0;
     starMessage.sysData.dmx.start = 0;
     starMessage.sysData.dmx.count = 0;
@@ -520,7 +528,7 @@ public:
         });
 
         serializeJson(instance.jsonData, starMessage.jsonString);
-        ppf("udp json String send ip:%d s:%s\n", instance.ip[3], starMessage.jsonString);
+        ppf("sendSysInfoUDP ip:%d s:%s\n", instance.ip[3], starMessage.jsonString);
         // print->printJson(" d:", instance.jsonData);
         // print->printJDocInfo("   info", instance.jsonData);
       }
@@ -544,6 +552,26 @@ public:
     }
   }
 
+  void sendMessageUDP(IPAddress ip, const char * id, JsonVariant value) {
+    if (0 != instanceUDP.beginPacket(ip, instanceUDPPort)) {
+
+      JsonDocument message;
+      message["id"] = id;
+      message["value"] = value;
+
+      char buffer[500];
+
+      serializeJson(message, buffer);
+
+      instanceUDP.write((byte *)buffer, sizeof(buffer));
+      web->sendUDPCounter++;
+      web->sendUDPBytes+=sizeof(buffer);
+      instanceUDP.endPacket();
+      ppf("sendMessageUDP ip:%d b:%s\n", ip[3], buffer);
+    }
+
+  }
+
   void updateInstance( UDPStarMessage udpStarMessage) {
     IPAddress messageIP = IPAddress(udpStarMessage.header.ip0, udpStarMessage.header.ip1, udpStarMessage.header.ip2, udpStarMessage.header.ip3);
 
@@ -565,7 +593,6 @@ public:
         instance.sysData.dmx.universe = 0;
         instance.sysData.dmx.start = 0;
         instance.sysData.dmx.count = 0;
-        instance.sysData.syncMaster = 0;
         //dash values default 0
         instance.jsonData.to<JsonObject>();
       }
@@ -594,22 +621,23 @@ public:
             JsonDocument newData;
             DeserializationError error = deserializeJson(newData, udpStarMessage.jsonString);
             if (error || !newData.is<JsonObject>()) {
-              ppf("udp json String receive failed ip:%d e:%s\n", instance.ip[3], error.c_str(), udpStarMessage.jsonString);
+              ppf("updateInstance json failed ip:%d e:%s\n", instance.ip[3], error.c_str(), udpStarMessage.jsonString);
             }
             else {
-              stackUnsigned8 syncMaster = mdl->getValue("sma");
-              if (syncMaster == messageIP[3]) { //if the message is from the master, set all values from the master
+              //check if instance belongs to the same group
+
+              char group1[32];
+              char group2[32];
+              if (groupOfName(instance.name, group1) && groupOfName(mdl->getValue("name"), group2) && strcmp(group1, group2) == 0) {
                 for (JsonPair pair: newData.as<JsonObject>()) {
-                  if (pair.key() != "sma" && pair.key() != "dch") { // do not sync sma and dch !!!
-                    ppf("updateInstance sync from i:%s k:%s v:%s\n", instance.name, pair.key().c_str(), pair.value().as<String>().c_str());
-                    // if (mdl->getValue(pair.key().c_str) != pair.value())
-                    mdl->setValue(pair.key().c_str(), pair.value());
-                  }
+                  ppf("updateInstance sync from i:%s k:%s v:%s\n", instance.name, pair.key().c_str(), pair.value().as<String>().c_str());
+                  // if (mdl->getValue(pair.key().c_str) != pair.value())
+                  mdl->setValue(pair.key().c_str(), pair.value());
                 }
               }
 
               instance.jsonData = newData; // deepcopy: https://github.com/bblanchon/ArduinoJson/issues/1023
-              ppf("udp json String receive ip:%d", instance.ip[3]);
+              ppf("updateInstance json ip:%d", instance.ip[3]);
               print->printJson(" d:", instance.jsonData);
             }
           }
@@ -647,7 +675,6 @@ public:
       
       ui->callVarFun("ddpInst", UINT8_MAX, f_UIFun); //UiFun as select changes
       ui->callVarFun("artInst", UINT8_MAX, f_UIFun);
-      ui->callVarFun("sma", UINT8_MAX, f_UIFun);
 
       // ui->processUiFun("insTbl");
       //run though it sorted to find the right rowNr
@@ -700,4 +727,4 @@ public:
 
 };
 
-extern UserModInstances *instances;
+extern SysModInstances *instances;

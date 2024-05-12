@@ -52,7 +52,7 @@ public:
     //last character must not be hyphen
     if (pos > 5) {
       while (pos > 4 && hostname[pos -1] == '-') pos--;
-      hostname[pos] = '\0'; // terminate string (leave at least "wled")
+      hostname[pos] = '\0'; // terminate string (leave at least "star")
     }
   }
 

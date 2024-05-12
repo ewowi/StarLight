@@ -533,9 +533,9 @@ void SysModWeb::serveUpdate(WebRequest *request, const String& filename, size_t 
     sendResponseObject(); //otherwise not send in asyn_tcp thread
 
     char message[64];
-    const char * instanceName = mdl->getValue("instanceName");
+    const char * name = mdl->getValue("name");
 
-    print->fFormat(message, sizeof(message)-1, "Update of %s (...%d) %s", instanceName, WiFi.localIP()[3], success?"Successful":"Failed");
+    print->fFormat(message, sizeof(message)-1, "Update of %s (...%d) %s", name, WiFi.localIP()[3], success?"Successful":"Failed");
 
     ppf("%s\n", message);
     request->send(200, "text/plain", message);
@@ -673,7 +673,7 @@ void SysModWeb::serializeInfo(JsonObject root) {
 
     deserializeJson(root, jsonInfo);
 
-    root["name"] = mdl->getValue("instanceName");
+    root["name"] = mdl->getValue("name");
     // docInfo["arch"] = "esp32"; //platformName
 
     // docInfo["rel"] = _INIT(TOSTRING(APP));

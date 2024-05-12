@@ -48,11 +48,11 @@ public:
     if (!mdls->isConnected) return;
     
     //reset cmDNS
-    const char * instanceName = mdl->getValue("instanceName");
-    if (strcmp(instanceName, _INIT(TOSTRING(APP))) == 0 )
+    const char * name = mdl->getValue("name");
+    if (strcmp(name, _INIT(TOSTRING(APP))) == 0 )
       sprintf(cmDNS, "star-%*s", 6, escapedMac.c_str() + 6);
     else
-      strcpy(cmDNS, instanceName);
+      strcpy(cmDNS, name);
 
     MDNS.end();
     MDNS.begin(cmDNS);

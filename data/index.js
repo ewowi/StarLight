@@ -1095,7 +1095,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
       }
 
       //'hack' show the instanceName on top of the page
-      if (variable.id == "instanceName") {
+      if (variable.id == "name") {
         gId("serverName").innerText = commandJson.value;
         document.title = commandJson.value;
       }
@@ -1501,15 +1501,13 @@ function setInstanceTableColumns() {
   }
 
   // console.log("setInstanceTableColumns", tbl, thead, tbody);
-  columnNr = 2;
-  for (; columnNr<6; columnNr++) {
+  let columnNr = 3; //column 0, 1 and 2 will always be shown (name, show and link)
+  for (; columnNr < 7; columnNr++) { // there are 7 fixed columns
     showHideColumn(columnNr, isDashView);
   }
   for (; columnNr<thead.querySelector("tr").childNodes.length; columnNr++) {
     showHideColumn(columnNr, !isDashView);
   }
-
-  if (gId("sma")) gId("sma").parentNode.hidden = isDashView; //hide sync master label field and comment
 }
 
 function changeHTMLView(viewName) {

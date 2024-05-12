@@ -217,13 +217,16 @@ void SysModUI::processJson(JsonVariant json) {
         char * rowNrC = strtok((char *)key, "#");
         if (rowNrC != NULL ) {
           key = rowNrC;
-          rowNrC = strtok(NULL, " ");
+          rowNrC = strtok(NULL, " "); //#?
         }
         stackUnsigned8 rowNr = rowNrC?atoi(rowNrC):UINT8_MAX;
 
         JsonObject var = mdl->findVar(key);
 
-        ppf("processJson var %s[%d] %s -> %s\n", key, rowNr, var["value"].as<String>().c_str(), newValue.as<String>().c_str());
+        if (rowNr == UINT8_MAX)
+          ppf("processJson var %s %s -> %s\n", key, var["value"].as<String>().c_str(), newValue.as<String>().c_str());
+        else
+          ppf("processJson var %s[%d] %s -> %s\n", key, rowNr, var["value"][rowNr].as<String>().c_str(), newValue.as<String>().c_str());
 
         if (!var.isNull())
         {

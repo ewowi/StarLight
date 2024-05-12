@@ -41,16 +41,16 @@ void SysModSystem::setup() {
   parentVar = ui->initSysMod(parentVar, name, 2000);
   parentVar["s"] = true; //setup
 
-  ui->initText(parentVar, "instanceName", _INIT(TOSTRING(APP)), 32, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "name", _INIT(TOSTRING(APP)), 24, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_UIFun:
-      ui->setLabel(var, "Name");
+      // ui->setLabel(var, "Name");
       ui->setComment(var, "Instance name");
       return true;
     case f_ChangeFun:
-      char instanceName[25];
-      removeInvalidCharacters(instanceName, var["value"]);
-      ppf("instanceName stripped %s\n", instanceName);
-      mdl->setValue(mdl->varID(var), JsonString(instanceName, JsonString::Copied));
+      char name[24];
+      removeInvalidCharacters(name, var["value"]);
+      ppf("instance name stripped %s\n", name);
+      mdl->setValue(mdl->varID(var), JsonString(name, JsonString::Copied)); //update with stripped name
       mdns->resetMDNS(); // set the new name for mdns
       return true;
     default: return false;
