@@ -32,7 +32,7 @@ SysModNetwork *net;
 SysModPins *pins;
 SysModInstances *instances;
 UserModMDNS *mdns;
-#ifdef STARLEDS_APPMOD_LEDS
+#ifdef STARLEDS
   #include "App/LedModEffects.h"
   #include "App/LedModFixture.h"
   #include "App/LedModFixtureGen.h"
@@ -75,7 +75,7 @@ void setup() {
   pins = new SysModPins();
   instances = new SysModInstances();
   mdns = new UserModMDNS();
-  #ifdef STARLEDS_APPMOD_LEDS
+  #ifdef STARLEDS
     eff= new LedModEffects();
     fix = new LedModFixture();
     lfg = new LedModFixtureGen();
@@ -99,7 +99,7 @@ void setup() {
   //Reorder with care! this is the order in which setup and loop is executed
   //If changed make sure mdlEnabled.chFun executes var["value"].to<JsonArray>(); and saveModel! 
   //Default: add below, not in between
-  #ifdef STARLEDS_APPMOD_LEDS
+  #ifdef STARLEDS
     mdls->add(fix);
     mdls->add(eff);
     mdls->add(lfg);
@@ -110,7 +110,7 @@ void setup() {
   mdls->add(print);
   mdls->add(web);
   mdls->add(net);
-  #ifdef STARLEDS_APPMOD_LEDS
+  #ifdef STARLEDS
     #ifdef STARLEDS_USERMOD_DDP
       mdls->add(ddpmod);
     #endif

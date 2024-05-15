@@ -1340,11 +1340,8 @@ class GameOfLife: public Effect {
     CRGB backgroundColor = CRGB::Black;
     CRGB color;
 
-    // if (call== 0) leds.fill_solid(CRGB::Black, true); //no blend, make sure it is done if effect is started
-
     //start new game of life
     if ((call == 0 || *generation == 0) && *pauseFrames == 0) {
-      // leds.fill_solid(CRGB::Black, true); //no blend
       *step = now; // .step = previous call time
       *generation = 1;
       *pauseFrames = 75; // show initial state for longer
