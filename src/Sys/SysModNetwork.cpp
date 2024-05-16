@@ -31,9 +31,9 @@ void SysModNetwork::setup() {
   //   ui->setComment(var, "List of defined and available Wifi APs");
   // });
 
-  ui->initText(parentVar, "ssid", "", 32, false);
+  ui->initText(parentVar, "ssid", "", 31, false);
 
-  ui->initPassword(parentVar, "pw", "", 32, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initPassword(parentVar, "pw", "", 63, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_UIFun:
       ui->setLabel(var, "Password");
       return true;
@@ -123,8 +123,8 @@ void SysModNetwork::initConnection() {
 
   const char * ssid = mdl->getValue("ssid");
   const char * password = mdl->getValue("pw");
-  if (ssid && strlen(ssid)>0) {
-    char passXXX [32] = "";
+  if (ssid && strlen(ssid)>0 && password) {
+    char passXXX [64] = "";
     for (int i = 0; i < strlen(password); i++) strncat(passXXX, "*", sizeof(passXXX)-1);
     ppf("Connecting to WiFi %s / %s\n", ssid, passXXX);
     WiFi.begin(ssid, password);
@@ -135,7 +135,7 @@ void SysModNetwork::initConnection() {
     WiFi.setHostname(mdns->cmDNS); //use the mdns name (instance name or star-mac)
   }
   else
-    ppf("No SSID");
+    ppf("initConnection error s:%s p:%s\n", ssid?ssid:"No SSID", password?password:"No Password");
 
   isConfirmedConnection = false; //need to test if really connected in handleConnection
 }

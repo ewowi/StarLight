@@ -431,7 +431,7 @@ public:
             // else
             //   mdl->setValue(message["id"].as<const char *>(), message["value"]);
 
-            ppf("handleNotifications i:%d json message %s\n", instanceUDP.remoteIP()[3], buffer);
+            // ppf("handleNotifications i:%d json message %s\n", instanceUDP.remoteIP()[3], buffer);
 
         }
         else {
@@ -450,19 +450,22 @@ public:
     }
 
     //remove inactive instances
+    bool erased = false;
     for (std::vector<InstanceInfo>::iterator instance=instances.begin(); instance!=instances.end(); ) {
       if (millis() - instance->timeStamp > 32000) { //assuming a ping each 30 seconds
         instance = instances.erase(instance);
-        // ppf("insTbl remove inactive instances %d\n", instance->ip[3]);
-
-        for (JsonObject childVar: mdl->varChildren("insTbl"))
-          ui->callVarFun(childVar, UINT8_MAX, f_ValueFun); //no rowNr so all rows updated
-
-        ui->callVarFun("ddpInst", UINT8_MAX, f_UIFun);
-        ui->callVarFun("artInst", UINT8_MAX, f_UIFun);
+        erased = true;
       }
       else
         ++instance;
+    }
+    if (erased) {
+      ppf("insTbl remove inactive instances\n");
+      for (JsonObject childVar: mdl->varChildren("insTbl"))
+        ui->callVarFun(childVar, UINT8_MAX, f_ValueFun); //no rowNr so all rows updated
+
+      ui->callVarFun("ddpInst", UINT8_MAX, f_UIFun);
+      ui->callVarFun("artInst", UINT8_MAX, f_UIFun);
     }
   }
 
@@ -567,7 +570,7 @@ public:
       web->sendUDPCounter++;
       web->sendUDPBytes+=sizeof(buffer);
       instanceUDP.endPacket();
-      ppf("sendMessageUDP ip:%d b:%s\n", ip[3], buffer);
+      // ppf("sendMessageUDP ip:%d b:%s\n", ip[3], buffer);
     }
 
   }
@@ -598,7 +601,7 @@ public:
       }
 
       instances.push_back(instance);
-      std::sort(instances.begin(),instances.end(), [](InstanceInfo &a, InstanceInfo &b){ return a.ip < b.ip; });//Sorting the vector strcmp(a.name,b.name);
+      std::sort(instances.begin(),instances.end(), [](InstanceInfo &a, InstanceInfo &b){ return strcmp(a.name,b.name)<0; });
     }
 
     //update the instance in the instances array with the message data
@@ -621,7 +624,8 @@ public:
             JsonDocument newData;
             DeserializationError error = deserializeJson(newData, udpStarMessage.jsonString);
             if (error || !newData.is<JsonObject>()) {
-              ppf("updateInstance json failed ip:%d e:%s\n", instance.ip[3], error.c_str(), udpStarMessage.jsonString);
+              // ppf("dev updateInstance json failed ip:%d e:%s\n", instance.ip[3], error.c_str(), udpStarMessage.jsonString);
+              //failed because some instances not on latest firmware, so turned off temporarily (tbd/wip)
             }
             else {
               //check if instance belongs to the same group
@@ -634,11 +638,10 @@ public:
                   // if (mdl->getValue(pair.key().c_str) != pair.value())
                   mdl->setValue(pair.key().c_str(), pair.value());
                 }
+                instance.jsonData = newData; // deepcopy: https://github.com/bblanchon/ArduinoJson/issues/1023
+                // ppf("updateInstance json ip:%d", instance.ip[3]);
+                print->printJson(" d:", instance.jsonData);
               }
-
-              instance.jsonData = newData; // deepcopy: https://github.com/bblanchon/ArduinoJson/issues/1023
-              ppf("updateInstance json ip:%d", instance.ip[3]);
-              print->printJson(" d:", instance.jsonData);
             }
           }
         }
@@ -658,7 +661,7 @@ public:
 
           // web->sendResponseObject();
 
-          // ppf("updateInstance updRow[%d] %s\n", instance - instances.begin(), instances[instance - instances.begin()].name);
+          // ppf("updateInstance updRow\n");
 
           for (JsonObject childVar: mdl->varChildren("insTbl"))
             ui->callVarFun(childVar, UINT8_MAX, f_ValueFun); //rowNr instance - instances.begin()
@@ -671,7 +674,7 @@ public:
     } // for instances
 
     if (!instanceFound) {
-      // ppf("insTbl new instance %s\n", messageIP.toString().c_str());
+      ppf("insTbl new instance %s\n", messageIP.toString().c_str());
       
       ui->callVarFun("ddpInst", UINT8_MAX, f_UIFun); //UiFun as select changes
       ui->callVarFun("artInst", UINT8_MAX, f_UIFun);
@@ -700,7 +703,7 @@ public:
       InstanceInfo instance;
       instance.ip = ip;
       instances.push_back(instance);
-      std::sort(instances.begin(),instances.end(), [](InstanceInfo &a, InstanceInfo &b){ return a.ip < b.ip; });//Sorting the vector strcmp(a.name,b.name);
+      std::sort(instances.begin(),instances.end(), [](InstanceInfo &a, InstanceInfo &b){ return strcmp(a.name,b.name)<0; });
     }
 
     // InstanceInfo foundInstance;
