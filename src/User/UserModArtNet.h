@@ -31,37 +31,37 @@ public:
     parentVar = ui->initUserMod(parentVar, name, 6100);
 
     ui->initIP(parentVar, "artInst", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    
       case f_UIFun: {
         ui->setLabel(var, "Instance");
         ui->setComment(var, "Instance to send data");
         JsonArray options = ui->setOptions(var);
-        JsonArray instanceObject = options.add<JsonArray>();
-        instanceObject.add(0);
-        instanceObject.add("no sync");
+        //keyValueOption: add key (ip[3] and value instance name/ip)
+        JsonArray keyValueOption = options.add<JsonArray>();
+        keyValueOption.add(0);
+        keyValueOption.add("no sync");
         for (InstanceInfo &instance : instances->instances) {
           if (instance.ip != WiFi.localIP()) {
             char option[64] = { 0 };
             strncpy(option, instance.name, sizeof(option)-1);
             strncat(option, " ", sizeof(option)-1);
             strncat(option, instance.ip.toString().c_str(), sizeof(option)-1);
-            instanceObject = options.add<JsonArray>();
-            instanceObject.add(instance.ip[3]);
-            instanceObject.add(option);
+            keyValueOption = options.add<JsonArray>();
+            keyValueOption.add(instance.ip[3]);
+            keyValueOption.add(option);
           }
         }
-        return true;
-      }
+        return true; }
       case f_ChangeFun: {
-        size_t ddpInst = var["value"];
-        if (ddpInst >=0 && ddpInst < instances->instances.size()) {
-          targetIp = instances->instances[ddpInst].ip;
-          ppf("Start ArtNet to %s\n", targetIp.toString().c_str());
+        uint8_t value = var["value"]; //ip[3] chosen
+        for (InstanceInfo &instance : instances->instances) {
+          if (instance.ip[3] == value) {
+            targetIp = instance.ip;
+            ppf("Start ArtNet to %s\n", targetIp.toString().c_str());
+          }
         }
-        return true;
-      }
+        return true; }
       default: return false;
-    }}); //ddpInst
+    }}); //artInst
   }
 
   void loop() {
