@@ -1326,7 +1326,7 @@ class GameOfLife: public Effect {
     bool allColors = mdl->getValue("allColors"); //instead of check1
     bool wrap = mdl->getValue("wrap"); //instead of check3
 
-    const uint16_t dataSize = leds.size.x * leds.size.y/8; //instead of row,col
+    const uint16_t dataSize = (leds.size.x * leds.size.y / 8) + ((leds.size.x * leds.size.y / 8) % 8 == 0 ? 0 : 1); //instead of row,col
 
     uint8_t *gliderLength = leds.sharedData.bind(gliderLength); //not in struct
     uint16_t *oscillatorCRC = leds.sharedData.bind(oscillatorCRC); //not in struct
