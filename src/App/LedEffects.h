@@ -1358,7 +1358,7 @@ class GameOfLife: public Effect {
         else {
           setBitValue(cells, y * leds.size.x + x, true);
           setBitValue(futureCells, y * leds.size.x + x, true);
-          color = ColorFromPalette(pal, random(8));// SEGMENT.color_from_palette(random8(), false, PALETTE_SOLID_WRAP, 0);
+          color = ColorFromPalette(pal, random8());// SEGMENT.color_from_palette(random8(), false, PALETTE_SOLID_WRAP, 0);
           leds.setPixelColor(leds.XY(x,y), color);
         }
       }
@@ -1453,7 +1453,7 @@ class GameOfLife: public Effect {
         else if (colorCount == 1) dominantColor = nColors[0]; // 2 leading parents died
         else dominantColor = color; // all parents died last used color
         // mutate color chance
-        if (random8() < mutation) dominantColor = !allColors?ColorFromPalette(pal, random(8)): random16()*random16(); // SEGMENT.color_from_palette(random8(), false, PALETTE_SOLID_WRAP, 0)
+        if (random8() < mutation) dominantColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16(); // SEGMENT.color_from_palette(random8(), false, PALETTE_SOLID_WRAP, 0)
 
         // if (allColors) dominantColor = CRGB(dominantColor.r, dominantColor.g, dominantColor.b); //WLEDMM support all colors)
         leds.setPixelColor(leds.XY(x,y), dominantColor);
@@ -1483,8 +1483,8 @@ class GameOfLife: public Effect {
   void controls(JsonObject parentVar) {
     addPalette(parentVar, 4);
     ui->initSlider(parentVar, "speed", 128, 0, 255);
-    ui->initSlider(parentVar, "mutation", 128, 2, 255); //intensity
-    ui->initCheckBox(parentVar, "allColors"); //check1
+    ui->initSlider(parentVar, "mutation", 1, 0, 255); //intensity
+    ui->initCheckBox(parentVar, "allColors", 0); //check1
     ui->initCheckBox(parentVar, "wrap"); //check3
     // !,Color Mutation ☾,,,,All Colors ☾,Overlay ☾,Wrap ☾,
   }
