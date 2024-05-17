@@ -1391,8 +1391,8 @@ class GameOfLife: public Effect {
     // }
 
     #define FRAMETIME_FIXED 12 // or 12 or 24? tbd
-    if (*pauseFrames || now - *step < FRAMETIME_FIXED * (uint32_t)map(speed,0,255,64,2)) {
-      if(*pauseFrames) (*pauseFrames)--;
+    if ((*pauseFrames) || now - *step < FRAMETIME_FIXED * (uint32_t)map(speed,0,255,64,2)) {
+      if (*pauseFrames) (*pauseFrames)--;
       return;// FRAMETIME; //skip if not enough time has passed
     }
     //Update Game of Life
@@ -1476,7 +1476,7 @@ class GameOfLife: public Effect {
     if ((*generation) % 16 == 0) *oscillatorCRC = crc;
     if ((*generation) % (*gliderLength) == 0) *spaceshipCRC = crc;
 
-    *generation++;
+    (*generation)++;
     *step = now;
   }
   
