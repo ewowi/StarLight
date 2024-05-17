@@ -1312,6 +1312,10 @@ uint16_t crc16(const unsigned char* data_p, size_t length) {
   return crc;
 }
 
+uint16_t flatten(byte x, byte y, byte z, byte width, byte height) {
+  return x + y * width + z * width * height;
+}
+
 // Written by Ewoud Wijma in 2022, inspired by https://natureofcode.com/book/chapter-7-cellular-automata/ and https://github.com/DougHaber/nlife-color , 
 // Modified By: Brandon Butler in 2024
 class GameOfLife: public Effect {
@@ -1322,20 +1326,19 @@ class GameOfLife: public Effect {
   void loop(Leds &leds) {
     CRGBPalette16 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("speed");
-    stackUnsigned8 mutation = mdl->getValue("mutation"); //instead of intensity
-    bool allColors = mdl->getValue("allColors"); //instead of check1
-    bool wrap = mdl->getValue("wrap"); //instead of check3
+    stackUnsigned8 mutation = mdl->getValue("mutation");
+    bool allColors = mdl->getValue("allColors");
+    bool wrap = mdl->getValue("wrap");
+    const uint16_t dataSize = (leds.size.x * leds.size.y * leds.size.z / 8) + ((leds.size.x * leds.size.y * leds.size.z / 8) % 8 == 0 ? 0 : 1);
 
-    const uint16_t dataSize = leds.size.x * leds.size.y/8; //instead of row,col
-
-    uint8_t *gliderLength = leds.sharedData.bind(gliderLength); //not in struct
-    uint16_t *oscillatorCRC = leds.sharedData.bind(oscillatorCRC); //not in struct
-    uint16_t *spaceshipCRC = leds.sharedData.bind(spaceshipCRC); //not in struct
-    byte *cells = leds.sharedData.bind(cells, dataSize); //not in struct
-    byte *futureCells = leds.sharedData.bind(futureCells, dataSize); //not in struct
-    uint16_t *generation = leds.sharedData.bind(generation); //instead of aux0
-    uint16_t *pauseFrames = leds.sharedData.bind(pauseFrames); //instead of aux1
-    unsigned long *step = leds.sharedData.bind(step); //instead of segment.step
+    uint8_t *gliderLength = leds.sharedData.bind(gliderLength);
+    uint16_t *oscillatorCRC = leds.sharedData.bind(oscillatorCRC);
+    uint16_t *spaceshipCRC = leds.sharedData.bind(spaceshipCRC);
+    byte *cells = leds.sharedData.bind(cells, dataSize);
+    byte *futureCells = leds.sharedData.bind(futureCells, dataSize);
+    uint16_t *generation = leds.sharedData.bind(generation);
+    uint16_t *pauseFrames = leds.sharedData.bind(pauseFrames);
+    unsigned long *step = leds.sharedData.bind(step);
 
     CRGB backgroundColor = CRGB::Black;
     CRGB color;
@@ -1347,21 +1350,38 @@ class GameOfLife: public Effect {
       *pauseFrames = 75; // show initial state for longer
       random16_set_seed(now>>2); //seed the random generator
       //Setup Grid
-      for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) {
+      for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
         uint8_t state = (random8() < 82) ? 1 : 0; // ~32% chance of being alive
         if (state == 0) {
-          setBitValue(cells, y * leds.size.x + x, false);
-          setBitValue(futureCells, y * leds.size.x + x, false);
-          // if (SEGMENT.check2) continue;
-          leds.setPixelColor(leds.XY(x,y), backgroundColor);
+          setBitValue(cells, flatten(x, y, z, leds.size.x, leds.size.y), false);
+          setBitValue(futureCells, flatten(x, y, z, leds.size.x, leds.size.y), false);
+          leds.setPixelColor(leds.XYZ(x,y,z), backgroundColor);
         }
         else {
-          setBitValue(cells, y * leds.size.x + x, true);
-          setBitValue(futureCells, y * leds.size.x + x, true);
-          color = ColorFromPalette(pal, random(8));// SEGMENT.color_from_palette(random8(), false, PALETTE_SOLID_WRAP, 0);
-          leds.setPixelColor(leds.XY(x,y), color);
+          setBitValue(cells, flatten(x, y, z, leds.size.x, leds.size.y), true);
+          setBitValue(futureCells, flatten(x, y, z, leds.size.x, leds.size.y), true);
+          color = ColorFromPalette(pal, random8());
+          leds.setPixelColor(leds.XYZ(x,y,z), color);
         }
       }
+      // ////////////////////////////////////////////
+      // //2D TESTING PATTERN
+      // //Reset grid
+      // for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) {
+      //   setBitValue(cells, y * leds.size.x + x, false);
+      //   setBitValue(futureCells, y * leds.size.x + x, false);
+      //   leds.setPixelColor(leds.XY(x,y), backgroundColor);
+      // }
+      // //Test Pattern Repeater
+      // byte patternX[6] {3,4,4,1,1,2};
+      // byte patternY[6] {0,0,1,2,3,3};
+      // for (int i = 0; i < 6; i++) {
+      //   setBitValue(cells, patternY[i] * leds.size.x + patternX[i], true);
+      //   setBitValue(futureCells, patternY[i] * leds.size.x + patternX[i], true);
+      //   color = ColorFromPalette(pal, random8());// SEGMENT.color_from_palette(random8(), false, PALETTE_SOLID_WRAP, 0);
+      //   leds.setPixelColor(leds.XY(patternX[i],patternY[i]), color);
+      // }
+      // ////////////////////////////////////////////
 
       //Clear CRCs
       *oscillatorCRC = 0;
@@ -1379,17 +1399,6 @@ class GameOfLife: public Effect {
       return;// FRAMETIME;
     }
 
-    //Redraw immediately if overlay to avoid flicker
-    // if (SEGMENT.check2) {
-    //   for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) {
-    //     //redraw foreground/alive
-    //     if (getBitValue(cells, y * leds.size.x + x)) {
-    //       color = SEGMENT.getPixelColorXY(x,y);
-    //       leds.setPixelColor(leds.XY(x,y), !allColors?color : CRGB(color.r, color.g, color.b));
-    //     }
-    //   }
-    // }
-
     #define FRAMETIME_FIXED 12 // or 12 or 24? tbd
     if ((*pauseFrames) || now - *step < FRAMETIME_FIXED * (uint32_t)map(speed,0,255,64,2)) {
       if (*pauseFrames) (*pauseFrames)--;
@@ -1401,27 +1410,33 @@ class GameOfLife: public Effect {
     uint16_t cIndex;
     uint16_t cX;
     uint16_t cY;
+    uint16_t cZ;
     //Loop through all cells. Count neighbors, apply rules, setPixel
-    for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) {
+    for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
       byte neighbors = 0;
       byte colorCount = 0; //track number of valid colors
       CRGB nColors[3]; // track 3 colors, dying cells may overwrite but this wont be used
 
-      for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) { // iterate through 3*3 matrix
-        if (i==0 && j==0) continue; // ignore itself
-        if (!wrap || (*generation) % 1500 == 0) { //no wrap disable wrap every 1500 generations to prevent undetected repeats
+      for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) { // iterate through 3*3*3 matrix
+        if (i==0 && j==0 && k==0) continue; // ignore itself
+        // don't wrap 3D
+        if (!wrap || leds.size.z > 1 || (*generation) % 1500 == 0) { //no wrap disable wrap every 1500 generations to prevent undetected repeats
           cX = x+i;
           cY = y+j;
-          if (cX < 0 || cY < 0 || cX >= leds.size.x || cY >= leds.size.y) continue; //skip if out of bounds
+          cZ = z+k;
+          if (cX < 0 || cY < 0 || cZ < 0 || cX >= leds.size.x || cY >= leds.size.y || cZ >= leds.size.z) continue; //skip if out of bounds
         } else { //wrap around
+          if (k != 0) continue; //no z axis (wrap around only for x and y
           cX = (x+i+leds.size.x) % leds.size.x;
           cY = (y+j+leds.size.y) % leds.size.y;
+          cZ = k; // no z axis
         }
-        cIndex = cY * leds.size.x + cX;
+        cIndex = flatten(cX, cY, cZ, leds.size.x, leds.size.y); 
+
         // count neighbors and store upto 3 neighbor colors
         if (getBitValue(cells, cIndex)) { //if alive
           neighbors++;
-          color = leds.getPixelColor(leds.XY(cX, cY));
+          color = leds.getPixelColor(leds.XYZ(cX, cY, cZ));
           if (color == backgroundColor) continue; //parent just died, color lost
           nColors[colorCount%3] = color;
           colorCount++;
@@ -1429,17 +1444,16 @@ class GameOfLife: public Effect {
       }
 
       // Rules of Life
-      bool cellValue = getBitValue(cells, y * leds.size.x + x);
+      bool cellValue = getBitValue(cells, flatten(x, y, z, leds.size.x, leds.size.y));
       if ((cellValue) && (neighbors < 2 || neighbors > 3)) {
         // Loneliness or overpopulation
         cellChanged = true;
-        setBitValue(futureCells, y * leds.size.x + x, false);
-        // if (!SEGMENT.check2) 
-        leds.setPixelColor(leds.XY(x,y), backgroundColor);
+        setBitValue(futureCells, flatten(x, y, z, leds.size.x, leds.size.y), false);
+        leds.setPixelColor(leds.XYZ(x,y,z), backgroundColor);
       } 
       else if (!(cellValue) && (neighbors == 3)) { 
         // Reproduction
-        setBitValue(futureCells, y * leds.size.x + x, true);
+        setBitValue(futureCells, flatten(x, y, z, leds.size.x, leds.size.y), true);
         cellChanged = true;
         // find dominant color and assign it to a cell
         // no longer storing colors, if parent dies the color is lost
@@ -1453,10 +1467,8 @@ class GameOfLife: public Effect {
         else if (colorCount == 1) dominantColor = nColors[0]; // 2 leading parents died
         else dominantColor = color; // all parents died last used color
         // mutate color chance
-        if (random8() < mutation) dominantColor = !allColors?ColorFromPalette(pal, random(8)): random16()*random16(); // SEGMENT.color_from_palette(random8(), false, PALETTE_SOLID_WRAP, 0)
-
-        // if (allColors) dominantColor = CRGB(dominantColor.r, dominantColor.g, dominantColor.b); //WLEDMM support all colors)
-        leds.setPixelColor(leds.XY(x,y), dominantColor);
+        if (random8() < mutation) dominantColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16(); 
+        leds.setPixelColor(leds.XYZ(x,y,z), dominantColor);
       } 
     }
     //update cell values
@@ -1483,9 +1495,9 @@ class GameOfLife: public Effect {
   void controls(JsonObject parentVar) {
     addPalette(parentVar, 4);
     ui->initSlider(parentVar, "speed", 128, 0, 255);
-    ui->initSlider(parentVar, "mutation", 128, 2, 255); //intensity
-    ui->initCheckBox(parentVar, "allColors"); //check1
-    ui->initCheckBox(parentVar, "wrap"); //check3
+    ui->initSlider(parentVar, "mutation", 2, 0, 255);
+    ui->initCheckBox(parentVar, "allColors", 0);
+    ui->initCheckBox(parentVar, "wrap");
     // !,Color Mutation ☾,,,,All Colors ☾,Overlay ☾,Wrap ☾,
   }
 }; //GameOfLife
