@@ -1486,7 +1486,7 @@ class GameOfLife: public Effect {
     }
     // Update CRC values
     if ((*generation) % 16 == 0) *oscillatorCRC = crc;
-    if ((*generation) % (*gliderLength) == 0) *spaceshipCRC = crc;
+    if ((*gliderLength) && (*generation) % (*gliderLength) == 0) *spaceshipCRC = crc; //check on gliderlength to avoid div/0
 
     (*generation)++;
     *step = now;
@@ -1495,9 +1495,9 @@ class GameOfLife: public Effect {
   void controls(JsonObject parentVar) {
     addPalette(parentVar, 4);
     ui->initSlider(parentVar, "speed", 128, 0, 255);
-    ui->initSlider(parentVar, "mutation", 2, 0, 255);
-    ui->initCheckBox(parentVar, "allColors", 0);
-    ui->initCheckBox(parentVar, "wrap");
+    ui->initSlider(parentVar, "mutation", 128, 2, 255); //intensity
+    ui->initCheckBox(parentVar, "allColors", false); //check1, default false?
+    ui->initCheckBox(parentVar, "wrap", true); //check3, default true?
     // !,Color Mutation ☾,,,,All Colors ☾,Overlay ☾,Wrap ☾,
   }
 }; //GameOfLife
