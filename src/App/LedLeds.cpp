@@ -41,7 +41,7 @@ unsigned16 Leds::XYZ(unsigned16 x, unsigned16 y, unsigned16 z) {
 // maps the virtual led to the physical led(s) and assign a color to it
 void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
   if (indexV < mappingTable.size()) {
-    if (mappingTable[indexV].indexes) {
+    if (isMapped(indexV)) {
       for (forUnsigned16 indexP:*mappingTable[indexV].indexes) {
         fixture->ledsP[indexP] = blend(color, fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount);
       }
@@ -58,7 +58,7 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
 
 CRGB Leds::getPixelColor(unsigned16 indexV) {
   if (indexV < mappingTable.size()) {
-    if (mappingTable[indexV].indexes && mappingTable[indexV].indexes->size())
+    if (isMapped(indexV) && mappingTable[indexV].indexes->size())
       return fixture->ledsP[*mappingTable[indexV].indexes->begin()]; //any would do as they are all the same
     else 
       return mappingTable[indexV].color;
