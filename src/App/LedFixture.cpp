@@ -320,7 +320,7 @@ void Fixture::projectAndMap() {
                         }
                       }
                       //indexV is within the square
-                      if (!leds->mappingTable[indexV].indexes) {
+                      if (!leds->isMapped(indexV)) {
                         leds->mappingTable[indexV].indexes = new std::vector<unsigned16>;
                       }
                       leds->mappingTable[indexV].indexes->push_back(indexP); //add the current led to indexes

@@ -1326,7 +1326,7 @@ class GameOfLife: public Effect {
     bool allColors = mdl->getValue("allColors"); //instead of check1
     bool wrap = mdl->getValue("wrap"); //instead of check3
 
-    const uint16_t dataSize = (leds.size.x * leds.size.y / 8) + ((leds.size.x * leds.size.y / 8) % 8 == 0 ? 0 : 1); //instead of row,col
+    const uint16_t dataSize = leds.size.x * leds.size.y/8 + 1; //instead of row,col, add one extra byte to round ceiling (inspired by SoftHack007)
 
     uint8_t *gliderLength = leds.sharedData.bind(gliderLength); //not in struct
     uint16_t *oscillatorCRC = leds.sharedData.bind(oscillatorCRC); //not in struct
@@ -1474,7 +1474,7 @@ class GameOfLife: public Effect {
     }
     // Update CRC values
     if ((*generation) % 16 == 0) *oscillatorCRC = crc;
-    if ((*generation) % (*gliderLength) == 0) *spaceshipCRC = crc;
+    if ((*gliderLength) && (*generation) % (*gliderLength) == 0) *spaceshipCRC = crc; //check on gliderlength to avoid div/0
 
     (*generation)++;
     *step = now;
@@ -1483,9 +1483,9 @@ class GameOfLife: public Effect {
   void controls(JsonObject parentVar) {
     addPalette(parentVar, 4);
     ui->initSlider(parentVar, "speed", 128, 0, 255);
-    ui->initSlider(parentVar, "mutation", 1, 0, 255); //intensity
-    ui->initCheckBox(parentVar, "allColors", 0); //check1
-    ui->initCheckBox(parentVar, "wrap"); //check3
+    ui->initSlider(parentVar, "mutation", 128, 2, 255); //intensity
+    ui->initCheckBox(parentVar, "allColors", false); //check1, default false?
+    ui->initCheckBox(parentVar, "wrap", true); //check3, default true?
     // !,Color Mutation ☾,,,,All Colors ☾,Overlay ☾,Wrap ☾,
   }
 }; //GameOfLife

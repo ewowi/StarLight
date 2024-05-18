@@ -282,6 +282,11 @@ public:
   void fill_solid(const struct CRGB& color, bool noBlend = false);
   void fill_rainbow(unsigned8 initialhue, unsigned8 deltahue);
 
+  //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
+  bool isMapped(unsigned16 indexV) {
+    return mappingTable[indexV].indexes;
+  }
+
   void blur1d(fract8 blur_amount)
   {
     uint8_t keep = 255 - blur_amount;
