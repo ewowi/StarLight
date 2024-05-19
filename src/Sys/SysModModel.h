@@ -192,6 +192,25 @@ public:
   //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
   void cleanUpModel(JsonObject parent = JsonObject(), bool oPos = true, bool ro = false);
 
+  //setValue for JsonVariants (extract the StarMod supported types)
+  JsonObject setValueJV(const char * id, JsonVariant value, unsigned8 rowNr = UINT8_MAX) {
+    if (value.is<JsonArray>()) {
+      uint8_t rowNr = 0;
+      // ppf("   %s is Array\n", value.as<String>().c_str);
+      JsonObject var;
+      for (JsonVariant el: value.as<JsonArray>()) {
+        var = setValueJV(id, el, rowNr++);
+      }
+      return var;
+    }
+    else if (value.is<const char *>())
+      return setValue(id, JsonString(value, JsonString::Copied), rowNr);
+    else if (value.is<Coord3D>()) //otherwise it will be treated as JsonObject and toJson / fromJson will not be triggered!!!
+      return setValue(id, value.as<Coord3D>(), rowNr);
+    else
+      return setValue(id, value, rowNr);
+  }
+
   //sets the value of var with id
   template <typename Type>
   JsonObject setValue(const char * id, Type value, unsigned8 rowNr = UINT8_MAX) {

@@ -405,7 +405,6 @@ public:
           UDPStarMessage starMessage;
           byte *udpIn = (byte *)&starMessage;
           instanceUDP.read(udpIn, packetSize);
-          starMessage.sysData.type = (strcmp(_INIT(TOSTRING(APP)), "StarBase")==0)?1:(strcmp(_INIT(TOSTRING(APP)), "StarLeds")==0)?2:3; //1=StarBase,2=StarLeds, 3=StarFork
 
           updateInstance(starMessage);
         }
@@ -417,21 +416,9 @@ public:
             JsonDocument message;
             deserializeJson(message, buffer);
 
-            //see also processJson for same code (function?)
-            if (message["value"].is<const char *>())
-              mdl->setValue(message["id"].as<const char *>(), JsonString(message["value"], JsonString::Copied));
-            else if (message["value"].is<Coord3D>()) //otherwise it will be treated as JsonObject and toJson / fromJson will not be triggered!!!
-              mdl->setValue(message["id"].as<const char *>(), message["value"].as<Coord3D>());
-            else if (message["value"].is<int>())
-              mdl->setValue(message["id"].as<const char *>(), message["value"].as<int>());
-            else if (message["value"].is<bool>())
-              mdl->setValue(message["id"].as<const char *>(), message["value"].as<bool>());
-            else
-              ppf("dev handleNotifications type unknown %s", buffer);
-            // else
-            //   mdl->setValue(message["id"].as<const char *>(), message["value"]);
+            ppf("handleNotifications i:%d json message %s (%s)\n", instanceUDP.remoteIP()[3], buffer, message.as<String>().c_str());
 
-            // ppf("handleNotifications i:%d json message %s\n", instanceUDP.remoteIP()[3], buffer);
+            mdl->setValueJV(message["id"].as<const char *>(), message["value"]);
 
         }
         else {
@@ -635,11 +622,11 @@ public:
               if (groupOfName(instance.name, group1) && groupOfName(mdl->getValue("name"), group2) && strcmp(group1, group2) == 0) {
                 for (JsonPair pair: newData.as<JsonObject>()) {
                   ppf("updateInstance sync from i:%s k:%s v:%s\n", instance.name, pair.key().c_str(), pair.value().as<String>().c_str());
-                  // if (mdl->getValue(pair.key().c_str) != pair.value())
-                  mdl->setValue(pair.key().c_str(), pair.value());
+
+                  mdl->setValueJV(pair.key().c_str(), pair.value());
                 }
                 instance.jsonData = newData; // deepcopy: https://github.com/bblanchon/ArduinoJson/issues/1023
-                // ppf("updateInstance json ip:%d", instance.ip[3]);
+                ppf("updateInstance json ip:%d", instance.ip[3]);
                 print->printJson(" d:", instance.jsonData);
               }
             }
