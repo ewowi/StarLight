@@ -408,10 +408,10 @@ void Fixture::projectAndMap() {
             //debug info + summary values
             stackUnsigned16 indexV = 0;
             for (PhysMap &map:leds->mappingTable) {
-              if (map.indexes && map.indexes->size()) {
+              if (map.indexes) { // && map.indexes->size()
                 // if (nrOfMappings < 10 || map.indexes->size() - indexV < 10) //first 10 and last 10
                 // if (nrOfMappings%(leds->nrOfLeds/10+1) == 0)
-                  // ppf("ledV %d mapping: #ledsP (%d):", indexV, nrOfMappings, map.indexes->size());
+                  // ppf("ledV %d mapping: #ledsP (%d):", indexV, nrOfMappings);
 
                 for (forUnsigned16 indexP:*map.indexes) {
                   // if (nrOfPixels < 10 || map.indexes->size() - indexV < 10)
