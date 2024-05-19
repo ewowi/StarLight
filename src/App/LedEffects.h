@@ -1353,42 +1353,7 @@ class GameOfLife: public Effect {
     byte *futureCells = leds.sharedData.bind(futureCells, dataSize);
     uint16_t *generation = leds.sharedData.bind(generation);
     uint16_t *pauseFrames = leds.sharedData.bind(pauseFrames);
-    String *prevRuleString = leds.sharedData.bind(prevRuleString);
-    bool *birthNumbers = leds.sharedData.bind(birthNumbers, sizeof(bool) * 9);
-    bool *surviveNumbers = leds.sharedData.bind(surviveNumbers, sizeof(bool) * 9);
     unsigned long *step = leds.sharedData.bind(step);
-
-    if (prevRuleString == nullptr) { // May fix random boot crash loop?
-      Serial.println("prevRuleString is null");
-      prevRuleString = new String("");
-    }
-    //Rule String Parsing will update in future
-    String ruleString = mdl->getValue("ruleString").as<String>();
-    if (ruleString != *prevRuleString || (*generation == 0 && *pauseFrames == 0)  || call == 0) {
-      ppf("Changing Rule String to: %s\n", ruleString.c_str());
-      *prevRuleString = ruleString;
-      for (int i = 0; i < 9; i++) {
-        birthNumbers[i] = false;
-        surviveNumbers[i] = false;
-      }
-      int slashIndex = ruleString.indexOf('/');
-      String bornPart = ruleString.substring(1, slashIndex);
-      String survivePart = ruleString.substring(slashIndex + 2);
-
-      for (int i = 0; i < bornPart.length(); i++) {
-          int num = bornPart.charAt(i) - '0';
-          if (num >= 0 && num < 9) birthNumbers[num] = true;
-      }
-      for (int i = 0; i < survivePart.length(); i++) {
-          int num = survivePart.charAt(i) - '0';
-          if (num >= 0 && num < 9) surviveNumbers[num] = true;
-      }
-      ppf("  Birth: ");
-      for (int i = 0; i < 9; i++) ppf("%d", birthNumbers[i]);
-      ppf("\nSurvive: ");
-      for (int i = 0; i < 9; i++) ppf("%d", surviveNumbers[i]);
-      ppf("\n");
-    }
 
     CRGB bgColor = CRGB::Black;
     CRGB color;
@@ -1405,9 +1370,7 @@ class GameOfLife: public Effect {
 
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
         uint8_t state = (random8() < initialChance) ? 1 : 0;
-        if (state == 0) {
-          leds.setPixelColor({x,y,z}, bgColor, 0);
-        }
+        if (state == 0) leds.setPixelColor({x,y,z}, bgColor, 0);
         else {
           // if (leds.isMapped({x,y,z}) == -1) continue; //skip if not physical led
           setBitValue(cells, coord_to_index({x,y,z}, leds.size), true);
@@ -1469,13 +1432,13 @@ class GameOfLife: public Effect {
 
       // Rules of Life
       bool cellValue = getBitValue(cells, cIndex);
-      if ((cellValue) && !(surviveNumbers[neighbors])) {
+      if ((cellValue) && (neighbors < 2 || neighbors > 3)){
         // Loneliness or overpopulation
         cellChanged = true;
         setBitValue(futureCells, cIndex, false);
         leds.setPixelColor(cPos, bgColor);
       }
-      else if (!(cellValue) && (birthNumbers[neighbors])) {
+      else if (!(cellValue) && neighbors == 3){
         // Reproduction
         setBitValue(futureCells, cIndex, true);
         cellChanged = true;
@@ -1531,19 +1494,6 @@ class GameOfLife: public Effect {
     ui->initText(parentVar, "ruleString", "B3/S23");
     ui->initCheckBox(parentVar, "allColors", false);
     ui->initCheckBox(parentVar, "wrap", true);
-    // Unused testing UI
-    ui->initSelect(parentVar, "ruleSet", 0, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun: {
-        ui->setLabel(var, "Rule Set:");
-        JsonArray options = ui->setOptions(var);
-        options.add("Conway's Game of Life B3/S23");
-        options.add("High Life B36/S23");
-        options.add("Maze B3/S12345");
-        options.add("InverseLife B0123478/S34678");
-        options.add("Custom String (B#/S#)");
-        return true; }
-      default: return false;
-    }});
   }
 }; //GameOfLife
 
