@@ -58,7 +58,7 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
 
 CRGB Leds::getPixelColor(unsigned16 indexV) {
   if (indexV < mappingTable.size()) {
-    if (isMapped(indexV) && mappingTable[indexV].indexes->size())
+    if (isMapped(indexV)) // && mappingTable[indexV].indexes->size()
       return fixture->ledsP[*mappingTable[indexV].indexes->begin()]; //any would do as they are all the same
     else 
       return mappingTable[indexV].color;
