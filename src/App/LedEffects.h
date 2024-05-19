@@ -1340,7 +1340,6 @@ class GameOfLife: public Effect {
     CRGBPalette16 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("speed");
     stackUnsigned8 mutation = mdl->getValue("mutation");
-    stackUnsigned8 ruleSet = mdl->getValue("ruleSet");
     byte initialChance = mdl->getValue("initialChance (out of 255)");
     bool allColors = mdl->getValue("allColors");
     bool wrap = mdl->getValue("wrap");
@@ -1491,7 +1490,6 @@ class GameOfLife: public Effect {
     ui->initSlider(parentVar, "speed", 128, 0, 255);
     ui->initSlider(parentVar, "initialChance (out of 255)", 82, 0, 255);
     ui->initSlider(parentVar, "mutation", 2, 0, 255);
-    ui->initText(parentVar, "ruleString", "B3/S23");
     ui->initCheckBox(parentVar, "allColors", false);
     ui->initCheckBox(parentVar, "wrap", true);
   }
