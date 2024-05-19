@@ -1,3 +1,7 @@
+
+git log v0.14.1-beta.30..HEAD  --pretty=format:'%ad,%<(20)%an,%s' --date=short
+
+
 Copy System Modules from MoonModules/StarLeds to upstream
 (as should only be modified in upstream)
 ============================================================
