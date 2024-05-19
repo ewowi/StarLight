@@ -1325,10 +1325,6 @@ uint16_t lcm(uint16_t a, uint16_t b) {
   return a / gcd(a, b) * b;
 }
 
-uint16_t coord_to_index(Coord3D coord, Coord3D size) {
-  return coord.x + coord.y * size.x + coord.z * size.x * size.y;
-}
-
 // Written by Ewoud Wijma in 2022, inspired by https://natureofcode.com/book/chapter-7-cellular-automata/ and https://github.com/DougHaber/nlife-color , 
 // Modified By: Brandon Butler in 2024
 class GameOfLife: public Effect {
@@ -1372,8 +1368,8 @@ class GameOfLife: public Effect {
         if (state == 0) leds.setPixelColor({x,y,z}, bgColor, 0);
         else {
           // if (leds.isMapped({x,y,z}) == -1) continue; //skip if not physical led
-          setBitValue(cells, coord_to_index({x,y,z}, leds.size), true);
-          setBitValue(futureCells, coord_to_index({x,y,z}, leds.size), true);
+          setBitValue(cells, leds.XYZ(x,y,z), true);
+          setBitValue(futureCells, leds.XYZ(x,y,z), true);
           color = allColors ? random16() * random16() : ColorFromPalette(pal, random8());
           leds.setPixelColor({x,y,z}, color, 0);
         }
@@ -1399,7 +1395,7 @@ class GameOfLife: public Effect {
       // ppf("x: %d, y: %d, z: %d isMapped: %d\n", x, y, z, leds.isMapped({x,y,z}));      
       // if (leds.isMapped({x,y,z}) == -1) continue; //skip if not physical led
       Coord3D cPos = {x, y, z}; //current cells position
-      uint16_t cIndex = coord_to_index(cPos, leds.size);
+      uint16_t cIndex = leds.XYZ(cPos);
       byte neighbors = 0;
       byte colorCount = 0; //track number of valid colors
       CRGB nColors[3]; // track 3 colors, dying cells may overwrite but this wont be used
@@ -1416,7 +1412,7 @@ class GameOfLife: public Effect {
           nPos.y = (nPos.y + leds.size.y) % leds.size.y;
           nPos.z = 0; // no z axis
         }
-        uint16_t nIndex = coord_to_index(nPos, leds.size);
+        uint16_t nIndex = leds.XYZ(nPos);
 
         // count neighbors and store upto 3 neighbor colors
         if (getBitValue(cells, nIndex)) { //if alive
