@@ -1339,11 +1339,14 @@ class GameOfLife: public Effect {
     byte initialChance = mdl->getValue("initialChance (out of 255)");
     bool allColors = mdl->getValue("allColors");
     bool wrap = mdl->getValue("wrap");
+    bool test = mdl->getValue("testPattern");
     const uint16_t dataSize = (leds.size.x * leds.size.y * leds.size.z / 8) + 1;
 
     uint8_t *gliderLength = leds.sharedData.bind(gliderLength);
+    uint8_t *cubeGliderLength = leds.sharedData.bind(cubeGliderLength);
     uint16_t *oscillatorCRC = leds.sharedData.bind(oscillatorCRC);
     uint16_t *spaceshipCRC = leds.sharedData.bind(spaceshipCRC);
+    uint16_t *cubeGliderCRC = leds.sharedData.bind(cubeGliderCRC);
     byte *cells = leds.sharedData.bind(cells, dataSize);
     byte *futureCells = leds.sharedData.bind(futureCells, dataSize);
     uint16_t *generation = leds.sharedData.bind(generation);
@@ -1363,22 +1366,58 @@ class GameOfLife: public Effect {
       memset(cells, 0, dataSize);
       memset(futureCells, 0, dataSize);
 
+      ppf("Game of Life: %d x %d x %d\n", leds.size.x, leds.size.y, leds.size.z);
+
+
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
         uint8_t state = (random8() < initialChance) ? 1 : 0;
         if (state == 0) leds.setPixelColor({x,y,z}, bgColor, 0);
         else {
-          // if (leds.isMapped({x,y,z}) == -1) continue; //skip if not physical led
+          if (!leds.isMapped(leds.XYZ(x,y,z))) continue; //skip if not physical led
+          // if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue; 
           setBitValue(cells, leds.XYZ(x,y,z), true);
           setBitValue(futureCells, leds.XYZ(x,y,z), true);
+          // setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
+          // setBitValue(futureCells, leds.XYZNoSpin({x,y,z}), true);
           color = allColors ? random16() * random16() : ColorFromPalette(pal, random8());
           leds.setPixelColor({x,y,z}, color, 0);
         }
       }
 
+
+      ////////////////////////////////////////////
+      //2D TESTING PATTERN
+      //Reset grid
+      if (test) {
+        for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
+          setBitValue(cells, leds.XYZ(x,y,z), false);
+          setBitValue(futureCells, leds.XYZ(x,y,z), false);
+          // setBitValue(cells, leds.XYZNoSpin({x,y,z}), false);
+          // setBitValue(futureCells, leds.XYZNoSpin({x,y,z}), false);
+          leds.setPixelColor({x,y,z}, bgColor, 0);
+        }
+        //Test Pattern Glider
+        byte patternLen = 5;
+        byte patternX[patternLen] {1,2,3,3,2};
+        byte patternY[patternLen] {3,3,3,4,5};
+        byte patternZ[patternLen] {0,0,0,0,0};
+        for (int i = 0; i < patternLen; i++) {
+          setBitValue(cells, leds.XYZ(patternX[i],patternY[i],patternZ[i]), true);
+          setBitValue(futureCells, leds.XYZ(patternX[i],patternY[i],patternZ[i]), true);
+          // setBitValue(cells, leds.XYZNoSpin({patternX[i], patternY[i], patternZ[i]}), true);
+          // setBitValue(futureCells, leds.XYZNoSpin({patternX[i], patternY[i], patternZ[i]}), true);
+          color = ColorFromPalette(pal, random8());
+          leds.setPixelColor(leds.XYZ({patternX[i],patternY[i],patternZ[i]}), color, 0);
+        }
+      }
+      ////////////////////////////////////////////
+
       //Clear CRCs
       *oscillatorCRC = 0;
       *spaceshipCRC = 0;
+      *cubeGliderCRC = 0;
       *gliderLength = lcm(leds.size.y, leds.size.x) * 4;
+      *cubeGliderLength = *gliderLength * 6; // change later for rectangular cuboid
       return;// FRAMETIME;
     }
 
@@ -1392,27 +1431,30 @@ class GameOfLife: public Effect {
 
     //Loop through all cells. Count neighbors, apply rules, setPixel
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-      // ppf("x: %d, y: %d, z: %d isMapped: %d\n", x, y, z, leds.isMapped({x,y,z}));      
-      // if (leds.isMapped({x,y,z}) == -1) continue; //skip if not physical led
+      // if (*generation == 1) ppf("x: %d, y: %d, z: %d isMapped: %d\n", x, y, z, leds.isMapped(leds.XYZ(x,y,z)));      
       Coord3D cPos = {x, y, z}; //current cells position
       uint16_t cIndex = leds.XYZ(cPos);
+      // uint16_t cIndex = leds.XYZNoSpin(cPos);
+      if (!leds.isMapped(leds.XYZ(x,y,z))) continue; //skip if not physical led
       byte neighbors = 0;
       byte colorCount = 0; //track number of valid colors
       CRGB nColors[3]; // track 3 colors, dying cells may overwrite but this wont be used
 
       for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) { // iterate through 3*3*3 matrix
         if (i==0 && j==0 && k==0) continue; // ignore itself
-        Coord3D nPos = {x+i, y+j, z+k}; //neighbor position
-        // don't wrap 3D
+        Coord3D nPos = {x+i, y+j, z+k};     // neighbor position
+          // wrap disabled, never wrap 3D.
         if (!wrap || leds.size.z > 1 || (*generation) % 1500 == 0) { //no wrap disable wrap every 1500 generations to prevent undetected repeats
           if (nPos.x < 0 || nPos.y < 0 || nPos.z < 0 || nPos.x >= leds.size.x || nPos.y >= leds.size.y || nPos.z >= leds.size.z) continue; //skip if out of bounds
-        } else { //wrap around
+        } else {
+          // wrap around 2D Matrix if enabled
           if (k != 0) continue; //no z axis (wrap around only for x and y
           nPos.x = (nPos.x + leds.size.x) % leds.size.x;
           nPos.y = (nPos.y + leds.size.y) % leds.size.y;
           nPos.z = 0; // no z axis
         }
         uint16_t nIndex = leds.XYZ(nPos);
+        // uint16_t nIndex = leds.XYZNoSpin(nPos);
 
         // count neighbors and store upto 3 neighbor colors
         if (getBitValue(cells, nIndex)) { //if alive
@@ -1427,6 +1469,7 @@ class GameOfLife: public Effect {
 
       // Rules of Life
       bool cellValue = getBitValue(cells, cIndex);
+      // if (cellValue) ppf ("x: %d, y: %d, z: %d, cIndex: %d, neighbors: %d, colorCount: %d, mapped: %d\n", x, y, z, cIndex, neighbors, colorCount, leds.isMapped(cIndex));
       if ((cellValue) && (neighbors < 2 || neighbors > 3)){
         // Loneliness or overpopulation
         cellChanged = true;
@@ -1467,16 +1510,22 @@ class GameOfLife: public Effect {
     uint16_t crc = crc16((const unsigned char*)cells, dataSize);
 
     bool repetition = false;
-    if (!cellChanged || crc == *oscillatorCRC || crc == *spaceshipCRC) repetition = true; //check if cell changed this gen and compare previous stored crc values
+    if (!cellChanged || crc == *oscillatorCRC || crc == *spaceshipCRC || crc == *cubeGliderCRC) repetition = true; //check if cell changed this gen and compare previous stored crc values
     if (repetition) {
+      ppf("Repeat Detected, Oscillator: %d, Spaceship: %d, CubeGlider: %d. Generations: %d\n", *generation%16, *generation%int(gliderLength), *generation%int(cubeGliderLength), *generation);
       *generation = 0; // reset on next call
       *pauseFrames = 50;
       return;// FRAMETIME;
     }
     // Update CRC values
+    if (*generation == 1) {
+      *oscillatorCRC = crc;
+      *spaceshipCRC = crc;
+      *cubeGliderCRC = crc;
+    }
     if ((*generation) % 16 == 0) *oscillatorCRC = crc;
     if ((*gliderLength) && (*generation) % (*gliderLength) == 0) *spaceshipCRC = crc; //check on gliderlength to avoid div/0
-
+    if (((*cubeGliderLength) && (*generation) % (*cubeGliderLength) == 0)) *cubeGliderCRC = crc; 
     (*generation)++;
     *step = now;
   }
@@ -1488,6 +1537,7 @@ class GameOfLife: public Effect {
     ui->initSlider(parentVar, "mutation", 2, 0, 255);
     ui->initCheckBox(parentVar, "allColors", false);
     ui->initCheckBox(parentVar, "wrap", true);
+    ui->initCheckBox(parentVar, "testPattern", false);
   }
 }; //GameOfLife
 
