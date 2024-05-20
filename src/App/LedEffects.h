@@ -1340,8 +1340,8 @@ class GameOfLife: public Effect {
     bool allColors = mdl->getValue("allColors");
     bool wrap = mdl->getValue("wrap");
     bool test = mdl->getValue("testPattern");
+    byte ruleset = mdl->getValue("ruleset");
     const uint16_t dataSize = (leds.size.x * leds.size.y * leds.size.z / 8) + 1;
-
     uint8_t *gliderLength = leds.sharedData.bind(gliderLength);
     uint8_t *cubeGliderLength = leds.sharedData.bind(cubeGliderLength);
     uint16_t *oscillatorCRC = leds.sharedData.bind(oscillatorCRC);
@@ -1352,11 +1352,17 @@ class GameOfLife: public Effect {
     uint16_t *generation = leds.sharedData.bind(generation);
     uint16_t *pauseFrames = leds.sharedData.bind(pauseFrames);
     unsigned long *step = leds.sharedData.bind(step);
+    String *prevRuleString = leds.sharedData.bind(prevRuleString);
+    bool *birthNumbers = leds.sharedData.bind(birthNumbers, sizeof(bool) * 9);
+    bool *surviveNumbers = leds.sharedData.bind(surviveNumbers, sizeof(bool) * 9);
 
     CRGB bgColor = CRGB::Black;
     CRGB color;
 
     //start new game of life
+    if (call == 0) {
+      ppf("Game of Life: %d x %d x %d\n", leds.size.x, leds.size.y, leds.size.z); //debug
+    }
     if ((call == 0 || *generation == 0) && *pauseFrames == 0) {
       *step = now; // .step = previous call time
       *generation = 1;
@@ -1365,8 +1371,6 @@ class GameOfLife: public Effect {
       //Setup Grid
       memset(cells, 0, dataSize);
       memset(futureCells, 0, dataSize);
-
-      ppf("Game of Life: %d x %d x %d\n", leds.size.x, leds.size.y, leds.size.z);
 
 
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
@@ -1383,7 +1387,6 @@ class GameOfLife: public Effect {
           leds.setPixelColor({x,y,z}, color, 0);
         }
       }
-
 
       ////////////////////////////////////////////
       //2D TESTING PATTERN
@@ -1426,6 +1429,44 @@ class GameOfLife: public Effect {
       if (*pauseFrames) (*pauseFrames)--;
       return;// FRAMETIME; //skip if not enough time has passed
     }
+
+    //rule set for game of life
+    String ruleString = "";
+    if (ruleset == 0) ruleString = mdl->getValue("Custom Rule String").as<String>(); //Custom
+    else if (ruleset == 1) ruleString = "B3/S23";         //Conway's Game of Life
+    else if (ruleset == 2) ruleString = "B36/S23";        //HighLife
+    else if (ruleset == 3) ruleString = "B0123478/S34678";//InverseLife
+    else if (ruleset == 4) ruleString = "B3/S12345";      //Maze
+    else if (ruleset == 5) ruleString = "B3/S1234";       //Mazecentric
+    else if (ruleset == 6) ruleString = "B367/S23";       //DrighLife
+
+    //Rule String Parsing will update in future
+    if (ruleString != *prevRuleString || (*generation == 0 && *pauseFrames == 0)  || call == 0) {
+      ppf("Changing Rule String to: %s\n", ruleString.c_str());
+      *prevRuleString = ruleString;
+      for (int i = 0; i < 9; i++) {
+        birthNumbers[i] = false;
+        surviveNumbers[i] = false;
+      }
+      int slashIndex = ruleString.indexOf('/');
+      String bornPart = ruleString.substring(1, slashIndex);
+      String survivePart = ruleString.substring(slashIndex + 2);
+
+      for (int i = 0; i < bornPart.length(); i++) {
+          int num = bornPart.charAt(i) - '0';
+          if (num >= 0 && num < 9) birthNumbers[num] = true;
+      }
+      for (int i = 0; i < survivePart.length(); i++) {
+          int num = survivePart.charAt(i) - '0';
+          if (num >= 0 && num < 9) surviveNumbers[num] = true;
+      }
+      ppf("  Birth: ");
+      for (int i = 0; i < 9; i++) ppf("%d", birthNumbers[i]);
+      ppf("\nSurvive: ");
+      for (int i = 0; i < 9; i++) ppf("%d", surviveNumbers[i]);
+      ppf("\n");
+    }
+
     //Update Game of Life
     bool cellChanged = false; // Detect still live and dead grids
 
@@ -1470,13 +1511,13 @@ class GameOfLife: public Effect {
       // Rules of Life
       bool cellValue = getBitValue(cells, cIndex);
       // if (cellValue) ppf ("x: %d, y: %d, z: %d, cIndex: %d, neighbors: %d, colorCount: %d, mapped: %d\n", x, y, z, cIndex, neighbors, colorCount, leds.isMapped(cIndex));
-      if ((cellValue) && (neighbors < 2 || neighbors > 3)){
+      if (cellValue && !surviveNumbers[neighbors]) {
         // Loneliness or overpopulation
         cellChanged = true;
         setBitValue(futureCells, cIndex, false);
         leds.setPixelColor(cPos, bgColor);
       }
-      else if (!(cellValue) && neighbors == 3){
+      else if (!cellValue && birthNumbers[neighbors]){
         // Reproduction
         setBitValue(futureCells, cIndex, true);
         cellChanged = true;
@@ -1512,13 +1553,14 @@ class GameOfLife: public Effect {
     bool repetition = false;
     if (!cellChanged || crc == *oscillatorCRC || crc == *spaceshipCRC || crc == *cubeGliderCRC) repetition = true; //check if cell changed this gen and compare previous stored crc values
     if (repetition) {
-      ppf("Repeat Detected, Oscillator: %d, Spaceship: %d, CubeGlider: %d. Generations: %d\n", *generation%16, *generation%int(gliderLength), *generation%int(cubeGliderLength), *generation);
+      ppf ("Generations: %d\n", *generation);
+      // ppf("Repeat Detected, Oscillator: %d, Spaceship: %d, CubeGlider: %d. Generations: %d\n", *generation%16, *generation%int(gliderLength), *generation%int(cubeGliderLength), *generation);
       *generation = 0; // reset on next call
       *pauseFrames = 50;
       return;// FRAMETIME;
     }
     // Update CRC values
-    if (*generation == 1) {
+    if ((*generation) == 1) {
       *oscillatorCRC = crc;
       *spaceshipCRC = crc;
       *cubeGliderCRC = crc;
@@ -1538,6 +1580,21 @@ class GameOfLife: public Effect {
     ui->initCheckBox(parentVar, "allColors", false);
     ui->initCheckBox(parentVar, "wrap", true);
     ui->initCheckBox(parentVar, "testPattern", false);
+    ui->initSelect(parentVar, "ruleset", 1, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case f_UIFun: {
+        JsonArray options = ui->setOptions(var);
+        options.add("Custom B/S");
+        options.add("Conway's Game of Life B3/S23");
+        options.add("HighLife B36/S23");
+        options.add("InverseLife B0123478/S34678");
+        options.add("Maze B3/S12345");
+        options.add("Mazecentric B3/S1234");
+        options.add("DrighLife B367/S23");
+        return true;
+      }
+      default: return false;
+    }});
+    ui->initText(parentVar, "Custom Rule String", "B/S");
   }
 }; //GameOfLife
 
