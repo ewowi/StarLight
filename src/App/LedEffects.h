@@ -1335,7 +1335,7 @@ class GameOfLife: public Effect {
   void loop(Leds &leds) {
     CRGBPalette16 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("speed");
-    stackUnsigned8 mutation = mdl->getValue("mutation");
+    stackUnsigned8 mutation = mdl->getValue("Mutation Chance");
     byte lifeChance = mdl->getValue("Starting Life Density");
     bool allColors = mdl->getValue("allColors");
     bool wrap = mdl->getValue("wrap");
@@ -1510,7 +1510,7 @@ class GameOfLife: public Effect {
         if (colorCount) randomParentColor = nColors[random8() % colorCount];
         if (randomParentColor == bgColor) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16();
         // mutate color chance
-        if (random8() < mutation) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16();
+        if (map(random8(), 0, 255, 0, 100) < mutation) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16();
         leds.setPixelColor(cPos, randomParentColor, 0);
       }
       else {
@@ -1551,7 +1551,7 @@ class GameOfLife: public Effect {
     addPalette(parentVar, 4);
     ui->initSlider(parentVar, "speed", 128, 0, 255);
     ui->initSlider(parentVar, "Starting Life Density", 32, 10, 90);
-    ui->initSlider(parentVar, "mutation", 2, 0, 255);
+    ui->initSlider(parentVar, "Mutation Chance", 2, 0, 100);
     ui->initCheckBox(parentVar, "allColors", false);
     ui->initCheckBox(parentVar, "wrap", true);
     ui->initCheckBox(parentVar, "testPattern", false);
