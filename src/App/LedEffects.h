@@ -1465,7 +1465,7 @@ class GameOfLife: public Effect {
       if (!leds.isMapped(leds.XYZ(x,y,z))) continue; //skip if not physical led
       byte neighbors = 0;
       byte colorCount = 0; //track number of valid colors
-      CRGB nColors[9]; // track 10 colors (3D / alt ruleset), dying cells may overwrite but this wont be used
+      CRGB nColors[9]; // track up to 9 colors (3D / alt ruleset), dying cells may overwrite but this wont be used
 
       for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) { // iterate through 3*3*3 matrix
         if (i==0 && j==0 && k==0) continue; // ignore itself
@@ -1481,13 +1481,12 @@ class GameOfLife: public Effect {
         // uint16_t nIndex = leds.XYZ(nPos);
         uint16_t nIndex = leds.XYZNoSpin(nPos);
 
-        // count neighbors and store upto 3 neighbor colors
+        // count neighbors and store up to 9 neighbor colors
         if (getBitValue(cells, nIndex)) { //if alive
           neighbors++;
-          if (!getBitValue(futureCells, nIndex)) continue; //skip if parent died in this loop (color lost)
-          color = leds.getPixelColor(nPos);
-          if (color == bgColor) continue; //parent just died, color lost seems redunant but breaks without
-          nColors[colorCount%9] = color;
+          if (!getBitValue(futureCells, nIndex)) continue; //skip if parent died in this loop (color lost or blended)
+          nColors[colorCount % 9] = leds.getPixelColor(nPos);
+          colorCount++;
         }
       }
 
@@ -1504,7 +1503,7 @@ class GameOfLife: public Effect {
         // Reproduction
         setBitValue(futureCells, cIndex, true);
         cellChanged = true;
-        // find dominant color and assign it to a cell
+        // find random parent color and assign it to a cell
         // no longer storing colors, if parent dies the color is lost
         CRGB randomParentColor = color; // last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8() % colorCount];
@@ -1514,9 +1513,8 @@ class GameOfLife: public Effect {
         leds.setPixelColor(cPos, randomParentColor, 0);
       }
       else {
-        // Fade dead cells further causing blurring effect to moving cells
-        if (!cellValue && leds.getPixelColor(cPos) != bgColor) leds.setPixelColor(cPos, bgColor); //Maybe faster to check if bgColor instead of always blending
-        // if (!cellValue) leds.setPixelColor(cPos, bgColor);
+        // Blending, fade dead cells further causing blurring effect to moving cells
+        if (!cellValue) leds.setPixelColor(cPos, bgColor);
       }
     }
 
