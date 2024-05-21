@@ -1471,11 +1471,13 @@ class GameOfLife: public Effect {
         Coord3D nPos = {x+i, y+j, z+k};     // neighbor position
           // wrap disabled, never wrap 3D.
         if (!wrap || leds.size.z > 1 || (*generation) % 1500 == 0) { //no wrap disable wrap every 1500 generations to prevent undetected repeats
-          if (!nPos.isWithin(leds.size)) continue; //skip if out of bounds
+          if (nPos.x < 0 || nPos.y < 0 || nPos.z < 0 || nPos.x >= leds.size.x || nPos.y >= leds.size.y || nPos.z >= leds.size.z) continue; //skip if out of bounds
         } else {
           // wrap around 2D Matrix if enabled
-          if (k != 0) continue;
-          nPos = (nPos + leds.size) % leds.size; // wrap around
+          if (k != 0) continue; //no z axis (wrap around only for x and y
+          nPos.x = (nPos.x + leds.size.x) % leds.size.x;
+          nPos.y = (nPos.y + leds.size.y) % leds.size.y;
+          nPos.z = 0; // no z axis
         }
         // uint16_t nIndex = leds.XYZ(nPos);
         uint16_t nIndex = leds.XYZNoSpin(nPos);
