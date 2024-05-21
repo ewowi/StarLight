@@ -1295,7 +1295,7 @@ static void setBitValue(byte* byteArray, size_t n, bool value) {
     size_t byteIndex = n / 8;
     size_t bitIndex = n % 8;
     if (value)
-        byteArray[byteIndex] |= (1 << bitIndex); 
+        byteArray[byteIndex] |= (1 << bitIndex);
     else
         byteArray[byteIndex] &= ~(1 << bitIndex);
 }
@@ -1325,7 +1325,7 @@ uint16_t lcm(uint16_t a, uint16_t b) {
   return a / gcd(a, b) * b;
 }
 
-// Written by Ewoud Wijma in 2022, inspired by https://natureofcode.com/book/chapter-7-cellular-automata/ and https://github.com/DougHaber/nlife-color , 
+// Written by Ewoud Wijma in 2022, inspired by https://natureofcode.com/book/chapter-7-cellular-automata/ and https://github.com/DougHaber/nlife-color ,
 // Modified By: Brandon Butler in 2024
 class GameOfLife: public Effect {
   const char * name() {return "GameOfLife";}
@@ -1375,12 +1375,9 @@ class GameOfLife: public Effect {
         uint8_t state = (random8() < initialChance) ? 1 : 0;
         if (state == 0) leds.setPixelColor({x,y,z}, bgColor, 0);
         else {
-          if (!leds.isMapped(leds.XYZ(x,y,z))) continue; //skip if not physical led
-          // if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue; 
-          setBitValue(cells, leds.XYZ(x,y,z), true);
-          setBitValue(futureCells, leds.XYZ(x,y,z), true);
-          // setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
-          // setBitValue(futureCells, leds.XYZNoSpin({x,y,z}), true);
+          if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
+          setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
+          setBitValue(futureCells, leds.XYZNoSpin({x,y,z}), true);
           color = allColors ? random16() * random16() : ColorFromPalette(pal, random8());
           leds.setPixelColor({x,y,z}, color, 0);
         }
@@ -1391,10 +1388,8 @@ class GameOfLife: public Effect {
       //Reset grid
       if (test) {
         for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-          setBitValue(cells, leds.XYZ(x,y,z), false);
-          setBitValue(futureCells, leds.XYZ(x,y,z), false);
-          // setBitValue(cells, leds.XYZNoSpin({x,y,z}), false);
-          // setBitValue(futureCells, leds.XYZNoSpin({x,y,z}), false);
+          setBitValue(cells, leds.XYZNoSpin({x,y,z}), false);
+          setBitValue(futureCells, leds.XYZNoSpin({x,y,z}), false);
           leds.setPixelColor({x,y,z}, bgColor, 0);
         }
         //Test Pattern Glider
@@ -1403,10 +1398,8 @@ class GameOfLife: public Effect {
         byte patternY[patternLen] {3,3,3,4,5};
         byte patternZ[patternLen] {0,0,0,0,0};
         for (int i = 0; i < patternLen; i++) {
-          setBitValue(cells, leds.XYZ(patternX[i],patternY[i],patternZ[i]), true);
-          setBitValue(futureCells, leds.XYZ(patternX[i],patternY[i],patternZ[i]), true);
-          // setBitValue(cells, leds.XYZNoSpin({patternX[i], patternY[i], patternZ[i]}), true);
-          // setBitValue(futureCells, leds.XYZNoSpin({patternX[i], patternY[i], patternZ[i]}), true);
+          setBitValue(cells, leds.XYZNoSpin({patternX[i], patternY[i], patternZ[i]}), true);
+          setBitValue(futureCells, leds.XYZNoSpin({patternX[i], patternY[i], patternZ[i]}), true);
           color = ColorFromPalette(pal, random8());
           leds.setPixelColor(leds.XYZ({patternX[i],patternY[i],patternZ[i]}), color, 0);
         }
@@ -1466,10 +1459,9 @@ class GameOfLife: public Effect {
 
     //Loop through all cells. Count neighbors, apply rules, setPixel
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-      // if (*generation == 1) ppf("x: %d, y: %d, z: %d isMapped: %d\n", x, y, z, leds.isMapped(leds.XYZ(x,y,z)));      
+      // if (*generation == 1) ppf("x: %d, y: %d, z: %d isMapped: %d\n", x, y, z, leds.isMapped(leds.XYZ(x,y,z)));
       Coord3D cPos = {x, y, z}; //current cells position
-      uint16_t cIndex = leds.XYZ(cPos);
-      // uint16_t cIndex = leds.XYZNoSpin(cPos);
+      uint16_t cIndex = leds.XYZNoSpin(cPos);
       if (!leds.isMapped(leds.XYZ(x,y,z))) continue; //skip if not physical led
       byte neighbors = 0;
       byte colorCount = 0; //track number of valid colors
@@ -1488,8 +1480,8 @@ class GameOfLife: public Effect {
           nPos.y = (nPos.y + leds.size.y) % leds.size.y;
           nPos.z = 0; // no z axis
         }
-        uint16_t nIndex = leds.XYZ(nPos);
-        // uint16_t nIndex = leds.XYZNoSpin(nPos);
+        // uint16_t nIndex = leds.XYZ(nPos);
+        uint16_t nIndex = leds.XYZNoSpin(nPos);
 
         // count neighbors and store upto 3 neighbor colors
         if (getBitValue(cells, nIndex)) { //if alive
@@ -1518,9 +1510,9 @@ class GameOfLife: public Effect {
         // no longer storing colors, if parent dies the color is lost
         CRGB randomParentColor = color; // last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8() % colorCount];
-        if (randomParentColor == bgColor) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16(); 
+        if (randomParentColor == bgColor) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16();
         // mutate color chance
-        if (random8() < mutation) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16(); 
+        if (random8() < mutation) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16();
         leds.setPixelColor(cPos, randomParentColor, 0);
       }
       else {
@@ -1553,11 +1545,11 @@ class GameOfLife: public Effect {
     }
     if ((*generation) % 16 == 0) *oscillatorCRC = crc;
     if ((*gliderLength) && (*generation) % (*gliderLength) == 0) *spaceshipCRC = crc; //check on gliderlength to avoid div/0
-    if (((*cubeGliderLength) && (*generation) % (*cubeGliderLength) == 0)) *cubeGliderCRC = crc; 
+    if (((*cubeGliderLength) && (*generation) % (*cubeGliderLength) == 0)) *cubeGliderCRC = crc;
     (*generation)++;
     *step = now;
   }
-  
+
   void controls(JsonObject parentVar) {
     addPalette(parentVar, 4);
     ui->initSlider(parentVar, "speed", 128, 0, 255);
