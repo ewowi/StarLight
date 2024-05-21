@@ -1334,7 +1334,7 @@ class GameOfLife: public Effect {
 
   void loop(Leds &leds) {
     CRGBPalette16 pal = getPalette();
-    stackUnsigned8 speed = mdl->getValue("speed");
+    stackUnsigned8 speed = mdl->getValue("Game Speed (FPS)");
     stackUnsigned8 mutation = mdl->getValue("Mutation Chance");
     byte lifeChance = mdl->getValue("Starting Life Density");
     bool allColors = mdl->getValue("allColors");
@@ -1414,10 +1414,9 @@ class GameOfLife: public Effect {
       return;// FRAMETIME;
     }
 
-    #define FRAMETIME_FIXED 12 // or 12 or 24? tbd
-    if ((*pauseFrames) || now - *step < FRAMETIME_FIXED * (uint32_t)map(speed,0,255,64,2)) {
+    if ((*pauseFrames) || !speed || now - *step < 1000 / speed) {
       if (*pauseFrames) (*pauseFrames)--;
-      return;// FRAMETIME; //skip if not enough time has passed
+      return; //skip if not enough time has passed
     }
 
     //rule set for game of life
@@ -1430,7 +1429,7 @@ class GameOfLife: public Effect {
     else if (ruleset == 5) ruleString = "B3/S1234";       //Mazecentric
     else if (ruleset == 6) ruleString = "B367/S23";       //DrighLife
 
-    //Rule String Parsing will update in future
+    //Rule String Parsing
     if (ruleString != *prevRuleString || (*generation == 0 && *pauseFrames == 0)  || call == 0) {
       ppf("Changing Rule String to: %s\n", ruleString.c_str());
       *prevRuleString = ruleString;
@@ -1508,7 +1507,7 @@ class GameOfLife: public Effect {
         // no longer storing colors, if parent dies the color is lost
         CRGB randomParentColor = color; // last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8() % colorCount];
-        if (randomParentColor == bgColor) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16();
+        if (randomParentColor == bgColor) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16(); // needed for tilt, pan, roll
         // mutate color chance
         if (map(random8(), 0, 255, 0, 100) < mutation) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16();
         leds.setPixelColor(cPos, randomParentColor, 0);
@@ -1549,12 +1548,6 @@ class GameOfLife: public Effect {
 
   void controls(JsonObject parentVar) {
     addPalette(parentVar, 4);
-    ui->initSlider(parentVar, "speed", 128, 0, 255);
-    ui->initSlider(parentVar, "Starting Life Density", 32, 10, 90);
-    ui->initSlider(parentVar, "Mutation Chance", 2, 0, 100);
-    ui->initCheckBox(parentVar, "allColors", false);
-    ui->initCheckBox(parentVar, "wrap", true);
-    ui->initCheckBox(parentVar, "testPattern", false);
     ui->initSelect(parentVar, "ruleset", 1, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun: {
         JsonArray options = ui->setOptions(var);
@@ -1570,6 +1563,12 @@ class GameOfLife: public Effect {
       default: return false;
     }});
     ui->initText(parentVar, "Custom Rule String", "B/S");
+    ui->initSlider(parentVar, "Game Speed (FPS)", 60, 0, 60);
+    ui->initSlider(parentVar, "Starting Life Density", 32, 10, 90);
+    ui->initSlider(parentVar, "Mutation Chance", 2, 0, 100);
+    ui->initCheckBox(parentVar, "allColors", false);
+    ui->initCheckBox(parentVar, "wrap", true);
+    ui->initCheckBox(parentVar, "testPattern", false);
   }
 }; //GameOfLife
 
