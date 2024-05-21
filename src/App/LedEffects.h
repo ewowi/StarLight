@@ -1360,10 +1360,8 @@ class GameOfLife: public Effect {
     CRGB color;
 
     //start new game of life
-    if (call == 0) {
-      ppf("Game of Life: %d x %d x %d\n", leds.size.x, leds.size.y, leds.size.z); //debug
-    }
     if ((call == 0 || *generation == 0) && *pauseFrames == 0) {
+      ppf("Game of Life: %d x %d x %d\n", leds.size.x, leds.size.y, leds.size.z); //debug
       *step = now; // .step = previous call time
       *generation = 1;
       *pauseFrames = 75; // show initial state for longer
@@ -1479,7 +1477,7 @@ class GameOfLife: public Effect {
       if (!leds.isMapped(leds.XYZ(x,y,z))) continue; //skip if not physical led
       byte neighbors = 0;
       byte colorCount = 0; //track number of valid colors
-      CRGB nColors[3]; // track 3 colors, dying cells may overwrite but this wont be used
+      CRGB nColors[9]; // track 10 colors (3D / alt ruleset), dying cells may overwrite but this wont be used
 
       for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) { // iterate through 3*3*3 matrix
         if (i==0 && j==0 && k==0) continue; // ignore itself
@@ -1503,8 +1501,7 @@ class GameOfLife: public Effect {
           if (!getBitValue(futureCells, nIndex)) continue; //skip if parent died in this loop (color lost)
           color = leds.getPixelColor(nPos);
           if (color == bgColor) continue; //parent just died, color lost seems redunant but breaks without
-          nColors[colorCount%3] = color;
-          colorCount++;
+          nColors[colorCount%9] = color;
         }
       }
 
@@ -1523,19 +1520,12 @@ class GameOfLife: public Effect {
         cellChanged = true;
         // find dominant color and assign it to a cell
         // no longer storing colors, if parent dies the color is lost
-        CRGB dominantColor;
-        if (colorCount == 3) { //All parents survived
-          if ((nColors[0] == nColors[1]) || (nColors[0] == nColors[2])) dominantColor = nColors[0];
-          else if (nColors[1] == nColors[2]) dominantColor = nColors[1];
-          else dominantColor = nColors[random8()%3];
-        }
-        else if (colorCount == 2) dominantColor = nColors[random8()%2]; // 1 leading parent died
-        else if (colorCount == 1) dominantColor = nColors[0];           // 2 leading parents died
-        else dominantColor = color;                                     // all parents died last used color
-        if (color == bgColor) dominantColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16(); 
+        CRGB randomParentColor = color; // last seen color, overwrite if colors are found
+        if (colorCount) randomParentColor = nColors[random8() % colorCount];
+        if (randomParentColor == bgColor) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16(); 
         // mutate color chance
-        if (random8() < mutation) dominantColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16(); 
-        leds.setPixelColor(cPos, dominantColor, 0);
+        if (random8() < mutation) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16(); 
+        leds.setPixelColor(cPos, randomParentColor, 0);
       }
       else {
         // Fade dead cells further causing blurring effect to moving cells
