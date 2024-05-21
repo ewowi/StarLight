@@ -1336,7 +1336,7 @@ class GameOfLife: public Effect {
     CRGBPalette16 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("speed");
     stackUnsigned8 mutation = mdl->getValue("mutation");
-    byte initialChance = mdl->getValue("initialChance (out of 255)");
+    byte lifeChance = mdl->getValue("Starting Life Density");
     bool allColors = mdl->getValue("allColors");
     bool wrap = mdl->getValue("wrap");
     bool test = mdl->getValue("testPattern");
@@ -1366,20 +1366,19 @@ class GameOfLife: public Effect {
       *generation = 1;
       *pauseFrames = 75; // show initial state for longer
       random16_set_seed(now>>2); //seed the random generator
+
       //Setup Grid
       memset(cells, 0, dataSize);
       memset(futureCells, 0, dataSize);
-
-
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-        uint8_t state = (random8() < initialChance) ? 1 : 0;
-        if (state == 0) leds.setPixelColor({x,y,z}, bgColor, 0);
-        else {
-          if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
+        if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
+        if (map(random8(), 0, 255, 0, 100) < lifeChance) {
           setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
           setBitValue(futureCells, leds.XYZNoSpin({x,y,z}), true);
-          color = allColors ? random16() * random16() : ColorFromPalette(pal, random8());
-          leds.setPixelColor({x,y,z}, color, 0);
+          leds.setPixelColor({x,y,z}, allColors ? random16() * random16() : ColorFromPalette(pal, random8()), 0);
+        }
+        else {
+          leds.setPixelColor({x,y,z}, bgColor, 0);
         }
       }
 
@@ -1549,7 +1548,7 @@ class GameOfLife: public Effect {
   void controls(JsonObject parentVar) {
     addPalette(parentVar, 4);
     ui->initSlider(parentVar, "speed", 128, 0, 255);
-    ui->initSlider(parentVar, "initialChance (out of 255)", 82, 0, 255);
+    ui->initSlider(parentVar, "Starting Life Density", 32, 10, 90);
     ui->initSlider(parentVar, "mutation", 2, 0, 255);
     ui->initCheckBox(parentVar, "allColors", false);
     ui->initCheckBox(parentVar, "wrap", true);
