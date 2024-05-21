@@ -1350,7 +1350,6 @@ class GameOfLife: public Effect {
     byte *cells = leds.sharedData.bind(cells, dataSize);
     byte *futureCells = leds.sharedData.bind(futureCells, dataSize);
     uint16_t *generation = leds.sharedData.bind(generation);
-    uint16_t *pauseFrames = leds.sharedData.bind(pauseFrames);
     unsigned long *step = leds.sharedData.bind(step);
     String *prevRuleString = leds.sharedData.bind(prevRuleString);
     bool *birthNumbers = leds.sharedData.bind(birthNumbers, sizeof(bool) * 9);
@@ -1360,11 +1359,10 @@ class GameOfLife: public Effect {
     CRGB color;
 
     //start new game of life
-    if ((call == 0 || *generation == 0) && *pauseFrames == 0) {
+    if (call == 0 || (*generation == 0 && *step < now)) {
       ppf("Game of Life: %d x %d x %d\n", leds.size.x, leds.size.y, leds.size.z); //debug
-      *step = now; // .step = previous call time
       *generation = 1;
-      *pauseFrames = 75; // show initial state for longer
+      *step = now + 1500; // previous call time + 1.5 seconds initial delay
       random16_set_seed(now>>2); //seed the random generator
 
       //Setup Grid
@@ -1411,14 +1409,11 @@ class GameOfLife: public Effect {
       *cubeGliderCRC = 0;
       *gliderLength = lcm(leds.size.y, leds.size.x) * 4;
       *cubeGliderLength = *gliderLength * 6; // change later for rectangular cuboid
-      return;// FRAMETIME;
+      return;
     }
-
-    if ((*pauseFrames) || !speed || now - *step < 1000 / speed) {
-      if (*pauseFrames) (*pauseFrames)--;
+    if (!speed || *step > now || now - *step < 1000 / speed) {
       return; //skip if not enough time has passed
     }
-
     //rule set for game of life
     String ruleString = "";
     if (ruleset == 0) ruleString = mdl->getValue("Custom Rule String").as<String>(); //Custom
@@ -1430,7 +1425,7 @@ class GameOfLife: public Effect {
     else if (ruleset == 6) ruleString = "B367/S23";       //DrighLife
 
     //Rule String Parsing
-    if (ruleString != *prevRuleString || (*generation == 0 && *pauseFrames == 0)  || call == 0) {
+    if (ruleString != *prevRuleString || (*generation == 0)  || call == 0) {
       ppf("Changing Rule String to: %s\n", ruleString.c_str());
       *prevRuleString = ruleString;
       for (int i = 0; i < 9; i++) {
@@ -1457,7 +1452,6 @@ class GameOfLife: public Effect {
 
     //Loop through all cells. Count neighbors, apply rules, setPixel
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-      // if (*generation == 1) ppf("x: %d, y: %d, z: %d isMapped: %d\n", x, y, z, leds.isMapped(leds.XYZ(x,y,z)));
       Coord3D cPos = {x, y, z}; //current cells position
       uint16_t cIndex = leds.XYZNoSpin(cPos);
       if (!leds.isMapped(leds.XYZ(x,y,z))) continue; //skip if not physical led
@@ -1474,11 +1468,8 @@ class GameOfLife: public Effect {
         } else {
           // wrap around 2D Matrix if enabled
           if (k != 0) continue; //no z axis (wrap around only for x and y
-          nPos.x = (nPos.x + leds.size.x) % leds.size.x;
-          nPos.y = (nPos.y + leds.size.y) % leds.size.y;
-          nPos.z = 0; // no z axis
+          nPos = (nPos + leds.size) % leds.size;
         }
-        // uint16_t nIndex = leds.XYZ(nPos);
         uint16_t nIndex = leds.XYZNoSpin(nPos);
 
         // count neighbors and store up to 9 neighbor colors
@@ -1530,7 +1521,7 @@ class GameOfLife: public Effect {
       ppf ("Generations: %d\n", *generation);
       // ppf("Repeat Detected, Oscillator: %d, Spaceship: %d, CubeGlider: %d. Generations: %d\n", *generation%16, *generation%int(gliderLength), *generation%int(cubeGliderLength), *generation);
       *generation = 0; // reset on next call
-      *pauseFrames = 50;
+      *step += 1500;
       return;// FRAMETIME;
     }
     // Update CRC values
