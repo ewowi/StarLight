@@ -1447,16 +1447,12 @@ class GameOfLife: public Effect {
         surviveNumbers[i] = false;
       }
       int slashIndex = ruleString.indexOf('/');
-      String bornPart = ruleString.substring(1, slashIndex);
-      String survivePart = ruleString.substring(slashIndex + 2);
-
-      for (int i = 0; i < bornPart.length(); i++) {
-          int num = bornPart.charAt(i) - '0';
-          if (num >= 0 && num < 9) birthNumbers[num] = true;
-      }
-      for (int i = 0; i < survivePart.length(); i++) {
-          int num = survivePart.charAt(i) - '0';
-          if (num >= 0 && num < 9) surviveNumbers[num] = true;
+      for (int i = 0; i < ruleString.length(); i++) {
+        int num = ruleString.charAt(i) - '0';
+        if (num >= 0 && num < 9) {
+          if (i < slashIndex) birthNumbers[num] = true;
+          else surviveNumbers[num] = true;
+        }
       }
       ppf("  Birth: ");
       for (int i = 0; i < 9; i++) ppf("%d", birthNumbers[i]);
