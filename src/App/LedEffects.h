@@ -1362,8 +1362,11 @@ class GameOfLife: public Effect {
     if (call == 0 || (*generation == 0 && *step < now)) {
       *generation = 1;
       *step = now + 1500; // previous call time + 1.5 seconds initial delay
-      random16_set_seed(now>>2); //seed the random generator
-
+      unsigned long seed = now>>2;
+      // seed = 8333; // broken seed for testing 16x16x16 cubeBox all colors off, density = 32
+      random16_set_seed(seed); //seed the random generator
+      ppf("Game of Life: %d x %d x %d\n", leds.size.x, leds.size.y, leds.size.z); //debug
+      ppf("Seed: %d\n", seed); //debug
       //Setup Grid
       memset(cells, 0, dataSize);
       memset(futureCells, 0, dataSize);
