@@ -1341,7 +1341,7 @@ class GameOfLife: public Effect {
     bool wrap = mdl->getValue("wrap");
     bool test = mdl->getValue("testPattern");
     byte ruleset = mdl->getValue("ruleset");
-    const uint16_t dataSize = (leds.size.x * leds.size.y * leds.size.z / 8) + 1;
+    const uint16_t dataSize = ((leds.size.x * leds.size.y * leds.size.z + 7) / 8);
     uint8_t *gliderLength = leds.sharedData.bind(gliderLength);
     uint8_t *cubeGliderLength = leds.sharedData.bind(cubeGliderLength);
     uint16_t *oscillatorCRC = leds.sharedData.bind(oscillatorCRC);
@@ -1351,16 +1351,15 @@ class GameOfLife: public Effect {
     byte *futureCells = leds.sharedData.bind(futureCells, dataSize);
     uint16_t *generation = leds.sharedData.bind(generation);
     unsigned long *step = leds.sharedData.bind(step);
-    String *prevRuleString = leds.sharedData.bind(prevRuleString);
     bool *birthNumbers = leds.sharedData.bind(birthNumbers, sizeof(bool) * 9);
     bool *surviveNumbers = leds.sharedData.bind(surviveNumbers, sizeof(bool) * 9);
+    String *prevRuleString = leds.sharedData.bind(prevRuleString);
 
     CRGB bgColor = CRGB::Black;
     CRGB color;
 
     //start new game of life
     if (call == 0 || (*generation == 0 && *step < now)) {
-      ppf("Game of Life: %d x %d x %d\n", leds.size.x, leds.size.y, leds.size.z); //debug
       *generation = 1;
       *step = now + 1500; // previous call time + 1.5 seconds initial delay
       random16_set_seed(now>>2); //seed the random generator
