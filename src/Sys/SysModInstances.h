@@ -98,6 +98,7 @@ class SysModInstances:public SysModule {
 public:
 
   std::vector<InstanceInfo> instances;
+  std::vector<JsonObject> changedVarsQueue;
 
   SysModInstances() :SysModule("Instances") {
   };
@@ -289,9 +290,10 @@ public:
 
     handleNotifications();
 
-    if (ui->dashVarChanged) {
-      ui->dashVarChanged = false;
-      sendSysInfoUDP(); 
+    while (changedVarsQueue.size()) {
+      JsonObject var = changedVarsQueue.front();
+      sendMessageUDP(IPAddress(255, 255, 255, 255), var["id"], var["value"]); //broadcast
+      changedVarsQueue.erase(changedVarsQueue.begin());
     }
   }
 
@@ -392,6 +394,8 @@ public:
         // IPAddress remoteIp = instanceUDP.remoteIP();
         // ppf("handleNotifications instances ...%d %d check %d or %d\n", instanceUDP.remoteIP()[3], packetSize, sizeof(UDPWLEDMessage), sizeof(UDPStarMessage));
 
+        bool found = false;
+
         if (packetSize == sizeof(UDPWLEDMessage)) { //WLED instance
           UDPStarMessage starMessage;
           byte *udpIn = (byte *)&starMessage.header;
@@ -399,42 +403,57 @@ public:
 
           starMessage.sysData.type = 0; //WLED
 
-          updateInstance(starMessage);
+          if (starMessage.header.ip0 == WiFi.localIP()[0]) { // checksum - no other type of message
+            updateInstance(starMessage);
+            found = true;
+          }
         }
-        else if (packetSize == sizeof(UDPStarMessage)) { //StarBase instance
+
+        if (!found && packetSize == sizeof(UDPStarMessage)) { //StarBase instance
           UDPStarMessage starMessage;
           byte *udpIn = (byte *)&starMessage;
           instanceUDP.read(udpIn, packetSize);
 
-          updateInstance(starMessage);
+          if (starMessage.header.ip0 == WiFi.localIP()[0]) { // checksum - no other type of message
+            updateInstance(starMessage);
+            found = true;
+          }
         }
-        else if (packetSize == 500) { //udp json message
 
-            char buffer[packetSize];
-            instanceUDP.read(buffer, packetSize);
+        if (!found) { // check on json
+          char buffer[packetSize];
+          instanceUDP.read(buffer, packetSize);
 
-            JsonDocument message;
-            deserializeJson(message, buffer);
+          JsonDocument message;
+          DeserializationError error = deserializeJson(message, buffer);
+          if (error)
+            ppf("handleNotifications i:%d no json l: %d e:%s\n", instanceUDP.remoteIP()[3], strlen(buffer), error.c_str());
+          else {
+            if (instanceUDP.remoteIP()[3] != WiFi.localIP()[3]) { //only others tbd only in group
 
-            ppf("handleNotifications i:%d json message %s (%s)\n", instanceUDP.remoteIP()[3], buffer, message.as<String>().c_str());
+              InstanceInfo *instance = findInstance(instanceUDP.remoteIP()); //if not exist, created
+              char group1[32];
+              char group2[32];
+              if (groupOfName(instance->name, group1) && groupOfName(mdl->getValue("name"), group2) && strcmp(group1, group2) == 0) {
+                  if (!message["id"].isNull() && !message["value"].isNull()) {
+                    ppf("handleNotifications i:%d json message %.*s l:%d\n", instanceUDP.remoteIP()[3], packetSize, buffer, packetSize);
 
-            mdl->setValueJV(message["id"].as<const char *>(), message["value"]);
-
+                    mdl->setValueJV(message["id"].as<const char *>(), message["value"]);
+                  }
+                }
+              }
+            else
+              ppf("handleNotifications self i:%d b:%.*s\n", instanceUDP.remoteIP()[3], packetSize, buffer);
+          }
         }
-        else {
-          //read the rest of the data (flush)
-          byte udpIn[1472+1];
-          instanceUDP.read(udpIn, packetSize);
 
-          ppf("packetSize %d not equal to %d or %d or 500\n", packetSize, sizeof(UDPWLEDMessage), sizeof(UDPStarMessage));
-        }
         web->recvUDPCounter++;
         web->recvUDPBytes+=packetSize;
 
       } //packetSize
       else {
       }
-    }
+    } //udp2Connected
 
     //remove inactive instances
     bool erased = false;
@@ -549,17 +568,18 @@ public:
       message["id"] = id;
       message["value"] = value;
 
-      char buffer[500];
+      size_t len = measureJson(message);
 
-      serializeJson(message, buffer);
+      char buffer[len];
 
-      instanceUDP.write((byte *)buffer, sizeof(buffer));
+      serializeJson(message, buffer, len);
+
+      instanceUDP.write((byte *)buffer, len);
       web->sendUDPCounter++;
-      web->sendUDPBytes+=sizeof(buffer);
+      web->sendUDPBytes+=len;
       instanceUDP.endPacket();
-      // ppf("sendMessageUDP ip:%d b:%s\n", ip[3], buffer);
+      ppf("sendMessageUDP ip:%d b:%.*s\n", ip[3], len, buffer);
     }
-
   }
 
   void updateInstance( UDPStarMessage udpStarMessage) {
@@ -625,10 +645,10 @@ public:
 
                   mdl->setValueJV(pair.key().c_str(), pair.value());
                 }
-                instance.jsonData = newData; // deepcopy: https://github.com/bblanchon/ArduinoJson/issues/1023
-                ppf("updateInstance json ip:%d", instance.ip[3]);
-                print->printJson(" d:", instance.jsonData);
               }
+              instance.jsonData = newData; // deepcopy: https://github.com/bblanchon/ArduinoJson/issues/1023
+              // ppf("updateInstance json ip:%d", instance.ip[3]);
+              // print->printJson(" d:", instance.jsonData);
             }
           }
         }

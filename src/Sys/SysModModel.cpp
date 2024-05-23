@@ -14,6 +14,7 @@
 #include "SysModFiles.h"
 #include "SysStarJson.h"
 #include "SysModUI.h"
+#include "SysModInstances.h"
 
 SysModModel::SysModModel() :SysModule("Model") {
   model = new JsonDocument(&allocator);
@@ -174,6 +175,28 @@ JsonObject SysModModel::findVar(const char * id, JsonArray parent) {
   return JsonObject();
 }
 
+JsonObject SysModModel::findParentVar(const char * id, JsonObject parent) {
+  JsonArray varArray;
+  // print ->print("findParentVar %s %s\n", id, parent.isNull()?"root":"n");
+  if (parent.isNull()) {
+    varArray = model->as<JsonArray>();
+  }
+  else
+    varArray = parent["n"];
+
+  JsonObject foundVar = JsonObject();
+  for (JsonObject var : varArray) {
+    if (foundVar.isNull()) {
+      if (var["id"] == id)
+        foundVar = parent;
+      else if (!var["n"].isNull()) {
+        foundVar = findParentVar(id, var);
+      }
+    }
+  }
+  return foundVar;
+}
+
 void SysModModel::findVars(const char * property, bool value, FindFun fun, JsonArray parent) {
   JsonArray root;
   // print ->print("findVar %s %s\n", id, parent.isNull()?"root":"n");
@@ -204,11 +227,10 @@ void SysModModel::varToValues(JsonObject var, JsonArray row) {
     }
 }
 
-void SysModModel::callChangeFun(JsonObject var, unsigned8 rowNr) {
-
+void SysModModel::setValueChangeFun(JsonObject var, unsigned8 rowNr) {
   //done here as ui cannot be used in SysModModel.h
-  if (var["dash"])
-    ui->dashVarChanged = true;
+  if (var["dash"] || findParentVar(var["id"])["dash"]) //parents of parents not supported yet
+    instances->changedVarsQueue.push_back(var);
 
   ui->callVarFun(var, rowNr, f_ChangeFun);
 

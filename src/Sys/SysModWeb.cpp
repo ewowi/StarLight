@@ -633,24 +633,24 @@ JsonObject SysModWeb::getResponseObject() {
 void SysModWeb::sendResponseObject(WebClient * client) {
   JsonObject responseObject = getResponseObject();
   if (responseObject.size()) {
-    if (strncmp(pcTaskGetTaskName(NULL), "loopTask", 8) != 0) {
-      ppf("send ");
-      char sep[3] = "";
-      for (JsonPair pair: responseObject) {
-        ppf("%s%s", sep, pair.key().c_str());
-        strcpy(sep, ", ");
-        if (pair.value().is<JsonObject>()) {
-          char sep[3] = "";
-          ppf("{");
-          for (JsonPair pair: pair.value().as<JsonObject>()) {
-            ppf("%s%s", sep, pair.key().c_str());
-            strcpy(sep, ", ");
-          }
-          ppf("}");
-        }
-      }
-      ppf("\n");
-    }
+    // if (strncmp(pcTaskGetTaskName(NULL), "loopTask", 8) != 0) {
+    //   ppf("send ");
+    //   char sep[3] = "";
+    //   for (JsonPair pair: responseObject) {
+    //     ppf("%s%s", sep, pair.key().c_str());
+    //     strcpy(sep, ", ");
+    //     if (pair.value().is<JsonObject>()) {
+    //       char sep[3] = "";
+    //       ppf("{");
+    //       for (JsonPair pair: pair.value().as<JsonObject>()) {
+    //         ppf("%s%s", sep, pair.key().c_str());
+    //         strcpy(sep, ", ");
+    //       }
+    //       ppf("}");
+    //     }
+    //   }
+    //   ppf("\n");
+    // }
     sendDataWs(responseObject, client);
     getResponseDoc()->to<JsonObject>(); //recreate!
   }

@@ -279,7 +279,7 @@ public:
       }
     }
 
-    if (changed) callChangeFun(var, rowNr);
+    if (changed) setValueChangeFun(var, rowNr);
     
     return var;
   }
@@ -340,13 +340,14 @@ public:
 
   //returns the var defined by id (parent to recursively call findVar)
   JsonObject findVar(const char * id, JsonArray parent = JsonArray());
+  JsonObject findParentVar(const char * id, JsonObject parent = JsonObject());
   void findVars(const char * id, bool value, FindFun fun, JsonArray parent = JsonArray());
 
   //recursively add values in  a variant
   void varToValues(JsonObject var, JsonArray values);
 
   //run the change function and send response to all? websocket clients
-  void callChangeFun(JsonObject var, unsigned8 rowNr = UINT8_MAX);
+  void setValueChangeFun(JsonObject var, unsigned8 rowNr = UINT8_MAX);
 
   //pseudo VarObject: public JsonObject functions
   const char * varID(JsonObject var) {return var["id"];}
@@ -431,7 +432,7 @@ public:
                 allNull = false;
             }
             if (allNull) {
-              print->printJson("remove allnulls", *childVar);
+              ppf("remove allnulls %s\n", varID(*childVar));
               varChildren(var).remove(childVar);
             }
           }

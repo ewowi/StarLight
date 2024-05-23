@@ -31,14 +31,14 @@ Coord3D assign 32 32 0
 fxEnd chFun 0 0 0 - 32 32 0
 Coord3D toJson 8,8,1 -> {"x":8,"y":8,"z":1}
 setValue changed fxSize ->{"x":8,"y":8,"z":1}
-callChangeFun fxSize unknown type for {"x":8,"y":8,"z":1}
+setValueChangeFun fxSize unknown type for {"x":8,"y":8,"z":1}
 setValue changed fxCount ->64
 initVarAndUpdate chFun init fixture v:0
 seqNrToName: 2DMatrix3232.json 9640
 fixture chFun send ws done {"pview":{"file":"/2DMatrix3232.json"}}
 Coord3D toJson 8,8,1 -> {"x":8,"y":8,"z":1}
 setValue changed fixSize ->{"x":8,"y":8,"z":1}
-callChangeFun fixSize unknown type for {"x":8,"y":8,"z":1}
+setValueChangeFun fixSize unknown type for {"x":8,"y":8,"z":1}
 setValue changed fixCount ->64
 initVarAndUpdate chFun init fps v:60
 setValue value removed realFps 
@@ -140,11 +140,11 @@ StarJson found all what it was looking for 1030 >= 6
 projectAndMap P:32x32x1 V:15x15x1 and P:1024 V:225
 Coord3D toJson 15,15,1 -> {"x":15,"y":15,"z":1}
 setValue changed fxSize ->{"x":15,"y":15,"z":1}
-callChangeFun fxSize unknown type for {"x":15,"y":15,"z":1}
+setValueChangeFun fxSize unknown type for {"x":15,"y":15,"z":1}
 setValue changed fxCount ->225
 Coord3D toJson 32,32,1 -> {"x":32,"y":32,"z":1}
 setValue changed fixSize ->{"x":32,"y":32,"z":1}
-callChangeFun fixSize unknown type for {"x":32,"y":32,"z":1}
+setValueChangeFun fixSize unknown type for {"x":32,"y":32,"z":1}
 setValue changed fixCount ->1024
 StarJson destructing
 FastLED.addLeds new 16: 0-1024
