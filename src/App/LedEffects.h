@@ -1491,6 +1491,152 @@ class GameOfLife: public Effect {
   }
 }; //GameOfLife
 
+
+Coord3D rotate(Coord3D pos, Coord3D grid, char axis = 'z') {
+  // ppf("Starting rotation of x: %d, y: %d, z: %d ->", pos.x, pos.y, pos.z);
+  float rotationMatrix[3][3];
+  switch(axis) {
+      case 'x':
+          rotationMatrix[0][0] = 1; rotationMatrix[0][1] = 0; rotationMatrix[0][2] = 0;
+          rotationMatrix[1][0] = 0; rotationMatrix[1][1] = 0; rotationMatrix[1][2] = -1;
+          rotationMatrix[2][0] = 0; rotationMatrix[2][1] = 1; rotationMatrix[2][2] = 0;
+          break;
+      case 'y':
+          rotationMatrix[0][0] = 0; rotationMatrix[0][1] = 0; rotationMatrix[0][2] = 1;
+          rotationMatrix[1][0] = 0; rotationMatrix[1][1] = 1; rotationMatrix[1][2] = 0;
+          rotationMatrix[2][0] = -1; rotationMatrix[2][1] = 0; rotationMatrix[2][2] = 0;
+          break;
+      case 'z':
+      default:
+          rotationMatrix[0][0] = 0; rotationMatrix[0][1] = -1; rotationMatrix[0][2] = 0;
+          rotationMatrix[1][0] = 1; rotationMatrix[1][1] = 0; rotationMatrix[1][2] = 0;
+          rotationMatrix[2][0] = 0; rotationMatrix[2][1] = 0; rotationMatrix[2][2] = 1;
+          break;
+  }
+  
+  Coord3D currPos = pos;
+  if (currPos.x == 0) currPos.x = -grid.x + 1;
+  if (currPos.y == 0) currPos.y = -grid.y + 1;
+  if (currPos.z == 0) currPos.z = -grid.z + 1;
+
+  // Apply rotation to 1,0,1
+  //0 * 1 + -1 * 0 + 0 * 1 = 0
+  //1 * 1 + 0 * 0 + 0 * 1 = 1
+  //0 * 1 + 0 * 0 + 1 * 1 = 1
+
+  //Apply rotation to 1,4,1
+  //0 * 1 + -1 * 4 + 0 * 1 = -4
+  //1 * 1 + 0 * 4 + 0 * 1 = 1
+  //0 * 1 + 0 * 4 + 1 * 1 = 1
+
+  // Apply the rotation matrix to the current position
+  Coord3D newPos;
+  int x = rotationMatrix[0][0] * currPos.x + rotationMatrix[0][1] * currPos.y + rotationMatrix[0][2] * currPos.z;
+  int y = rotationMatrix[1][0] * currPos.x + rotationMatrix[1][1] * currPos.y + rotationMatrix[1][2] * currPos.z;
+  int z = rotationMatrix[2][0] * currPos.x + rotationMatrix[2][1] * currPos.y + rotationMatrix[2][2] * currPos.z;
+
+  if (x < 0) x = ((x + grid.x) % grid.x) - 1;
+  if (y < 0) y = ((y + grid.y) % grid.y) - 1;
+  if (z < 0) z = ((z + grid.z) % grid.z) - 1;
+
+  if (pos.x == 0) x = abs(x);
+  if (pos.y == 0) y = abs(y);
+  if (pos.z == 0) z = abs(z);
+
+  // ppf(" x: %d, y: %d, z: %d\n", x, y, z);
+  return Coord3D({x, y, z});
+}
+
+class RubiksCube: public Effect {
+  const char * name() {return "Rubik's Cube";}
+  unsigned8 dim() {return _3D;}
+  const char * tags() {return "💡💫";}
+
+  void loop(Leds &leds) {
+    CRGBPalette16 pal = getPalette();
+    stackUnsigned8 speed = mdl->getValue("Turn Every");
+    uint8_t *setup = leds.sharedData.bind(setup);
+    unsigned long *step = leds.sharedData.bind(step);
+    char *prevAxis = leds.sharedData.bind(prevAxis);
+
+    //3 or 6 face fixture cheat :( (this didn't even work so joke's on me)
+    //assumes 6 sides is even width and 3 sides is odd width
+    int cheater = 1;
+    if (leds.size.x % 2 == 1) cheater = 0;
+
+    if (*setup != 123) {
+      *setup = 123;
+      *step = now;
+      leds.fill_solid(CRGB::Black, 0); //clear leds
+      random16_set_seed(now>>2);
+
+      //set up cube colors
+      for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
+        Coord3D pos = {x, y, z};
+        CRGB color;
+        if      (pos.y == 0)                     color = CRGB::Yellow; //top face
+        else if (pos.x == 0)                     color = CRGB::Blue; //left face
+        else if (pos.z == 0)                     color = CRGB::Red; //front face
+        else if (pos.x == leds.size.x - cheater) color = CRGB::Green; //right face
+        else if (pos.y == leds.size.z - cheater) color = CRGB::White; //bottom face
+        else if (pos.z == leds.size.y - cheater) color = CRGB::DarkOrange; //back face
+        else                                     color = CRGB::Black; //inside
+      
+        leds.setPixelColor(pos, color, 0);
+      }
+    }
+    //temp Cube store colors
+    CRGB tempCube[leds.size.x +1-cheater][leds.size.y+1-cheater][leds.size.z+1-cheater];
+    // fill tempCube with black
+    for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
+      tempCube[x][y][z] = CRGB::Black;
+    }
+    // tursPerSecond
+    float turnsPerSecond = 2;
+    if (now - *step >= 1000 / turnsPerSecond) {
+      *step = now;
+      // choose a random axis to rotate the layer around
+      char axis = *prevAxis;
+      while (axis == *prevAxis) axis = random8(3) == 0 ? 'x' : random8(3) == 1 ? 'y' : 'z';
+      byte rotations = random8(3);
+
+      // rotate the layer
+
+      int startLayer = 0; //random8(leds.size.x/4);
+      int endLayer = leds.size.x/2-1; //startLayer + random8(leds.size.x/4);
+      
+      for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
+        if ((axis == 'z' && z >= startLayer && z <= endLayer) ||
+            (axis == 'y' && y >= startLayer && y <= endLayer) ||
+            (axis == 'x' && x >= startLayer && x <= endLayer)) {
+            Coord3D currPos = Coord3D({x, y, z});
+            Coord3D rotatedPos = currPos;
+            for (int i = 0; i < rotations; i++) rotatedPos = rotate(rotatedPos, leds.size, axis);
+            // ppf("Rotating x: %d, y: %d, z: %d to x: %d, y: %d, z: %d Color: r: %d, g: %d, b: %d\n", currPos.x, currPos.y, currPos.z, rotatedPos.x, rotatedPos.y, rotatedPos.z, leds.getPixelColor(currPos).r, leds.getPixelColor(currPos).g, leds.getPixelColor(currPos).b);
+            tempCube[rotatedPos.x][rotatedPos.y][rotatedPos.z] = leds.getPixelColor(currPos);
+        }
+      }
+
+      //draw cube layer
+      for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
+        if ((axis == 'z' && z >= startLayer && z <= endLayer) ||
+            (axis == 'y' && y >= startLayer && y <= endLayer) ||
+            (axis == 'x' && x >= startLayer && x <= endLayer)) {
+          leds.setPixelColor(Coord3D({x, y, z}), tempCube[x][y][z], 0);
+          // ppf("Setting x: %d, y: %d, z: %d to color r: %d, g: %d, b: %d\n", x, y, z, tempCube[x][y][z].r, tempCube[x][y][z].g, tempCube[x][y][z].b);
+        }
+      }
+    }
+  }
+  
+  void controls(JsonObject parentVar) {
+    addPalette(parentVar, 4);
+    ui->initSlider(parentVar, "Turn Every", 10, 0, 255);
+  }
+}; //Rubik's Cube
+
+
+
 #ifdef STARLEDS_USERMOD_WLEDAUDIO
 
 class Waverly: public Effect {
@@ -1826,6 +1972,7 @@ public:
     effects.push_back(new ScrollingText);
     effects.push_back(new Noise2D);
     effects.push_back(new GameOfLife);
+    effects.push_back(new RubiksCube);
     #ifdef STARLEDS_USERMOD_WLEDAUDIO
       //2D WLED
       effects.push_back(new Waverly);
