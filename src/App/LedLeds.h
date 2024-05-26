@@ -197,6 +197,8 @@ public:
 
   bool doMap = false;
 
+  CRGBPalette256 palette;
+
   unsigned16 XY(unsigned16 x, unsigned16 y) {
     return XYZ(x, y, 0);
   }
