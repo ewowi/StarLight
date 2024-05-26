@@ -1554,7 +1554,7 @@ class RubiksCube: public Effect {
 
   void loop(Leds &leds) {
     CRGBPalette16 pal = getPalette();
-    stackUnsigned8 speed = mdl->getValue("Turn Every");
+    stackUnsigned8 speed = mdl->getValue("Turns Per Second");
     uint8_t *setup = leds.sharedData.bind(setup);
     unsigned long *step = leds.sharedData.bind(step);
     char *prevAxis = leds.sharedData.bind(prevAxis);
@@ -1566,7 +1566,6 @@ class RubiksCube: public Effect {
 
     if (*setup != 123) {
       *setup = 123;
-      *step = now;
       leds.fill_solid(CRGB::Black, 0); //clear leds
       random16_set_seed(now>>2);
 
@@ -1592,9 +1591,9 @@ class RubiksCube: public Effect {
       tempCube[x][y][z] = CRGB::Black;
     }
     // tursPerSecond
-    float turnsPerSecond = 2;
+    float turnsPerSecond = speed/4.0;
     if (now - *step >= 1000 / turnsPerSecond) {
-      *step = now;
+      // *step = now;
       // choose a random axis to rotate the layer around
       char axis = *prevAxis;
       while (axis == *prevAxis) axis = random8(3) == 0 ? 'x' : random8(3) == 1 ? 'y' : 'z';
@@ -1626,12 +1625,13 @@ class RubiksCube: public Effect {
           // ppf("Setting x: %d, y: %d, z: %d to color r: %d, g: %d, b: %d\n", x, y, z, tempCube[x][y][z].r, tempCube[x][y][z].g, tempCube[x][y][z].b);
         }
       }
+    *step = now;
     }
   }
   
   void controls(JsonObject parentVar) {
     addPalette(parentVar, 4);
-    ui->initSlider(parentVar, "Turn Every", 10, 0, 255);
+    ui->initSlider(parentVar, "Turns Per Second", 10, 0, 255);
   }
 }; //Rubik's Cube
 
