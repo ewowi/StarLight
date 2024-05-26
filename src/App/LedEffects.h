@@ -1384,7 +1384,7 @@ class GameOfLife: public Effect {
         if (map(random8(), 0, 255, 0, 100) < lifeChance) {
           setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
           setBitValue(futureCells, leds.XYZNoSpin({x,y,z}), true);
-          leds.setPixelColor({x,y,z}, allColors ? random16() * random16() : ColorFromPalette(pal, random8()), 0);
+          leds.setPixelColor({x,y,z}, ColorFromPalette(pal, random8()), 0);
         }
         else {
           leds.setPixelColor({x,y,z}, bgColor, 0);
@@ -1529,9 +1529,9 @@ class GameOfLife: public Effect {
         // no longer storing colors, if parent dies the color is lost
         CRGB randomParentColor = color; // last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8() % colorCount];
-        if (randomParentColor == bgColor) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16(); // needed for tilt, pan, roll
+        if (randomParentColor == bgColor) randomParentColor = ColorFromPalette(pal, random8()); // needed for tilt, pan, roll
         // mutate color chance
-        if (map(random8(), 0, 255, 0, 100) < mutation) randomParentColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16();
+        if (map(random8(), 0, 255, 0, 100) < mutation) randomParentColor = ColorFromPalette(pal, random8());
         leds.setPixelColor(cPos, randomParentColor, 0);
       }
       else {
@@ -1595,7 +1595,6 @@ class GameOfLife: public Effect {
     ui->initSlider(parentVar, "Game Speed (FPS)", 60, 0, 60);
     ui->initSlider(parentVar, "Starting Life Density", 32, 10, 90);
     ui->initSlider(parentVar, "Mutation Chance", 2, 0, 100);
-    ui->initCheckBox(parentVar, "allColors", false);
     ui->initCheckBox(parentVar, "wrap", true);
     ui->initCheckBox(parentVar, "testPattern", false);
   }
