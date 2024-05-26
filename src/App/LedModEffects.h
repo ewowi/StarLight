@@ -128,8 +128,7 @@ public:
         options.add("Mirror WIP");
         options.add("Reverse WIP");
         // options.add("Kaleidoscope WIP");
-        return true;
-      }
+        return true; }
       case f_ChangeFun:
 
         if (rowNr == UINT8_MAX) rowNr = 0; // in case fx without a rowNr

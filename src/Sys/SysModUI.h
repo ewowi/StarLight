@@ -38,7 +38,6 @@ struct VarLoop {
 class SysModUI: public SysModule {
 
 public:
-  bool dashVarChanged = false; //tbd: move mechanism to SysModInstances as there it will be used
   std::vector<VarFun> varFunctions;
 
   SysModUI();

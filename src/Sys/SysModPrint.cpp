@@ -86,32 +86,38 @@ void SysModPrint::printf(const char * format, ...) {
 
   va_start(args, format);
 
-  // Serial.print(strncmp(pcTaskGetTaskName(NULL), "loopTask", 8) == 0?"":"α"); //looptask λ/ asyncTCP task α
-
   unsigned8 pOut = 1; //default serial
-  char value[1024];
-  vsnprintf(value, sizeof(value)-1, format, args);
+  char buffer[512]; //this is a lot for the stack - move to heap?
+  vsnprintf(buffer, sizeof(buffer)-1, format, args);
+  bool toSerial = false;
+  
   if (mdls->isConnected) {
     if (mdl->model)
       pOut = mdl->getValue("pOut");
 
-    if (pOut == 1)
-      Serial.print(value);
+    if (pOut == 1) {
+      toSerial = true;
+    }
     else if (pOut == 2) {
       JsonObject responseObject = web->getResponseObject();
       if (responseObject["log"]["value"].isNull())
-        responseObject["log"]["value"] = value;
+        responseObject["log"]["value"] = buffer;
       else
-        responseObject["log"]["value"] = responseObject["log"]["value"].as<String>() + String(value);
-      // web->addResponse("log", "value", JsonString(value, JsonString::Copied)); //setValue not necessary
-      // mdl->setUIValueV("log", "%s", value);
+        responseObject["log"]["value"] = responseObject["log"]["value"].as<String>() + String(buffer);
+      // web->addResponse("log", "value", JsonString(buffer, JsonString::Copied)); //setValue not necessary
+      // mdl->setUIValueV("log", "%s", buffer);
     }
     else if (pOut == 3) {
       //tbd
     }
   }
   else
-    Serial.print(value);
+    toSerial = true;
+
+  if (toSerial) {
+    Serial.print(strncmp(pcTaskGetTaskName(NULL), "loopTask", 8) == 0?"":"α"); //looptask λ/ asyncTCP task α
+    Serial.print(buffer);
+  }
 
   va_end(args);
 }
