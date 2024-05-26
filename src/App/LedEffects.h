@@ -51,6 +51,7 @@ public:
         options.add("RainbowStripeColors");
         options.add("PartyColors");
         options.add("HeatColors");
+        options.add("RandomColors");
         return true; }
       default: return false;
     }});
@@ -58,17 +59,23 @@ public:
     // currentVar["dash"] = true;
   }
 
-  CRGBPalette16 getPalette() {
+  CRGBPalette256 getPalette() {
     switch (mdl->getValue("pal").as<unsigned8>()) {
-      case 0: return CloudColors_p; break;
-      case 1: return LavaColors_p; break;
-      case 2: return OceanColors_p; break;
-      case 3: return ForestColors_p; break;
-      case 4: return RainbowColors_p; break;
-      case 5: return RainbowStripeColors_p; break;
-      case 6: return PartyColors_p; break;
-      case 7: return HeatColors_p; break;
-      default: return PartyColors_p; break;
+      case 0: return CloudColors_p;
+      case 1: return LavaColors_p;
+      case 2: return OceanColors_p;
+      case 3: return ForestColors_p;
+      case 4: return RainbowColors_p;
+      case 5: return RainbowStripeColors_p;
+      case 6: return PartyColors_p;
+      case 7: return HeatColors_p;
+      case 8: {
+        CRGBPalette256 random;
+        for (int i=0; i < 255; i++)
+          random[i] = CRGB(random8(), random8(), random8());
+        return random; 
+      }
+      default: return PartyColors_p; //should never occur
     }
   }
 };
@@ -160,7 +167,7 @@ class BPMEffect: public Effect {
   const char * tags() {return "⚡";}
 
   void loop(Leds &leds) {
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
 
     // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
     stackUnsigned8 BeatsPerMinute = 62;
@@ -263,7 +270,7 @@ class BouncingBalls: public Effect {
   void loop(Leds &leds) {
     stackUnsigned8 grav = mdl->getValue("gravity");
     stackUnsigned8 numBalls = mdl->getValue("balls");
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
 
     Ball *balls = leds.sharedData.bind(balls, maxNumBalls); //array
 
@@ -324,7 +331,7 @@ class BouncingBalls: public Effect {
   }
 }; // BouncingBalls
 
-void mode_fireworks(Leds &leds, stackUnsigned16 *aux0, stackUnsigned16 *aux1, uint8_t speed, uint8_t intensity, CRGBPalette16 pal, bool useAudio = false) {
+void mode_fireworks(Leds &leds, stackUnsigned16 *aux0, stackUnsigned16 *aux1, uint8_t speed, uint8_t intensity, CRGBPalette256 pal, bool useAudio = false) {
   // fade_out(0);
   leds.fadeToBlackBy(10);
   // if (SEGENV.call == 0) {
@@ -391,7 +398,7 @@ class RainEffect: public Effect {
 
   void loop(Leds &leds) {
 
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
     uint8_t speed = mdl->getValue("speed");
     uint8_t intensity = mdl->getValue("intensity");
 
@@ -455,7 +462,7 @@ class DripEffect: public Effect {
 
   void loop(Leds &leds) {
 
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
     uint8_t grav = mdl->getValue("gravity");
     uint8_t drips = mdl->getValue("drips");
     uint8_t swell = mdl->getValue("swell");
@@ -541,7 +548,7 @@ class HeartBeatEffect: public Effect {
 
   void loop(Leds &leds) {
 
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
     uint8_t speed = mdl->getValue("speed");
     uint8_t intensity = mdl->getValue("intensity");
 
@@ -649,7 +656,7 @@ class PopCorn: public Effect {
   const char * tags() {return "♪💡";}
 
   void loop(Leds &leds) {
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("speed");
     stackUnsigned8 numPopcorn = mdl->getValue("corns");
     bool useaudio = mdl->getValue("useaudio");
@@ -721,7 +728,7 @@ class NoiseMeter: public Effect {
   const char * tags() {return "♪💡";}
 
   void loop(Leds &leds) {
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
     stackUnsigned8 fadeRate = mdl->getValue("fadeRate");
     stackUnsigned8 width = mdl->getValue("width");
 
@@ -757,7 +764,7 @@ class AudioRings: public RingEffect {
   const char * tags() {return "♫💫";}
 
   void loop(Leds &leds) {
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
     for (int i = 0; i < 7; i++) { // 7 rings
 
       byte val;
@@ -781,7 +788,7 @@ class AudioRings: public RingEffect {
     setRingFromFtt(leds, pal, 0, 8); // set outer ring to bass
 
   }
-  void setRingFromFtt(Leds &leds, CRGBPalette16 pal, int index, int ring) {
+  void setRingFromFtt(Leds &leds, CRGBPalette256 pal, int index, int ring) {
     byte val = wledAudioMod->fftResults[index];
     // Visualize leds to the beat
     CRGB color = ColorFromPalette(pal, val, 255);
@@ -961,7 +968,7 @@ class DNA: public Effect {
   const char * tags() {return "💡💫";}
 
   void loop(Leds &leds) {
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("speed");
     stackUnsigned8 blur = mdl->getValue("blur");
     stackUnsigned8 phases = mdl->getValue("phases");
@@ -1072,7 +1079,7 @@ class Octopus: public Effect {
     stackUnsigned8 offsetX = mdl->getValue("Offset X");
     stackUnsigned8 offsetY = mdl->getValue("Offset Y");
     stackUnsigned8 legs = mdl->getValue("Legs");
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
 
     Map_t    *rMap = leds.sharedData.bind(rMap, leds.size.x * leds.size.y); //array
     uint8_t *offsX = leds.sharedData.bind(offsX);
@@ -1153,7 +1160,7 @@ class Lissajous: public Effect {
     stackUnsigned8 fadeRate = mdl->getValue("Fade rate");
     stackUnsigned8 speed = mdl->getValue("speed");
     bool smooth = mdl->getValue("Smooth");
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
 
     leds.fadeToBlackBy(fadeRate);
 
@@ -1203,7 +1210,7 @@ class Frizzles: public Effect {
 
     stackUnsigned8 bpm = mdl->getValue("BPM");
     stackUnsigned8 intensity = mdl->getValue("intensity");
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
 
     for (int i = 8; i > 0; i--) {
       Coord3D pos = {0,0,0};
@@ -1266,7 +1273,7 @@ class Noise2D: public Effect {
   const char * tags() {return "💡";}
 
   void loop(Leds &leds) {
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("speed");
     stackUnsigned8 scale = mdl->getValue("scale");
 
@@ -1333,11 +1340,10 @@ class GameOfLife: public Effect {
   const char * tags() {return "💡💫";}
 
   void loop(Leds &leds) {
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("speed");
     stackUnsigned8 mutation = mdl->getValue("mutation");
     byte initialChance = mdl->getValue("initialChance (out of 255)");
-    bool allColors = mdl->getValue("allColors");
     bool wrap = mdl->getValue("wrap");
     const uint16_t dataSize = (leds.size.x * leds.size.y * leds.size.z / 8) + 1;
 
@@ -1370,7 +1376,7 @@ class GameOfLife: public Effect {
           // if (leds.isMapped({x,y,z}) == -1) continue; //skip if not physical led
           setBitValue(cells, leds.XYZ(x,y,z), true);
           setBitValue(futureCells, leds.XYZ(x,y,z), true);
-          color = allColors ? random16() * random16() : ColorFromPalette(pal, random8());
+          color = ColorFromPalette(pal, random8());
           leds.setPixelColor({x,y,z}, color, 0);
         }
       }
@@ -1448,9 +1454,9 @@ class GameOfLife: public Effect {
         else if (colorCount == 2) dominantColor = nColors[random8()%2]; // 1 leading parent died
         else if (colorCount == 1) dominantColor = nColors[0];           // 2 leading parents died
         else dominantColor = color;                                     // all parents died last used color
-        if (color == bgColor) dominantColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16(); 
+        if (color == bgColor) dominantColor = ColorFromPalette(pal, random8()); 
         // mutate color chance
-        if (random8() < mutation) dominantColor = !allColors?ColorFromPalette(pal, random8()): random16()*random16(); 
+        if (random8() < mutation) dominantColor = ColorFromPalette(pal, random8()); 
         leds.setPixelColor(cPos, dominantColor, 0);
       }
       else {
@@ -1486,7 +1492,6 @@ class GameOfLife: public Effect {
     ui->initSlider(parentVar, "speed", 128, 0, 255);
     ui->initSlider(parentVar, "initialChance (out of 255)", 82, 0, 255);
     ui->initSlider(parentVar, "mutation", 2, 0, 255);
-    ui->initCheckBox(parentVar, "allColors", false);
     ui->initCheckBox(parentVar, "wrap", true);
   }
 }; //GameOfLife
@@ -1499,7 +1504,7 @@ class Waverly: public Effect {
   const char * tags() {return "♪💡";}
 
   void loop(Leds &leds) {
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
     stackUnsigned8 amplification = mdl->getValue("Amplification");
     stackUnsigned8 sensitivity = mdl->getValue("Sensitivity");
     bool noClouds = mdl->getValue("No Clouds");
@@ -1562,7 +1567,7 @@ class GEQEffect: public Effect {
     stackUnsigned8 ripple = mdl->getValue("ripple"); 
     bool colorBars = mdl->getValue("colorBars");
     bool smoothBars = mdl->getValue("smoothBars");
-    CRGBPalette16 pal = getPalette();
+    CRGBPalette256 pal = getPalette();
 
     bool rippleTime = false;
     if (now - *step >= (256U - ripple)) {
