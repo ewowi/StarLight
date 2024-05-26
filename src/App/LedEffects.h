@@ -17,7 +17,7 @@
 #endif
 
 unsigned8 gHue = 0; // rotating "base color" used by many of the patterns
-unsigned long call = 0; //not used at the moment (don't use in effect calculations)
+unsigned long call = 0; //not used at the moment (don't use in effect calculations), well this is not entirely true.
 unsigned long now = millis();
 
 //utility function
@@ -36,12 +36,10 @@ public:
 
   virtual void loop(Leds &leds) {}
 
-  virtual void controls(JsonObject parentVar) {}
-
-  void addPalette(JsonObject parentVar, unsigned8 value) {
-    JsonObject currentVar = ui->initSelect(parentVar, "pal", value, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  virtual void controls(Leds &leds, JsonObject parentVar) {
+    ui->initSelect(parentVar, "pal", 4, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun: {
-        ui->setLabel(var, "Palette");
+        ui->setLabel(var, "Palettekes");
         JsonArray options = ui->setOptions(var);
         options.add("CloudColors");
         options.add("LavaColors");
@@ -53,31 +51,30 @@ public:
         options.add("HeatColors");
         options.add("RandomColors");
         return true; }
+      case f_ChangeFun:
+        print->printJson("pal changefun", var);
+        switch (var["value"][rowNr].as<unsigned8>()) {
+          case 0: leds.palette = CloudColors_p; break;
+          case 1: leds.palette = LavaColors_p; break;
+          case 2: leds.palette = OceanColors_p; break;
+          case 3: leds.palette = ForestColors_p; break;
+          case 4: leds.palette = RainbowColors_p; break;
+          case 5: leds.palette = RainbowStripeColors_p; break;
+          case 6: leds.palette = PartyColors_p; break;
+          case 7: leds.palette = HeatColors_p; break;
+          case 8: { //randomColors
+            for (int i=0; i < 255; i++) {
+              leds.palette[i] = CRGB(random8(), random8(), random8());
+            }
+            break;
+          }
+          default: leds.palette = PartyColors_p; //should never occur
+        }
+        return true;
       default: return false;
     }});
-    //tbd: check if memory is freed!
-    // currentVar["dash"] = true;
   }
 
-  CRGBPalette256 getPalette() {
-    switch (mdl->getValue("pal").as<unsigned8>()) {
-      case 0: return CloudColors_p;
-      case 1: return LavaColors_p;
-      case 2: return OceanColors_p;
-      case 3: return ForestColors_p;
-      case 4: return RainbowColors_p;
-      case 5: return RainbowStripeColors_p;
-      case 6: return PartyColors_p;
-      case 7: return HeatColors_p;
-      case 8: {
-        CRGBPalette256 random;
-        for (int i=0; i < 255; i++)
-          random[i] = CRGB(random8(), random8(), random8());
-        return random; 
-      }
-      default: return PartyColors_p; //should never occur
-    }
-  }
 };
 
 class SolidEffect: public Effect {
@@ -94,7 +91,7 @@ class SolidEffect: public Effect {
     leds.fill_solid(color);
   }
   
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "Red", 182);
     ui->initSlider(parentVar, "Green", 15);
     ui->initSlider(parentVar, "Blue", 98);
@@ -143,7 +140,7 @@ class SinelonEffect: public Effect {
     leds[pos] = leds.getPixelColor(pos) + CHSV( gHue, 255, 192);
   }
   
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "BPM", 60);
   }
 }; //Sinelon
@@ -167,18 +164,17 @@ class BPMEffect: public Effect {
   const char * tags() {return "⚡";}
 
   void loop(Leds &leds) {
-    CRGBPalette256 pal = getPalette();
 
     // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
     stackUnsigned8 BeatsPerMinute = 62;
     stackUnsigned8 beat = beatsin8( BeatsPerMinute, 64, 255);
     for (forUnsigned16 i = 0; i < leds.nrOfLeds; i++) { //9948
-      leds[i] = ColorFromPalette(pal, gHue+(i*2), beat-gHue+(i*10));
+      leds[i] = ColorFromPalette(leds.palette, gHue+(i*2), beat-gHue+(i*10));
     }
   }
   
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
   }
 };
 
@@ -213,7 +209,7 @@ class RunningEffect: public Effect {
     // leds[leds.nrOfLeds -1 - pos2] = CHSV( gHue, 255, 192); //make sure the right physical leds get their value
   }
 
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "BPM", 60, 0, 255, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun:
         ui->setComment(var, "in BPM!");
@@ -270,7 +266,6 @@ class BouncingBalls: public Effect {
   void loop(Leds &leds) {
     stackUnsigned8 grav = mdl->getValue("gravity");
     stackUnsigned8 numBalls = mdl->getValue("balls");
-    CRGBPalette256 pal = getPalette();
 
     Ball *balls = leds.sharedData.bind(balls, maxNumBalls); //array
 
@@ -316,7 +311,7 @@ class BouncingBalls: public Effect {
 
       int pos = roundf(balls[i].height * (leds.nrOfLeds - 1));
 
-      CRGB color = ColorFromPalette(pal, i*(256/max(numBalls, (stackUnsigned8)8)), 255); //error: no matching function for call to 'max(uint8_t&, int)'
+      CRGB color = ColorFromPalette(leds.palette, i*(256/max(numBalls, (stackUnsigned8)8)), 255); //error: no matching function for call to 'max(uint8_t&, int)'
 
       leds[pos] = color;
       // if (leds.nrOfLeds<32) leds.setPixelColor(indexToVStrip(pos, stripNr), color); // encode virtual strip into index
@@ -324,14 +319,14 @@ class BouncingBalls: public Effect {
     } //balls
   }
 
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "gravity", 128);
     ui->initSlider(parentVar, "balls", 8, 1, 16);
   }
 }; // BouncingBalls
 
-void mode_fireworks(Leds &leds, stackUnsigned16 *aux0, stackUnsigned16 *aux1, uint8_t speed, uint8_t intensity, CRGBPalette256 pal, bool useAudio = false) {
+void mode_fireworks(Leds &leds, stackUnsigned16 *aux0, stackUnsigned16 *aux1, uint8_t speed, uint8_t intensity, bool useAudio = false) {
   // fade_out(0);
   leds.fadeToBlackBy(10);
   // if (SEGENV.call == 0) {
@@ -380,9 +375,9 @@ void mode_fireworks(Leds &leds, stackUnsigned16 *aux0, stackUnsigned16 *aux1, ui
       if(random8(my_intensity) == 0) {
         uint16_t index = random(leds.nrOfLeds);
         if (soundColor < 0)
-          leds.setPixelColor(index, ColorFromPalette(pal, random8()));
+          leds.setPixelColor(index, ColorFromPalette(leds.palette, random8()));
         else
-          leds.setPixelColor(index, ColorFromPalette(pal, soundColor + random8(24))); // WLEDSR
+          leds.setPixelColor(index, ColorFromPalette(leds.palette, soundColor + random8(24))); // WLEDSR
         *aux1 = *aux0;
         *aux0 = index;
       }
@@ -397,8 +392,6 @@ class RainEffect: public Effect {
   const char * tags() {return "💡";}
 
   void loop(Leds &leds) {
-
-    CRGBPalette256 pal = getPalette();
     uint8_t speed = mdl->getValue("speed");
     uint8_t intensity = mdl->getValue("intensity");
 
@@ -435,11 +428,11 @@ class RainEffect: public Effect {
       if (*aux0 >= leds.size.x*leds.size.y) *aux0 = 0;     // ignore
       if (*aux1 >= leds.size.x*leds.size.y) *aux1 = 0;
     }
-    mode_fireworks(leds, aux0, aux1, speed, intensity, pal);
+    mode_fireworks(leds, aux0, aux1, speed, intensity);
   }
   
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "speed", 128, 1, 255);
     ui->initSlider(parentVar, "intensity", 64, 1, 128);
   }
@@ -462,7 +455,6 @@ class DripEffect: public Effect {
 
   void loop(Leds &leds) {
 
-    CRGBPalette256 pal = getPalette();
     uint8_t grav = mdl->getValue("gravity");
     uint8_t drips = mdl->getValue("drips");
     uint8_t swell = mdl->getValue("swell");
@@ -483,7 +475,7 @@ class DripEffect: public Effect {
         drops[j].vel = 0;           // speed
         drops[j].col = sourcedrop;  // brightness
         drops[j].colIndex = 1;      // drop state (0 init, 1 forming, 2 falling, 5 bouncing)
-        drops[j].velX = (uint32_t)ColorFromPalette(pal, random8()); // random color
+        drops[j].velX = (uint32_t)ColorFromPalette(leds.palette, random8()); // random color
       }
       CRGB dropColor = drops[j].velX;
 
@@ -532,8 +524,8 @@ class DripEffect: public Effect {
     }
   }
   
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "gravity", 128, 1, 255);
     ui->initSlider(parentVar, "drips", 4, 1, 6);
     ui->initSlider(parentVar, "swell", 4, 1, 6);
@@ -548,7 +540,6 @@ class HeartBeatEffect: public Effect {
 
   void loop(Leds &leds) {
 
-    CRGBPalette256 pal = getPalette();
     uint8_t speed = mdl->getValue("speed");
     uint8_t intensity = mdl->getValue("intensity");
 
@@ -575,12 +566,12 @@ class HeartBeatEffect: public Effect {
     }
 
     for (int i = 0; i < leds.nrOfLeds; i++) {
-      leds.setPixelColor(i, ColorFromPalette(pal, map(i, 0, leds.nrOfLeds, 0, 255), 255 - (*bri_lower >> 8)));
+      leds.setPixelColor(i, ColorFromPalette(leds.palette, map(i, 0, leds.nrOfLeds, 0, 255), 255 - (*bri_lower >> 8)));
     }
   }
   
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "speed", 15, 0, 31);
     ui->initSlider(parentVar, "intensity", 128);
   }
@@ -638,7 +629,7 @@ class FreqMatrix: public Effect {
     }
   }
 
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "speed", 255);
     ui->initSlider(parentVar, "Sound effect", 128);
     ui->initSlider(parentVar, "Low bin", 18);
@@ -656,7 +647,6 @@ class PopCorn: public Effect {
   const char * tags() {return "♪💡";}
 
   void loop(Leds &leds) {
-    CRGBPalette256 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("speed");
     stackUnsigned8 numPopcorn = mdl->getValue("corns");
     bool useaudio = mdl->getValue("useaudio");
@@ -708,14 +698,14 @@ class PopCorn: public Effect {
         // stackUnsigned32 col = SEGMENT.color_wheel(popcorn[i].colIndex);
         // if (!SEGMENT.palette && popcorn[i].colIndex < NUM_COLORS) col = SEGCOLOR(popcorn[i].colIndex);
         stackUnsigned16 ledIndex = popcorn[i].pos;
-        CRGB col = ColorFromPalette(pal, popcorn[i].colIndex*(256/maxNumPopcorn), 255);
+        CRGB col = ColorFromPalette(leds.palette, popcorn[i].colIndex*(256/maxNumPopcorn), 255);
         if (ledIndex < leds.nrOfLeds) leds.setPixelColor(ledIndex, col);
       }
     }
   }
   
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "speed", 128);
     ui->initSlider(parentVar, "corns", 10, 1, maxNumPopcorn);
     ui->initCheckBox(parentVar, "useaudio", false);
@@ -728,7 +718,6 @@ class NoiseMeter: public Effect {
   const char * tags() {return "♪💡";}
 
   void loop(Leds &leds) {
-    CRGBPalette256 pal = getPalette();
     stackUnsigned8 fadeRate = mdl->getValue("fadeRate");
     stackUnsigned8 width = mdl->getValue("width");
 
@@ -744,15 +733,15 @@ class NoiseMeter: public Effect {
 
     for (int i=0; i<maxLen; i++) {                                    // The louder the sound, the wider the soundbar. By Andrew Tuline.
       uint8_t index = inoise8(i*wledAudioMod->sync.volumeSmth+*aux0, *aux1+i*wledAudioMod->sync.volumeSmth);  // Get a value from the noise function. I'm using both x and y axis.
-      leds.setPixelColor(i, ColorFromPalette(pal, index));//, 255, PALETTE_SOLID_WRAP));
+      leds.setPixelColor(i, ColorFromPalette(leds.palette, index));//, 255, PALETTE_SOLID_WRAP));
     }
 
     *aux0+=beatsin8(5,0,10);
     *aux1+=beatsin8(4,0,10);
   }
   
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "fadeRate", 248, 200, 254);
     ui->initSlider(parentVar, "width");
   }
@@ -764,7 +753,6 @@ class AudioRings: public RingEffect {
   const char * tags() {return "♫💫";}
 
   void loop(Leds &leds) {
-    CRGBPalette256 pal = getPalette();
     for (int i = 0; i < 7; i++) { // 7 rings
 
       byte val;
@@ -777,27 +765,27 @@ class AudioRings: public RingEffect {
       }
   
       // Visualize leds to the beat
-      CRGB color = ColorFromPalette(pal, val, val);
+      CRGB color = ColorFromPalette(leds.palette, val, val);
 //      CRGB color = ColorFromPalette(currentPalette, val, 255, currentBlending);
 //      color.nscale8_video(val);
       setRing(leds, i, color);
 //        setRingFromFtt((i * 2), i); 
     }
 
-    setRingFromFtt(leds, pal, 2, 7); // set outer ring to bass
-    setRingFromFtt(leds, pal, 0, 8); // set outer ring to bass
+    setRingFromFtt(leds, 2, 7); // set outer ring to bass
+    setRingFromFtt(leds, 0, 8); // set outer ring to bass
 
   }
-  void setRingFromFtt(Leds &leds, CRGBPalette256 pal, int index, int ring) {
+  void setRingFromFtt(Leds &leds, int index, int ring) {
     byte val = wledAudioMod->fftResults[index];
     // Visualize leds to the beat
-    CRGB color = ColorFromPalette(pal, val, 255);
+    CRGB color = ColorFromPalette(leds.palette, val, 255);
     color.nscale8_video(val);
     setRing(leds, ring, color);
   }
 
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initCheckBox(parentVar, "inWards", true);
   }
 };
@@ -873,7 +861,7 @@ class DJLight: public Effect {
     }
   }
 
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "speed", 255);
     ui->initCheckBox(parentVar, "candyFactory", true);
     ui->initSlider(parentVar, "fade", 4, 0, 10);
@@ -909,7 +897,7 @@ class Lines: public Effect {
     }
   }
 
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "BPM", 60);
     ui->initCheckBox(parentVar, "Vertical", true);
   }
@@ -952,7 +940,7 @@ class BlackHole: public Effect {
 
   }
   
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "fade", 16, 0, 32);
     ui->initSlider(parentVar, "outX", 16, 0, 32);
     ui->initSlider(parentVar, "outY", 16, 0, 32);
@@ -968,7 +956,6 @@ class DNA: public Effect {
   const char * tags() {return "💡💫";}
 
   void loop(Leds &leds) {
-    CRGBPalette256 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("speed");
     stackUnsigned8 blur = mdl->getValue("blur");
     stackUnsigned8 phases = mdl->getValue("phases");
@@ -982,14 +969,14 @@ class DNA: public Effect {
       //32: 4 * i
       //16: 8 * i
       phase = i * 127 / (leds.size.x-1) * phases / 64;
-      leds.setPixelColor(leds.XY(i, beatsin8(speed, 0, leds.size.y-1, 0, phase    )), ColorFromPalette(pal, i*5+now/17, beatsin8(5, 55, 255, 0, i*10), LINEARBLEND));
-      leds.setPixelColor(leds.XY(i, beatsin8(speed, 0, leds.size.y-1, 0, phase+128)), ColorFromPalette(pal, i*5+128+now/17, beatsin8(5, 55, 255, 0, i*10+128), LINEARBLEND));
+      leds.setPixelColor(leds.XY(i, beatsin8(speed, 0, leds.size.y-1, 0, phase    )), ColorFromPalette(leds.palette, i*5+now/17, beatsin8(5, 55, 255, 0, i*10), LINEARBLEND));
+      leds.setPixelColor(leds.XY(i, beatsin8(speed, 0, leds.size.y-1, 0, phase+128)), ColorFromPalette(leds.palette, i*5+128+now/17, beatsin8(5, 55, 255, 0, i*10+128), LINEARBLEND));
     }
     leds.blur2d(blur);
   }
   
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "speed", 16, 0, 32);
     ui->initSlider(parentVar, "blur", 128);
     ui->initSlider(parentVar, "phases", 64);
@@ -1050,7 +1037,7 @@ class DistortionWaves: public Effect {
     }
   }
   
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "speed", 4, 0, 8);
     ui->initSlider(parentVar, "scale", 4, 0, 8);
   }
@@ -1079,7 +1066,6 @@ class Octopus: public Effect {
     stackUnsigned8 offsetX = mdl->getValue("Offset X");
     stackUnsigned8 offsetY = mdl->getValue("Offset Y");
     stackUnsigned8 legs = mdl->getValue("Legs");
-    CRGBPalette256 pal = getPalette();
 
     Map_t    *rMap = leds.sharedData.bind(rMap, leds.size.x * leds.size.y); //array
     uint8_t *offsX = leds.sharedData.bind(offsX);
@@ -1116,13 +1102,13 @@ class Octopus: public Effect {
         //CRGB c = CHSV(*step / 2 - radius, 255, sin8(sin8((angle * 4 - radius) / 4 + *step) + radius - *step * 2 + angle * (SEGMENT.custom3/3+1)));
         uint16_t intensity = sin8(sin8((angle * 4 - radius) / 4 + *step/2) + radius - *step + angle * legs);
         intensity = map(intensity*intensity, 0, UINT16_MAX, 0, 255); // add a bit of non-linearity for cleaner display
-        CRGB color = ColorFromPalette(pal, *step / 2 - radius, intensity);
+        CRGB color = ColorFromPalette(leds.palette, *step / 2 - radius, intensity);
         leds[pos] = color;
       }
     }
   }
   
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
 
     //bind the variables to sharedData...
     // stackUnsigned8 *speed2 = leds.sharedData.bind(speed2);
@@ -1131,7 +1117,7 @@ class Octopus: public Effect {
 
     //if changeValue then update the linked variable...
 
-    addPalette(parentVar, 4);
+    Effect::controls(leds, parentVar); //palette
 
     ui->initSlider(parentVar, "speed", 128, 1, 255);
     // , false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
@@ -1160,7 +1146,6 @@ class Lissajous: public Effect {
     stackUnsigned8 fadeRate = mdl->getValue("Fade rate");
     stackUnsigned8 speed = mdl->getValue("speed");
     bool smooth = mdl->getValue("Smooth");
-    CRGBPalette256 pal = getPalette();
 
     leds.fadeToBlackBy(fadeRate);
 
@@ -1176,7 +1161,7 @@ class Lissajous: public Effect {
           //leds.setPixelColorXY(xlocn, ylocn, SEGMENT.color_from_palette(strip.now/100+i, false, PALETTE_SOLID_WRAP, 0)); // draw pixel with anti-aliasing
           unsigned palIndex = (256*locn.y) + phase/2 + (i* freqX)/64;
           // leds.setPixelColorXY(xlocn, ylocn, SEGMENT.color_from_palette(palIndex, false, PALETTE_SOLID_WRAP, 0)); // draw pixel with anti-aliasing - color follows rotation
-          leds[locn] = ColorFromPalette(pal, palIndex);
+          leds[locn] = ColorFromPalette(leds.palette, palIndex);
         }
     } else
     for (int i=0; i < 256; i ++) {
@@ -1186,12 +1171,12 @@ class Lissajous: public Effect {
       locn.x = (leds.size.x < 2) ? 1 : (map(2*locn.x, 0,511, 0,2*(leds.size.x-1)) +1) /2;    // softhack007: "*2 +1" for proper rounding
       locn.y = (leds.size.y < 2) ? 1 : (map(2*locn.y, 0,511, 0,2*(leds.size.y-1)) +1) /2;    // "leds.size.y > 2" is needed to avoid div/0 in map()
       // leds.setPixelColorXY((unsigned8)xlocn, (unsigned8)ylocn, SEGMENT.color_from_palette(strip.now/100+i, false, PALETTE_SOLID_WRAP, 0));
-      leds[locn] = ColorFromPalette(pal, now/100+i);
+      leds[locn] = ColorFromPalette(leds.palette, now/100+i);
     }
   }
   
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "X frequency", 64);
     ui->initSlider(parentVar, "Fade rate", 128);
     ui->initSlider(parentVar, "speed", 128);
@@ -1210,20 +1195,19 @@ class Frizzles: public Effect {
 
     stackUnsigned8 bpm = mdl->getValue("BPM");
     stackUnsigned8 intensity = mdl->getValue("intensity");
-    CRGBPalette256 pal = getPalette();
 
     for (int i = 8; i > 0; i--) {
       Coord3D pos = {0,0,0};
       pos.x = beatsin8(bpm/8 + i, 0, leds.size.x - 1);
       pos.y = beatsin8(intensity/8 - i, 0, leds.size.y - 1);
-      CRGB color = ColorFromPalette(pal, beatsin8(12, 0, 255), 255);
+      CRGB color = ColorFromPalette(leds.palette, beatsin8(12, 0, 255), 255);
       leds[pos] = color;
     }
     leds.blur2d(mdl->getValue("blur"));
   }
 
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "BPM", 60);
     ui->initSlider(parentVar, "intensity", 128);
     ui->initSlider(parentVar, "blur", 128);
@@ -1249,7 +1233,7 @@ class ScrollingText: public Effect {
 
   }
   
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
     ui->initText(parentVar, "text", "StarLeds");
     ui->initSlider(parentVar, "speed", 128);
     ui->initSelect(parentVar, "font", 0, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
@@ -1273,20 +1257,19 @@ class Noise2D: public Effect {
   const char * tags() {return "💡";}
 
   void loop(Leds &leds) {
-    CRGBPalette256 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("speed");
     stackUnsigned8 scale = mdl->getValue("scale");
 
     for (int y = 0; y < leds.size.y; y++) {
       for (int x = 0; x < leds.size.x; x++) {
         uint8_t pixelHue8 = inoise8(x * scale, y * scale, now / (16 - speed));
-        leds.setPixelColor(leds.XY(x, y), ColorFromPalette(pal, pixelHue8));
+        leds.setPixelColor(leds.XY(x, y), ColorFromPalette(leds.palette, pixelHue8));
       }
     }
   }
   
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "speed", 8, 0, 15);
     ui->initSlider(parentVar, "scale", 128, 2, 255);
   }
@@ -1340,7 +1323,6 @@ class GameOfLife: public Effect {
   const char * tags() {return "💡💫";}
 
   void loop(Leds &leds) {
-    CRGBPalette256 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("speed");
     stackUnsigned8 mutation = mdl->getValue("mutation");
     byte initialChance = mdl->getValue("initialChance (out of 255)");
@@ -1376,7 +1358,7 @@ class GameOfLife: public Effect {
           // if (leds.isMapped({x,y,z}) == -1) continue; //skip if not physical led
           setBitValue(cells, leds.XYZ(x,y,z), true);
           setBitValue(futureCells, leds.XYZ(x,y,z), true);
-          color = ColorFromPalette(pal, random8());
+          color = ColorFromPalette(leds.palette, random8());
           leds.setPixelColor({x,y,z}, color, 0);
         }
       }
@@ -1454,9 +1436,9 @@ class GameOfLife: public Effect {
         else if (colorCount == 2) dominantColor = nColors[random8()%2]; // 1 leading parent died
         else if (colorCount == 1) dominantColor = nColors[0];           // 2 leading parents died
         else dominantColor = color;                                     // all parents died last used color
-        if (color == bgColor) dominantColor = ColorFromPalette(pal, random8()); 
+        if (color == bgColor) dominantColor = ColorFromPalette(leds.palette, random8()); 
         // mutate color chance
-        if (random8() < mutation) dominantColor = ColorFromPalette(pal, random8()); 
+        if (random8() < mutation) dominantColor = ColorFromPalette(leds.palette, random8()); 
         leds.setPixelColor(cPos, dominantColor, 0);
       }
       else {
@@ -1487,8 +1469,8 @@ class GameOfLife: public Effect {
     *step = now;
   }
   
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "speed", 128, 0, 255);
     ui->initSlider(parentVar, "initialChance (out of 255)", 82, 0, 255);
     ui->initSlider(parentVar, "mutation", 2, 0, 255);
@@ -1504,7 +1486,6 @@ class Waverly: public Effect {
   const char * tags() {return "♪💡";}
 
   void loop(Leds &leds) {
-    CRGBPalette256 pal = getPalette();
     stackUnsigned8 amplification = mdl->getValue("Amplification");
     stackUnsigned8 sensitivity = mdl->getValue("Sensitivity");
     bool noClouds = mdl->getValue("No Clouds");
@@ -1523,7 +1504,7 @@ class Waverly: public Effect {
       stackUnsigned16 thisMax = min(map(thisVal, 0, 512, 0, leds.size.y), (long)leds.size.x);
 
       for (pos.y = 0; pos.y < thisMax; pos.y++) {
-        CRGB color = ColorFromPalette(pal, map(pos.y, 0, thisMax, 250, 0), 255, LINEARBLEND);
+        CRGB color = ColorFromPalette(leds.palette, map(pos.y, 0, thisMax, 250, 0), 255, LINEARBLEND);
         if (!noClouds)
           leds.addPixelColor(pos, color);
         leds.addPixelColor(leds.XY((leds.size.x - 1) - pos.x, (leds.size.y - 1) - pos.y), color);
@@ -1533,8 +1514,8 @@ class Waverly: public Effect {
 
   }
   
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "Amplification", 128);
     ui->initSlider(parentVar, "Sensitivity", 128);
     ui->initCheckBox(parentVar, "No Clouds");
@@ -1567,7 +1548,6 @@ class GEQEffect: public Effect {
     stackUnsigned8 ripple = mdl->getValue("ripple"); 
     bool colorBars = mdl->getValue("colorBars");
     bool smoothBars = mdl->getValue("smoothBars");
-    CRGBPalette256 pal = getPalette();
 
     bool rippleTime = false;
     if (now - *step >= (256U - ripple)) {
@@ -1623,7 +1603,7 @@ class GEQEffect: public Effect {
         if (colorBars) //color_vertical / color bars toggle
           colorIndex = map(pos.y, 0, leds.size.y-1, 0, 255);
 
-        ledColor = ColorFromPalette(pal, (unsigned8)colorIndex);
+        ledColor = ColorFromPalette(leds.palette, (unsigned8)colorIndex);
 
         leds.setPixelColor(leds.XY(pos.x, leds.size.y - 1 - pos.y), ledColor);
       }
@@ -1636,8 +1616,8 @@ class GEQEffect: public Effect {
     }
   }
 
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "fadeOut", 255);
     ui->initSlider(parentVar, "ripple", 128);
     ui->initCheckBox(parentVar, "colorBars", false);
@@ -1701,7 +1681,7 @@ class FunkyPlank: public Effect {
     }
   }
 
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "speed", 255);
     ui->initSlider(parentVar, "bands", NUM_GEQ_CHANNELS, 1, NUM_GEQ_CHANNELS);
   }
@@ -1734,12 +1714,12 @@ class RipplesEffect: public Effect {
         stackUnsigned32 time_interval = now/(100 - speed)/((256.0f-128.0f)/20.0f);
         pos.y = floor(leds.size.y/2.0f + sinf(d/ripple_interval + time_interval) * leds.size.y/2.0f); //between 0 and leds.size.y
 
-        leds[pos] = CHSV( gHue + random8(64), 200, 255);// ColorFromPalette(pal,call, bri, LINEARBLEND);
+        leds[pos] = CHSV( gHue + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri, LINEARBLEND);
       }
     }
   }
   
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "speed", 50, 0, 99);
     ui->initSlider(parentVar, "interval", 128);
   }
@@ -1764,7 +1744,6 @@ class SphereMoveEffect: public Effect {
 
     float diameter = 2.0f+sinf(time_interval/3.0f);
 
-    // CRGBPalette256 pal;
     Coord3D pos;
     for (pos.x=0; pos.x<leds.size.x; pos.x++) {
         for (pos.y=0; pos.y<leds.size.y; pos.y++) {
@@ -1772,14 +1751,14 @@ class SphereMoveEffect: public Effect {
                 stackUnsigned16 d = distance(pos.x, pos.y, pos.z, origin.x, origin.y, origin.z);
 
                 if (d>diameter && d<diameter+1) {
-                  leds[pos] = CHSV( gHue + random8(64), 200, 255);// ColorFromPalette(pal,call, bri, LINEARBLEND);
+                  leds[pos] = CHSV( gHue + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri, LINEARBLEND);
                 }
             }
         }
     }
   }
   
-  void controls(JsonObject parentVar) {
+  void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "speed", 50, 0, 99);
   }
 }; // SphereMove3DEffect
@@ -1895,7 +1874,7 @@ public:
       // effect->loop(leds); //do a loop to set sharedData right
       // leds.sharedData.loop();
       mdl->varPreDetails(var, rowNr);
-      effect->controls(var);
+      effect->controls(leds, var);
       mdl->varPostDetails(var, rowNr);
 
       effect->setup(leds); //if changed then run setup once (like call==0 in WLED)
