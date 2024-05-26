@@ -1388,7 +1388,7 @@ class GameOfLife: public Effect {
         }
         else {
           leds.setPixelColor({x,y,z}, bgColor, 0);
-        }
+        }   
       }
 
       ////////////////////////////////////////////
@@ -1411,6 +1411,31 @@ class GameOfLife: public Effect {
           color = ColorFromPalette(pal, random8());
           leds.setPixelColor(leds.XYZ({patternX[i],patternY[i],patternZ[i]}), color, 0);
         }
+        //debug print entire grid
+        // ppf("*************************************\n");
+        // for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
+        //   if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
+        //   ppf("Cell (%d, %d, %d): %d\n", x, y, z, getBitValue(cells, leds.XYZNoSpin({x,y,z})));
+        // }
+
+        ppf("(1,9,9) isMapped = %d\n", leds.isMapped(leds.XYZNoSpin({1,9,9}))); //debug
+        ppf("(2,9,9) isMapped = %d\n", leds.isMapped(leds.XYZNoSpin({2,9,9}))); //debug
+        ppf("(3,9,9) isMapped = %d\n", leds.isMapped(leds.XYZNoSpin({3,9,9}))); //debug
+        ppf("(4,9,9) isMapped = %d\n", leds.isMapped(leds.XYZNoSpin({4,9,9}))); //debug
+        ppf("(5,9,9) isMapped = %d\n", leds.isMapped(leds.XYZNoSpin({5,9,9}))); //debug
+        ppf("(6,9,9) isMapped = %d\n", leds.isMapped(leds.XYZNoSpin({6,9,9}))); //debug
+        ppf("(7,9,9) isMapped = %d\n", leds.isMapped(leds.XYZNoSpin({7,9,9}))); //debug
+        ppf("(8,9,9) isMapped = %d\n", leds.isMapped(leds.XYZNoSpin({8,9,9}))); //debug
+        ppf("(9,9,9) isMapped = %d\n", leds.isMapped(leds.XYZNoSpin({9,9,9}))); //debug
+        ppf("(9,8,9) isMapped = %d\n", leds.isMapped(leds.XYZNoSpin({9,8,9}))); //debug
+
+        int mappedCount = 0;
+        int unmappedCount = 0;
+        for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
+          if (leds.isMapped(leds.XYZNoSpin({x,y,z}))) mappedCount++;
+          else unmappedCount++;
+        }
+        ppf("Mapped Cells: %d, Unmapped Cells: %d\n", mappedCount, unmappedCount);
       }
       ////////////////////////////////////////////
 
@@ -1486,7 +1511,7 @@ class GameOfLife: public Effect {
         Coord3D nPos = {x+i, y+j, z+k};     // neighbor position
           // wrap disabled, never wrap 3D.
         if (!wrap || leds.size.z > 1 || (*generation) % 1500 == 0) { //no wrap disable wrap every 1500 generations to prevent undetected repeats
-          if (!nPos.isWithin(leds.size)) continue; //skip if out of bounds
+          if (nPos.isOutofBounds(leds.size)) continue; //skip if out of bounds
         } else {
           // wrap around 2D Matrix if enabled
           if (k != 0) continue; //no z axis (wrap around only for x and y
