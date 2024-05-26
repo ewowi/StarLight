@@ -1353,19 +1353,22 @@ class GameOfLife: public Effect {
     unsigned long *step = leds.sharedData.bind(step);
     bool *birthNumbers = leds.sharedData.bind(birthNumbers, sizeof(bool) * 9);
     bool *surviveNumbers = leds.sharedData.bind(surviveNumbers, sizeof(bool) * 9);
-    String *prevRuleString = leds.sharedData.bind(prevRuleString);
+    byte *setUp = leds.sharedData.bind(setUp); // call == 0 not working temp fix
+    // String *prevRuleString = leds.sharedData.bind(prevRuleString, 33);
+    byte *prevRuleset = leds.sharedData.bind(prevRuleset);
 
     CRGB bgColor = CRGB::Black;
     CRGB color;
 
     //start new game of life
-    if (call == 0 || (*generation == 0 && *step < now)) {
+    if (call == 0 || (*generation == 0 && *step < now || *setUp != 123)) {
+      *setUp = 123; // quick fix for effect starting up
       *generation = 1;
       *step = now + 1500; // previous call time + 1.5 seconds initial delay
       unsigned long seed = now>>2;
       // seed = 8333; // broken seed for testing 16x16x16 cubeBox all colors off, density = 32
       random16_set_seed(seed); //seed the random generator
-      ppf("Game of Life: %d x %d x %d\n", leds.size.x, leds.size.y, leds.size.z); //debug
+      ppf("Game of Life: %d x %d x %d  ", leds.size.x, leds.size.y, leds.size.z); //debug
       ppf("Seed: %d\n", seed); //debug
       //Setup Grid
       memset(cells, 0, dataSize);
@@ -1414,11 +1417,20 @@ class GameOfLife: public Effect {
       return;
     }
     if (!speed || *step > now || now - *step < 1000 / speed) {
+      // // draw live cells overlay test
+      // for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
+      //   if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
+      //   if (getBitValue(cells, leds.XYZNoSpin({x,y,z}))) {
+      //     color = leds.getPixelColor({x,y,z});
+      //     leds.setPixelColor({x,y,z}, color, 0);
+      //   }
+      // }
       return; //skip if not enough time has passed
     }
     //rule set for game of life
     String ruleString = "";
-    if (ruleset == 0) ruleString = mdl->getValue("Custom Rule String").as<String>(); //Custom
+    // if      (ruleset == 0) ruleString = mdl->getValue("Custom Rule String").as<String>(); //Custom
+    if      (ruleset == 0) ruleString = "B3678/S34678";   // Temp change while custom disabled
     else if (ruleset == 1) ruleString = "B3/S23";         //Conway's Game of Life
     else if (ruleset == 2) ruleString = "B36/S23";        //HighLife
     else if (ruleset == 3) ruleString = "B0123478/S34678";//InverseLife
@@ -1427,9 +1439,11 @@ class GameOfLife: public Effect {
     else if (ruleset == 6) ruleString = "B367/S23";       //DrighLife
 
     //Rule String Parsing
-    if (ruleString != *prevRuleString || (*generation == 0)  || call == 0) {
+    // if (ruleString != *prevRuleString || (*generation == 0)  || call == 0) {
+      // *prevRuleString = ruleString;
+    if (ruleset != *prevRuleset) {
+      *prevRuleset = ruleset;
       ppf("Changing Rule String to: %s\n", ruleString.c_str());
-      *prevRuleString = ruleString;
       for (int i = 0; i < 9; i++) {
         birthNumbers[i] = false;
         surviveNumbers[i] = false;
@@ -1471,6 +1485,15 @@ class GameOfLife: public Effect {
           // wrap around 2D Matrix if enabled
           if (k != 0) continue; //no z axis (wrap around only for x and y
           nPos = (nPos + leds.size) % leds.size;
+          // //Weird 2D shape wrapping test
+          // if (!leds.isMapped(leds.XYZ(nPos))) {
+          //   if (i != 0 && j != 0) continue; //skip if diagonal     
+          //   while (!leds.isMapped(leds.XYZ(nPos))) {
+          //     nPos = nPos + Coord3D{i,j,0};
+          //     nPos = (nPos + leds.size) % leds.size;
+          //   }
+          // }
+          // if (nPos == cPos) continue; //skip if it back to origin, only cell mapped in this row
         }
         uint16_t nIndex = leds.XYZNoSpin(nPos);
 
@@ -1539,12 +1562,19 @@ class GameOfLife: public Effect {
     *step = now;
   }
 
+  //Todo:
+  // - Fix 3D bug
+  // - Allow background blending (option 1)
+  // - Color based on age?
+  // - Infinite Option (track born cells, spawn random glider/exploder )
+
   void controls(JsonObject parentVar) {
     addPalette(parentVar, 4);
     ui->initSelect(parentVar, "ruleset", 1, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun: {
         JsonArray options = ui->setOptions(var);
-        options.add("Custom B/S");
+        // options.add("Custom B/S");
+        options.add("Day & Night B3678/S34678"); //while custom is disabled
         options.add("Conway's Game of Life B3/S23");
         options.add("HighLife B36/S23");
         options.add("InverseLife B0123478/S34678");
@@ -1555,7 +1585,7 @@ class GameOfLife: public Effect {
       }
       default: return false;
     }});
-    ui->initText(parentVar, "Custom Rule String", "B/S");
+    // ui->initText(parentVar, "Custom Rule String", "B/S");
     ui->initSlider(parentVar, "Game Speed (FPS)", 60, 0, 60);
     ui->initSlider(parentVar, "Starting Life Density", 32, 10, 90);
     ui->initSlider(parentVar, "Mutation Chance", 2, 0, 100);
