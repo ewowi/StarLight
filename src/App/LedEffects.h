@@ -1323,7 +1323,6 @@ class GameOfLife: public Effect {
   const char * tags() {return "💡💫";}
 
   void loop(Leds &leds) {
-    CRGBPalette256 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("Game Speed (FPS)");
     stackUnsigned8 mutation = mdl->getValue("Mutation Chance");
     byte lifeChance = mdl->getValue("Starting Life Density");
@@ -1367,7 +1366,7 @@ class GameOfLife: public Effect {
         if (map(random8(), 0, 255, 0, 100) < lifeChance) {
           setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
           setBitValue(futureCells, leds.XYZNoSpin({x,y,z}), true);
-          leds.setPixelColor({x,y,z}, ColorFromPalette(pal, random8()), 0);
+          leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0);
         }
         else {
           leds.setPixelColor({x,y,z}, bgColor, 0);
@@ -1391,7 +1390,7 @@ class GameOfLife: public Effect {
         for (int i = 0; i < patternLen; i++) {
           setBitValue(cells, leds.XYZNoSpin({patternX[i], patternY[i], patternZ[i]}), true);
           setBitValue(futureCells, leds.XYZNoSpin({patternX[i], patternY[i], patternZ[i]}), true);
-          color = ColorFromPalette(pal, random8());
+          color = ColorFromPalette(leds.palette, random8());
           leds.setPixelColor(leds.XYZ({patternX[i],patternY[i],patternZ[i]}), color, 0);
         }
         //debug print entire grid
@@ -1537,9 +1536,9 @@ class GameOfLife: public Effect {
         // no longer storing colors, if parent dies the color is lost
         CRGB randomParentColor = color; // last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8() % colorCount];
-        if (randomParentColor == bgColor) randomParentColor = ColorFromPalette(pal, random8()); // needed for tilt, pan, roll
+        if (randomParentColor == bgColor) randomParentColor = ColorFromPalette(leds.palette, random8()); // needed for tilt, pan, roll
         // mutate color chance
-        if (map(random8(), 0, 255, 0, 100) < mutation) randomParentColor = ColorFromPalette(pal, random8());
+        if (map(random8(), 0, 255, 0, 100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8());
         leds.setPixelColor(cPos, randomParentColor, 0);
       }
       else {
@@ -1582,8 +1581,8 @@ class GameOfLife: public Effect {
   // - Color based on age?
   // - Infinite Option (track born cells, spawn random glider/exploder )
 
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
     ui->initSelect(parentVar, "ruleset", 1, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun: {
         JsonArray options = ui->setOptions(var);
