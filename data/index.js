@@ -1502,7 +1502,7 @@ function setInstanceTableColumns() {
 
   // console.log("setInstanceTableColumns", tbl, thead, tbody);
   let columnNr = 3; //column 0, 1 and 2 will always be shown (name, show and link)
-  for (; columnNr < 7; columnNr++) { // there are 7 fixed columns
+  for (; columnNr < 11; columnNr++) { // fixed columns which show in Systems/All and not in Dashboard tab
     showHideColumn(columnNr, isDashView);
   }
   for (; columnNr<thead.querySelector("tr").childNodes.length; columnNr++) {
