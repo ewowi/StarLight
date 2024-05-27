@@ -39,7 +39,7 @@ public:
   virtual void controls(Leds &leds, JsonObject parentVar) {
     ui->initSelect(parentVar, "pal", 4, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun: {
-        ui->setLabel(var, "Palettekes");
+        ui->setLabel(var, "Palette");
         JsonArray options = ui->setOptions(var);
         options.add("CloudColors");
         options.add("LavaColors");
@@ -63,8 +63,8 @@ public:
           case 6: leds.palette = PartyColors_p; break;
           case 7: leds.palette = HeatColors_p; break;
           case 8: { //randomColors
-            for (int i=0; i < 255; i++) {
-              leds.palette[i] = CRGB(random8(), random8(), random8());
+            for (int i=0; i < sizeof(leds.palette.entries) / sizeof(CRGB); i++) {
+              leds.palette[i] = CHSV(random8(), 255, 255); //take the max saturation, max brightness of the colorwheel
             }
             break;
           }
@@ -108,6 +108,8 @@ public:
     // FastLED's built-in rainbow generator
     leds.fill_rainbow(gHue, 7);
   }
+
+  void controls(Leds &leds, JsonObject parentVar) {} //so no palette control is created
 };
 
 class RainbowWithGlitterEffect: public RainbowEffect {
@@ -137,7 +139,7 @@ class SinelonEffect: public Effect {
     // a colored dot sweeping back and forth, with fading trails
     leds.fadeToBlackBy(20);
     int pos = beatsin16( mdl->getValue("BPM").as<int>(), 0, leds.nrOfLeds-1 );
-    leds[pos] = leds.getPixelColor(pos) + CHSV( gHue, 255, 192);
+    leds[pos] = leds.getPixelColor(pos) + CHSV( gHue, 255, 255);
   }
   
   void controls(Leds &leds, JsonObject parentVar) {
@@ -156,6 +158,8 @@ class ConfettiEffect: public Effect {
     int pos = random16(leds.nrOfLeds);
     leds[pos] += CHSV( gHue + random8(64), 200, 255);
   }
+
+  void controls(Leds &leds, JsonObject parentVar) {} //so no palette control is created
 };
 
 class BPMEffect: public Effect {
@@ -192,6 +196,7 @@ class JuggleEffect: public Effect {
       dothue += 32;
     }
   }
+  void controls(Leds &leds, JsonObject parentVar) {} //so no palette control is created
 };
 
 //https://www.perfectcircuit.com/signal/difference-between-waveforms
@@ -205,8 +210,8 @@ class RunningEffect: public Effect {
     leds.fadeToBlackBy(mdl->getValue("fade").as<int>()); //physical leds
     int pos = map(beat16( mdl->getValue("BPM").as<int>()), 0, UINT16_MAX, 0, leds.nrOfLeds-1 ); //instead of call%leds.nrOfLeds
     // int pos2 = map(beat16( mdl->getValue("BPM").as<int>(), 1000), 0, UINT16_MAX, 0, leds.nrOfLeds-1 ); //one second later
-    leds[pos] = CHSV( gHue, 255, 192); //make sure the right physical leds get their value
-    // leds[leds.nrOfLeds -1 - pos2] = CHSV( gHue, 255, 192); //make sure the right physical leds get their value
+    leds[pos] = CHSV( gHue, 255, 255); //make sure the right physical leds get their value
+    // leds[leds.nrOfLeds -1 - pos2] = CHSV( gHue, 255, 255); //make sure the right physical leds get their value
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
@@ -247,6 +252,8 @@ class RingRandomFlow: public RingEffect {
     }
     // FastLED.delay(SPEED);
   }
+  
+  void controls(Leds &leds, JsonObject parentVar) {} //so no palette control is created
 };
 
 //BouncingBalls inspired by WLED
@@ -887,12 +894,12 @@ class Lines: public Effect {
       pos.x = map(beat16( mdl->getValue("BPM").as<int>()), 0, UINT16_MAX, 0, leds.size.x-1 ); //instead of call%width
 
       for (pos.y = 0; pos.y <  leds.size.y; pos.y++) {
-        leds[pos] = CHSV( gHue, 255, 192);
+        leds[pos] = CHSV( gHue, 255, 255);
       }
     } else {
       pos.y = map(beat16( mdl->getValue("BPM").as<int>()), 0, UINT16_MAX, 0, leds.size.y-1 ); //instead of call%height
       for (pos.x = 0; pos.x <  leds.size.x; pos.x++) {
-        leds[pos] = CHSV( gHue, 255, 192);
+        leds[pos] = CHSV( gHue, 255, 255);
       }
     }
   }
@@ -1609,7 +1616,7 @@ class GEQEffect: public Effect {
       }
 
       if ((ripple > 0) && (previousBarHeight[pos.x] > 0) && (previousBarHeight[pos.x] < leds.size.y))  // WLEDMM avoid "overshooting" into other segments
-        leds.setPixelColor(leds.XY(pos.x, leds.size.y - previousBarHeight[pos.x]), CHSV( gHue, 255, 192)); // take gHue color for the time being
+        leds.setPixelColor(leds.XY(pos.x, leds.size.y - previousBarHeight[pos.x]), CHSV( gHue, 255, 255)); // take gHue color for the time being
 
       if (rippleTime && previousBarHeight[pos.x]>0) previousBarHeight[pos.x]--;    //delay/ripple effect
 
