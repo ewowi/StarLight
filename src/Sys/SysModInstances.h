@@ -210,7 +210,7 @@ public:
           mdl->setValue(var, instances[rowNrL].sysData.timebase, rowNrL);
         return true;
       case f_UIFun:
-        ui->setLabel(var, "TimeBase");
+        ui->setLabel(var, "TB");
         return true;
       default: return false;
     }});
@@ -221,7 +221,7 @@ public:
           mdl->setValue(var, instances[rowNrL].sysData.timeSource, rowNrL);
         return true;
       case f_UIFun:
-        ui->setLabel(var, "TimeSource");
+        ui->setLabel(var, "TS");
         return true;
       default: return false;
     }});
@@ -232,7 +232,7 @@ public:
           mdl->setValue(var, instances[rowNrL].sysData.tokiTime, rowNrL);
         return true;
       case f_UIFun:
-        ui->setLabel(var, "TokiTime");
+        ui->setLabel(var, "Time");
         return true;
       default: return false;
     }});
@@ -243,7 +243,7 @@ public:
           mdl->setValue(var, instances[rowNrL].sysData.tokiMs, rowNrL);
         return true;
       case f_UIFun:
-        ui->setLabel(var, "TokiMs");
+        ui->setLabel(var, "Ms");
         return true;
       default: return false;
     }});
@@ -344,11 +344,10 @@ public:
       changedVarsQueue.erase(changedVarsQueue.begin());
     }
 
-    // sendSysInfoUDP(); //call here for testing
   }
 
-  void loop10s() {
-    sendSysInfoUDP();  //call here normally
+  void loop1s() {
+    sendSysInfoUDP();  //temporary every second
   }
 
   //distract the groupName of an instance name
@@ -729,7 +728,7 @@ public:
             Toki::Time tm;
             tm.sec = instance.sysData.tokiTime;
             tm.ms = instance.sysData.tokiMs;
-            if (instance.sysData.timeSource > sys->toki.getTimeSource()) { //if sender's time source is more accurate
+            if (instance.sysData.timeSource > sys->toki.getTimeSource() || sys->toki.getTimeSource() == TOKI_TS_NONE) { //if sender's time source is more accurate
               sys->toki.adjust(tm, PRESUMED_NETWORK_DELAY); //adjust trivially for network delay
               uint8_t ts = TOKI_TS_UDP; //5
               if (instance.sysData.timeSource > 99) ts = TOKI_TS_UDP_NTP; //110
