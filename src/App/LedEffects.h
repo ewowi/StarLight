@@ -52,7 +52,6 @@ public:
         options.add("RandomColors");
         return true; }
       case f_ChangeFun:
-        print->printJson("pal changefun", var);
         switch (var["value"][rowNr].as<unsigned8>()) {
           case 0: leds.palette = CloudColors_p; break;
           case 1: leds.palette = LavaColors_p; break;
@@ -252,7 +251,7 @@ class RingRandomFlow: public RingEffect {
     }
     // FastLED.delay(SPEED);
   }
-  
+
   void controls(Leds &leds, JsonObject parentVar) {} //so no palette control is created
 };
 
