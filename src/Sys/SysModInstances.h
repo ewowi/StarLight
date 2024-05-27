@@ -624,7 +624,7 @@ public:
         });
 
         serializeJson(instance.jsonData, starMessage.jsonString);
-        ppf("sendSysInfoUDP ip:%d s:%s\n", instance.ip[3], starMessage.jsonString);
+        // ppf("sendSysInfoUDP ip:%d s:%s\n", instance.ip[3], starMessage.jsonString);
         // print->printJson(" d:", instance.jsonData);
         // print->printJDocInfo("   info", instance.jsonData);
       }
@@ -760,7 +760,7 @@ public:
               char group2[32];
               if (groupOfName(instance.name, group1) && groupOfName(mdl->getValue("name"), group2) && strcmp(group1, group2) == 0) {
                 for (JsonPair pair: newData.as<JsonObject>()) {
-                  ppf("updateInstance sync from i:%s k:%s v:%s\n", instance.name, pair.key().c_str(), pair.value().as<String>().c_str());
+                  // ppf("updateInstance sync from i:%s k:%s v:%s\n", instance.name, pair.key().c_str(), pair.value().as<String>().c_str());
 
                   mdl->setValueJV(pair.key().c_str(), pair.value());
                 }
