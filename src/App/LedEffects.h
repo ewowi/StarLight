@@ -879,7 +879,7 @@ class DJLight: public Effect {
 //2D Effects
 //==========
 
-class Lines: public Effect {
+class LinesEffect: public Effect {
   const char * name() {return "Lines";}
   unsigned8 dim() {return _2D;}
   const char * tags() {return "💫";}
@@ -1585,7 +1585,7 @@ public:
     #endif
 
     //2D StarMod
-    effects.push_back(new Lines);
+    effects.push_back(new LinesEffect);
     //2D WLED
     effects.push_back(new BlackHole);
     effects.push_back(new DNA);
