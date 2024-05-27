@@ -227,9 +227,20 @@ void SysModModel::varToValues(JsonObject var, JsonArray row) {
     }
 }
 
+bool checkDash(JsonObject var) {
+  if (var["dash"])
+    return true;
+  else {
+    JsonObject parentVar = mdl->findParentVar(var["id"]);
+    if (!parentVar.isNull())
+      return checkDash(parentVar);
+  }
+  return false;
+}
+
 void SysModModel::setValueChangeFun(JsonObject var, unsigned8 rowNr) {
   //done here as ui cannot be used in SysModModel.h
-  if (var["dash"] || findParentVar(var["id"])["dash"]) //parents of parents not supported yet
+  if (checkDash(var))
     instances->changedVarsQueue.push_back(var);
 
   ui->callVarFun(var, rowNr, f_ChangeFun);

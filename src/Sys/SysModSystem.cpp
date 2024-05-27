@@ -63,6 +63,20 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
+  ui->initNumber(parentVar, "now", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    case f_UIFun:
+      ui->setLabel(var, "now");
+      return true;
+    default: return false;
+  }});
+
+  ui->initNumber(parentVar, "timeBase", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    case f_UIFun:
+      ui->setLabel(var, "TimeBase");
+      return true;
+    default: return false;
+  }});
+
   ui->initButton(parentVar, "reboot", false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_ChangeFun:
       web->ws.closeAll(1012);
@@ -133,30 +147,30 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  ui->initSelect(parentVar, "reset0", (int)rtc_get_reset_reason(0), true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initSelect(parentVar, "reset0", (int)rtc_get_reset_reason(0), true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_UIFun:
       ui->setLabel(var, "Reset 0");
       ui->setComment(var, "Reason Core 0");
-      sys->addResetReasonsSelect(ui->setOptions(var));
+      addResetReasonsSelect(ui->setOptions(var));
       return true;
     default: return false;
   }});
 
   if (ESP.getChipCores() > 1)
-    ui->initSelect(parentVar, "reset1", (int)rtc_get_reset_reason(1), true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "reset1", (int)rtc_get_reset_reason(1), true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun:
         ui->setLabel(var, "Reset 1");
         ui->setComment(var, "Reason Core 1");
-        sys->addResetReasonsSelect(ui->setOptions(var));
+        addResetReasonsSelect(ui->setOptions(var));
         return true;
       default: return false;
     }});
 
-  ui->initSelect(parentVar, "restartReason", (int)esp_reset_reason(), true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initSelect(parentVar, "restartReason", (int)esp_reset_reason(), true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_UIFun:
       ui->setLabel(var, "Restart");
       ui->setComment(var, "Reason restart");
-      sys->addRestartReasonsSelect(ui->setOptions(var));
+      addRestartReasonsSelect(ui->setOptions(var));
       return true;
     default: return false;
   }});
@@ -214,6 +228,8 @@ void SysModSystem::loop() {
 }
 void SysModSystem::loop1s() {
   mdl->setUIValueV("upTime", "%lu s", millis()/1000);
+  mdl->setUIValueV("now", "%lu s", now/1000);
+  mdl->setUIValueV("timeBase", "%lu s", timebase/1000);
   mdl->setUIValueV("loops", "%lu /s", loopCounter);
 
   loopCounter = 0;

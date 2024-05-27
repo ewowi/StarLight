@@ -14,6 +14,7 @@
 #ifdef STARBASE_USERMOD_E131
   #include "../User/UserModE131.h"
 #endif
+#include "SysModSystem.h"
 
 struct DMX {
   byte universe:3; //3 bits / 8
@@ -24,7 +25,11 @@ struct DMX {
 //additional data not in wled header
 struct SysData {
   unsigned long upTime;
-  byte type;
+  uint32_t timebase; //25
+  uint8_t timeSource; //29
+  uint32_t tokiTime; //30 in sec
+  uint16_t tokiMs; //34
+  byte type; //0=WLED, 1=StarBase, 2=StarLeds, 3=StarFork
   DMX dmx;
   uint8_t macAddress[6]; // 48 bits WIP
 };
@@ -39,7 +44,7 @@ struct VarData {
 struct InstanceInfo {
   IPAddress ip;
   char name[32];
-  uint32_t version;
+  uint32_t version; //release/version date build
   unsigned long timeStamp; //when was the package received, used to check on aging
   SysData sysData;
   JsonDocument jsonData;
@@ -78,7 +83,7 @@ struct UDPWLEDSyncMessage { //see notify( in WLED
   byte mainsegMode; //8
   byte mainsegSpeed; //9
   byte wCol0; //10
-  byte version; //11
+  byte version; //11 compatibilityVersionByte - we assume 12 only (toki since >7)
   byte col1[4]; //12
   byte mainsegIntensity; //16
   byte transitionDelay[2]; //17
@@ -86,7 +91,7 @@ struct UDPWLEDSyncMessage { //see notify( in WLED
   byte col2[4]; //20
   byte followUp; //24
   byte timebase[4]; //25
-  byte tokiSource; //29
+  byte timeSource; //29
   byte tokiTime[4]; //30
   byte tokiMs[2]; //34
   byte syncGroups; //36
@@ -109,11 +114,10 @@ public:
     parentVar = ui->initSysMod(parentVar, name, 3000);
 
     JsonObject tableVar = ui->initTable(parentVar, "insTbl", nullptr, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun: {
+      case f_UIFun:
         ui->setLabel(var, "Instances");
         ui->setComment(var, "List of instances");
         return true;
-      }
       default: return false;
     }});
     
@@ -125,10 +129,10 @@ public:
       case f_UIFun:
         ui->setLabel(var, "Name");
         return true;
-      case f_ChangeFun: {
+      case f_ChangeFun:
         strcpy(instances[rowNr].name, mdl->getValue(var, rowNr));
         sendMessageUDP(instances[rowNr].ip, "name", mdl->getValue(var, rowNr));
-        return true; }
+        return true;
       default: return false;
     }});
 
@@ -197,6 +201,50 @@ public:
         return true;
       case f_UIFun:
         ui->setLabel(var, "Uptime");
+        return true;
+      default: return false;
+    }});
+    ui->initNumber(tableVar, "insTB", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case f_ValueFun:
+        for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
+          mdl->setValue(var, instances[rowNrL].sysData.timebase, rowNrL);
+        return true;
+      case f_UIFun:
+        ui->setLabel(var, "TimeBase");
+        return true;
+      default: return false;
+    }});
+
+    ui->initNumber(tableVar, "insTS", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case f_ValueFun:
+        for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
+          mdl->setValue(var, instances[rowNrL].sysData.timeSource, rowNrL);
+        return true;
+      case f_UIFun:
+        ui->setLabel(var, "TimeSource");
+        return true;
+      default: return false;
+    }});
+
+    ui->initNumber(tableVar, "insTT", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case f_ValueFun:
+        for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
+          mdl->setValue(var, instances[rowNrL].sysData.tokiTime, rowNrL);
+        return true;
+      case f_UIFun:
+        ui->setLabel(var, "TokiTime");
+        return true;
+      default: return false;
+    }});
+
+    ui->initNumber(tableVar, "insTM", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case f_ValueFun:
+        for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
+          mdl->setValue(var, instances[rowNrL].sysData.tokiMs, rowNrL);
+        return true;
+      case f_UIFun:
+        ui->setLabel(var, "TokiMs");
+        return true;
       default: return false;
     }});
 
@@ -295,10 +343,12 @@ public:
       sendMessageUDP(IPAddress(255, 255, 255, 255), var["id"], var["value"]); //broadcast
       changedVarsQueue.erase(changedVarsQueue.begin());
     }
+
+    // sendSysInfoUDP(); //call here for testing
   }
 
   void loop10s() {
-    sendSysInfoUDP(); 
+    sendSysInfoUDP();  //call here normally
   }
 
   //distract the groupName of an instance name
@@ -310,10 +360,10 @@ public:
 
     //check if group
     if (token != NULL) {
-      // ppf("calcGroup 1:%s 2:%s 3:%s 4:%s 5:%s\n",name, strstr(name, "-"), name, strtok(name, "-"), name?name:"X"); 
+      // ppf("groupOfName 1:%s 2:%s 3:%s 4:%s 5:%s\n",name, strstr(name, "-"), name, strtok(name, "-"), name?name:"X"); 
       token = strtok(NULL, "-"); //after -
       if (token != NULL) {
-        // ppf("calcGroup g:%s i:%s\n", copy, token); 
+        // ppf("groupOfName g:%s i:%s\n", copy, token); 
         if (group) strcpy(group, copy);
         return true;
       }
@@ -322,7 +372,7 @@ public:
 
   }
 
-  // identify if an instance belongs to a group
+  // identify if an instance belongs to a group: 0: no, 1: group of 1, >1: group with more
   uint8_t calcGroup(const char * insName) {
     uint8_t calc = 0;
     for (InstanceInfo &instance: instances) {
@@ -333,6 +383,8 @@ public:
     }
     return calc++;
   }
+
+  #define PRESUMED_NETWORK_DELAY 3 //how many ms could it take on avg to reach the receiver? This will be added to transmitted times
 
   void handleNotifications()
   {
@@ -364,6 +416,38 @@ public:
         InstanceInfo *instance = findInstance(notifierUdp.remoteIP()); //if not exist, created
 
         instance->sysData.upTime = (wledSyncMessage.timebase[0] * 256*256*256 + 256*256*wledSyncMessage.timebase[1] + 256*wledSyncMessage.timebase[2] + wledSyncMessage.timebase[3]) / 1000;
+        instance->sysData.timebase = (wledSyncMessage.timebase[0] << 24) | (wledSyncMessage.timebase[1] << 16) | (wledSyncMessage.timebase[2] << 8) | (wledSyncMessage.timebase[3]);
+        instance->sysData.timeSource = wledSyncMessage.timeSource;
+        instance->sysData.tokiTime = (wledSyncMessage.tokiTime[0] << 24) | (wledSyncMessage.tokiTime[1] << 16) | (wledSyncMessage.tokiTime[2] << 8) | (wledSyncMessage.tokiTime[3]);
+        instance->sysData.tokiMs = (wledSyncMessage.tokiMs[0] << 8) | (wledSyncMessage.tokiMs[1]);
+
+        //don't update toki for WLED ATM
+
+            // uint32_t t = instance->sysData.timebase;
+            // t += PRESUMED_NETWORK_DELAY; //adjust trivially for network delay
+            // t -= millis();
+            // sys->timebase = t;
+            // // timebaseUpdated = true;
+
+            // Toki::Time tm;
+            // tm.sec = instance->sysData.tokiTime;
+            // tm.ms = instance->sysData.tokiMs;
+            // if (instance->sysData.timeSource > sys->toki.getTimeSource()) { //if sender's time source is more accurate
+            //   sys->toki.adjust(tm, PRESUMED_NETWORK_DELAY); //adjust trivially for network delay
+            //   uint8_t ts = TOKI_TS_UDP;
+            //   if (instance->sysData.timeSource > 99) ts = TOKI_TS_UDP_NTP;
+            //   else if (instance->sysData.timeSource >= TOKI_TS_SEC) ts = TOKI_TS_UDP_SEC;
+            //   sys->toki.setTime(tm, ts);
+            // } else if (/*timebaseUpdated && */ sys->toki.getTimeSource() > 99) { //if we both have good times, get a more accurate timebase
+            //   Toki::Time myTime = sys->toki.getTime();
+            //   uint32_t diff = sys->toki.msDifference(tm, myTime);
+            //   sys->timebase -= PRESUMED_NETWORK_DELAY; //no need to presume, use difference between NTP times at send and receive points
+            //   if (sys->toki.isLater(tm, myTime)) {
+            //     sys->timebase += diff;
+            //   } else {
+            //     sys->timebase -= diff;
+            //   }
+            // }
         
         instance->jsonData["bri"] = wledSyncMessage.bri;
         instance->jsonData["fx"] = wledSyncMessage.mainsegMode; //tbd: rowNr
@@ -429,7 +513,7 @@ public:
           if (error)
             ppf("handleNotifications i:%d no json l: %d e:%s\n", instanceUDP.remoteIP()[3], strlen(buffer), error.c_str());
           else {
-            if (instanceUDP.remoteIP()[3] != WiFi.localIP()[3]) { //only others tbd only in group
+            if (instanceUDP.remoteIP()[3] != WiFi.localIP()[3]) { //only others
 
               InstanceInfo *instance = findInstance(instanceUDP.remoteIP()); //if not exist, created
               char group1[32];
@@ -508,6 +592,10 @@ public:
     starMessage.header.version = VERSION;
     starMessage.sysData.type = (strcmp(_INIT(TOSTRING(APP)), "StarBase")==0)?1:(strcmp(_INIT(TOSTRING(APP)), "StarLeds")==0)?2:3; //1=StarBase,2=StarLeds, 3=StarFork
     starMessage.sysData.upTime = millis()/1000;
+    starMessage.sysData.timebase = millis() + sys->timebase;
+    starMessage.sysData.timeSource = sys->toki.getTimeSource();
+    starMessage.sysData.tokiTime = sys->toki.getTime().sec;
+    starMessage.sysData.tokiMs = sys->toki.getTime().ms;
     starMessage.sysData.dmx.universe = 0;
     starMessage.sysData.dmx.start = 0;
     starMessage.sysData.dmx.count = 0;
@@ -528,12 +616,12 @@ public:
 
         //send dash values
         mdl->findVars("dash", true, [&instance](JsonObject var) { //varFun
-          // print->printJson("setVar", var);
-          JsonArray valArray = mdl->varValArray(var);
-          if (valArray.isNull())
-            instance.jsonData[mdl->varID(var)] = var["value"];
-          else if (valArray.size())
-            instance.jsonData[mdl->varID(var)] = valArray;
+          instance.jsonData[mdl->varID(var)] = var["value"];
+          // // print->printJson("setVar", var);
+          // JsonArray valArray = mdl->varValArray(var);
+          // if (valArray.isNull())
+          // else if (valArray.size())
+          //   instance.jsonData[mdl->varID(var)] = valArray;
         });
 
         serializeJson(instance.jsonData, starMessage.jsonString);
@@ -561,6 +649,7 @@ public:
     }
   }
 
+  //sends an UDP message to a specific ip. Broadcast?
   void sendMessageUDP(IPAddress ip, const char * id, JsonVariant value) {
     if (0 != instanceUDP.beginPacket(ip, instanceUDPPort)) {
 
@@ -616,17 +705,48 @@ public:
     // stackUnsigned8 rowNr = 0;
     for (InstanceInfo &instance: instances) {
       if (instance.ip == messageIP) {
-        instance.timeStamp = millis(); //update timestamp
+        //update instance from StarMessage
+        instance.timeStamp = millis(); //update timestamp (when was the package received)
         strncpy(instance.name, udpStarMessage.header.name, sizeof(instance.name)-1);
         instance.version = udpStarMessage.header.version;
+
         if (instance.ip == WiFi.localIP()) {
           esp_wifi_get_mac((wifi_interface_t)ESP_IF_WIFI_STA, instance.sysData.macAddress);
           // ppf("macaddress %02X:%02X:%02X:%02X:%02X:%02X\n", instance.macAddress[0], instance.macAddress[1], instance.macAddress[2], instance.macAddress[3], instance.macAddress[4], instance.macAddress[5]);
         }
+
         if (udpStarMessage.sysData.type >= 1) {//StarBase, StarLeds and forks only
           instance.sysData = udpStarMessage.sysData;
 
           if (instance.ip != WiFi.localIP()) { //send from localIP will be done after updateInstance
+
+            uint32_t t = instance.sysData.timebase;
+            t += PRESUMED_NETWORK_DELAY; //adjust trivially for network delay
+            t -= millis();
+            sys->timebase = t;
+            // timebaseUpdated = true;
+
+            Toki::Time tm;
+            tm.sec = instance.sysData.tokiTime;
+            tm.ms = instance.sysData.tokiMs;
+            if (instance.sysData.timeSource > sys->toki.getTimeSource()) { //if sender's time source is more accurate
+              sys->toki.adjust(tm, PRESUMED_NETWORK_DELAY); //adjust trivially for network delay
+              uint8_t ts = TOKI_TS_UDP; //5
+              if (instance.sysData.timeSource > 99) ts = TOKI_TS_UDP_NTP; //110
+              else if (instance.sysData.timeSource >= TOKI_TS_SEC) ts = TOKI_TS_UDP_SEC; //20
+              sys->toki.setTime(tm, ts);
+            } else if (/*timebaseUpdated && */ sys->toki.getTimeSource() > 99) { //if we both have good times, get a more accurate timebase
+              Toki::Time myTime = sys->toki.getTime();
+              uint32_t diff = sys->toki.msDifference(tm, myTime);
+              sys->timebase -= PRESUMED_NETWORK_DELAY; //no need to presume, use difference between NTP times at send and receive points
+              if (sys->toki.isLater(tm, myTime)) {
+                sys->timebase += diff;
+              } else {
+                sys->timebase -= diff;
+              }
+            }
+            sys->now = millis() + sys->timebase;
+
             //set instance.jsonData from new string
             JsonDocument newData;
             DeserializationError error = deserializeJson(newData, udpStarMessage.jsonString);
