@@ -338,7 +338,7 @@ public:
 
     effects.setup();
 
-    FastLED.setMaxPowerInVoltsAndMilliamps(5,2000); // 5v, 2000mA
+    // TODO: replacement for FastLED.setMaxPowerInVoltsAndMilliamps(5,2000); // 5v, 2000mA
   }
 
   void loop() {
@@ -422,13 +422,14 @@ public:
       lastMappingMillis = millis();
       fixture.projectAndMap();
 
-      //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
-
       //connect allocated Pins to gpio
 
       if (fixture.doAllocPins) {
         unsigned pinNr = 0;
 
+        int pinAssignment[16];
+        int lengths[16];
+        int nb_pins=0;
         for (PinObject &pinObject: pins->pinObjects) {
 
           if (pins->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in projectAndMap)
@@ -445,15 +446,17 @@ public:
               stackUnsigned16 nrOfLeds = atoi(after) - atoi(before) + 1;
               ppf("driver.initled new %d: %d-%d\n", pinNr, startLed, nrOfLeds-1);
 
-              int pins[1] = { pinNr };
-              driver.initled((uint8_t*) fixture.ledsP, pins, 1, (int) nrOfLeds, ORDER_GRB);
-
-              driverInit = true;
-
+              pinAssignment[nb_pins] = pinNr;
+              lengths[nb_pins] = nrOfLeds;
+              nb_pins++;
             } //if led range in details (- in details e.g. 0-1023)
           } //if pin owned by leds
           pinNr++;
         } // for pins
+        if(nb_pins>0) {
+          driver.initled((uint8_t*) fixture.ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
+          driverInit = true;
+        }
         fixture.doAllocPins = false;
       }
     }
