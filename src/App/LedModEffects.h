@@ -341,9 +341,11 @@ public:
   void loop() {
     // SysModule::loop();
 
+    random16_set_seed(sys->now);
+
     //set new frame
-    if (millis() - frameMillis >= 1000.0/fps) {
-      frameMillis = millis();
+    if (sys->now - frameMillis >= 1000.0/fps) {
+      frameMillis = sys->now;
 
       newFrame = true;
 
@@ -416,8 +418,8 @@ public:
     }
 
     //update projection
-    if (millis() - lastMappingMillis >= 1000 && fixture.doMap) { //not more then once per second (for E131)
-      lastMappingMillis = millis();
+    if (sys->now - lastMappingMillis >= 1000 && fixture.doMap) { //not more then once per second (for E131)
+      lastMappingMillis = sys->now;
       fixture.projectAndMap();
 
       //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples

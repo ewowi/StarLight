@@ -18,7 +18,6 @@
 
 unsigned8 gHue = 0; // rotating "base color" used by many of the patterns
 unsigned long call = 0; //not used at the moment (don't use in effect calculations), well this is not entirely true.
-unsigned long now = millis();
 
 //utility function
 float distance(float x1, float y1, float z1, float x2, float y2, float z2) {
@@ -280,7 +279,7 @@ class BouncingBalls: public Effect {
     // non-chosen color is a random color
     const float gravity = -9.81f; // standard value of gravity
     // const bool hasCol2 = SEGCOLOR(2);
-    const unsigned long time = now;
+    const unsigned long time = sys->now;
 
     //not necessary as sharedData is cleared at setup(Leds &leds)
     // if (call == 0) {
@@ -556,7 +555,7 @@ class HeartBeatEffect: public Effect {
     uint8_t bpm = 40 + (speed);
     uint32_t msPerBeat = (60000L / bpm);
     uint32_t secondBeat = (msPerBeat / 3);
-    unsigned long beatTimer = now - *step;
+    unsigned long beatTimer = sys->now - *step;
 
     *bri_lower = *bri_lower * 2042 / (2048 + intensity);
 
@@ -568,7 +567,7 @@ class HeartBeatEffect: public Effect {
     if (beatTimer > msPerBeat) { // time to reset the beat timer?
       *bri_lower = UINT16_MAX; //full bri
       *isSecond = false;
-      *step = now;
+      *step = sys->now;
     }
 
     for (int i = 0; i < leds.nrOfLeds; i++) {
@@ -925,7 +924,7 @@ class BlackHole: public Effect {
     uint16_t x, y;
 
     leds.fadeToBlackBy(16 + (fade)); // create fading trails
-    unsigned long t = now/128;                 // timebase
+    unsigned long t = sys->now/128;                 // timebase
     // outer stars
     for (size_t i = 0; i < 8; i++) {
       x = beatsin8(outX,   0, leds.size.x - 1, 0, ((i % 2) ? 128 : 0) + t * i);
@@ -975,8 +974,8 @@ class DNA: public Effect {
       //32: 4 * i
       //16: 8 * i
       phase = i * 127 / (leds.size.x-1) * phases / 64;
-      leds.setPixelColor(leds.XY(i, beatsin8(speed, 0, leds.size.y-1, 0, phase    )), ColorFromPalette(leds.palette, i*5+now/17, beatsin8(5, 55, 255, 0, i*10), LINEARBLEND));
-      leds.setPixelColor(leds.XY(i, beatsin8(speed, 0, leds.size.y-1, 0, phase+128)), ColorFromPalette(leds.palette, i*5+128+now/17, beatsin8(5, 55, 255, 0, i*10+128), LINEARBLEND));
+      leds.setPixelColor(leds.XY(i, beatsin8(speed, 0, leds.size.y-1, 0, phase    )), ColorFromPalette(leds.palette, i*5+ sys->now /17, beatsin8(5, 55, 255, 0, i*10), LINEARBLEND));
+      leds.setPixelColor(leds.XY(i, beatsin8(speed, 0, leds.size.y-1, 0, phase+128)), ColorFromPalette(leds.palette, i*5+128+ sys->now /17, beatsin8(5, 55, 255, 0, i*10+128), LINEARBLEND));
     }
     leds.blur2d(blur);
   }
@@ -1006,7 +1005,7 @@ class DistortionWaves: public Effect {
 
     stackUnsigned8  w = 2;
 
-    stackUnsigned16 a  = now/32;
+    stackUnsigned16 a  = sys->now/32;
     stackUnsigned16 a2 = a/2;
     stackUnsigned16 a3 = a/3;
 
@@ -1099,7 +1098,7 @@ class Octopus: public Effect {
       }
     }
 
-    *step = now * speed / 32 / 10;//mdl->getValue("realFps").as<int>();  // WLEDMM 40fps
+    *step = sys->now * speed / 32 / 10;//mdl->getValue("realFps").as<int>();  // WLEDMM 40fps
 
     for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
       for (pos.y = 0; pos.y < leds.size.y; pos.y++) {
@@ -1155,7 +1154,7 @@ class Lissajous: public Effect {
 
     leds.fadeToBlackBy(fadeRate);
 
-    uint_fast16_t phase = now * speed / 256;  // allow user to control rotation speed, speed between 0 and 255!
+    uint_fast16_t phase = sys->now * speed / 256;  // allow user to control rotation speed, speed between 0 and 255!
 
     Coord3D locn = {0,0,0};
     if (smooth) { // WLEDMM: this is the original "float" code featuring anti-aliasing
@@ -1164,7 +1163,7 @@ class Lissajous: public Effect {
         for (int i=0; i < maxLoops; i++) {
           locn.x = float(sin8(phase/2 + (i* freqX)/64)) / 255.0f;  // WLEDMM align speed with original effect
           locn.y = float(cos8(phase/2 + i*2)) / 255.0f;
-          //leds.setPixelColorXY(xlocn, ylocn, SEGMENT.color_from_palette(strip.now/100+i, false, PALETTE_SOLID_WRAP, 0)); // draw pixel with anti-aliasing
+          //leds.setPixelColorXY(xlocn, ylocn, SEGMENT.color_from_palette(sys->now/100+i, false, PALETTE_SOLID_WRAP, 0)); // draw pixel with anti-aliasing
           unsigned palIndex = (256*locn.y) + phase/2 + (i* freqX)/64;
           // leds.setPixelColorXY(xlocn, ylocn, SEGMENT.color_from_palette(palIndex, false, PALETTE_SOLID_WRAP, 0)); // draw pixel with anti-aliasing - color follows rotation
           leds[locn] = ColorFromPalette(leds.palette, palIndex);
@@ -1176,8 +1175,8 @@ class Lissajous: public Effect {
       locn.y = cos8(phase/2 + i*2);
       locn.x = (leds.size.x < 2) ? 1 : (map(2*locn.x, 0,511, 0,2*(leds.size.x-1)) +1) /2;    // softhack007: "*2 +1" for proper rounding
       locn.y = (leds.size.y < 2) ? 1 : (map(2*locn.y, 0,511, 0,2*(leds.size.y-1)) +1) /2;    // "leds.size.y > 2" is needed to avoid div/0 in map()
-      // leds.setPixelColorXY((unsigned8)xlocn, (unsigned8)ylocn, SEGMENT.color_from_palette(strip.now/100+i, false, PALETTE_SOLID_WRAP, 0));
-      leds[locn] = ColorFromPalette(leds.palette, now/100+i);
+      // leds.setPixelColorXY((unsigned8)xlocn, (unsigned8)ylocn, SEGMENT.color_from_palette(sys->now/100+i, false, PALETTE_SOLID_WRAP, 0));
+      leds[locn] = ColorFromPalette(leds.palette, sys->now/100+i);
     }
   }
   
@@ -1268,7 +1267,7 @@ class Noise2D: public Effect {
 
     for (int y = 0; y < leds.size.y; y++) {
       for (int x = 0; x < leds.size.x; x++) {
-        uint8_t pixelHue8 = inoise8(x * scale, y * scale, now / (16 - speed));
+        uint8_t pixelHue8 = inoise8(x * scale, y * scale, sys->now / (16 - speed));
         leds.setPixelColor(leds.XY(x, y), ColorFromPalette(leds.palette, pixelHue8));
       }
     }
@@ -1355,15 +1354,15 @@ class GameOfLife: public Effect {
     CRGB color;
 
     //start new game of life
-    if (call == 0 || (*generation == 0 && *step < now || *setUp != 123)) {
+    if (call == 0 || (*generation == 0 && *step < sys->now || *setUp != 123)) {
       *setUp = 123; // quick fix for effect starting up
       *generation = 1;
-      *step = now + 1500; // previous call time + 1.5 seconds initial delay
-      unsigned long seed = now>>2;
+      *step = sys->now + 1500; // previous call time + 1.5 seconds initial delay
+      // unsigned long seed = sys->now>>2;
       // seed = 8333; // broken seed for testing 16x16x16 cubeBox all colors off, density = 32
-      random16_set_seed(seed); //seed the random generator
-      ppf("Game of Life: %d x %d x %d  ", leds.size.x, leds.size.y, leds.size.z); //debug
-      ppf("Seed: %d\n", seed); //debug
+      // random16_set_seed(seed); //seed the random generator
+      // ppf("Game of Life: %d x %d x %d  ", leds.size.x, leds.size.y, leds.size.z); //debug
+      // ppf("Seed: %d\n", seed); //debug
       //Setup Grid
       memset(cells, 0, dataSize);
       memset(futureCells, 0, dataSize);
@@ -1435,7 +1434,7 @@ class GameOfLife: public Effect {
       *cubeGliderLength = *gliderLength * 6; // change later for rectangular cuboid
       return;
     }
-    if (!speed || *step > now || now - *step < 1000 / speed) {
+    if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) {
       // // draw live cells overlay test
       // for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
       //   if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
@@ -1562,7 +1561,7 @@ class GameOfLife: public Effect {
     bool repetition = false;
     if (!cellChanged || crc == *oscillatorCRC || crc == *spaceshipCRC || crc == *cubeGliderCRC) repetition = true; //check if cell changed this gen and compare previous stored crc values
     if (repetition) {
-      ppf ("Generations: %d\n", *generation);
+      // ppf ("Generations: %d\n", *generation);
       // ppf("Repeat Detected, Oscillator: %d, Spaceship: %d, CubeGlider: %d. Generations: %d\n", *generation%16, *generation%int(gliderLength), *generation%int(cubeGliderLength), *generation);
       *generation = 0; // reset on next call
       *step += 1500;
@@ -1578,7 +1577,7 @@ class GameOfLife: public Effect {
     if ((*gliderLength) && (*generation) % (*gliderLength) == 0) *spaceshipCRC = crc; //check on gliderlength to avoid div/0
     if (((*cubeGliderLength) && (*generation) % (*cubeGliderLength) == 0)) *cubeGliderCRC = crc;
     (*generation)++;
-    *step = now;
+    *step = sys->now;
   }
 
   //Todo:
@@ -1632,7 +1631,7 @@ class Waverly: public Effect {
     // if ((soundPressure) && (wledAudioMod->sync.volumeSmth > 0.5f)) wledAudioMod->sync.volumeSmth = wledAudioMod->sync.soundPressure;    // show sound pressure instead of volume
     // if (agcDebug) wledAudioMod->sync.volumeSmth = 255.0 - wledAudioMod->sync.agcSensitivity;                    // show AGC level instead of volume
 
-    long t = now / 2; 
+    long t = sys->now / 2; 
     Coord3D pos;
     for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
       stackUnsigned16 thisVal = wledAudioMod->sync.volumeSmth*sensitivity/64 * inoise8(pos.x * 45 , t , t)/64;      // WLEDMM back to SR code
@@ -1685,8 +1684,8 @@ class GEQEffect: public Effect {
     bool smoothBars = mdl->getValue("smoothBars");
 
     bool rippleTime = false;
-    if (now - *step >= (256U - ripple)) {
-      *step = now;
+    if (sys->now - *step >= (256U - ripple)) {
+      *step = sys->now;
       rippleTime = true;
     }
 
@@ -1846,7 +1845,7 @@ class RipplesEffect: public Effect {
     for (pos.z=0; pos.z<leds.size.z; pos.z++) {
       for (pos.x=0; pos.x<leds.size.x; pos.x++) {
         float d = distance(3.5f, 3.5f, 0.0f, (float)pos.y, (float)pos.z, 0.0f) / 9.899495f * leds.size.y;
-        stackUnsigned32 time_interval = now/(100 - speed)/((256.0f-128.0f)/20.0f);
+        stackUnsigned32 time_interval = sys->now/(100 - speed)/((256.0f-128.0f)/20.0f);
         pos.y = floor(leds.size.y/2.0f + sinf(d/ripple_interval + time_interval) * leds.size.y/2.0f); //between 0 and leds.size.y
 
         leds[pos] = CHSV( gHue + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri, LINEARBLEND);
@@ -1870,7 +1869,7 @@ class SphereMoveEffect: public Effect {
 
     leds.fill_solid(CRGB::Black);
 
-    stackUnsigned32 time_interval = now/(100 - speed)/((256.0f-128.0f)/20.0f);
+    stackUnsigned32 time_interval = sys->now/(100 - speed)/((256.0f-128.0f)/20.0f);
 
     Coord3D origin;
     origin.x = 3.5f+sinf(time_interval)*2.5f;
@@ -1984,8 +1983,6 @@ public:
   }
 
   void loop(Leds &leds) {
-    now = millis(); //tbd timebase
-
     leds.sharedData.loop(); //sets the sharedData pointer back to 0 so loop effect can go through it
     effects[leds.fx%effects.size()]->loop(leds);
 

@@ -10,6 +10,7 @@
 */
 
 #include "LedLeds.h"
+#include "../Sys/SysModSystem.h"
 
 //convenience functions to call fastled functions out of the Leds namespace (there naming conflict)
 void fastled_fadeToBlackBy(CRGB* leds, unsigned16 num_leds, unsigned8 fadeBy) {
@@ -25,9 +26,9 @@ void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, unsigned8 in
 unsigned16 Leds::XYZ(unsigned16 x, unsigned16 y, unsigned16 z) {
   if (projectionNr == p_TiltPanRoll || projectionNr == p_Preset1) {
     Coord3D result = Coord3D{x, y, z};
-    if (proTiltSpeed) result = trigoTiltPanRoll.tilt(result, size/2, millis() * 5 / (255 - proTiltSpeed));
-    if (proPanSpeed) result = trigoTiltPanRoll.pan(result, size/2, millis() * 5 / (255 - proPanSpeed));
-    if (proRollSpeed) result = trigoTiltPanRoll.roll(result, size/2, millis() * 5 / (255 - proRollSpeed));
+    if (proTiltSpeed) result = trigoTiltPanRoll.tilt(result, size/2, sys->now * 5 / (255 - proTiltSpeed));
+    if (proPanSpeed) result = trigoTiltPanRoll.pan(result, size/2, sys->now * 5 / (255 - proPanSpeed));
+    if (proRollSpeed) result = trigoTiltPanRoll.roll(result, size/2, sys->now * 5 / (255 - proRollSpeed));
     if (fixture->fixSize.z == 1) result.z = 0; // 3d effects will be flattened on 2D fixtures
     if (result >= 0 && result < size)
       return result.x + result.y * size.x + result.z * size.x * size.y;
