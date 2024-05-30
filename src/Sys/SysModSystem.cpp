@@ -225,11 +225,13 @@ void SysModSystem::loop() {
   // SysModule::loop();
 
   loopCounter++;
+  now = millis() + timebase;
 }
+
 void SysModSystem::loop1s() {
   mdl->setUIValueV("upTime", "%lu s", millis()/1000);
   mdl->setUIValueV("now", "%lu s", now/1000);
-  mdl->setUIValueV("timeBase", "%lu s", timebase/1000);
+  mdl->setUIValueV("timeBase", "%lu s", (now<millis())? - (UINT32_MAX - timebase)/1000:timebase/1000);
   mdl->setUIValueV("loops", "%lu /s", loopCounter);
 
   loopCounter = 0;

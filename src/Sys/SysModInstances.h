@@ -25,7 +25,7 @@ struct DMX {
 //additional data not in wled header
 struct SysData {
   unsigned long upTime;
-  uint32_t timebase; //25
+  uint32_t now; //25
   uint8_t timeSource; //29
   uint32_t tokiTime; //30 in sec
   uint16_t tokiMs; //34
@@ -70,7 +70,7 @@ struct UDPStarMessage {
   char jsonString[1460 - sizeof(UDPWLEDMessage) - sizeof(SysData)];
 };
 
-//WLED syncmessage
+//WLED syncmessage 1193 bytes
 struct UDPWLEDSyncMessage { //see notify( in WLED
   byte protocol; //0
   byte callMode; //1
@@ -90,7 +90,7 @@ struct UDPWLEDSyncMessage { //see notify( in WLED
   byte palette; //19
   byte col2[4]; //20
   byte followUp; //24
-  byte timebase[4]; //25
+  byte now[4]; //25
   byte timeSource; //29
   byte tokiTime[4]; //30
   byte tokiMs[2]; //34
@@ -204,13 +204,13 @@ public:
         return true;
       default: return false;
     }});
-    ui->initNumber(tableVar, "insTB", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "insNow", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
         for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, instances[rowNrL].sysData.timebase, rowNrL);
+          mdl->setValue(var, instances[rowNrL].sysData.now / 1000, rowNrL);
         return true;
       case f_UIFun:
-        ui->setLabel(var, "TB");
+        ui->setLabel(var, "Now");
         return true;
       default: return false;
     }});
@@ -400,70 +400,76 @@ public:
       if (packetSize > 0) {
         // IPAddress remoteIp = notifierUdp.remoteIP();
 
-        // ppf("handleNotifications sync ...%d %d\n", notifierUdp.remoteIP()[3], packetSize);
+        if (packetSize == sizeof(UDPWLEDSyncMessage)) { //1193 bytes
 
-        UDPWLEDSyncMessage wledSyncMessage;
-        byte *udpIn = (byte *)&wledSyncMessage;
-        notifierUdp.read(udpIn, packetSize);
+          ppf("handleNotifications WLED sync ...%d %d %d\n", notifierUdp.remoteIP()[3], packetSize, sizeof(UDPWLEDSyncMessage));
 
-        // for (int i=0; i<40; i++) {
-        //   Serial.printf("%d: %d\n", i, udpIn[i]);
-        // }
+          UDPWLEDSyncMessage wledSyncMessage;
+          byte *udpIn = (byte *)&wledSyncMessage;
+          notifierUdp.read(udpIn, packetSize);
 
-        ppf("   %d %d p:%d\n", wledSyncMessage.bri, wledSyncMessage.mainsegMode, packetSize);
+          // for (int i=0; i<40; i++) {
+          //   Serial.printf("%d: %d\n", i, udpIn[i]);
+          // }
 
-        InstanceInfo *instance = findInstance(notifierUdp.remoteIP()); //if not exist, created
+          ppf("   %d %d p:%d\n", wledSyncMessage.bri, wledSyncMessage.mainsegMode, packetSize);
 
-        instance->sysData.upTime = (wledSyncMessage.timebase[0] * 256*256*256 + 256*256*wledSyncMessage.timebase[1] + 256*wledSyncMessage.timebase[2] + wledSyncMessage.timebase[3]) / 1000;
-        instance->sysData.timebase = (wledSyncMessage.timebase[0] << 24) | (wledSyncMessage.timebase[1] << 16) | (wledSyncMessage.timebase[2] << 8) | (wledSyncMessage.timebase[3]);
-        instance->sysData.timeSource = wledSyncMessage.timeSource;
-        instance->sysData.tokiTime = (wledSyncMessage.tokiTime[0] << 24) | (wledSyncMessage.tokiTime[1] << 16) | (wledSyncMessage.tokiTime[2] << 8) | (wledSyncMessage.tokiTime[3]);
-        instance->sysData.tokiMs = (wledSyncMessage.tokiMs[0] << 8) | (wledSyncMessage.tokiMs[1]);
+          InstanceInfo *instance = findInstance(notifierUdp.remoteIP()); //if not exist, created
 
-        //don't update toki for WLED ATM
+          // instance->sysData.upTime = (wledSyncMessage.now[0] * 256*256*256 + 256*256*wledSyncMessage.now[1] + 256*wledSyncMessage.now[2] + wledSyncMessage.now[3]) / 1000;
+          instance->sysData.upTime = (wledSyncMessage.now[0] << 24) | (wledSyncMessage.now[1] << 16) | (wledSyncMessage.now[2] << 8) | (wledSyncMessage.now[3]);
+          instance->sysData.now = (wledSyncMessage.now[0] << 24) | (wledSyncMessage.now[1] << 16) | (wledSyncMessage.now[2] << 8) | (wledSyncMessage.now[3]);
+          instance->sysData.timeSource = wledSyncMessage.timeSource;
+          instance->sysData.tokiTime = (wledSyncMessage.tokiTime[0] << 24) | (wledSyncMessage.tokiTime[1] << 16) | (wledSyncMessage.tokiTime[2] << 8) | (wledSyncMessage.tokiTime[3]);
+          instance->sysData.tokiMs = (wledSyncMessage.tokiMs[0] << 8) | (wledSyncMessage.tokiMs[1]);
 
-            // uint32_t t = instance->sysData.timebase;
-            // t += PRESUMED_NETWORK_DELAY; //adjust trivially for network delay
-            // t -= millis();
-            // sys->timebase = t;
-            // // timebaseUpdated = true;
+          //don't update toki for WLED ATM
 
-            // Toki::Time tm;
-            // tm.sec = instance->sysData.tokiTime;
-            // tm.ms = instance->sysData.tokiMs;
-            // if (instance->sysData.timeSource > sys->toki.getTimeSource()) { //if sender's time source is more accurate
-            //   sys->toki.adjust(tm, PRESUMED_NETWORK_DELAY); //adjust trivially for network delay
-            //   uint8_t ts = TOKI_TS_UDP;
-            //   if (instance->sysData.timeSource > 99) ts = TOKI_TS_UDP_NTP;
-            //   else if (instance->sysData.timeSource >= TOKI_TS_SEC) ts = TOKI_TS_UDP_SEC;
-            //   sys->toki.setTime(tm, ts);
-            // } else if (/*timebaseUpdated && */ sys->toki.getTimeSource() > 99) { //if we both have good times, get a more accurate timebase
-            //   Toki::Time myTime = sys->toki.getTime();
-            //   uint32_t diff = sys->toki.msDifference(tm, myTime);
-            //   sys->timebase -= PRESUMED_NETWORK_DELAY; //no need to presume, use difference between NTP times at send and receive points
-            //   if (sys->toki.isLater(tm, myTime)) {
-            //     sys->timebase += diff;
-            //   } else {
-            //     sys->timebase -= diff;
-            //   }
-            // }
-        
-        instance->jsonData["bri"] = wledSyncMessage.bri;
-        instance->jsonData["fx"] = wledSyncMessage.mainsegMode; //tbd: rowNr
-        instance->jsonData["pal"] = wledSyncMessage.palette; //tbd: rowNr
+              // uint32_t t = instance->sysData.now;
+              // t += PRESUMED_NETWORK_DELAY; //adjust trivially for network delay
+              // t -= millis();
+              // sys->timebase = t;
+              // // timebaseUpdated = true;
 
-        // for (size_t x = 0; x < packetSize; x++) {
-        //   char xx = (char)udpIn[x];
-        //   Serial.print(xx);
-        // }
-        // Serial.println();
+              // Toki::Time tm;
+              // tm.sec = instance->sysData.tokiTime;
+              // tm.ms = instance->sysData.tokiMs;
+              // if (instance->sysData.timeSource > sys->toki.getTimeSource()) { //if sender's time source is more accurate
+              //   sys->toki.adjust(tm, PRESUMED_NETWORK_DELAY); //adjust trivially for network delay
+              //   uint8_t ts = TOKI_TS_UDP;
+              //   if (instance->sysData.timeSource > 99) ts = TOKI_TS_UDP_NTP;
+              //   else if (instance->sysData.timeSource >= TOKI_TS_SEC) ts = TOKI_TS_UDP_SEC;
+              //   sys->toki.setTime(tm, ts);
+              // } else if (/*timebaseUpdated && */ sys->toki.getTimeSource() > 99) { //if we both have good times, get a more accurate timebase
+              //   Toki::Time myTime = sys->toki.getTime();
+              //   uint32_t diff = sys->toki.msDifference(tm, myTime);
+              //   sys->timebase -= PRESUMED_NETWORK_DELAY; //no need to presume, use difference between NTP times at send and receive points
+              //   if (sys->toki.isLater(tm, myTime)) {
+              //     sys->timebase += diff;
+              //   } else {
+              //     sys->timebase -= diff;
+              //   }
+              // }
+          
+          instance->jsonData["bri"] = wledSyncMessage.bri;
+          instance->jsonData["fx"] = wledSyncMessage.mainsegMode; //tbd: rowNr
+          instance->jsonData["pal"] = wledSyncMessage.palette; //tbd: rowNr
 
-        ppf("insTbl handleNotifications %d\n", notifierUdp.remoteIP()[3]);
-        for (JsonObject childVar: mdl->varChildren("insTbl"))
-          ui->callVarFun(childVar, UINT8_MAX, f_ValueFun); //rowNr //instance - instances.begin()
+          // for (size_t x = 0; x < packetSize; x++) {
+          //   char xx = (char)udpIn[x];
+          //   Serial.print(xx);
+          // }
+          // Serial.println();
 
-        web->recvUDPCounter++;
-        web->recvUDPBytes+=packetSize;
+          ppf("insTbl handleNotifications %d\n", notifierUdp.remoteIP()[3]);
+          for (JsonObject childVar: mdl->varChildren("insTbl"))
+            ui->callVarFun(childVar, UINT8_MAX, f_ValueFun); //rowNr //instance - instances.begin()
+
+          web->recvUDPCounter++;
+          web->recvUDPBytes+=packetSize;
+        }
+        else
+          ppf("dev WLED sync massage not size %d\n", sizeof(UDPWLEDSyncMessage));
 
         return;
       }
@@ -591,7 +597,7 @@ public:
     starMessage.header.version = VERSION;
     starMessage.sysData.type = (strcmp(_INIT(TOSTRING(APP)), "StarBase")==0)?1:(strcmp(_INIT(TOSTRING(APP)), "StarLeds")==0)?2:3; //1=StarBase,2=StarLeds, 3=StarFork
     starMessage.sysData.upTime = millis()/1000;
-    starMessage.sysData.timebase = millis() + sys->timebase;
+    starMessage.sysData.now = millis() + sys->timebase; //similar to now
     starMessage.sysData.timeSource = sys->toki.getTimeSource();
     starMessage.sysData.tokiTime = sys->toki.getTime().sec;
     starMessage.sysData.tokiMs = sys->toki.getTime().ms;
@@ -718,58 +724,57 @@ public:
           instance.sysData = udpStarMessage.sysData;
 
           if (instance.ip != WiFi.localIP()) { //send from localIP will be done after updateInstance
+            char group1[32];
+            char group2[32];
+            if (groupOfName(instance.name, group1) && groupOfName(mdl->getValue("name"), group2) && strcmp(group1, group2) == 0) {
 
-            uint32_t t = instance.sysData.timebase;
-            t += PRESUMED_NETWORK_DELAY; //adjust trivially for network delay
-            t -= millis();
-            sys->timebase = t;
-            // timebaseUpdated = true;
+              uint32_t t = instance.sysData.now;
+              t += PRESUMED_NETWORK_DELAY; //adjust trivially for network delay
+              t -= millis();
+              sys->timebase = t;
+              // timebaseUpdated = true;
 
-            Toki::Time tm;
-            tm.sec = instance.sysData.tokiTime;
-            tm.ms = instance.sysData.tokiMs;
-            if (instance.sysData.timeSource > sys->toki.getTimeSource() || sys->toki.getTimeSource() == TOKI_TS_NONE) { //if sender's time source is more accurate
-              sys->toki.adjust(tm, PRESUMED_NETWORK_DELAY); //adjust trivially for network delay
-              uint8_t ts = TOKI_TS_UDP; //5
-              if (instance.sysData.timeSource > 99) ts = TOKI_TS_UDP_NTP; //110
-              else if (instance.sysData.timeSource >= TOKI_TS_SEC) ts = TOKI_TS_UDP_SEC; //20
-              sys->toki.setTime(tm, ts);
-            } else if (/*timebaseUpdated && */ sys->toki.getTimeSource() > 99) { //if we both have good times, get a more accurate timebase
-              Toki::Time myTime = sys->toki.getTime();
-              uint32_t diff = sys->toki.msDifference(tm, myTime);
-              sys->timebase -= PRESUMED_NETWORK_DELAY; //no need to presume, use difference between NTP times at send and receive points
-              if (sys->toki.isLater(tm, myTime)) {
-                sys->timebase += diff;
-              } else {
-                sys->timebase -= diff;
+              Toki::Time tm;
+              tm.sec = instance.sysData.tokiTime;
+              tm.ms = instance.sysData.tokiMs;
+              if (instance.sysData.timeSource > sys->toki.getTimeSource() || sys->toki.getTimeSource() == TOKI_TS_NONE) { //if sender's time source is more accurate
+                sys->toki.adjust(tm, PRESUMED_NETWORK_DELAY); //adjust trivially for network delay
+                uint8_t ts = TOKI_TS_UDP; //5
+                if (instance.sysData.timeSource > 99) ts = TOKI_TS_UDP_NTP; //110
+                else if (instance.sysData.timeSource >= TOKI_TS_SEC) ts = TOKI_TS_UDP_SEC; //20
+                sys->toki.setTime(tm, ts);
+              } else if (/*timebaseUpdated && */ sys->toki.getTimeSource() > 99) { //if we both have good times, get a more accurate timebase
+                Toki::Time myTime = sys->toki.getTime();
+                uint32_t diff = sys->toki.msDifference(tm, myTime);
+                sys->timebase -= PRESUMED_NETWORK_DELAY; //no need to presume, use difference between NTP times at send and receive points
+                if (sys->toki.isLater(tm, myTime)) {
+                  sys->timebase += diff;
+                } else {
+                  sys->timebase -= diff;
+                }
               }
-            }
-            sys->now = millis() + sys->timebase;
 
-            //set instance.jsonData from new string
-            JsonDocument newData;
-            DeserializationError error = deserializeJson(newData, udpStarMessage.jsonString);
-            if (error || !newData.is<JsonObject>()) {
-              // ppf("dev updateInstance json failed ip:%d e:%s\n", instance.ip[3], error.c_str(), udpStarMessage.jsonString);
-              //failed because some instances not on latest firmware, so turned off temporarily (tbd/wip)
-            }
-            else {
-              //check if instance belongs to the same group
+              //set instance.jsonData from new string
+              JsonDocument newData;
+              DeserializationError error = deserializeJson(newData, udpStarMessage.jsonString);
+              if (error || !newData.is<JsonObject>()) {
+                // ppf("dev updateInstance json failed ip:%d e:%s\n", instance.ip[3], error.c_str(), udpStarMessage.jsonString);
+                //failed because some instances not on latest firmware, so turned off temporarily (tbd/wip)
+              }
+              else {
+                //check if instance belongs to the same group
 
-              char group1[32];
-              char group2[32];
-              if (groupOfName(instance.name, group1) && groupOfName(mdl->getValue("name"), group2) && strcmp(group1, group2) == 0) {
                 for (JsonPair pair: newData.as<JsonObject>()) {
                   // ppf("updateInstance sync from i:%s k:%s v:%s\n", instance.name, pair.key().c_str(), pair.value().as<String>().c_str());
 
                   mdl->setValueJV(pair.key().c_str(), pair.value());
                 }
+                instance.jsonData = newData; // deepcopy: https://github.com/bblanchon/ArduinoJson/issues/1023
+                // ppf("updateInstance json ip:%d", instance.ip[3]);
+                // print->printJson(" d:", instance.jsonData);
               }
-              instance.jsonData = newData; // deepcopy: https://github.com/bblanchon/ArduinoJson/issues/1023
-              // ppf("updateInstance json ip:%d", instance.ip[3]);
-              // print->printJson(" d:", instance.jsonData);
             }
-          }
+          } //same group
         }
 
         //only update cell in instbl!
