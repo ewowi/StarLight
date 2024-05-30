@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      SysModNetwork.cpp
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -31,9 +31,9 @@ void SysModNetwork::setup() {
   //   ui->setComment(var, "List of defined and available Wifi APs");
   // });
 
-  ui->initText(parentVar, "ssid", "", 32, false);
+  ui->initText(parentVar, "ssid", "", 31, false);
 
-  ui->initPassword(parentVar, "pw", "", 32, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initPassword(parentVar, "pw", "", 63, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_UIFun:
       ui->setLabel(var, "Password");
       return true;
@@ -123,29 +123,29 @@ void SysModNetwork::initConnection() {
 
   const char * ssid = mdl->getValue("ssid");
   const char * password = mdl->getValue("pw");
-  if (ssid && strlen(ssid)>0) {
-    char passXXX [32] = "";
+  if (ssid && strlen(ssid)>0 && password) {
+    char passXXX [64] = "";
     for (int i = 0; i < strlen(password); i++) strncat(passXXX, "*", sizeof(passXXX)-1);
     ppf("Connecting to WiFi %s / %s\n", ssid, passXXX);
     WiFi.begin(ssid, password);
-    #if defined(STARMOD_LOLIN_WIFI_FIX )
+    #if defined(STARBASE_LOLIN_WIFI_FIX )
       WiFi.setTxPower(WIFI_POWER_8_5dBm );
     #endif
     WiFi.setSleep(false);
     WiFi.setHostname(mdns->cmDNS); //use the mdns name (instance name or star-mac)
   }
   else
-    ppf("No SSID");
+    ppf("initConnection error s:%s p:%s\n", ssid?ssid:"No SSID", password?password:"No Password");
 
   isConfirmedConnection = false; //need to test if really connected in handleConnection
 }
 
 void SysModNetwork::initAP() {
-  const char * apSSID = mdl->getValue("instanceName");
+  const char * apSSID = mdl->getValue("name");
   ppf("Opening access point %s\n", apSSID);
   WiFi.softAPConfig(IPAddress(4, 3, 2, 1), IPAddress(4, 3, 2, 1), IPAddress(255, 255, 255, 0));
   WiFi.softAP(apSSID, NULL, apChannel, false); //no password!!!
-  #if defined(STARMOD_LOLIN_WIFI_FIX )
+  #if defined(STARBASE_LOLIN_WIFI_FIX )
     WiFi.setTxPower(WIFI_POWER_8_5dBm );
   #endif
   if (!apActive) // start captive portal if AP active

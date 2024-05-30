@@ -1,7 +1,7 @@
 {
-  "name": "starmod",
-  "version": "0.0.1",
-  "description": "Tools for StarMod",
+  "name": "StarBase",
+  "version": "0.0.0",
+  "description": "Tools for StarBase",
   "main": "tools/cdata.js",
   "directories": {
     "lib": "lib",
@@ -13,14 +13,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ewowi/StarMod.git"
+    "url": "git+https://github.com/ewowi/StarBase.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ewowi/StarMod/issues"
+    "url": "https://github.com/ewowi/StarBase/issues"
   },
-  "homepage": "https://github.com/ewowi/StarMod#readme",
+  "homepage": "https://github.com/ewowi/StarBase#readme",
   "dependencies": {
     "clean-css": "^4.2.3",
     "html-minifier-terser": "^5.1.1",

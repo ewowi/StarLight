@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarLeds
    @file      LedLeds.cpp
    @date      20240226
-   @repo      https://github.com/ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/MoonModules/StarLeds
+   @Authors   https://github.com/MoonModules/StarLeds/commits/main
+   @Copyright © 2024 Github StarLeds Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -23,12 +23,12 @@ void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, unsigned8 in
 }
 
 unsigned16 Leds::XYZ(unsigned16 x, unsigned16 y, unsigned16 z) {
-  if (projectionNr == p_PanTiltRoll || projectionNr == p_Preset1) {
+  if (projectionNr == p_TiltPanRoll || projectionNr == p_Preset1) {
     Coord3D result = Coord3D{x, y, z};
-    if (proPanSpeed) result = trigoPanTiltRoll.pan(result, size/2, millis() * 5 / (255 - proPanSpeed));
-    if (proTiltSpeed) result = trigoPanTiltRoll.tilt(result, size/2, millis() * 5 / (255 - proTiltSpeed));
-    if (proRollSpeed) result = trigoPanTiltRoll.roll(result, size/2, millis() * 5 / (255 - proRollSpeed));
-    if (fixture->size.z == 1) result.z = 0; // 3d effects will be flattened on 2D fixtures
+    if (proTiltSpeed) result = trigoTiltPanRoll.tilt(result, size/2, millis() * 5 / (255 - proTiltSpeed));
+    if (proPanSpeed) result = trigoTiltPanRoll.pan(result, size/2, millis() * 5 / (255 - proPanSpeed));
+    if (proRollSpeed) result = trigoTiltPanRoll.roll(result, size/2, millis() * 5 / (255 - proRollSpeed));
+    if (fixture->fixSize.z == 1) result.z = 0; // 3d effects will be flattened on 2D fixtures
     if (result >= 0 && result < size)
       return result.x + result.y * size.x + result.z * size.x * size.y;
     else 
@@ -41,7 +41,7 @@ unsigned16 Leds::XYZ(unsigned16 x, unsigned16 y, unsigned16 z) {
 // maps the virtual led to the physical led(s) and assign a color to it
 void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
   if (indexV < mappingTable.size()) {
-    if (mappingTable[indexV].indexes) {
+    if (isMapped(indexV)) {
       for (forUnsigned16 indexP:*mappingTable[indexV].indexes) {
         fixture->ledsP[indexP] = blend(color, fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount);
       }
@@ -58,7 +58,7 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
 
 CRGB Leds::getPixelColor(unsigned16 indexV) {
   if (indexV < mappingTable.size()) {
-    if (mappingTable[indexV].indexes && mappingTable[indexV].indexes->size())
+    if (isMapped(indexV)) // && mappingTable[indexV].indexes->size()
       return fixture->ledsP[*mappingTable[indexV].indexes->begin()]; //any would do as they are all the same
     else 
       return mappingTable[indexV].color;

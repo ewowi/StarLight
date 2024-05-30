@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarLeds
    @file      LedLeds.h
    @date      20240227
-   @repo      https://github.com/ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/MoonModules/StarLeds
+   @Authors   https://github.com/MoonModules/StarLeds/commits/main
+   @Copyright © 2024 Github StarLeds Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -32,7 +32,7 @@ enum Projections
 {
   p_Default,
   p_Multiply,
-  p_PanTiltRoll,
+  p_TiltPanRoll,
   p_DistanceFromPoint,
   p_Preset1,
   p_None,
@@ -55,17 +55,17 @@ static unsigned trigoUnCached = 1;
 struct Trigo {
   uint16_t period = 360; //default period 360
   Trigo(uint16_t period = 360) {this->period = period;}
-  float sinValue[3]; uint16_t sinAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of sinValue=sin(sinAngle) for pan, tilt and roll
-  float cosValue[3]; uint16_t cosAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of cosValue=cos(cosAngle) for pan, tilt and roll
+  float sinValue[3]; uint16_t sinAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of sinValue=sin(sinAngle) for tilt, pan and roll
+  float cosValue[3]; uint16_t cosAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of cosValue=cos(cosAngle) for tilt, pan and roll
   virtual float sinBase(uint16_t angle) {return sinf(M_TWOPI * angle / period);}
   virtual float cosBase(uint16_t angle) {return cosf(M_TWOPI * angle / period);}
-  int16_t sin(int16_t factor, uint16_t angle, uint8_t index = 0) {
-    if (sinAngle[index] != angle) {sinAngle[index] = angle; sinValue[index] = sinBase(angle);trigoUnCached++;} else trigoCached++;
-    return factor * sinValue[index];
+  int16_t sin(int16_t factor, uint16_t angle, uint8_t cache012 = 0) {
+    if (sinAngle[cache012] != angle) {sinAngle[cache012] = angle; sinValue[cache012] = sinBase(angle);trigoUnCached++;} else trigoCached++;
+    return factor * sinValue[cache012];
   };
-  int16_t cos(int16_t factor, uint16_t angle, uint8_t index = 0) {
-    if (cosAngle[index] != angle) {cosAngle[index] = angle; cosValue[index] = cosBase(angle);trigoUnCached++;} else trigoCached++;
-    return factor * cosValue[index];
+  int16_t cos(int16_t factor, uint16_t angle, uint8_t cache012 = 0) {
+    if (cosAngle[cache012] != angle) {cosAngle[cache012] = angle; cosValue[cache012] = cosBase(angle);trigoUnCached++;} else trigoCached++;
+    return factor * cosValue[cache012];
   };
   // https://msl.cs.uiuc.edu/planning/node102.html
   Coord3D pan(Coord3D in, Coord3D middle, uint16_t angle) {
@@ -92,9 +92,9 @@ struct Trigo {
     out.z = inM.z;
     return out + middle;
   }
-  Coord3D rotate(Coord3D in, Coord3D middle, uint16_t panAngle, uint16_t tiltAngle, uint16_t rollAngle, uint16_t period = 360) {
+  Coord3D rotate(Coord3D in, Coord3D middle, uint16_t tiltAngle, uint16_t panAngle, uint16_t rollAngle, uint16_t period = 360) {
     this->period = period;
-    return roll(tilt(pan(in, middle, panAngle), middle, tiltAngle), middle, rollAngle);
+    return roll(pan(tilt(in, middle, tiltAngle), middle, panAngle), middle, rollAngle);
   }
 };
 
@@ -109,13 +109,13 @@ struct Trigo16: Trigo { //FastLed sin16 and cos16
   float cosBase(uint16_t angle) {return cos16(65536.0f * angle / period) / 32645.0f;}
 };
 
-static Trigo trigoPanTiltRoll(255); // Trigo8 is hardly any faster (27 vs 28 fps) (spanXY=28)
+static Trigo trigoTiltPanRoll(255); // Trigo8 is hardly any faster (27 vs 28 fps) (spanXY=28)
 
 class Fixture; //forward
 
 
 
-//StarMod implementation of segment.data
+//StarLeds implementation of segment.data
 class SharedData {
 
   private:
@@ -180,13 +180,13 @@ public:
 
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
 
-  unsigned8 fx = -1;
+  uint16_t fx = -1;
   unsigned8 projectionNr = -1;
   unsigned8 effectDimension = -1;
 
   Coord3D startPos = {0,0,0}, endPos = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
-  unsigned8 proPanSpeed = 128;
   unsigned8 proTiltSpeed = 128;
+  unsigned8 proPanSpeed = 128;
   unsigned8 proRollSpeed = 128;
 
   SharedData sharedData;
@@ -196,6 +196,8 @@ public:
   unsigned16 indexVLocal = 0; //set in operator[], used by operator=
 
   bool doMap = false;
+
+  CRGBPalette16 palette;
 
   unsigned16 XY(unsigned16 x, unsigned16 y) {
     return XYZ(x, y, 0);
@@ -281,6 +283,11 @@ public:
   void fadeToBlackBy(unsigned8 fadeBy = 255);
   void fill_solid(const struct CRGB& color, bool noBlend = false);
   void fill_rainbow(unsigned8 initialhue, unsigned8 deltahue);
+
+  //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
+  bool isMapped(unsigned16 indexV) {
+    return mappingTable[indexV].indexes;
+  }
 
   void blur1d(fract8 blur_amount)
   {

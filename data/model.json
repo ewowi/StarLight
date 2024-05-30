@@ -392,12 +392,12 @@
     "max": 255,
     "n": [
       {
-        "id": "instanceName",
+        "id": "name",
         "type": "text",
         "ro": false,
         "o": 42,
         "max": 32,
-        "value": "StarMod16MB"
+        "value": "StarBase16MB"
       },
       {
         "id": "upTime",
@@ -944,14 +944,6 @@
             "max": 255
           }
         ]
-      },
-      {
-        "id": "sma",
-        "type": "ip",
-        "ro": false,
-        "o": 101,
-        "max": 255,
-        "value": 0
       }
     ]
   },

@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      SysModModel.cpp
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -12,8 +12,9 @@
 #include "SysModModel.h"
 #include "SysModule.h"
 #include "SysModFiles.h"
-#include "SysStarModJson.h"
+#include "SysStarJson.h"
 #include "SysModUI.h"
+#include "SysModInstances.h"
 
 SysModModel::SysModModel() :SysModule("Model") {
   model = new JsonDocument(&allocator);
@@ -45,7 +46,7 @@ void SysModModel::setup() {
     default: return false;
   }});
 
-  #ifdef STARMOD_DEVMODE
+  #ifdef STARBASE_DEVMODE
 
   ui->initCheckBox(parentVar, "showObsolete", doShowObsolete, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_UIFun:
@@ -70,7 +71,7 @@ void SysModModel::setup() {
     default: return false;
   }});
 
-  #endif //STARMOD_DEVMODE
+  #endif //STARBASE_DEVMODE
 }
 
   void SysModModel::loop() {
@@ -88,11 +89,11 @@ void SysModModel::setup() {
 
     cleanUpModel(JsonObject(), false, true);//remove if var["o"] is negative (not cleanedUp) and remove ro values
 
-    StarModJson starModJson("/model.json", "w"); //open fileName for deserialize
-    starModJson.addExclusion("fun");
-    starModJson.addExclusion("dash");
-    starModJson.addExclusion("o");
-    starModJson.writeJsonDocToFile(model);
+    StarJson starJson("/model.json", "w"); //open fileName for deserialize
+    starJson.addExclusion("fun");
+    starJson.addExclusion("dash");
+    starJson.addExclusion("o");
+    starJson.writeJsonDocToFile(model);
 
     // print->printJson("Write model", *model); //this shows the model before exclusion
 
@@ -174,6 +175,28 @@ JsonObject SysModModel::findVar(const char * id, JsonArray parent) {
   return JsonObject();
 }
 
+JsonObject SysModModel::findParentVar(const char * id, JsonObject parent) {
+  JsonArray varArray;
+  // print ->print("findParentVar %s %s\n", id, parent.isNull()?"root":"n");
+  if (parent.isNull()) {
+    varArray = model->as<JsonArray>();
+  }
+  else
+    varArray = parent["n"];
+
+  JsonObject foundVar = JsonObject();
+  for (JsonObject var : varArray) {
+    if (foundVar.isNull()) {
+      if (var["id"] == id)
+        foundVar = parent;
+      else if (!var["n"].isNull()) {
+        foundVar = findParentVar(id, var);
+      }
+    }
+  }
+  return foundVar;
+}
+
 void SysModModel::findVars(const char * property, bool value, FindFun fun, JsonArray parent) {
   JsonArray root;
   // print ->print("findVar %s %s\n", id, parent.isNull()?"root":"n");
@@ -204,11 +227,21 @@ void SysModModel::varToValues(JsonObject var, JsonArray row) {
     }
 }
 
-void SysModModel::callChangeFun(JsonObject var, unsigned8 rowNr) {
-
-  //done here as ui cannot be used in SysModModel.h
+bool checkDash(JsonObject var) {
   if (var["dash"])
-    ui->dashVarChanged = true;
+    return true;
+  else {
+    JsonObject parentVar = mdl->findParentVar(var["id"]);
+    if (!parentVar.isNull())
+      return checkDash(parentVar);
+  }
+  return false;
+}
+
+void SysModModel::setValueChangeFun(JsonObject var, unsigned8 rowNr) {
+  //done here as ui cannot be used in SysModModel.h
+  if (checkDash(var))
+    instances->changedVarsQueue.push_back(var);
 
   ui->callVarFun(var, rowNr, f_ChangeFun);
 

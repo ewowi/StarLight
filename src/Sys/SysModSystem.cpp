@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      SysModSystem.cpp
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -41,16 +41,16 @@ void SysModSystem::setup() {
   parentVar = ui->initSysMod(parentVar, name, 2000);
   parentVar["s"] = true; //setup
 
-  ui->initText(parentVar, "instanceName", _INIT(TOSTRING(APP)), 32, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "name", _INIT(TOSTRING(APP)), 24, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_UIFun:
-      ui->setLabel(var, "Name");
+      // ui->setLabel(var, "Name");
       ui->setComment(var, "Instance name");
       return true;
     case f_ChangeFun:
-      char instanceName[25];
-      removeInvalidCharacters(instanceName, var["value"]);
-      ppf("instanceName stripped %s\n", instanceName);
-      mdl->setValue(mdl->varID(var), JsonString(instanceName, JsonString::Copied));
+      char name[24];
+      removeInvalidCharacters(name, var["value"]);
+      ppf("instance name stripped %s\n", name);
+      mdl->setValue(mdl->varID(var), JsonString(name, JsonString::Copied)); //update with stripped name
       mdns->resetMDNS(); // set the new name for mdns
       return true;
     default: return false;
@@ -59,6 +59,20 @@ void SysModSystem::setup() {
   ui->initText(parentVar, "upTime", nullptr, 16, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_UIFun:
       ui->setComment(var, "Uptime of board");
+      return true;
+    default: return false;
+  }});
+
+  ui->initNumber(parentVar, "now", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    case f_UIFun:
+      ui->setLabel(var, "now");
+      return true;
+    default: return false;
+  }});
+
+  ui->initNumber(parentVar, "timeBase", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    case f_UIFun:
+      ui->setLabel(var, "TimeBase");
       return true;
     default: return false;
   }});
@@ -80,7 +94,7 @@ void SysModSystem::setup() {
 
   ui->initText(parentVar, "loops", nullptr, 16, true);
 
-  print->fFormat(chipInfo, sizeof(chipInfo)-1, "%s %s c#:%d %d mHz f:%d KB %d mHz %d", ESP.getChipModel(), ESP.getSdkVersion(), ESP.getChipCores(), ESP.getCpuFreqMHz(), ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed()/1000000, ESP.getFlashChipMode());
+  print->fFormat(chipInfo, sizeof(chipInfo)-1, "%s %s (%d.%d.%d) c#:%d %d mHz f:%d KB %d mHz %d", ESP.getChipModel(), ESP.getSdkVersion(), ESP_ARDUINO_VERSION_MAJOR, ESP_ARDUINO_VERSION_MINOR, ESP_ARDUINO_VERSION_PATCH, ESP.getChipCores(), ESP.getCpuFreqMHz(), ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed()/1000000, ESP.getFlashChipMode());
   ui->initText(parentVar, "chip", chipInfo, 16, true);
 
   ui->initProgress(parentVar, "heap", UINT16_MAX, 0, ESP.getHeapSize()/1000, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
@@ -133,30 +147,30 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  ui->initSelect(parentVar, "reset0", (int)rtc_get_reset_reason(0), true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initSelect(parentVar, "reset0", (int)rtc_get_reset_reason(0), true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_UIFun:
       ui->setLabel(var, "Reset 0");
       ui->setComment(var, "Reason Core 0");
-      sys->addResetReasonsSelect(ui->setOptions(var));
+      addResetReasonsSelect(ui->setOptions(var));
       return true;
     default: return false;
   }});
 
   if (ESP.getChipCores() > 1)
-    ui->initSelect(parentVar, "reset1", (int)rtc_get_reset_reason(1), true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "reset1", (int)rtc_get_reset_reason(1), true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun:
         ui->setLabel(var, "Reset 1");
         ui->setComment(var, "Reason Core 1");
-        sys->addResetReasonsSelect(ui->setOptions(var));
+        addResetReasonsSelect(ui->setOptions(var));
         return true;
       default: return false;
     }});
 
-  ui->initSelect(parentVar, "restartReason", (int)esp_reset_reason(), true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initSelect(parentVar, "restartReason", (int)esp_reset_reason(), true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_UIFun:
       ui->setLabel(var, "Restart");
       ui->setComment(var, "Reason restart");
-      sys->addRestartReasonsSelect(ui->setOptions(var));
+      addRestartReasonsSelect(ui->setOptions(var));
       return true;
     default: return false;
   }});
@@ -214,6 +228,8 @@ void SysModSystem::loop() {
 }
 void SysModSystem::loop1s() {
   mdl->setUIValueV("upTime", "%lu s", millis()/1000);
+  mdl->setUIValueV("now", "%lu s", now/1000);
+  mdl->setUIValueV("timeBase", "%lu s", timebase/1000);
   mdl->setUIValueV("loops", "%lu /s", loopCounter);
 
   loopCounter = 0;
@@ -226,7 +242,12 @@ void SysModSystem::loop10s() {
   if (psramFound()) {
     ui->callVarFun(mdl->findVar("psram"));
   }
-  ppf("❤️"); //heartbeat
+
+  //heartbeat
+  if (millis() < 60000)
+    ppf("❤️ %s\n", WiFi.localIP().toString().c_str()); // show IP the first minute
+  else
+    ppf("❤️");
 }
 
 //replace code by sentence as soon it occurs, so we know what will happen and what not

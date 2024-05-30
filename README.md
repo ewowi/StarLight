@@ -1,4 +1,4 @@
-# StarModLeds
+# StarLeds
 
 See [StarDocs](https://ewowi.github.io/StarDocs/)
 
@@ -10,7 +10,7 @@ See [StarDocs](https://ewowi.github.io/StarDocs/)
 <img width="307" alt="image" src="https://github.com/ewowi/StarDocs/assets/138451817/5d4f0051-0e38-4d16-b81a-31fc8d2f7e1e">
 <img width="344" alt="image" src="https://github.com/ewowi/StarDocs/assets/138451817/dff1090a-7af0-4cbb-83e1-7108021976e8">
 
-Build using StarMod:
+Build using StarBase:
 
-* [ewowi/StarMod](https://github.com/ewowi/StarMod)
+* [ewowi/StarBase](https://github.com/ewowi/StarBase)
 

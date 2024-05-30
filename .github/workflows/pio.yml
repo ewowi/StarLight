@@ -61,11 +61,12 @@ jobs:
       - name: Build PlatformIO Project
         run: pio run -e ${{ matrix.environment }}
       - name: Rename Bin
-        run: mv .pio/build/${{ matrix.environment }}/firmware.bin StarMod-${{ matrix.environment }}-${{env.git_ref}}-${{env.git_hash}}.bin
+        run: mv .pio/build/${{ matrix.environment }}/firmware.bin StarBase-${{ matrix.environment }}-${{env.git_ref}}-${{env.git_hash}}.bin
       - name: 'Upload Artifact'
         uses: actions/upload-artifact@v3
         with:
-            path: StarMod-${{ matrix.environment }}-${{env.git_ref}}-${{env.git_hash}}.bin
+            path: StarBase-${{ matrix.environment }}-${{env.git_ref}}-${{env.git_hash}}.bin
+            name: StarBase-${{ matrix.environment }}-${{env.git_ref}}-${{env.git_hash}}.bin
             retention-days: 30
 
   release:

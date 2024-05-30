@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      SysModSystem.h
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -12,12 +12,18 @@
 #pragma once
 
 #include "SysModule.h"
+#include "dependencies/Toki.h"
 
 class SysModSystem:public SysModule {
 
 public:
   char build[64] = "";
   char chipInfo[64] = "";
+
+  Toki toki = Toki(); //Minimal millisecond accurate timekeeping.
+  uint32_t
+      now = millis(),
+      timebase = 0;
 
   SysModSystem();
   void setup();
@@ -52,7 +58,7 @@ public:
     //last character must not be hyphen
     if (pos > 5) {
       while (pos > 4 && hostname[pos -1] == '-') pos--;
-      hostname[pos] = '\0'; // terminate string (leave at least "wled")
+      hostname[pos] = '\0'; // terminate string (leave at least "star")
     }
   }
 

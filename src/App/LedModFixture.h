@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarLeds
    @file      LedModFixture.h
    @date      20240228
-   @repo      https://github.com/ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/MoonModules/StarLeds
+   @Authors   https://github.com/MoonModules/StarLeds/commits/main
+   @Copyright © 2024 Github StarLeds Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -66,13 +66,8 @@ public:
 
           buffer = wsBuf->get();
 
-          // send leds preview to clients
-          for (size_t i = 0; i < eff->fixture.nrOfLeds; i++)
-          {
-            buffer[i*3+5] = eff->fixture.ledsP[i].red;
-            buffer[i*3+5+1] = eff->fixture.ledsP[i].green;
-            buffer[i*3+5+2] = eff->fixture.ledsP[i].blue;
-          }
+          #define headerBytes 4
+
           //new values
           buffer[0] = 1; //userFun id
           //rotations
@@ -80,25 +75,33 @@ public:
             buffer[1] = 0;
             buffer[2] = 0;
             buffer[3] = 0;
-          } else if (viewRotation == 1) { //pan
-            buffer[1] = 0;//beatsin8(4, 250, 5); //tilt
-            buffer[2] = beat8(1);//, 0, 255); //pan
-            buffer[3] = 0;//beatsin8(6, 255, 5); //roll
-          } else if (viewRotation == 2) { //tilt
-            buffer[1] = beat8(1);//, 0, 255); //pan
-            buffer[2] = 0;//beatsin8(4, 250, 5); //tilt
-            buffer[3] = 0;//beatsin8(6, 255, 5); //roll
+          } else if (viewRotation == 1) { //tilt
+            buffer[1] = beat8(1);//, 0, 255);
+            buffer[2] = 0;//beatsin8(4, 250, 5);
+            buffer[3] = 0;//beatsin8(6, 255, 5);
+          } else if (viewRotation == 2) { //pan
+            buffer[1] = 0;//beatsin8(4, 250, 5);
+            buffer[2] = beat8(1);//, 0, 255);
+            buffer[3] = 0;//beatsin8(6, 255, 5);
           } else if (viewRotation == 3) { //roll
-            buffer[1] = 0;//beatsin8(4, 250, 5); //tilt
-            buffer[2] = 0;//beatsin8(6, 255, 5); //roll
-            buffer[3] = beat8(1);//, 0, 255); //pan
+            buffer[1] = 0;//beatsin8(4, 250, 5);
+            buffer[2] = 0;//beatsin8(6, 255, 5);
+            buffer[3] = beat8(1);//, 0, 255);
           } else if (viewRotation == 4) {
             buffer[1] = eff->fixture.head.x;
             buffer[2] = eff->fixture.head.y;
-            buffer[3] = eff->fixture.head.y;
+            buffer[3] = eff->fixture.head.z;
           }
 
-        }, eff->fixture.nrOfLeds * 3 + 5, true);
+          // send leds preview to clients
+          for (size_t i = 0; i < eff->fixture.nrOfLeds; i++)
+          {
+            buffer[headerBytes + i*3] = eff->fixture.ledsP[i].red;
+            buffer[headerBytes + i*3+1] = eff->fixture.ledsP[i].green;
+            buffer[headerBytes + i*3+2] = eff->fixture.ledsP[i].blue;
+          }
+
+        }, headerBytes + eff->fixture.nrOfLeds * 3, true);
         return true;
       }
       default: return false;
@@ -110,10 +113,10 @@ public:
         // ui->setComment(var, "View rotation");
         JsonArray options = ui->setOptions(var);
         options.add("None");
-        options.add("Pan");
         options.add("Tilt");
+        options.add("Pan");
         options.add("Roll");
-        #ifdef STARMOD_USERMOD_WLEDAUDIO
+        #ifdef STARLEDS_USERMOD_WLEDAUDIO
           options.add("Moving heads GEQ");
         #endif
         return true; }
@@ -157,9 +160,9 @@ public:
       default: return false; 
     }}); //fixture
 
-    ui->initCoord3D(currentVar, "fixSize", eff->fixture.size, 0, NUM_LEDS_Max, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(currentVar, "fixSize", eff->fixture.fixSize, 0, NUM_LEDS_Max, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
-        mdl->setValue(var, eff->fixture.size);
+        mdl->setValue(var, eff->fixture.fixSize);
         return true;
       case f_UIFun:
         ui->setLabel(var, "Size");

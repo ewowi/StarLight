@@ -1,12 +1,12 @@
 {
-  "name": "StarMod",
+  "name": "StarBase",
   "version": "1.0.0",
-  "description": "StarMod is a computer program that outputs StarMod or some variant on a display device",
+  "description": "StarBase is a computer program that outputs StarBase or some variant on a display device",
   "keywords": "planet, happiness, people",
   "repository":
   {
     "type": "git",
-    "url": "https://github.com/ewowi/starmod.git"
+    "url": "https://github.com/ewowi/StarBase.git"
   },
   "authors":
   [

@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      SysModFiles.cpp
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -25,7 +25,6 @@ SysModFiles::SysModFiles() :SysModule("Files") {
   }
 };
 
-//setup filesystem
 void SysModFiles::setup() {
   SysModule::setup();
   parentVar = ui->initSysMod(parentVar, name, 2101);
@@ -43,10 +42,12 @@ void SysModFiles::setup() {
     case f_DelRow:
       if (rowNr != UINT8_MAX && rowNr < fileList.size()) {
         const char * fileName = fileList[rowNr].name;
-        ppf("chFun delRow %s[%d] = %s %s\n", mdl->varID(var), rowNr, var["value"].as<String>().c_str(), fileName);
+        // ppf("chFun delRow %s[%d] = %s %s\n", mdl->varID(var), rowNr, var["value"].as<String>().c_str(), fileName);
         this->removeFiles(fileName, false);
+
+        // print->printVar(var);
+        // ppf("\n");
       }
-      print->printJson(" ", var);
       return true;
     default: return false;
   }});
@@ -222,7 +223,7 @@ bool SysModFiles::readObjectFromFile(const char* path, JsonDocument* dest) {
   }
   else { 
     ppf("File %s open to read, size %d bytes\n", path, (int)f.size());
-    DeserializationError error = deserializeJson(*dest, f, DeserializationOption::NestingLimit(20)); //StarMod requires more then 10
+    DeserializationError error = deserializeJson(*dest, f, DeserializationOption::NestingLimit(20)); //StarBase requires more then 10
     if (error) {
       print->printJDocInfo("readObjectFromFile", *dest);
       ppf("readObjectFromFile deserializeJson failed with code %s\n", error.c_str());
@@ -235,7 +236,7 @@ bool SysModFiles::readObjectFromFile(const char* path, JsonDocument* dest) {
   }
 }
 
-//candidate for deletion as taken over by StarModJson
+//candidate for deletion as taken over by StarJson
 // bool SysModFiles::writeObjectToFile(const char* path, JsonDocument* dest) {
 //   File f = open(path, "w");
 //   if (f) {

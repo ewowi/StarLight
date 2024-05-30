@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarLeds
    @file      LedFixture.cpp
    @date      20240228
-   @repo      https://github.com/ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/MoonModules/StarLeds
+   @Authors   https://github.com/MoonModules/StarLeds/commits/main
+   @Copyright © 2024 Github StarLeds Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -12,7 +12,7 @@
 #include "LedFixture.h"
 
 #include "../Sys/SysModFiles.h"
-#include "../Sys/SysStarModJson.h"
+#include "../Sys/SysStarJson.h"
 #include "../Sys/SysModPins.h"
 
 
@@ -21,7 +21,7 @@ void Fixture::projectAndMap() {
   char fileName[32] = "";
 
   if (files->seqNrToName(fileName, fixtureNr)) { // get the fixture.json
-    StarModJson starModJson(fileName); //open fileName for deserialize
+    StarJson starJson(fileName); //open fileName for deserialize
 
     // reset leds
     stackUnsigned8 rowNr = 0;
@@ -59,14 +59,14 @@ void Fixture::projectAndMap() {
     unsigned16 currPin; //lookFor needs u16
 
     //what to deserialize
-    starModJson.lookFor("width", (unsigned16 *)&size.x);
-    starModJson.lookFor("height", (unsigned16 *)&size.y);
-    starModJson.lookFor("depth", (unsigned16 *)&size.z);
-    starModJson.lookFor("nrOfLeds", &nrOfLeds);
-    starModJson.lookFor("pin", &currPin);
+    starJson.lookFor("width", (unsigned16 *)&fixSize.x);
+    starJson.lookFor("height", (unsigned16 *)&fixSize.y);
+    starJson.lookFor("depth", (unsigned16 *)&fixSize.z);
+    starJson.lookFor("nrOfLeds", &nrOfLeds);
+    starJson.lookFor("pin", &currPin);
 
     //lookFor leds array and for each item in array call lambdo to make a projection
-    starModJson.lookFor("leds", [this, &prevIndexP, &indexP, &currPin](std::vector<unsigned16> uint16CollectList) { //this will be called for each tuple of coordinates!
+    starJson.lookFor("leds", [this, &prevIndexP, &indexP, &currPin](std::vector<unsigned16> uint16CollectList) { //this will be called for each tuple of coordinates!
 
       if (uint16CollectList.size()>=1) { // process one pixel
 
@@ -79,11 +79,13 @@ void Fixture::projectAndMap() {
 
         stackUnsigned8 rowNr = 0;
         for (Leds *leds: projections) {
+
+          if (leds->projectionNr != p_Random && leds->projectionNr != p_None)
           if (leds->doMap) { //add pixel in leds mappingtable
 
             //set start and endPos between bounderies of fixture
-            Coord3D startPosAdjusted = (leds->startPos).minimum(size - Coord3D{1,1,1}) * 10;
-            Coord3D endPosAdjusted = (leds->endPos).minimum(size - Coord3D{1,1,1}) * 10;
+            Coord3D startPosAdjusted = (leds->startPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
+            Coord3D endPosAdjusted = (leds->endPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
 
             // mdl->setValue("fxStart", startPosAdjusted/10, rowNr); //rowNr
             // mdl->setValue("fxEnd", endPosAdjusted/10, rowNr); //rowNr
@@ -318,7 +320,7 @@ void Fixture::projectAndMap() {
                         }
                       }
                       //indexV is within the square
-                      if (!leds->mappingTable[indexV].indexes) {
+                      if (!leds->isMapped(indexV)) {
                         leds->mappingTable[indexV].indexes = new std::vector<unsigned16>;
                       }
                       leds->mappingTable[indexV].indexes->push_back(indexP); //add the current led to indexes
@@ -336,6 +338,7 @@ void Fixture::projectAndMap() {
         } //projections
         indexP++; //also increase if no buffer created
       } //if 1D-3D pixel
+
       else { // end of leds array
 
         if (doAllocPins) {
@@ -369,9 +372,9 @@ void Fixture::projectAndMap() {
           prevIndexP = indexP;
         }
       }
-    }); //starModJson.lookFor("leds" (create the right type, otherwise crash)
+    }); //starJson.lookFor("leds" (create the right type, otherwise crash)
 
-    if (starModJson.deserialize(false)) { //this will call above function parameter for each led
+    if (starJson.deserialize()) { //this will call above function parameter for each led
 
       //after processing each led
       stackUnsigned8 rowNr = 0;
@@ -386,8 +389,9 @@ void Fixture::projectAndMap() {
           if (leds->projectionNr == p_Random || leds->projectionNr == p_None) {
 
             //defaults
-            leds->size = size;
+            leds->size = fixSize;
             leds->nrOfLeds = nrOfLeds;
+            nrOfPixels = nrOfLeds;
 
           } else {
 
@@ -404,10 +408,10 @@ void Fixture::projectAndMap() {
             //debug info + summary values
             stackUnsigned16 indexV = 0;
             for (PhysMap &map:leds->mappingTable) {
-              if (map.indexes && map.indexes->size()) {
+              if (map.indexes) { // && map.indexes->size()
                 // if (nrOfMappings < 10 || map.indexes->size() - indexV < 10) //first 10 and last 10
                 // if (nrOfMappings%(leds->nrOfLeds/10+1) == 0)
-                  // ppf("ledV %d mapping: #ledsP (%d):", indexV, nrOfMappings, map.indexes->size());
+                  // ppf("ledV %d mapping: #ledsP (%d):", indexV, nrOfMappings);
 
                 for (forUnsigned16 indexP:*map.indexes) {
                   // if (nrOfPixels < 10 || map.indexes->size() - indexV < 10)
@@ -435,16 +439,16 @@ void Fixture::projectAndMap() {
           mdl->setValue("fxSize", JsonString(buf, JsonString::Copied), rowNr);
           // web->sendResponseObject();
 
-          ppf("leds[%d].size = %d + %d\n", rowNr, sizeof(Leds), leds->mappingTable.size()); //44
+          ppf("projectAndMap leds[%d].size = %d + %d\n", rowNr, sizeof(Leds), leds->mappingTable.size()); //44
 
           leds->doMap = false;
         } //leds->doMap
         rowNr++;
       } // leds
 
-      ppf("projectAndMap fixture P:%dx%dx%d -> %d\n", size.x, size.y, size.z, nrOfLeds);
+      ppf("projectAndMap fixture P:%dx%dx%d -> %d\n", fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
 
-      mdl->setValue("fixSize", size);
+      mdl->setValue("fixSize", fixSize);
       mdl->setValue("fixCount", nrOfLeds);
 
     } // if deserialize

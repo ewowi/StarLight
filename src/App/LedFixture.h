@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarLeds
    @file      LedFixture.h
    @date      20240228
-   @repo      https://github.com/ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/MoonModules/StarLeds
+   @Authors   https://github.com/MoonModules/StarLeds/commits/main
+   @Copyright © 2024 Github StarLeds Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -41,7 +41,7 @@ public:
 
   unsigned16 nrOfLeds = 64; //amount of physical leds
   unsigned8 fixtureNr = -1;
-  Coord3D size = {8,8,1};
+  Coord3D fixSize = {8,8,1};
 
   std::vector<Leds *> projections; //virtual leds
 

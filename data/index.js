@@ -1,9 +1,9 @@
-// @title     StarMod
+// @title     StarBase
 // @file      index.css
 // @date      20240411
-// @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-// @Authors   https://github.com/ewowi/StarMod/commits/main
-// @Copyright © 2024 Github StarMod Commit Authors
+// @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+// @Authors   https://github.com/ewowi/StarBase/commits/main
+// @Copyright © 2024 Github StarBase Commit Authors
 // @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
 // @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 
@@ -50,6 +50,31 @@ function onLoad() {
   d.addEventListener("visibilitychange", handleVisibilityChange, false);
 }
 
+function ppf() {
+  let logNode = gId("log");
+  let sep = "";
+  if (logNode) {
+    if (logNode.value.length > 64000) logNode.value = ""; //reset if too big
+    // console.log("conslog", theArgs);
+    for (var i = 0; i < arguments.length; i++) {
+      // console.log(arguments[i]);
+      if (Object.keys(arguments[i]))
+        logNode.value += sep + JSON.stringify(arguments[i]);
+      else
+        logNode.value += sep + arguments[i];
+      sep = " ";
+      // "WS receive createHTML " + module.id + "\n";
+    }
+    logNode.value += "\n";
+    // for (const arg of theArgs) {
+    //   console.log(arg);
+    // }
+    logNode.scrollTop = logNode.scrollHeight;
+  }
+  else 
+    console.log(arguments);
+}
+
 function makeWS() {
   if (ws) return;
   let url = (window.location.protocol == "https:"?"wss":"ws")+'://'+window.location.hostname+'/ws';
@@ -93,6 +118,7 @@ function makeWS() {
             let module = json;
             model.push((module)); //this is the model
             console.log("WS receive createHTML", module);
+            ppf("WS receive createHTML", module.id);
             createHTML(module); //no parentNode
 
             if (module.id == "System") {
@@ -231,7 +257,8 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
 
       varNode = cE("div");
       let mdlName = findVar("mdlName");
-      if (mdlName) {
+      if (mdlName && mdlName.value) { //sometimes value not set yet
+        // console.log("createModule", variable, mdlName);
         let index = mdlName.value.indexOf(variable.id); //find this module
         if (index != -1) {
           let mdlEnabled = findVar("mdlEnabled");
@@ -580,7 +607,7 @@ function varRemoveValuesForRow(variable, rowNr) {
 function receiveData(json) {
   // console.log("receiveData", json);
 
-  if (Object.keys(json)) {
+  if (isObject(json)) {
     for (let key of Object.keys(json)) {
       let value = json[key];
 
@@ -588,24 +615,24 @@ function receiveData(json) {
 
       //special commands
       if (key == "uiFun") {
-        console.log("receiveData no action", key, value); //should not happen anymore
+        ppf("receiveData no action", key, value); //should not happen anymore
       }
       else if (key == "view") {
-        console.log("receiveData", key, value);
+        ppf("receiveData", key, value);
         changeHTMLView(value);
       }
       else if (key == "theme") {
-        console.log("receiveData", key, value);
+        ppf("receiveData", key, value);
         changeHTMLTheme(value);
       }
       else if (key == "canvasData") {
-        console.log("receiveData no action", key, value);
+        ppf("receiveData no action", key, value);
       } else if (key == "details") {
         let variable = value.var;
         let rowNr = value.rowNr == null?UINT8_MAX:value.rowNr;
         let nodeId = variable.id + ((rowNr != UINT8_MAX)?"#" + rowNr:"");
         //if var object with .n, create .n (e.g. see setEffect and fixtureGenChFun, tbd: )
-        console.log("receiveData details", key, variable, nodeId, rowNr);
+        ppf("receiveData details", key, variable.id, nodeId, rowNr);
         if (gId(nodeId + "_n")) gId(nodeId + "_n").remove(); //remove old ndiv
 
         let modelVar = findVar(variable.id);
@@ -622,7 +649,7 @@ function receiveData(json) {
         flushUIFunCommands(); //make sure uiFuns of new elements are called
       }
       else if (key == "addRow") { //update the row of a table
-        console.log("receiveData", key, value);
+        ppf("receiveData", key, value);
 
         if (value.id && value.rowNr != null) {
           let tableId = value.id;
@@ -632,18 +659,18 @@ function receiveData(json) {
           let tableNode = gId(tableId);
           let tbodyNode = tableNode.querySelector("tbody");
 
-          console.log("addRow ", tableVar, tableNode, rowNr);
+          ppf("addRow ", tableVar, tableNode, rowNr);
 
           let newRowNr = tbodyNode.querySelectorAll("tr").length;
 
           genTableRowHTML(tableVar, tableNode, newRowNr);
         }
         else 
-          console.log("dev receiveData addRow no id and/or rowNr specified", key, value);
+          ppf("dev receiveData addRow no id and/or rowNr specified", key, value);
 
       } else if (key == "delRow") { //update the row of a table
 
-        console.log("receiveData", key, value);
+        ppf("receiveData", key, value);
         let tableId = value.id;
         let tableVar = findVar(tableId);
         let rowNr = value.rowNr;
@@ -656,7 +683,7 @@ function receiveData(json) {
 
         varRemoveValuesForRow(tableVar, rowNr);
 
-        console.log("delRow ", tableVar, tableNode, rowNr);
+        ppf("delRow ", tableVar, tableNode, rowNr);
 
       } else if (key == "updRow") { //update the row of a table
 
@@ -665,19 +692,19 @@ function receiveData(json) {
         let rowNr = value.rowNr;
         let tableRow = value.value;
 
-        // console.log("receiveData updRow", key, tableId, rowNr, tableRow);
-        // console.log("updRow main", tableId, tableRows, tableNode, tableVar);
+        // ppf("receiveData updRow", key, tableId, rowNr, tableRow);
+        // ppf("updRow main", tableId, tableRows, tableNode, tableVar);
 
         let colNr = 0;
         for (let colVar of tableVar.n) {
           let colValue = tableRow[colNr];
-          // console.log("    col", colNr, colVar, colValue);
+          // ppf("    col", colNr, colVar, colValue);
           changeHTML(colVar, {"value":colValue, "chk":"updRow"}, rowNr);
           colNr++;
         }
 
       } else if (key == "sysInfo") { //update the row of a table
-        console.log("receiveData", key, value);
+        ppf("receiveData", key, value.board);
         sysInfo = value;
       } else { //{variable:{label:value:options:comment:}}
 
@@ -686,19 +713,19 @@ function receiveData(json) {
         if (variable) {
           let rowNr = value.rowNr == null?UINT8_MAX:value.rowNr;
           // if (variable.id == "fxEnd" || variable.id == "fxSize" || variable.id == "point")
-          //   console.log("receiveData ", variable, value);
+          //   ppf("receiveData ", variable, value);
           variable.fun = -2; // request processed
 
           value.chk = "uiFun";
           changeHTML(variable, value, rowNr); //changeHTML will find the rownumbers if needed
         }
         else
-          console.log("receiveData key is no variable", key, value);
+          ppf("receiveData key is no variable", key, value);
       }
     } //for keys
   } //isObject
   else
-    console.log("receiveData no Object", object);
+    ppf("receiveData no Object", object);
 } //receiveData
 
 //do something with an existing (variable) node, key is an existing node, json is what to do with it
@@ -791,25 +818,61 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
       selectNodes.push(node);
     }
 
+    // console.log("commandJson.options", variable.id, commandJson.options);
     for (let selectNode of selectNodes) {
       //remove all old options first
-      var index = 0;
-      while (selectNode.options && selectNode.options.length > 0) {
-        selectNode.remove(0);
+
+      //remove options
+      for (var i = selectNode.length-1; i > 0; i--) {
+        selectNode.options[i] = null;
       }
-      for (var value of commandJson.options) {
-        let optNode = cE("option");
-        if (Array.isArray(value)) {
-          optNode.value = value[0];
-          optNode.text = value[1];
+      // remove the optgroups and their children if still exists
+      var optgroup=selectNode.getElementsByTagName('optgroup')
+      for (var i=optgroup.length-1;i>=0;i--) selectNode.removeChild(optgroup[i])
+
+      var index = 0;
+
+      //go recursively through the objects
+      function findOptions(group, option, depth = 0) {
+        if (isObject(option)) {
+          for (let key of Object.keys(option)) { // for each group
+            if (depth > 0) {
+              let optNode = cE("option"); // no optgroups in optgroups so create on same level
+              optNode.label = key;
+              group.appendChild(optNode);
+              findOptions(group, option[key], depth+1);
+            }
+            else {
+              let optGroup = cE("optgroup");
+              optGroup.label = key;
+              group.appendChild(optGroup);
+              findOptions(optGroup, option[key], depth+1);
+            }
+          }
+        }
+        else if (Array.isArray(option)) {
+          for (let subOption of option) {
+            if (Array.isArray(subOption)) { //array of arrays:  // for key values like ip nr and name
+              let optNode = cE("option");
+              optNode.value = subOption[0];
+              optNode.text = subOption[1];
+              selectNode.appendChild(optNode);
+            }
+            else
+              findOptions(group, subOption, depth); //recursive call were subOption is object
+          }
         }
         else {
-          optNode.value = index;
-          optNode.text = value;
+          let optNode = cE("option");
+          optNode.value = index++;
+          optNode.text = "---------".substring(0, depth-1) + option;
+          group.appendChild(optNode);
         }
-        selectNode.appendChild(optNode);
-        index++;
       }
+      findOptions(selectNode, commandJson.options); //recursively go through all the options
+
+      // console.log("Select options", selectNode, selectNode.options);
+
     }
       
     variable.options = commandJson.options;
@@ -837,7 +900,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
         //add each row
         let newRowNr = 0;
         for (var row of commandJson.value) {
-          if (row) { //not null, pnlTbl sent value:[null]... tbd: check why
+          if (row) { //not null, e.g. fixTbl sent value:[null]... tbd: check why
             genTableRowHTML(variable, node, newRowNr);
             let colNr = 0;
             for (let columnVar of variable.n) {
@@ -944,7 +1007,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
         if (Array.isArray(commandJson.value) && rowNr != UINT8_MAX)
           value = commandJson.value[rowNr];
 
-        if (Object.keys(value)) { 
+        if (isObject(value)) { 
           if (variable.ro) {
             let sep = "";
             node.textContent = "";
@@ -957,6 +1020,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
             let index = 0;
             for (let key of Object.keys(value)) {
               let childNode = node.childNodes[index++];
+              if (!childNode) console.log("dev Coord3D no child", variable, node, value, key, value[key], index);
               childNode.value = value[key];
               childNode.dispatchEvent(new Event("input")); // triggers addEventListener('input',...). now only used for input type range (slider), needed e.g. for qlc+ input
             }
@@ -1031,7 +1095,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
       }
 
       //'hack' show the instanceName on top of the page
-      if (variable.id == "instanceName") {
+      if (variable.id == "name") {
         gId("serverName").innerText = commandJson.value;
         document.title = commandJson.value;
       }
@@ -1437,15 +1501,13 @@ function setInstanceTableColumns() {
   }
 
   // console.log("setInstanceTableColumns", tbl, thead, tbody);
-  columnNr = 2;
-  for (; columnNr<6; columnNr++) {
+  let columnNr = 3; //column 0, 1 and 2 will always be shown (name, show and link)
+  for (; columnNr < 11; columnNr++) { // fixed columns which show in Systems/All and not in Dashboard tab
     showHideColumn(columnNr, isDashView);
   }
   for (; columnNr<thead.querySelector("tr").childNodes.length; columnNr++) {
     showHideColumn(columnNr, !isDashView);
   }
-
-  if (gId("sma")) gId("sma").parentNode.hidden = isDashView; //hide sync master label field and comment
 }
 
 function changeHTMLView(viewName) {
@@ -1633,4 +1695,14 @@ function previewBoard(canvasNode, buffer) {
       index++;
     }
   }
+}
+
+// Utility function
+//https://stackoverflow.com/questions/8511281/check-if-a-value-is-an-object-in-javascript
+function isObject(val) {
+  if (Array.isArray(val)) return false;
+  if (val === null) { return false;}
+  return ( (typeof val === 'function') || (typeof val === 'object'));
+
+  //or   return obj === Object(obj); //true for arrays.???
 }

@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      SysModPins.cpp
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -16,8 +16,9 @@
 
 SysModPins::SysModPins() :SysModule("Pins") {
   //start with no pins allocated
-  for (int i=0; i<NUM_DIGITAL_PINS; i++) {
-    deallocatePin(i, pinObjects[i].owner);
+  for (int pinNr=0; pinNr<NUM_DIGITAL_PINS; pinNr++) {
+    strcpy(pinObjects[pinNr].owner, "");  
+    strcpy(pinObjects[pinNr].details, "");  
   }
 };
 

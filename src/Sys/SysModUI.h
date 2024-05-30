@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      SysModUI.h
    @date      20240227
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -38,7 +38,6 @@ struct VarLoop {
 class SysModUI: public SysModule {
 
 public:
-  bool dashVarChanged = false; //tbd: move mechanism to UserModInstances as there it will be used
   std::vector<VarFun> varFunctions;
 
   SysModUI();
@@ -78,7 +77,7 @@ public:
     return initVarAndUpdate<const char *>(parent, id, "file", value, 0, max, readOnly, varFun);
   }
   JsonObject initPassword(JsonObject parent, const char * id, const char * value = nullptr, unsigned8 max = 32, bool readOnly = false, VarFun varFun = nullptr) {
-    return initVarAndUpdate<const char *>(parent, id, "password", value, 0, 0, readOnly, varFun);
+    return initVarAndUpdate<const char *>(parent, id, "password", value, 0, max, readOnly, varFun);
   }
 
   JsonObject initNumber(JsonObject parent, const char * id, int value = UINT16_MAX, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
@@ -219,10 +218,16 @@ public:
           // if (!var["value"].isNull() && 
           if (funType != f_ValueFun) {
             ppf("%sFun %s", funType==f_ValueFun?"val":funType==f_UIFun?"ui":funType==f_ChangeFun?"ch":funType==f_AddRow?"add":funType==f_DelRow?"del":"other", mdl->varID(var));
-            if (rowNr != UINT8_MAX)
-              ppf("[%d] = %s\n", rowNr, var["value"][rowNr].as<String>().c_str());
-            else
-              ppf(" = %s\n", var["value"].as<String>().c_str());
+            if (rowNr != UINT8_MAX) {
+              ppf("[%d] (", rowNr);
+              if (funType == f_ChangeFun) ppf("%s ->", var["oldValue"][rowNr].as<String>().c_str());
+              ppf("%s)\n", var["value"][rowNr].as<String>().c_str());
+            }
+            else {
+              ppf(" (");
+              if (funType == f_ChangeFun) ppf("%s ->", var["oldValue"].as<String>().c_str());
+              ppf("%s)\n", var["value"].as<String>().c_str());
+            }
           }
         }
       }
@@ -273,7 +278,47 @@ public:
     return web->getResponseObject()[mdl->varID(var)]["options"];
   }
   void clearOptions(JsonObject var) {
-    web->getResponseObject().remove(mdl->varID(var));
+    web->getResponseObject()[mdl->varID(var)].remove("options");
+  }
+
+  //find options text in a hierarchy of options
+  void findOptionsText(JsonObject var, uint8_t value, char * groupName, char * optionName) {
+    uint8_t startValue = 0;
+    bool optionsExisted = !web->getResponseObject()[mdl->varID(var)]["options"].isNull();
+    JsonString groupNameJS;
+    JsonString optionNameJS;
+    JsonArray options = getOptions(var);
+    if (!findOptionsTextRec(options, &startValue, value, &groupNameJS, &optionNameJS))
+      ppf("findOptions select option not found %d %s %s\n", value, groupNameJS.isNull()?"X":groupNameJS.c_str(), optionNameJS.isNull()?"X":optionNameJS.c_str());
+    strcpy(groupName, groupNameJS.c_str());
+    strcpy(optionName, optionNameJS.c_str());
+    if (!optionsExisted)
+      clearOptions(var); //if created here then also remove 
+  }
+
+  // (groupName and optionName as pointers? String is already a pointer?)
+  bool findOptionsTextRec(JsonVariant options, uint8_t * startValue, uint8_t value, JsonString *groupName, JsonString *optionName, JsonString parentGroup = JsonString()) {
+    if (options.is<JsonArray>()) { //array of options
+      for (JsonVariant option : options.as<JsonArray>()) {
+        if (findOptionsTextRec(option, startValue, value, groupName, optionName, parentGroup))
+          return true;
+      }
+    }
+    else if (options.is<JsonObject>()) { //group
+      for (JsonPair pair: options.as<JsonObject>()) {
+        if (findOptionsTextRec(pair.value(), startValue, value, groupName, optionName, parentGroup.isNull()?pair.key():parentGroup)) //send the master level group name only
+          return true;
+      }
+    } else { //individual option
+      if (*startValue == value) {
+        *groupName = parentGroup;
+        *optionName = options.as<JsonString>();
+        ppf("Found %d=%d ? %s . %s\n", *startValue, value, (*groupName).isNull()?"":(*groupName).c_str(), (*optionName).isNull()?"":(*optionName).c_str());
+        return true;
+      }
+      (*startValue)++;
+    }
+    return false;
   }
 
 private:

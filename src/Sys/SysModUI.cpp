@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      SysModUI.cpp
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -174,12 +174,12 @@ void SysModUI::processJson(JsonVariant json) {
           JsonObject command = value;
           JsonObject var = mdl->findVar(command["id"]);
           stackUnsigned8 rowNr = command["rowNr"];
-          ppf("processJson %s - %s [%d]\n", key, value.as<String>().c_str(), rowNr);
+          ppf("processJson %s - %s[%d]\n", key, mdl->varID(var), rowNr);
 
           //first remove the deleted row both on server and on client(s)
           if (pair.key() == "delRow") {
+            ppf("delRow remove values\n");
             mdl->varRemoveValuesForRow(var, rowNr);
-            print->printJson("deleted rows", var);
             web->sendResponseObject(); //async response //trigger receiveData->delRow
           }
 
@@ -217,13 +217,16 @@ void SysModUI::processJson(JsonVariant json) {
         char * rowNrC = strtok((char *)key, "#");
         if (rowNrC != NULL ) {
           key = rowNrC;
-          rowNrC = strtok(NULL, " ");
+          rowNrC = strtok(NULL, " "); //#?
         }
         stackUnsigned8 rowNr = rowNrC?atoi(rowNrC):UINT8_MAX;
 
         JsonObject var = mdl->findVar(key);
 
-        ppf("processJson var %s[%d] %s -> %s\n", key, rowNr, var["value"].as<String>().c_str(), newValue.as<String>().c_str());
+        if (rowNr == UINT8_MAX)
+          ppf("processJson var %s %s -> %s\n", key, var["value"].as<String>().c_str(), newValue.as<String>().c_str());
+        else
+          ppf("processJson var %s[%d] %s -> %s\n", key, rowNr, var["value"][rowNr].as<String>().c_str(), newValue.as<String>().c_str());
 
         if (!var.isNull())
         {
@@ -233,12 +236,7 @@ void SysModUI::processJson(JsonVariant json) {
             if (rowNr != UINT8_MAX) web->getResponseObject()[mdl->varID(var)]["rowNr"] = rowNr;
           }
           else {
-            if (newValue.is<const char *>())
-              mdl->setValue(var, JsonString(newValue, JsonString::Copied), rowNr);
-            else if (newValue.is<Coord3D>()) //otherwise it will be treated as JsonObject and toJson / fromJson will not be triggered!!!
-              mdl->setValue(var, newValue.as<Coord3D>(), rowNr);
-            else
-              mdl->setValue(var, newValue, rowNr);
+            mdl->setValueJV(mdl->varID(var), newValue, rowNr);
           }
           // json.remove(key); //key / var["id"] processed we don't need the key in the response
         }

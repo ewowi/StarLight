@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      SysModModel.h
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -88,13 +88,13 @@ struct Coord3D {
     return result;
   }
   Coord3D operator+(Coord3D rhs) {
-    return Coord3D{unsigned16(x + rhs.x), unsigned16(y + rhs.y), unsigned16(z + rhs.z)};
+    return Coord3D{x + rhs.x, y + rhs.y, z + rhs.z};
   }
   Coord3D operator/(Coord3D rhs) {
-    return Coord3D{unsigned16(x / rhs.x), unsigned16(y / rhs.y), unsigned16(z / rhs.z)};
+    return Coord3D{x / rhs.x, y / rhs.y, z / rhs.z};
   }
   Coord3D operator%(Coord3D rhs) {
-    return Coord3D{unsigned16(x % rhs.x), unsigned16(y % rhs.y), unsigned16(z % rhs.z)};
+    return Coord3D{x % rhs.x, y % rhs.y, z % rhs.z};
   }
   Coord3D minimum(Coord3D rhs) {
     return Coord3D{min(x, rhs.x), min(y, rhs.y), min(z, rhs.z)};
@@ -103,21 +103,24 @@ struct Coord3D {
     return Coord3D{max(x, rhs.x), max(y, rhs.y), max(z, rhs.z)};
   }
   Coord3D operator*(unsigned8 rhs) {
-    return Coord3D{unsigned16(x * rhs), unsigned16(y * rhs), unsigned16(z * rhs)};
+    return Coord3D{x * rhs, y * rhs, z * rhs};
   }
   Coord3D operator/(unsigned8 rhs) {
-    return Coord3D{unsigned16(x / rhs), unsigned16(y / rhs), unsigned16(z / rhs)};
+    return Coord3D{x / rhs, y / rhs, z / rhs};
   }
   //move the coordinate one step closer to the goal, if difference in coordinates (used in GenFix)
-  Coord3D advance(Coord3D goal) {
-    if (x != goal.x) x += (x<goal.x)?1:-1;
-    if (y != goal.y) y += (y<goal.y)?1:-1;
-    if (z != goal.z) z += (z<goal.z)?1:-1;
+  Coord3D advance(Coord3D goal, uint8_t step) {
+    if (x != goal.x) x += (x<goal.x)?step:-step;
+    if (y != goal.y) y += (y<goal.y)?step:-step;
+    if (z != goal.z) z += (z<goal.z)?step:-step;
     return *this;
   }
   unsigned distance(Coord3D rhs) {
     Coord3D delta = (*this-rhs);
     return sqrt((delta.x)*(delta.x) + (delta.y)*(delta.y) + (delta.z)*(delta.z));
+  }
+  bool isOutofBounds(Coord3D rhs) {
+    return x < 0 || y < 0 || z < 0 || x >= rhs.x || y >= rhs.y || z >= rhs.z;
   }
 };
 
@@ -192,6 +195,25 @@ public:
   //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
   void cleanUpModel(JsonObject parent = JsonObject(), bool oPos = true, bool ro = false);
 
+  //setValue for JsonVariants (extract the StarMod supported types)
+  JsonObject setValueJV(const char * id, JsonVariant value, unsigned8 rowNr = UINT8_MAX) {
+    if (value.is<JsonArray>()) {
+      uint8_t rowNr = 0;
+      // ppf("   %s is Array\n", value.as<String>().c_str);
+      JsonObject var;
+      for (JsonVariant el: value.as<JsonArray>()) {
+        var = setValueJV(id, el, rowNr++);
+      }
+      return var;
+    }
+    else if (value.is<const char *>())
+      return setValue(id, JsonString(value, JsonString::Copied), rowNr);
+    else if (value.is<Coord3D>()) //otherwise it will be treated as JsonObject and toJson / fromJson will not be triggered!!!
+      return setValue(id, value.as<Coord3D>(), rowNr);
+    else
+      return setValue(id, value, rowNr);
+  }
+
   //sets the value of var with id
   template <typename Type>
   JsonObject setValue(const char * id, Type value, unsigned8 rowNr = UINT8_MAX) {
@@ -260,7 +282,7 @@ public:
       }
     }
 
-    if (changed) callChangeFun(var, rowNr);
+    if (changed) setValueChangeFun(var, rowNr);
     
     return var;
   }
@@ -321,13 +343,14 @@ public:
 
   //returns the var defined by id (parent to recursively call findVar)
   JsonObject findVar(const char * id, JsonArray parent = JsonArray());
+  JsonObject findParentVar(const char * id, JsonObject parent = JsonObject());
   void findVars(const char * id, bool value, FindFun fun, JsonArray parent = JsonArray());
 
   //recursively add values in  a variant
   void varToValues(JsonObject var, JsonArray values);
 
   //run the change function and send response to all? websocket clients
-  void callChangeFun(JsonObject var, unsigned8 rowNr = UINT8_MAX);
+  void setValueChangeFun(JsonObject var, unsigned8 rowNr = UINT8_MAX);
 
   //pseudo VarObject: public JsonObject functions
   const char * varID(JsonObject var) {return var["id"];}
@@ -391,17 +414,17 @@ public:
 
       //check if post init added: parent is already >=0
       if (varOrder(var) >= 0) {
-        // for (JsonArray::iterator childVar=varChildren(var).begin(); childVar!=varChildren(var).end(); ++childVar) { //use iterator to make .remove work!!!
-        for (JsonObject childVar: varChildren(var)) { //use iterator to make .remove work!!!
-          JsonArray valArray = varValArray(childVar);
+        for (JsonArray::iterator childVar=varChildren(var).begin(); childVar!=varChildren(var).end(); ++childVar) { //use iterator to make .remove work!!!
+        // for (JsonObject &childVar: varChildren(var)) { //use iterator to make .remove work!!!
+          JsonArray valArray = varValArray(*childVar);
           if (!valArray.isNull())
           {
-            if (varOrder(childVar) < 0) { //if not updated
+            if (varOrder(*childVar) < 0) { //if not updated
               valArray[rowNr] = (char*)0; // set element in valArray to 0
 
-              ppf("varPostDetails %s.%s[%d] <- null\n", varID(var), varID(childVar), rowNr);
+              ppf("varPostDetails %s.%s[%d] <- null\n", varID(var), varID(*childVar), rowNr);
               // setValue(var, -99, rowNr); //set value -99
-              varOrder(childVar, -varOrder(childVar)); //make positive again
+              varOrder(*childVar, -varOrder(*childVar)); //make positive again
               //if some values in array are not -99
             }
 
@@ -412,12 +435,12 @@ public:
                 allNull = false;
             }
             if (allNull) {
-              print->printJson("remove allnulls", childVar);
+              ppf("remove allnulls %s\n", varID(*childVar));
               varChildren(var).remove(childVar);
             }
           }
           else {
-            print->printJson("remove non valArray", childVar);
+            print->printJson("remove non valArray", *childVar);
             varChildren(var).remove(childVar);
           }
 

@@ -1,10 +1,10 @@
 /*
-   @title     StarMod
+   @title     StarBase
    @file      UserModMDNS.h
    @date      20240411
-   @repo      https://github.com/ewowi/StarMod, submit changes to this file as PRs to ewowi/StarMod
-   @Authors   https://github.com/ewowi/StarMod/commits/main
-   @Copyright © 2024 Github StarMod Commit Authors
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
@@ -20,7 +20,6 @@ public:
   UserModMDNS() :SysModule("MDNS") {
   };
 
-  //setup filesystem
   void setup() {
     SysModule::setup();
 
@@ -49,11 +48,11 @@ public:
     if (!mdls->isConnected) return;
     
     //reset cmDNS
-    const char * instanceName = mdl->getValue("instanceName");
-    if (strcmp(instanceName, _INIT(TOSTRING(APP))) == 0 )
+    const char * name = mdl->getValue("name");
+    if (strcmp(name, _INIT(TOSTRING(APP))) == 0 )
       sprintf(cmDNS, "star-%*s", 6, escapedMac.c_str() + 6);
     else
-      strcpy(cmDNS, instanceName);
+      strcpy(cmDNS, name);
 
     MDNS.end();
     MDNS.begin(cmDNS);
