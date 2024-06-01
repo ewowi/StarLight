@@ -1418,9 +1418,8 @@ class GameOfLife: public Effect {
     }
     //Update Game of Life
     stackUnsigned8 mutation = mdl->getValue("Mutation Chance");
-    bool wrap = mdl->getValue("wrap");
+    bool wrap = mdl->getValue("Wrap");
     bool cellChanged = false; // Detect still live and dead grids
-
     //Loop through all cells. Count neighbors, apply rules, setPixel
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
       Coord3D cPos = {x, y, z}; //current cells position
