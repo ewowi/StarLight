@@ -129,10 +129,11 @@ public:
       case f_UIFun:
         ui->setLabel(var, "Name");
         return true;
-      case f_ChangeFun:
-        strcpy(instances[rowNr].name, mdl->getValue(var, rowNr));
-        sendMessageUDP(instances[rowNr].ip, "name", mdl->getValue(var, rowNr));
-        return true;
+      // comment this out for the time being as causes corrupted instance names
+      // case f_ChangeFun:
+      //   strcpy(instances[rowNr].name, mdl->getValue(var, rowNr));
+      //   sendMessageUDP(instances[rowNr].ip, "name", mdl->getValue(var, rowNr));
+      //   return true;
       default: return false;
     }});
 
