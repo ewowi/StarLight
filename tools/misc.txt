@@ -69,19 +69,19 @@ for f in (I*.mov|sort -d) ; do ffmpeg -i $PWD/$f -c copy -an $PWD/$f.nosound.mov
 
 Update instances
 
-for i in 166 132 117 107 125 246 152 
+for i in 107 239 143 111 154 177 208 129 157
 do 
     echo upgrade 192.168.168.$i
-    curl -s -F "update=@/Users/ewoudwijma/Downloads/StarLeds_24053018_esp32dev.bin" 192.168.8.$i/update
-    curl -X POST "http://192.168.8.$i/json" -d '{"reboot":true}' -H "Content-Type: application/json"
+    curl -s -F "update=@/Users/ewoudwijma/Downloads/StarLeds_24060113_lolin_s2_mini.bin" 192.168.8.$i/update &
 done
+    curl -X POST "http://192.168.8.$i/json" -d '{"reboot":true}' -H "Content-Type: application/json"
 
-for i in 239 143 111
+for i in 152 132
 do 
     echo upgrade 192.168.168.$i
-    curl -s -F "update=@/Users/ewoudwijma/Downloads/StarLeds_24053018_lolin_s2_mini.bin" 192.168.8.$i/update
-    curl -X POST "http://192.168.8.$i/json" -d '{"reboot":true}' -H "Content-Type: application/json"
+    curl -s -F "update=@/Users/ewoudwijma/Downloads/StarLeds_24060113_esp32dev.bin" 192.168.8.$i/update &
 done
+    curl -X POST "http://192.168.8.$i/json" -d '{"reboot":true}' -H "Content-Type: application/json"
 
 FileCreateDate for png files
 
