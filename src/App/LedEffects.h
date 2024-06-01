@@ -1340,6 +1340,7 @@ class GameOfLife: public Effect {
     unsigned long *step  = leds.sharedData.bind(step);
     bool *birthNumbers   = leds.sharedData.bind(birthNumbers, sizeof(bool) * 9);
     bool *surviveNumbers = leds.sharedData.bind(surviveNumbers, sizeof(bool) * 9);
+    byte *prevRuleset    = leds.sharedData.bind(prevRuleset);
     byte *setUp = leds.sharedData.bind(setUp); // call == 0 not working temp fix
 
     Coord3D bgC = mdl->getValue("Background Color");
@@ -1380,7 +1381,6 @@ class GameOfLife: public Effect {
       return;
     }
     stackUnsigned8 speed = mdl->getValue("Game Speed (FPS)");
-
     if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) { // Check if enough time has passed for updating
       // draw dead cells to blend further
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
@@ -1392,7 +1392,6 @@ class GameOfLife: public Effect {
     
     //Rule set for game of life
     byte ruleset = mdl->getValue("Ruleset");
-    byte *prevRuleset = leds.sharedData.bind(prevRuleset);
     if (ruleset != *prevRuleset || ruleset == 0) { // Custom rulestring always parsed
       String ruleString = "";
       if      (ruleset == 0) ruleString = mdl->getValue("Custom Rule String").as<String>(); //Custom
@@ -1498,7 +1497,8 @@ class GameOfLife: public Effect {
   // - Fix 3D bug
   // - Allow background blending (option 1)
   // - Color based on age?
-  // - Infinite Option (track born cells, spawn random glider/exploder )
+  // - Infinite Option (track born cells, spawn random glider/exploder)
+  // - Infinite Option (change ruleset every x generations)
 
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
