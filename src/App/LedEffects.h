@@ -1612,61 +1612,283 @@ class GameOfLife: public Effect {
   }
 }; //GameOfLife
 
+struct Cube {
+    static const int SIZE = 4;
+    using Face = std::array<std::array<uint8_t, SIZE>, SIZE>;
+    Face front;
+    Face back;
+    Face left;
+    Face right;
+    Face top;
+    Face bottom;
 
-Coord3D rotate(Coord3D pos, Coord3D grid, char axis = 'z') {
-  // ppf("Starting rotation of x: %d, y: %d, z: %d ->", pos.x, pos.y, pos.z);
-  float rotationMatrix[3][3];
-  switch(axis) {
-      case 'x':
-          rotationMatrix[0][0] = 1; rotationMatrix[0][1] = 0; rotationMatrix[0][2] = 0;
-          rotationMatrix[1][0] = 0; rotationMatrix[1][1] = 0; rotationMatrix[1][2] = -1;
-          rotationMatrix[2][0] = 0; rotationMatrix[2][1] = 1; rotationMatrix[2][2] = 0;
-          break;
-      case 'y':
-          rotationMatrix[0][0] = 0; rotationMatrix[0][1] = 0; rotationMatrix[0][2] = 1;
-          rotationMatrix[1][0] = 0; rotationMatrix[1][1] = 1; rotationMatrix[1][2] = 0;
-          rotationMatrix[2][0] = -1; rotationMatrix[2][1] = 0; rotationMatrix[2][2] = 0;
-          break;
-      case 'z':
-      default:
-          rotationMatrix[0][0] = 0; rotationMatrix[0][1] = -1; rotationMatrix[0][2] = 0;
-          rotationMatrix[1][0] = 1; rotationMatrix[1][1] = 0; rotationMatrix[1][2] = 0;
-          rotationMatrix[2][0] = 0; rotationMatrix[2][1] = 0; rotationMatrix[2][2] = 1;
-          break;
-  }
-  
-  Coord3D currPos = pos;
-  if (currPos.x == 0) currPos.x = -grid.x + 1;
-  if (currPos.y == 0) currPos.y = -grid.y + 1;
-  if (currPos.z == 0) currPos.z = -grid.z + 1;
+    Cube() {
+      init();
+    }
+    
+    void init() {
+      for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; ++j) {
+          front[i][j]  = 0;
+          back[i][j]   = 1;  
+          left[i][j]   = 2;  
+          right[i][j]  = 3; 
+          top[i][j]    = 4;   
+          bottom[i][j] = 5;
+        }
+      }
+    }
 
-  // Apply rotation to 1,0,1
-  //0 * 1 + -1 * 0 + 0 * 1 = 0
-  //1 * 1 + 0 * 0 + 0 * 1 = 1
-  //0 * 1 + 0 * 0 + 1 * 1 = 1
+    void reset() {
+      init();
+    }
 
-  //Apply rotation to 1,4,1
-  //0 * 1 + -1 * 4 + 0 * 1 = -4
-  //1 * 1 + 0 * 4 + 0 * 1 = 1
-  //0 * 1 + 0 * 4 + 1 * 1 = 1
+    void rotateFace(Face& face, bool clockwise) {
+      Face temp = face;
+      if (clockwise) {
+        for (int i = 0; i < SIZE; i++) for (int j = 0; j < SIZE; ++j) {
+          face[j][SIZE - 1 - i] = temp[i][j]; 
+        }
+      }  
+      else {
+        for (int i = 0; i < SIZE; i++) for (int j = 0; j < SIZE; ++j) {
+          face[SIZE - 1 - j][i] = temp[i][j];
+        }
+      }
+    }
 
-  // Apply the rotation matrix to the current position
-  Coord3D newPos;
-  int x = rotationMatrix[0][0] * currPos.x + rotationMatrix[0][1] * currPos.y + rotationMatrix[0][2] * currPos.z;
-  int y = rotationMatrix[1][0] * currPos.x + rotationMatrix[1][1] * currPos.y + rotationMatrix[1][2] * currPos.z;
-  int z = rotationMatrix[2][0] * currPos.x + rotationMatrix[2][1] * currPos.y + rotationMatrix[2][2] * currPos.z;
+    void rotateRow(int startRow, int stopRow, bool clockwise) {
+      std::array<uint8_t, SIZE> temp;
+      for (int row = startRow; row <= stopRow; ++row) {
+        if (clockwise) {
+          for (int i = 0; i < SIZE; i++) temp[i] = left[row][i];
+          for (int i = 0; i < SIZE; i++) left[row][i] = front[row][i];
+          for (int i = 0; i < SIZE; i++) front[row][i] = right[row][i];
+          for (int i = 0; i < SIZE; i++) right[row][i] = back[row][i];
+          for (int i = 0; i < SIZE; i++) back[row][i] = temp[i];
+        } else {
+          for (int i = 0; i < SIZE; i++) temp[i] = left[row][i];
+          for (int i = 0; i < SIZE; i++) left[row][i] = back[row][i];
+          for (int i = 0; i < SIZE; i++) back[row][i] = right[row][i];
+          for (int i = 0; i < SIZE; i++) right[row][i] = front[row][i];
+          for (int i = 0; i < SIZE; i++) front[row][i] = temp[i];
+        }
+      }
+    }
 
-  if (x < 0) x = ((x + grid.x) % grid.x) - 1;
-  if (y < 0) y = ((y + grid.y) % grid.y) - 1;
-  if (z < 0) z = ((z + grid.z) % grid.z) - 1;
+    void rotateColumn(int startCol, int stopCol, bool clockwise) {
+      std::array<uint8_t, SIZE> temp;
+      for (int col = startCol; col <= stopCol; col++) {
+        if (clockwise) {
+          for (int i = 0; i < SIZE; i++) temp[i] = top[i][col];
+          for (int i = 0; i < SIZE; i++) top[i][col] = front[i][col];
+          for (int i = 0; i < SIZE; i++) front[i][col] = bottom[i][col];
+          for (int i = 0; i < SIZE; i++) bottom[i][col] = back[SIZE - 1 - i][SIZE - 1 - col];
+          for (int i = 0; i < SIZE; i++) back[SIZE - 1 - i][SIZE - 1 - col] = temp[i];       
+        } else {
+          for (int i = 0; i < SIZE; i++) temp[i] = top[i][col];
+          for (int i = 0; i < SIZE; i++) top[i][col] = back[SIZE - 1 - i][SIZE - 1 - col];
+          for (int i = 0; i < SIZE; i++) back[SIZE - 1 - i][SIZE - 1 - col] = bottom[i][col];
+          for (int i = 0; i < SIZE; i++) bottom[i][col] = front[i][col];
+          for (int i = 0; i < SIZE; i++) front[i][col] = temp[i];
+        }
+      }
+    }
 
-  if (pos.x == 0) x = abs(x);
-  if (pos.y == 0) y = abs(y);
-  if (pos.z == 0) z = abs(z);
+    void rotateFaceLayer(bool clockwise, int startLayer = 0, int endLayer = 0) {
+      for (int layer = startLayer; layer <= endLayer; ++layer) {
+        std::array<uint8_t, SIZE> temp;
+        for (int i = 0; i < SIZE; i++) temp[i] = clockwise ? top[SIZE - 1 - layer][i] : bottom[layer][i];
+        for (int i = 0; i < SIZE; i++) {
+          if (clockwise) {
+            top[SIZE - 1 - layer][i] = left[SIZE - 1 - i][SIZE - 1 - layer];
+            left[SIZE - 1 - i][SIZE - 1 - layer] = bottom[layer][i];
+            bottom[layer][i] = right[i][layer];
+            right[i][layer] = temp[i];
+          } else {
+            bottom[layer][i] = left[SIZE - 1 - i][SIZE - 1 - layer];
+            left[SIZE - 1 - i][SIZE - 1 - layer] = top[SIZE - 1 - layer][i];
+            top[SIZE - 1 - layer][i] = right[i][layer];
+            right[i][layer] = temp[i];
+          }
+        }
+      }
+    }
 
-  // ppf(" x: %d, y: %d, z: %d\n", x, y, z);
-  return Coord3D({x, y, z});
-}
+    CRGB getColor(uint8_t num) {
+      switch (num) {
+        case 0: return CRGB::Red;        //front color
+        case 1: return CRGB::DarkOrange; //back color
+        case 2: return CRGB::Blue;       //left color
+        case 3: return CRGB::Green;      //right color
+        case 4: return CRGB::Yellow;     //top color
+        case 5: return CRGB::White;      //bottom color
+        default: return CRGB::Black;
+      }
+    }
+
+    void rotateFront(bool clockwise, int width = 1) {
+      rotateFaceLayer(clockwise, 0, width - 1);
+      rotateFace(front, clockwise);
+    }
+    void rotateBack(bool clockwise, int width = 1) {
+      rotateFaceLayer(!clockwise, SIZE - width, SIZE - 1);
+      rotateFace(back, clockwise);
+    }
+    void rotateLeft(bool clockwise, int width = 1) {
+      rotateFace(left, clockwise);
+      rotateColumn(0, width - 1, !clockwise);
+    }
+    void rotateRight(bool clockwise, int width = 1) {
+      rotateFace(right, clockwise);
+      rotateColumn(SIZE - width, SIZE - 1, clockwise);
+    }
+    void rotateTop(bool clockwise, int width = 1) {
+      rotateFace(top, clockwise);
+      rotateRow(0, width - 1, clockwise);
+    }
+    void rotateBottom(bool clockwise, int width = 1) {
+      rotateFace(bottom, clockwise);
+      rotateRow(SIZE - width, SIZE - 1, !clockwise);
+    }
+
+    void rotateRandom() {
+      // no slice moves
+      byte layer = random8(6);
+      bool clockwise = random8(2);
+      byte width = random8(SIZE);
+      width = width == 0 ? 1 : width;
+           if (layer == 0) rotateFront(clockwise, width);
+      else if (layer == 1) rotateBack(clockwise, width);
+      else if (layer == 2) rotateLeft(clockwise, width);
+      else if (layer == 3) rotateRight(clockwise, width);
+      else if (layer == 4) rotateTop(clockwise, width);
+      else if (layer == 5) rotateBottom(clockwise, width);
+    }
+    void drawCube(Leds &leds) {
+      // 3 Sided 8x8 panels = 9x9x9
+      // 6 Sided 8x8 panels = 10x10x10
+      // Cheating, measure front panel
+      int panelSize = leds.size.x;
+      if (leds.isMapped(leds.XYZNoSpin({0, leds.size.y/2, 0})) == 0) panelSize--;
+      if (leds.isMapped(leds.XYZNoSpin({leds.size.x-1, leds.size.y/2, 0})) == 0) panelSize--;
+
+      float scaleX = (panelSize) / SIZE;
+      float scaleY = (panelSize) / SIZE;
+      float scaleZ = (panelSize) / SIZE;
+
+      bool sixSides = true;
+      // cheat by looking at back panel
+      if (leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, leds.size.z-1})) == 0) {
+        sixSides = false;
+      }
+
+      if (sixSides) {
+        //draw back panel
+        for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) {
+          int z = leds.size.z - 1;
+          if (leds.isMapped(leds.XYZNoSpin({x, y, z})) == 0) continue; //skip if not physical led
+          Coord3D pos = {x, y, z};
+          Coord3D cubePos = {int((x-1) / scaleX), int((y-1) / scaleY), int(z / scaleZ)};
+          cubePos.x = max(0, min(SIZE - 1, cubePos.x));
+          cubePos.y = max(0, min(SIZE - 1, cubePos.y));
+          leds.setPixelColor(pos, getColor(back[cubePos.y][SIZE - 1 - cubePos.x]));
+        }
+        //draw bottom panel
+        for (int x = 0; x < leds.size.x; x++) for (int z = 0; z < leds.size.z; z++) {
+          int y = leds.size.y - 1;
+          if (leds.isMapped(leds.XYZNoSpin({x, y, z})) == 0) continue; //skip if not physical led
+          Coord3D pos = {x, y, z};
+          Coord3D cubePos = {int((x-1) / scaleX), int(y / scaleY), int((z-1) / scaleZ)};
+          cubePos.x = max(0, min(SIZE - 1, cubePos.x));
+          cubePos.z = max(0, min(SIZE - 1, cubePos.z));
+          leds.setPixelColor(pos, getColor(bottom[cubePos.z][cubePos.x]));
+        }
+        //draw right panel
+        for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++) {
+          int x = leds.size.x - 1;
+          if (leds.isMapped(leds.XYZNoSpin({x, y, z})) == 0) continue; //skip if not physical led
+          Coord3D pos = {x, y, z};
+          Coord3D cubePos = {int(x / scaleX), int((y-1) / scaleY), int((z-1) / scaleZ)};
+          cubePos.y = max(0, min(SIZE - 1, cubePos.y));
+          cubePos.z = max(0, min(SIZE - 1, cubePos.z));
+          leds.setPixelColor(pos, getColor(right[cubePos.y][cubePos.z]));
+        }
+      }
+
+      //draw front panel
+      for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) {
+        int z = 0;
+        if (leds.isMapped(leds.XYZNoSpin({x, y, z})) == 0) continue; //skip if not physical led
+        Coord3D pos = {x, y, z};
+        Coord3D cubePos = {int((x-1) / scaleX), int((y-1) / scaleY), int(z / scaleZ)};
+        cubePos.x = max(0, min(SIZE - 1, cubePos.x));
+        cubePos.y = max(0, min(SIZE - 1, cubePos.y));
+        leds.setPixelColor(pos, getColor(front[cubePos.y][cubePos.x]));
+      }
+      //draw top panel
+      for (int x = 0; x < leds.size.x; x++) for (int z = 0; z < leds.size.z; z++) {
+        int y = 0;
+        if (leds.isMapped(leds.XYZNoSpin({x, y, z})) == 0) continue; //skip if not physical led
+        Coord3D pos = {x, y, z};
+        Coord3D cubePos = {int((x-1) / scaleX), int(y / scaleY), int((z-1) / scaleZ)};
+        cubePos.x = max(0, min(SIZE - 1, cubePos.x));
+        cubePos.z = max(0, min(SIZE - 1, cubePos.z));
+        leds.setPixelColor(pos, getColor(top[SIZE - 1 - cubePos.z][cubePos.x]));
+      }
+      //draw left panel
+      for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++) {
+        int x = 0;
+        if (leds.isMapped(leds.XYZNoSpin({x, y, z})) == 0) continue; //skip if not physical led
+        Coord3D pos = {x, y, z};
+        Coord3D cubePos = {int(x / scaleX), int((y-1) / scaleY), int((z-1) / scaleZ)};
+        cubePos.y = max(0, min(SIZE - 1, cubePos.y));
+        cubePos.z = max(0, min(SIZE - 1, cubePos.z));
+        leds.setPixelColor(pos, getColor(left[cubePos.y][SIZE - 1 - cubePos.z]));
+      }
+
+      // //draw back 3 panels first
+      // for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
+      //   if (leds.isMapped(leds.XYZNoSpin({x, y, z})) == 0) continue; //skip if not physical led
+      //   Coord3D pos = {x, y, z};
+      //   Coord3D cubePos = {int(x / scaleX), int(y / scaleY), int(z / scaleZ)};
+      //   cubePos.x = max(0, min(SIZE - 1, cubePos.x));
+      //   cubePos.y = max(0, min(SIZE - 1, cubePos.y));
+      //   cubePos.z = max(0, min(SIZE - 1, cubePos.z));
+
+      //   if      (z == 0)               leds.setPixelColor(pos, getColor(front[cubePos.y][cubePos.x]));
+      //   else if (y == 0)               leds.setPixelColor(pos, getColor(top[SIZE - 1 - cubePos.z][cubePos.x]));
+      //   else if (x == 0)               leds.setPixelColor(pos, getColor(left[cubePos.y][SIZE - 1 - cubePos.z])); 
+      //   else if (z == leds.size.z - 1 && sixSides)  leds.setPixelColor(pos, getColor(back[cubePos.y][SIZE - 1 - cubePos.x])); 
+      //   else if (y == leds.size.y - 1 && sixSides)  leds.setPixelColor(pos, getColor(bottom[cubePos.z][cubePos.x]));
+      //   else if (x == leds.size.x - 1 && sixSides)  leds.setPixelColor(pos, getColor(right[cubePos.y][cubePos.z]));
+      //   else leds.setPixelColor(pos, CRGB::Black, 0);
+      // }
+    }
+    void printCube() {
+      ppf("-------------------\n");
+      for (int i = 0; i < SIZE; i++) {
+        for (int space = 0; space <= SIZE; space++) ppf("  ");
+        for (int j = 0; j < SIZE; ++j) ppf("%d ", top[i][j]);
+        ppf("\n");
+      }
+      for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; ++j) ppf("%d ", left[i][j]);
+        ppf("  ");
+        for (int j = 0; j < SIZE; ++j) ppf("%d ", front[i][j]);
+        ppf("  ");
+        for (int j = 0; j < SIZE; ++j) ppf("%d ", right[i][j]);
+        ppf("  ");
+        for (int j = 0; j < SIZE; ++j) ppf("%d ", back[i][j]);
+        ppf("\n");
+      }
+      for (int i = 0; i < SIZE; i++) {
+        for (int space = 0; space <= SIZE; space++) ppf("  ");
+        for (int j = 0; j < SIZE; ++j) ppf("%d ", bottom[i][j]);
+        ppf("\n");
+      }
+    }
+};
 
 class RubiksCube: public Effect {
   const char * name() {return "Rubik's Cube";}
@@ -1674,89 +1896,58 @@ class RubiksCube: public Effect {
   const char * tags() {return "💡💫";}
 
   void loop(Leds &leds) {
-    CRGBPalette16 pal = getPalette();
     stackUnsigned8 speed = mdl->getValue("Turns Per Second");
+    byte nextMove = mdl->getValue("nextMove");
     uint8_t *setup = leds.sharedData.bind(setup);
     unsigned long *step = leds.sharedData.bind(step);
-    char *prevAxis = leds.sharedData.bind(prevAxis);
-
-    //3 or 6 face fixture cheat :( (this didn't even work so joke's on me)
-    //assumes 6 sides is even width and 3 sides is odd width
-    int cheater = 1;
-    if (leds.size.x % 2 == 1) cheater = 0;
-
+    Cube *cube = leds.sharedData.bind(cube, sizeof(Cube));
+    
     if (*setup != 123) {
       *setup = 123;
-      leds.fill_solid(CRGB::Black, 0); //clear leds
-      random16_set_seed(now>>2);
-
-      //set up cube colors
-      for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-        Coord3D pos = {x, y, z};
-        CRGB color;
-        if      (pos.y == 0)                     color = CRGB::Yellow; //top face
-        else if (pos.x == 0)                     color = CRGB::Blue; //left face
-        else if (pos.z == 0)                     color = CRGB::Red; //front face
-        else if (pos.x == leds.size.x - cheater) color = CRGB::Green; //right face
-        else if (pos.y == leds.size.z - cheater) color = CRGB::White; //bottom face
-        else if (pos.z == leds.size.y - cheater) color = CRGB::DarkOrange; //back face
-        else                                     color = CRGB::Black; //inside
-      
-        leds.setPixelColor(pos, color, 0);
-      }
+      leds.fill_solid(CRGB::Black, 0);
+      cube->reset();
+      cube->drawCube(leds);
+      *step = sys->now;
     }
-    //temp Cube store colors
-    CRGB tempCube[leds.size.x +1-cheater][leds.size.y+1-cheater][leds.size.z+1-cheater];
-    // fill tempCube with black
-    for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-      tempCube[x][y][z] = CRGB::Black;
-    }
-    // tursPerSecond
+    
     float turnsPerSecond = speed/4.0;
-    if (now - *step >= 1000 / turnsPerSecond) {
-      // *step = now;
-      // choose a random axis to rotate the layer around
-      char axis = *prevAxis;
-      while (axis == *prevAxis) axis = random8(3) == 0 ? 'x' : random8(3) == 1 ? 'y' : 'z';
-      byte rotations = random8(3);
+    if (sys->now - *step >= 1000 / turnsPerSecond) {
+      *step = sys->now;
 
-      // rotate the layer
+           if (nextMove == 6) cube->rotateRandom();
+      else if (nextMove == 0) cube->rotateFront(true); // F turn
+      else if (nextMove == 1) cube->rotateBack(true);  // B turn
+      else if (nextMove == 2) cube->rotateRight(true); // R turn
+      else if (nextMove == 3) cube->rotateLeft(true);  // L turn
+      else if (nextMove == 4) cube->rotateTop(true);   // U turn
+      else if (nextMove == 5) cube->rotateBottom(true);// D turn
 
-      int startLayer = 0; //random8(leds.size.x/4);
-      int endLayer = leds.size.x/2-1; //startLayer + random8(leds.size.x/4);
-      
-      for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-        if ((axis == 'z' && z >= startLayer && z <= endLayer) ||
-            (axis == 'y' && y >= startLayer && y <= endLayer) ||
-            (axis == 'x' && x >= startLayer && x <= endLayer)) {
-            Coord3D currPos = Coord3D({x, y, z});
-            Coord3D rotatedPos = currPos;
-            for (int i = 0; i < rotations; i++) rotatedPos = rotate(rotatedPos, leds.size, axis);
-            // ppf("Rotating x: %d, y: %d, z: %d to x: %d, y: %d, z: %d Color: r: %d, g: %d, b: %d\n", currPos.x, currPos.y, currPos.z, rotatedPos.x, rotatedPos.y, rotatedPos.z, leds.getPixelColor(currPos).r, leds.getPixelColor(currPos).g, leds.getPixelColor(currPos).b);
-            tempCube[rotatedPos.x][rotatedPos.y][rotatedPos.z] = leds.getPixelColor(currPos);
-        }
-      }
-
-      //draw cube layer
-      for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-        if ((axis == 'z' && z >= startLayer && z <= endLayer) ||
-            (axis == 'y' && y >= startLayer && y <= endLayer) ||
-            (axis == 'x' && x >= startLayer && x <= endLayer)) {
-          leds.setPixelColor(Coord3D({x, y, z}), tempCube[x][y][z], 0);
-          // ppf("Setting x: %d, y: %d, z: %d to color r: %d, g: %d, b: %d\n", x, y, z, tempCube[x][y][z].r, tempCube[x][y][z].g, tempCube[x][y][z].b);
-        }
-      }
-    *step = now;
+      // cube->printCube();
+      cube->drawCube(leds);
+    } else {
+      cube->drawCube(leds);
     }
   }
-  
-  void controls(JsonObject parentVar) {
-    addPalette(parentVar, 4);
-    ui->initSlider(parentVar, "Turns Per Second", 10, 0, 255);
+
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    ui->initSlider(parentVar, "Turns Per Second", 0, 0, 20);
+    ui->initSelect(parentVar, "nextMove", 6, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case f_UIFun: {
+        JsonArray options = ui->setOptions(var);
+        options.add("F");
+        options.add("B"); 
+        options.add("R");
+        options.add("L");
+        options.add("U");
+        options.add("D");
+        options.add("Random");
+        return true;
+      }
+      default: return false;
+    }});
   }
-}; //Rubik's Cube
-
-
+};
 
 #ifdef STARLEDS_USERMOD_WLEDAUDIO
 
