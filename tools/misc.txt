@@ -5,7 +5,7 @@ git log v0.14.1-beta.30..HEAD  --pretty=format:'%ad,%<(20)%an,%s' --date=short
 Copy System Modules from MoonModules/StarLeds to upstream
 (as should only be modified in upstream)
 ============================================================
-cd /Users/ewoudwijma/Developer/GitHub/MoonModules/StarLeds
+cd ~/Developer/GitHub/MoonModules/StarLeds
 ls ../../ewowi/StarBase/src/Sys
 cp ./src/Sys/* ../../ewowi/StarBase/src/Sys
 cp ./tools/* ../../ewowi/StarBase/tools
@@ -67,10 +67,21 @@ ls -tU
 remove sound
 for f in (I*.mov|sort -d) ; do ffmpeg -i $PWD/$f -c copy -an $PWD/$f.nosound.mov; done
 
-Update instance
-curl -s -F "update=@/Users/ewoudwijma/Developer/GitHub/ewowi/StarBase/.pio/build/esp32dev/firmware.bin" 192.168.8.189/update
+Update instances
 
+for i in 166 132 117 107 125 246 152 
+do 
+    echo upgrade 192.168.168.$i
+    curl -s -F "update=@/Users/ewoudwijma/Downloads/StarLeds_24053018_esp32dev.bin" 192.168.8.$i/update
+    curl -X POST "http://192.168.8.$i/json" -d '{"reboot":true}' -H "Content-Type: application/json"
+done
 
+for i in 239 143 111
+do 
+    echo upgrade 192.168.168.$i
+    curl -s -F "update=@/Users/ewoudwijma/Downloads/StarLeds_24053018_lolin_s2_mini.bin" 192.168.8.$i/update
+    curl -X POST "http://192.168.8.$i/json" -d '{"reboot":true}' -H "Content-Type: application/json"
+done
 
 FileCreateDate for png files
 
