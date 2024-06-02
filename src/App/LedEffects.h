@@ -1230,7 +1230,7 @@ class ScrollingText: public Effect {
     const char * text = mdl->getValue("text");
 
     // text might be nullified by selecting other effects and if effect is selected, controls are run afterwards  
-    // tbd: this should be removed and setEffect must make sure this cannot happen!!
+    // tbd: this should be removed and fx.changeFUn (setEffect) must make sure this cannot happen!!
     if (text && strlen(text)>0) {
       leds.fadeToBlackBy();
       leds.drawText(text, 0, 0, font, CRGB::Red, - (call*speed/256));
@@ -1989,39 +1989,6 @@ public:
     call++;
 
     EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
-  }
-
-  void setEffect(Leds &leds, JsonObject var, unsigned8 rowNr) {
-
-    leds.fx = mdl->getValue(var, rowNr);
-
-    ppf("setEffect fx[%d]: %d\n", rowNr, leds.fx);
-
-    if (leds.fx < effects.size()) {
-
-      leds.sharedData.clear(); //make sure all values are 0
-
-      Effect* effect = effects[leds.fx];
-
-      // effect->loop(leds); //do a loop to set sharedData right
-      // leds.sharedData.loop();
-      mdl->varPreDetails(var, rowNr);
-      effect->controls(leds, var);
-      mdl->varPostDetails(var, rowNr);
-
-      effect->setup(leds); //if changed then run setup once (like call==0 in WLED)
-
-      ppf("control ");
-      print->printVar(var);
-      ppf("\n");
-
-      if (effects[leds.fx]->dim() != leds.effectDimension) {
-        leds.effectDimension = effects[leds.fx]->dim();
-        leds.doMap = true;
-        leds.fixture->doMap = true;
-      }
-    } // fx < size
-
   }
 
 };
