@@ -1345,37 +1345,34 @@ class GameOfLife: public Effect {
 
     Coord3D bgC = mdl->getValue("Background Color");
     CRGB bgColor = CRGB(bgC.x, bgC.y, bgC.z);
-    CRGB color;
+    CRGB color = ColorFromPalette(leds.palette, random8()); // used if all parents died
 
     //start new game of life
-    if (call == 0 || (*generation == 0 && *step < sys->now || *setUp != 123)) {
+    if (call == 0  || *setUp != 123|| (*generation == 0 && *step < sys->now)) {
       *setUp = 123; // quick fix for effect starting up
       *generation = 1;
-      if (mdl->getValue("Disable Pause")) *step = sys->now;
-      else *step = sys->now + 1500; // previous call time + 1.5 seconds initial delay
+      mdl->getValue("Disable Pause") ? *step = sys->now : *step = sys->now + 1500;
 
       //Setup Grid
       memset(cells, 0, dataSize);
-      memset(futureCells, 0, dataSize);
       byte lifeChance = mdl->getValue("Starting Life Density");
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
         if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
-        if (map(random8(), 0, 255, 0, 100) < lifeChance) {
+        if (random8(100) < lifeChance) {
           setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
-          setBitValue(futureCells, leds.XYZNoSpin({x,y,z}), true);
           leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0);
         }
         else {
           leds.setPixelColor({x,y,z}, bgColor, 0);
         }   
       }
+      memcpy(futureCells, cells, dataSize); 
 
       // Change CRCs
       uint16_t crc = crc16((const unsigned char*)cells, dataSize);
       *oscillatorCRC = crc;
       *spaceshipCRC = crc;
       *cubeGliderCRC = crc;
-    
       *gliderLength  = lcm(leds.size.y, leds.size.x) * 4;
       *cubeGliderLength = *gliderLength * 6; // change later for rectangular cuboid
       return;
@@ -1462,7 +1459,7 @@ class GameOfLife: public Effect {
         CRGB randomParentColor = color; // last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8(colorCount)];
         if (randomParentColor == bgColor) randomParentColor = ColorFromPalette(leds.palette, random8()); // needed for tilt, pan, roll
-        if (map(random8(), 0, 255, 0, 100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8()); // mutate
+        if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8()); // mutate
         leds.setPixelColor(cPos, randomParentColor, 0);
       }
       else {
@@ -1480,8 +1477,7 @@ class GameOfLife: public Effect {
     if (!cellChanged || crc == *oscillatorCRC || crc == *spaceshipCRC || crc == *cubeGliderCRC) repetition = true; //check if cell changed this gen and compare previous stored crc values
     if (repetition) {
       *generation = 0; //reset on next call
-      if (mdl->getValue("Disable Pause")) *step = sys->now; //skip pause
-      else *step = sys->now  + 1000;                        //pause
+      mdl->getValue("Disable Pause") ? *step = sys->now : *step = sys->now + 1000;
       return;
     }
     // Update CRC values
