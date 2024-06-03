@@ -347,7 +347,7 @@ public:
 
   }
 
-  void loop1s() {
+  void loop10s() {
     sendSysInfoUDP();  //temporary every second
   }
 
