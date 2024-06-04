@@ -163,7 +163,7 @@ class SharedData {
 
   //returns the next pointer initialized by a value (length for arrays not supported yet)
   template <typename Type>
-  Type * write(int initValue) {
+  Type * write(Type initValue) {
     Type * returnValue =  readWrite<Type>();
     *returnValue = initValue;
     return returnValue;

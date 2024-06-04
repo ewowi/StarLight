@@ -1371,6 +1371,7 @@ class GameOfLife: public Effect {
     uint8_t mutation = leds.sharedData.read<uint8_t>();
     bool wrap = leds.sharedData.read<bool>();
     bool test = leds.sharedData.read<bool>();
+    Coord3D testCoord3D = leds.sharedData.read<Coord3D>();
 
     //binding of loop persistent values (pointers)
     const uint16_t dataSize = ((leds.size.x * leds.size.y * leds.size.z + 7) / 8);
@@ -1410,7 +1411,7 @@ class GameOfLife: public Effect {
         if (map(random8(), 0, 255, 0, 100) < lifeChance) {
           setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
           setBitValue(futureCells, leds.XYZNoSpin({x,y,z}), true);
-          leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0);
+          leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0); //blend=0
         }
         else {
           leds.setPixelColor({x,y,z}, bgColor, 0);
@@ -1648,6 +1649,7 @@ class GameOfLife: public Effect {
     ui->initSlider(parentVar, "Mutation Chance", leds.sharedData.write<uint8_t>(2), 0, 100);
     ui->initCheckBox(parentVar, "wrap", leds.sharedData.write<bool>(true));
     ui->initCheckBox(parentVar, "testPattern", leds.sharedData.write<bool>(false));
+    ui->initCoord3D(parentVar, "testCoord3D", leds.sharedData.write<Coord3D>({1,2,3}));
   }
 }; //GameOfLife
 
