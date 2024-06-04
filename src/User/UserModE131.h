@@ -27,12 +27,9 @@ public:
 
     parentVar = ui->initUserMod(parentVar, name, 6201);
 
-    ui->initNumber(parentVar, "dun", universe, 0, 7, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "dun", &universe, 0, 7, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun:
         ui->setLabel(var, "DMX Universe");
-        return true;
-      case f_ChangeFun:
-        universe = var["value"];
         return true;
       default: return false;
     }});
@@ -44,7 +41,7 @@ public:
         return true;
       case f_ChangeFun:
         for (JsonObject childVar: mdl->varChildren("e131Tbl"))
-          ui->callVarFun(childVar, UINT8_MAX, f_ValueFun);
+          ui->callVarFun(childVar);
         return true;
       default: return false;
     }});
