@@ -534,7 +534,7 @@ class DripEffect: public Effect {
     ui->initSlider(parentVar, "gravity", 128, 1, 255);
     ui->initSlider(parentVar, "drips", 4, 1, 6);
     ui->initSlider(parentVar, "swell", 4, 1, 6);
-    ui->initCheckBox(parentVar, "invert");
+    ui->initCheckBox(parentVar, "invert", false);
   }
 }; // DripEffect
 
@@ -748,7 +748,7 @@ class NoiseMeter: public Effect {
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "fadeRate", 248, 200, 254);
-    ui->initSlider(parentVar, "width");
+    ui->initSlider(parentVar, "width", 128);
   }
 }; //NoiseMeter
 
@@ -1652,7 +1652,7 @@ class Waverly: public Effect {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "Amplification", 128);
     ui->initSlider(parentVar, "Sensitivity", 128);
-    ui->initCheckBox(parentVar, "No Clouds");
+    ui->initCheckBox(parentVar, "No Clouds", false);
     // ui->initCheckBox(parentVar, "Sound Pressure");
     // ui->initCheckBox(parentVar, "AGC debug");
   }
