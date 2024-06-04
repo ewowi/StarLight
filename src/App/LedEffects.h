@@ -1378,14 +1378,15 @@ class GameOfLife: public Effect {
       return;
     }
     stackUnsigned8 speed = mdl->getValue("Game Speed (FPS)");
-    if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) { // Check if enough time has passed for updating
-      // draw dead cells to blend further
+
+    if (*step > sys->now) { // blend dead cells while paused
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
         if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
         if (!getBitValue(cells, leds.XYZNoSpin({x,y,z}))) leds.setPixelColor({x,y,z}, bgColor);
       }
       return;
     }
+    if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) return; // Check if enough time has passed for updating
     
     //Rule set for game of life
     byte ruleset = mdl->getValue("Ruleset");
@@ -1491,7 +1492,7 @@ class GameOfLife: public Effect {
   //Todo:
   // - Fix 3D bug
   // - Allow background blending (option 1)
-  // - Color based on age?
+  // - Color based on age? (Start green fade to red using blend on draw loop for alive cells)
   // - Infinite Option (track born cells, spawn random glider/exploder)
   // - Infinite Option (change ruleset every x generations)
 
