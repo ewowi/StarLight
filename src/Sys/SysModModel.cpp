@@ -48,12 +48,9 @@ void SysModModel::setup() {
 
   #ifdef STARBASE_DEVMODE
 
-  ui->initCheckBox(parentVar, "showObsolete", doShowObsolete, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initCheckBox(parentVar, "showObsolete", &doShowObsolete, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case f_UIFun:
       ui->setComment(var, "Show in UI (refresh)");
-      return true;
-    case f_ChangeFun:
-      doShowObsolete = var["value"];
       return true;
     default: return false;
   }});
@@ -92,7 +89,8 @@ void SysModModel::setup() {
     StarJson starJson("/model.json", "w"); //open fileName for deserialize
     starJson.addExclusion("fun");
     starJson.addExclusion("dash");
-    starJson.addExclusion("o");
+    starJson.addExclusion("o"); //order
+    starJson.addExclusion("p"); //pointers
     starJson.writeJsonDocToFile(model);
 
     // print->printJson("Write model", *model); //this shows the model before exclusion
@@ -238,12 +236,49 @@ bool checkDash(JsonObject var) {
   return false;
 }
 
-void SysModModel::setValueChangeFun(JsonObject var, unsigned8 rowNr) {
-  //done here as ui cannot be used in SysModModel.h
-  if (checkDash(var))
-    instances->changedVarsQueue.push_back(var);
+bool SysModModel::callVarChangeFun(JsonObject var, unsigned8 rowNr, bool init) {
+  //not in SysModModel.h as ui->callVarFun cannot be used in SysModModel.h
 
-  ui->callVarFun(var, rowNr, f_ChangeFun);
+  if (!init) {
+    if (checkDash(var))
+      instances->changedVarsQueue.push_back(var); //tbd: check value arrays / rowNr is working
+  }
+
+  //if var is bound by pointer, set the pointer value before calling changeFun
+  if (!var["p"].isNull()) {
+    JsonVariant value;
+    int pointer;
+    if (rowNr == UINT8_MAX) {
+      value = var["value"]; 
+      pointer = var["p"];
+    } else {
+      value = var["value"][rowNr];
+      pointer = var["p"][rowNr];
+    }
+
+    if (var["type"] == "select" || var["type"] == "checkbox" || var["type"] == "range") {
+      uint8_t *valuePointer = (uint8_t *)pointer;
+      if (valuePointer != nullptr) {
+        *valuePointer = value;
+        ppf("pointer set8 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+      }
+      else
+        ppf("dev pointer set8 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+    }
+    else if (var["type"] == "number") {
+      uint16_t *valuePointer = (uint16_t *)pointer;
+      if (valuePointer != nullptr) {
+        *valuePointer = value;
+        ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+      }
+      else
+        ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+    }
+    else
+      ppf("dev pointer of type %s not supported yet\n", var["type"].as<String>().c_str());
+  }
+
+  return ui->callVarFun(var, rowNr, f_ChangeFun);
 
   // web->sendResponseObject();
 }  

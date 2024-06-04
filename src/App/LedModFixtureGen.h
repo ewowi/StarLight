@@ -659,7 +659,7 @@ public:
         generateChFun(var, fileName);
 
         //set fixture in fixture module
-        ui->callVarFun("fixture", UINT8_MAX, f_UIFun); //reload fixture select
+        ui->callVarFun("fixture", UINT8_MAX, f_UIFun); //rebuild options
 
         uint8_t value = ui->selectOptionToValue("fixture", fileName);
         if (value != UINT8_MAX)

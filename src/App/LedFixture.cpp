@@ -39,7 +39,7 @@ void Fixture::projectAndMap() {
           }
         }
         leds->mappingTable.clear();
-        leds->sharedData.clear();
+        // leds->sharedData.reset(); //do not reset as want to save settings.
       }
       rowNr++;
     }

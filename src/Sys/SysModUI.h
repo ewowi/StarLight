@@ -83,6 +83,10 @@ public:
   JsonObject initNumber(JsonObject parent, const char * id, int value = UINT16_MAX, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndUpdate<int>(parent, id, "number", value, min, max, readOnly, varFun);
   }
+  //init a number using referenced value
+  JsonObject initNumber(JsonObject parent, const char * id, uint16_t * value = nullptr, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndUpdate<uint16_t>(parent, id, "number", value, min, max, readOnly, varFun);
+  }
 
   JsonObject initPin(JsonObject parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndUpdate<int>(parent, id, "pin", value, 0, NUM_DIGITAL_PINS, readOnly, varFun);
@@ -100,6 +104,10 @@ public:
   JsonObject initSlider(JsonObject parent, const char * id, int value = UINT16_MAX, int min = 0, int max = 255, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndUpdate<int>(parent, id, "range", value, min, max, readOnly, varFun);
   }
+  //init a range slider using referenced value
+  JsonObject initSlider(JsonObject parent, const char * id, unsigned8 * value = nullptr, int min = 0, int max = 255, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndUpdate<unsigned8>(parent, id, "range", value, min, max, readOnly, varFun);
+  }
 
   JsonObject initCanvas(JsonObject parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndUpdate<int>(parent, id, "canvas", value, 0, 0, readOnly, varFun);
@@ -108,6 +116,10 @@ public:
   //supports 3 state value: if UINT16_MAX it is indeterminated
   JsonObject initCheckBox(JsonObject parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndUpdate<int>(parent, id, "checkbox", value, 0, 0, readOnly, varFun);
+  }
+  //init a checkbox using referenced value
+  JsonObject initCheckBox(JsonObject parent, const char * id, bool * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndUpdate<bool>(parent, id, "checkbox", value, 0, 0, readOnly, varFun);
   }
 
   //a button never gets a value
@@ -119,14 +131,13 @@ public:
   JsonObject initSelect(JsonObject parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndUpdate<int>(parent, id, "select", value, 0, 0, readOnly, varFun);
   }
+  //init a select using referenced value
+  JsonObject initSelect(JsonObject parent, const char * id, unsigned8 * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndUpdate<unsigned8>(parent, id, "select", value, 0, 0, readOnly, varFun);
+  }
 
   JsonObject initIP(JsonObject parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndUpdate<int>(parent, id, "ip", value, 0, 255, readOnly, varFun);
-  }
-
-  //WIP pointer values
-  JsonObject initSelect(JsonObject parent, const char * id, unsigned8 * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
-    return initVarAndUpdate<unsigned8>(parent, id, "select", value, 0, 0, readOnly, varFun);
   }
 
   JsonObject initTextArea(JsonObject parent, const char * id, const char * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
@@ -137,18 +148,23 @@ public:
     return initVarAndUpdate<const char *>(parent, id, "url", value, 0, 0, readOnly, varFun);
   }
 
-  //WIP pointer values
+  //initVarAndUpdate using referenced value
   template <typename Type>
   JsonObject initVarAndUpdate(JsonObject parent, const char * id, const char * type, Type * value, int min = 0, int max = 255, bool readOnly = true, VarFun varFun = nullptr) {
-    // JsonObject var = initVar(parent, id, type, readOnly, varFun);
-    JsonObject var = initVarAndUpdate(parent, id, type, *value, min, max, readOnly, varFun);
-    // var["p"] = (const char *)value; //store pointer!
+    JsonObject var = initVarAndUpdate(parent, id, type, *value, min, max, readOnly, varFun, (int)value); //call with extra parameter: int of the pointer
     return var;
   }
 
   template <typename Type>
-  JsonObject initVarAndUpdate(JsonObject parent, const char * id, const char * type, Type value, int min = 0, int max = 255, bool readOnly = true, VarFun varFun = nullptr) {
+  JsonObject initVarAndUpdate(JsonObject parent, const char * id, const char * type, Type value, int min = 0, int max = 255, bool readOnly = true, VarFun varFun = nullptr, int pointer = 0) {
     JsonObject var = initVar(parent, id, type, readOnly, varFun);
+    if (pointer != 0) {
+      if (mdl->setValueRowNr == UINT8_MAX)
+        var["p"] = pointer; //store pointer!
+      else
+        var["p"][mdl->setValueRowNr] = pointer; //store pointer in array! 
+      ppf("pointer stored %s: %s\n", id, (void *)(var["p"].as<String>().c_str()));
+    }
     if (min) var["min"] = min;
     if (max && max != UINT16_MAX) var["max"] = max;
 
@@ -184,11 +200,11 @@ public:
         if (var["value"].is<JsonArray>()) {
           int rowNr = 0;
           for (JsonVariant val:var["value"].as<JsonArray>()) {
-            changeFunExists |= varFun(var, rowNr++, f_ChangeFun);
+            changeFunExists |= mdl->callVarChangeFun(var, rowNr++, true); //init, also set var["p"]
           }
         }
         else {
-          changeFunExists = varFun(var, UINT8_MAX, f_ChangeFun); //if no rowNr use rowNr 0
+          changeFunExists = mdl->callVarChangeFun(var, UINT8_MAX, true); //init, also set var["p"]
         }
 
         if (changeFunExists)
@@ -201,11 +217,13 @@ public:
 
   JsonObject initVar(JsonObject parent, const char * id, const char * type, bool readOnly = true, VarFun varFun = nullptr);
 
-  bool callVarFun(const char * varID, unsigned8 rowNr = UINT8_MAX, unsigned8 funType = f_ChangeFun) {
+  //checks if var has fun of type funType implemented by calling it and checking result (for uiFun on RO var, also valueFun is called)
+  bool callVarFun(const char * varID, unsigned8 rowNr = UINT8_MAX, unsigned8 funType = f_ValueFun) {
     JsonObject var = mdl->findVar(varID);
     return callVarFun(var, rowNr, funType);
   }
 
+  //checks if var has fun of type funType implemented by calling it and checking result (for uiFun on RO var, also valueFun is called)
   bool callVarFun(JsonObject var, unsigned8 rowNr = UINT8_MAX, unsigned8 funType = f_ValueFun) {
     bool result = false;
 
@@ -274,7 +292,7 @@ public:
   }
   //return the options from valueFun (don't forget to clear responseObject)
   JsonArray getOptions(JsonObject var) {
-    callVarFun(var, UINT8_MAX, f_UIFun); //tricky: fills the options table
+    callVarFun(var, UINT8_MAX, f_UIFun); //rebuild options
     return web->getResponseObject()[mdl->varID(var)]["options"];
   }
   void clearOptions(JsonObject var) {

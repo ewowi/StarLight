@@ -131,15 +131,15 @@ void SysModFiles::loop() {
     }
     root.close();
 
-    ui->callVarFun(mdl->findVar("drsize")); //valueFun
+    ui->callVarFun("drsize");
 
     for (JsonObject childVar: mdl->varChildren("fileTbl"))
-      ui->callVarFun(childVar, UINT8_MAX, f_ValueFun);
+      ui->callVarFun(childVar);
   }
 }
 
 void SysModFiles::loop10s() {
-  ui->callVarFun(mdl->findVar("drsize"));
+  ui->callVarFun("drsize");
 }
 
 bool SysModFiles::remove(const char * path) {
