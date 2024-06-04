@@ -1327,6 +1327,21 @@ class GameOfLife: public Effect {
   unsigned8 dim() {return _3D;}
   const char * tags() {return "💡💫";}
 
+  void drawGrid(Leds &leds, byte *cells, CRGB bgColor, byte overlay = 0, bool drawAliveRandomColor = false, bool drawDead =false, bool blur = false) {
+    // Redraws the grid. drawAliveRandomColor is used when palettes change or new game is started drawDead is used to blur dead cells further
+    for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
+      if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
+      bool alive = getBitValue(cells, leds.XYZNoSpin({x,y,z}));
+      if (overlay) {
+        if (overlay == 1 && alive) leds.setPixelColor({x,y,z}, bgColor, 0);
+        else if (overlay == 2 && !alive) leds.setPixelColor({x,y,z}, bgColor);
+        continue;
+      }
+      else if (drawAliveRandomColor && alive) leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0);
+      else if (drawDead && !alive) blur ? leds.setPixelColor({x,y,z}, bgColor) : leds.setPixelColor({x,y,z}, bgColor, 0);
+    }
+  }
+
   void loop(Leds &leds) {
     const uint16_t dataSize = ((leds.size.x * leds.size.y * leds.size.z + 7) / 8);
     uint8_t  *gliderLength     = leds.sharedData.bind(gliderLength);
@@ -1342,14 +1357,17 @@ class GameOfLife: public Effect {
     bool *surviveNumbers = leds.sharedData.bind(surviveNumbers, sizeof(bool) * 9);
     byte *prevRuleset    = leds.sharedData.bind(prevRuleset);
     byte *setUp = leds.sharedData.bind(setUp); // call == 0 not working temp fix
+    CRGB *prevPalette = leds.sharedData.bind(prevPalette);
 
-    Coord3D bgC = mdl->getValue("Background Color");
-    CRGB bgColor = CRGB(bgC.x, bgC.y, bgC.z);
+    Coord3D bgC = mdl->getValue("Background or Overlay Color");
+    CRGB bgColor = CRGB(bgC.x, bgC.y, bgC.z); // Overlay color if toggled
     CRGB color = ColorFromPalette(leds.palette, random8()); // used if all parents died
+    byte overlay = mdl->getValue("Overlay");
 
     //start new game of life
     if (call == 0  || *setUp != 123|| (*generation == 0 && *step < sys->now)) {
       *setUp = 123; // quick fix for effect starting up
+      *prevPalette = ColorFromPalette(leds.palette, 0);
       *generation = 1;
       mdl->getValue("Disable Pause") ? *step = sys->now : *step = sys->now + 1500;
 
@@ -1360,13 +1378,10 @@ class GameOfLife: public Effect {
         if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
         if (random8(100) < lifeChance) {
           setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
-          leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0);
         }
-        else {
-          leds.setPixelColor({x,y,z}, bgColor, 0);
-        }   
       }
       memcpy(futureCells, cells, dataSize); 
+      drawGrid(leds, cells, bgColor, overlay, true, true, false);
 
       // Change CRCs
       uint16_t crc = crc16((const unsigned char*)cells, dataSize);
@@ -1377,17 +1392,19 @@ class GameOfLife: public Effect {
       *cubeGliderLength = *gliderLength * 6; // change later for rectangular cuboid
       return;
     }
-    stackUnsigned8 speed = mdl->getValue("Game Speed (FPS)");
 
-    if (*step > sys->now) { // blend dead cells while paused
-      for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-        if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
-        if (!getBitValue(cells, leds.XYZNoSpin({x,y,z}))) leds.setPixelColor({x,y,z}, bgColor);
-      }
-      return;
-    }
-    if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) return; // Check if enough time has passed for updating
+    byte blendVal = leds.fixture->globalBlend; // Used for different blend model
+    bool bgBlendMode = blendVal > 200;
+    if (overlay) drawGrid(leds, cells, bgColor, overlay); // Immediately redraw overlay
+    if (*prevPalette != ColorFromPalette(leds.palette, 0)) {   // Palette changed, redraw grid
+      drawGrid(leds, cells, bgColor, false, true, true);
+      *prevPalette = ColorFromPalette(leds.palette, 0);
+    } 
+    if (*step > sys->now && !overlay && !bgBlendMode) drawGrid(leds, cells, bgColor, 0, false, true, true); // Blend dead cells while paused
     
+    stackUnsigned8 speed = mdl->getValue("Game Speed (FPS)");
+    if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) return; // Check if enough time has passed for updating
+
     //Rule set for game of life
     byte ruleset = mdl->getValue("Ruleset");
     if (ruleset != *prevRuleset || ruleset == 0) { // Custom rulestring always parsed
@@ -1418,6 +1435,7 @@ class GameOfLife: public Effect {
     stackUnsigned8 mutation = mdl->getValue("Mutation Chance");
     bool wrap = mdl->getValue("Wrap");
     bool cellChanged = false; // Detect still live and dead grids
+
     //Loop through all cells. Count neighbors, apply rules, setPixel
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
       Coord3D cPos = {x, y, z}; //current cells position
@@ -1451,21 +1469,24 @@ class GameOfLife: public Effect {
         // Loneliness or Overpopulation
         cellChanged = true;
         setBitValue(futureCells, cIndex, false);
-        leds.setPixelColor(cPos, bgColor);
+        if (!overlay) leds.setPixelColor(cPos, bgColor, bgBlendMode ? blendVal - 190 : blendVal);
+        else if (overlay == 2) leds.setPixelColor(cPos, bgColor);
       }
       else if (!cellValue && birthNumbers[neighbors]){
         // Reproduction
         setBitValue(futureCells, cIndex, true);
         cellChanged = true;
+        if (overlay == 2) continue;
         CRGB randomParentColor = color; // last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8(colorCount)];
         if (randomParentColor == bgColor) randomParentColor = ColorFromPalette(leds.palette, random8()); // needed for tilt, pan, roll
-        if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8()); // mutate
+        if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8());      // mutate
+        if (overlay == 1) randomParentColor = bgColor;
         leds.setPixelColor(cPos, randomParentColor, 0);
       }
       else {
         // Blending, fade dead cells further causing blurring effect to moving cells
-        if (!cellValue) leds.setPixelColor(cPos, bgColor);
+        if (!cellValue && !overlay && !bgBlendMode) leds.setPixelColor(cPos, bgColor);
       }
     }
 
@@ -1498,7 +1519,17 @@ class GameOfLife: public Effect {
 
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
-    ui->initCoord3D(parentVar, "Background Color", {0,0,0}, 0, 255);
+    ui->initSelect(parentVar, "Overlay", 0, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case f_UIFun: {
+        JsonArray options = ui->setOptions(var);
+        options.add("None");
+        options.add("Background");
+        options.add("Alive Cells");
+        return true;
+      }
+      default: return false;
+    }});
+    ui->initCoord3D(parentVar, "Background or Overlay Color", {0,0,0}, 0, 255);
     ui->initSelect(parentVar, "Ruleset", 1, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun: {
         JsonArray options = ui->setOptions(var);
