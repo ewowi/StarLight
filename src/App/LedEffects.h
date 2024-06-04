@@ -1381,8 +1381,7 @@ class GameOfLife: public Effect {
   void loop(Leds &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     byte overlay      = leds.sharedData.read<byte>();
-    // Coord3D bgC       = leds.sharedData.read<Coord3D>();
-    Coord3D bgC       = mdl->getValue("Background or Overlay Color").as<Coord3D>();
+    Coord3D bgC       = leds.sharedData.read<Coord3D>();
     byte ruleset      = leds.sharedData.read<byte>();
     uint8_t speed     = leds.sharedData.read<uint8_t>();
     byte lifeChance   = leds.sharedData.read<byte>();
@@ -1568,13 +1567,11 @@ class GameOfLife: public Effect {
       }
       default: return false;
     }});
-    // ui->initCoord3D(parentVar, "Background or Overlay Color", leds.sharedData.write<Coord3D>({0,0,0}), 0, 255);
-    ui->initCoord3D(parentVar, "Background or Overlay Color", {0,0,0}, 0, 255);
+    ui->initCoord3D(parentVar, "Background or Overlay Color", leds.sharedData.write<Coord3D>({0,0,0}), 0, 255);
     ui->initSelect(parentVar, "ruleset", leds.sharedData.write<uint8_t>(1), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case f_UIFun: {
         JsonArray options = ui->setOptions(var);
         options.add("Custom B/S");
-        // options.add("Day & Night B3678/S34678"); //while custom is disabled
         options.add("Conway's Game of Life B3/S23");
         options.add("HighLife B36/S23");
         options.add("InverseLife B0123478/S34678");

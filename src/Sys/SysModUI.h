@@ -99,6 +99,10 @@ public:
   JsonObject initCoord3D(JsonObject parent, const char * id, Coord3D value = {UINT16_MAX, UINT16_MAX, UINT16_MAX}, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndUpdate<Coord3D>(parent, id, "coord3D", value, min, max, readOnly, varFun);
   }
+  //init a Coord3D using referenced value
+  JsonObject initCoord3D(JsonObject parent, const char * id, Coord3D *value = nullptr, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndUpdate<Coord3D>(parent, id, "coord3D", value, min, max, readOnly, varFun);
+  }
 
   //init a range slider, range between 0 and 255!
   JsonObject initSlider(JsonObject parent, const char * id, int value = UINT16_MAX, int min = 0, int max = 255, bool readOnly = false, VarFun varFun = nullptr) {

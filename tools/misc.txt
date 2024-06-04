@@ -8,6 +8,7 @@ Copy System Modules from MoonModules/StarLeds to upstream
 cd ~/Developer/GitHub/MoonModules/StarLeds
 ls ../../ewowi/StarBase/src/Sys
 cp ./src/Sys/* ../../ewowi/StarBase/src/Sys
+cp ./src/User/* ../../ewowi/StarBase/src/User
 cp ./tools/* ../../ewowi/StarBase/tools
 cp ./data/index* ../../ewowi/StarBase/data
 
