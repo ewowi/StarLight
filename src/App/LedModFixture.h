@@ -27,7 +27,7 @@ public:
         ui->setLabel(var, "On");
         return true;
       case f_ChangeFun:
-        ui->callVarFun("bri", UINT8_MAX, f_ChangeFun); //set FastLed brightness
+        mdl->callVarChangeFun(mdl->findVar("bri"), UINT8_MAX, true); //set FastLed brightness (init is true so bri value not send via udp)
         return true;
       default: return false;
     }});
@@ -107,7 +107,7 @@ public:
       default: return false;
     }});
 
-    ui->initSelect(currentVar, "viewRot", viewRotation, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSelect(currentVar, "viewRot", &viewRotation, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun: {
         ui->setLabel(var, "Rotation");
         // ui->setComment(var, "View rotation");
@@ -120,15 +120,10 @@ public:
           options.add("Moving heads GEQ");
         #endif
         return true; }
-      case f_ChangeFun:
-        this->viewRotation = var["value"];
-        // if (!var["value"])
-        //   eff->fixture.head = {0,0,0};
-        return true;
       default: return false; 
     }});
 
-    currentVar = ui->initSelect(parentVar, "fixture", eff->fixture.fixtureNr, false ,[](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    currentVar = ui->initSelect(parentVar, "fixture", &eff->fixture.fixtureNr, false ,[](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun: {
         // ui->setComment(var, "Fixture to display effect on");
         JsonArray options = ui->setOptions(var);
@@ -141,7 +136,6 @@ public:
         }
         return true; }
       case f_ChangeFun: {
-        eff->fixture.fixtureNr = var["value"];
         eff->fixture.doMap = true;
         eff->fixture.doAllocPins = true;
 
@@ -181,12 +175,9 @@ public:
       default: return false;
     }});
 
-    ui->initNumber(parentVar, "fps", eff->fps, 1, 999, false , [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "fps", &eff->fps, 1, 999, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun:
         ui->setComment(var, "Frames per second");
-        return true;
-      case f_ChangeFun:
-        eff->fps = var["value"];
         return true;
       default: return false; 
     }});
@@ -198,13 +189,10 @@ public:
       default: return false;
     }});
 
-    ui->initCheckBox(parentVar, "fShow", eff->fShow, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "fShow", &eff->fShow, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun:
         ui->setLabel(var, "FastLed show");
         ui->setComment(var, "dev performance tuning");
-        return true;
-      case f_ChangeFun:
-        eff->fShow = var["value"];
         return true;
       default: return false; 
     }});

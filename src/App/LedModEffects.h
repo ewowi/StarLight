@@ -112,7 +112,7 @@ public:
 
           if (leds->fx < effects.effects.size()) {
 
-            leds->sharedData.clear(); //make sure all values are 0
+            leds->sharedData.reset(); //make sure all values are 0 and reset for a fresh start of the effect
 
             Effect* effect = effects.effects[leds->fx];
 
@@ -339,12 +339,7 @@ public:
     //   default: return false;
     // }}); //fxLayout
 
-    ui->initSlider(parentVar, "Blending", fixture.globalBlend, 0, 255, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ChangeFun:
-        fixture.globalBlend = var["value"];
-        return true;
-      default: return false;
-    }});
+    ui->initSlider(parentVar, "Blending", &fixture.globalBlend);
 
     #ifdef STARBASE_USERMOD_E131
       // if (e131mod->isEnabled) {
@@ -358,7 +353,7 @@ public:
           // ui->dashVarChanged = true;
           // //rebuild the table
           for (JsonObject childVar: mdl->varChildren("e131Tbl"))
-            ui->callVarFun(childVar, UINT8_MAX, f_ValueFun);
+            ui->callVarFun(childVar);
 
       // }
       // else
