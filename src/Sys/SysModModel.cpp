@@ -274,15 +274,15 @@ bool SysModModel::callVarChangeFun(JsonObject var, unsigned8 rowNr, bool init) {
       else
         ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
     }
-    else if (var["type"] == "text") {
-      const char *valuePointer = (const char *)pointer;
-      if (valuePointer != nullptr) {
-        *valuePointer = value;
-        ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
-      }
-      else
-        ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
-    }
+    // else if (var["type"] == "text") {
+    //   const char *valuePointer = (const char *)pointer;
+    //   if (valuePointer != nullptr) {
+    //     *valuePointer = value;
+    //     ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+    //   }
+    //   else
+    //     ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+    // }
     else if (var["type"] == "coord3D") {
       Coord3D *valuePointer = (Coord3D *)pointer;
       if (valuePointer != nullptr) {
