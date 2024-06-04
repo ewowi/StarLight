@@ -631,7 +631,7 @@ function receiveData(json) {
         let variable = value.var;
         let rowNr = value.rowNr == null?UINT8_MAX:value.rowNr;
         let nodeId = variable.id + ((rowNr != UINT8_MAX)?"#" + rowNr:"");
-        //if var object with .n, create .n (e.g. see setEffect and fixtureGenChFun, tbd: )
+        //if var object with .n, create .n (e.g. see fx.changefun (setEffect) and fixtureGenChFun, tbd: )
         ppf("receiveData details", key, variable.id, nodeId, rowNr);
         if (gId(nodeId + "_n")) gId(nodeId + "_n").remove(); //remove old ndiv
 

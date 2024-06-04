@@ -237,12 +237,12 @@ void SysModSystem::loop1s() {
   loopCounter = 0;
 }
 void SysModSystem::loop10s() {
-  ui->callVarFun(mdl->findVar("heap"));
-  ui->callVarFun(mdl->findVar("mainStack"));
-  ui->callVarFun(mdl->findVar("tcpStack"));
+  ui->callVarFun("heap");
+  ui->callVarFun("mainStack");
+  ui->callVarFun("tcpStack");
 
   if (psramFound()) {
-    ui->callVarFun(mdl->findVar("psram"));
+    ui->callVarFun("psram");
   }
 
   //heartbeat

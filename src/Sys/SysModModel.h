@@ -239,7 +239,7 @@ public:
         //trick to remove null values
         if (var["value"].isNull() || var["value"].as<unsigned16>() == UINT16_MAX) {
           var.remove("value");
-          ppf("dev setValue value removed %s %s\n", varID(var), var["oldValue"].as<String>().c_str());
+          // ppf("dev setValue value removed %s %s\n", varID(var), var["oldValue"].as<String>().c_str());
         }
         else {
           //only print if ! read only
@@ -282,7 +282,7 @@ public:
       }
     }
 
-    if (changed) setValueChangeFun(var, rowNr);
+    if (changed) callVarChangeFun(var, rowNr);
     
     return var;
   }
@@ -349,8 +349,8 @@ public:
   //recursively add values in  a variant
   void varToValues(JsonObject var, JsonArray values);
 
-  //run the change function and send response to all? websocket clients
-  void setValueChangeFun(JsonObject var, unsigned8 rowNr = UINT8_MAX);
+  //sends dash var change to udp (if init),  sets pointer if pointer var and run changeFun
+  bool callVarChangeFun(JsonObject var, unsigned8 rowNr = UINT8_MAX, bool init = false);
 
   //pseudo VarObject: public JsonObject functions
   const char * varID(JsonObject var) {return var["id"];}
