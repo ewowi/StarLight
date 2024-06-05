@@ -1382,6 +1382,7 @@ class GameOfLife: public Effect {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     byte overlay      = leds.sharedData.read<byte>();
     Coord3D bgC       = leds.sharedData.read<Coord3D>();
+    // Coord3D bgC       = mdl->getValue("Background or Overlay Color").as<Coord3D>();
     byte ruleset      = leds.sharedData.read<byte>();
     uint8_t speed     = leds.sharedData.read<uint8_t>();
     byte lifeChance   = leds.sharedData.read<byte>();
@@ -1391,8 +1392,8 @@ class GameOfLife: public Effect {
 
     //Binding of loop persistent values (pointers)
     const uint16_t dataSize = ((leds.size.x * leds.size.y * leds.size.z + 7) / 8);
-    uint8_t  *gliderLength     = leds.sharedData.readWrite<uint8_t>();
-    uint8_t  *cubeGliderLength = leds.sharedData.readWrite<uint8_t>();
+    uint16_t *gliderLength     = leds.sharedData.readWrite<uint16_t>();
+    uint16_t *cubeGliderLength = leds.sharedData.readWrite<uint16_t>();
     uint16_t *oscillatorCRC    = leds.sharedData.readWrite<uint16_t>();
     uint16_t *spaceshipCRC     = leds.sharedData.readWrite<uint16_t>();
     uint16_t *cubeGliderCRC    = leds.sharedData.readWrite<uint16_t>();
@@ -1406,17 +1407,17 @@ class GameOfLife: public Effect {
     byte *setUp       = leds.sharedData.readWrite<byte>(); // call == 0 not working temp fix
     CRGB *prevPalette = leds.sharedData.readWrite<CRGB>();
 
-    CRGB bgColor = CRGB(bgC.x, bgC.y, bgC.z); // Overlay color if toggled
-    CRGB color = ColorFromPalette(leds.palette, random8()); // used if all parents died
+    CRGB bgColor = CRGB(bgC.x, bgC.y, bgC.z);                 // Overlay color if toggled
+    CRGB color   = ColorFromPalette(leds.palette, random8()); // Used if all parents died
 
-    //start new game of life
+    // Start New Game of Life
     if (call == 0  || *setUp != 123|| (*generation == 0 && *step < sys->now)) {
       *setUp = 123; // quick fix for effect starting up
       *prevPalette = ColorFromPalette(leds.palette, 0);
       *generation = 1;
       disablePause ? *step = sys->now : *step = sys->now + 1500;
 
-      //Setup Grid
+      // Setup Grid
       memset(cells, 0, dataSize);
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
         if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
@@ -1428,7 +1429,7 @@ class GameOfLife: public Effect {
       // Change CRCs
       uint16_t crc = crc16((const unsigned char*)cells, dataSize);
       *oscillatorCRC = crc;
-      *spaceshipCRC = crc;
+      *spaceshipCRC  = crc;
       *cubeGliderCRC = crc;
       *gliderLength  = lcm(leds.size.y, leds.size.x) * 4;
       *cubeGliderLength = *gliderLength * 6; // change later for rectangular cuboid
@@ -1568,6 +1569,7 @@ class GameOfLife: public Effect {
       default: return false;
     }});
     ui->initCoord3D(parentVar, "Background or Overlay Color", leds.sharedData.write<Coord3D>({0,0,0}), 0, 255);
+    // ui->initCoord3D(parentVar, "Background or Overlay Color", {0,0,0}, 0, 255);
     ui->initSelect(parentVar, "ruleset", leds.sharedData.write<uint8_t>(1), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case f_UIFun: {
         JsonArray options = ui->setOptions(var);
