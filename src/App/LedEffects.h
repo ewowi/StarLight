@@ -1360,7 +1360,7 @@ uint16_t lcm(uint16_t a, uint16_t b) {
 // Modified By: Brandon Butler in 2024
 class GameOfLife: public Effect {
   const char * name() {return "GameOfLife";}
-  uint8_t dim() {return _3D;}
+  uint8_t dim() {return _3D;} //supports 3D but also 2D (1D as well?)
   const char * tags() {return "💡💫";}
 
   void loop(Leds &leds) {
@@ -1407,7 +1407,7 @@ class GameOfLife: public Effect {
       memset(cells, 0, dataSize);
       memset(futureCells, 0, dataSize);
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-        if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
+        if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
         if (map(random8(), 0, 255, 0, 100) < lifeChance) {
           setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
           setBitValue(futureCells, leds.XYZNoSpin({x,y,z}), true);
@@ -1528,7 +1528,7 @@ class GameOfLife: public Effect {
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
       Coord3D cPos = {x, y, z}; //current cells position
       uint16_t cIndex = leds.XYZNoSpin(cPos);
-      if (!leds.isMapped(leds.XYZ(x,y,z))) continue; //skip if not physical led
+      if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZ(x,y,z))) continue; //skip if not physical led
       byte neighbors = 0;
       byte colorCount = 0; //track number of valid colors
       CRGB nColors[9]; // track up to 9 colors (3D / alt ruleset), dying cells may overwrite but this wont be used

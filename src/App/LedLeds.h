@@ -199,6 +199,7 @@ public:
   uint16_t fx = -1;
   unsigned8 projectionNr = -1;
   unsigned8 effectDimension = -1;
+  unsigned8 projectionDimension = -1;
 
   Coord3D startPos = {0,0,0}, endPos = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
   unsigned8 proTiltSpeed = 128;
