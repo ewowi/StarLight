@@ -1380,9 +1380,6 @@ class GameOfLife: public Effect {
 
   void loop(Leds &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
-    byte overlay      = leds.sharedData.read<byte>();
-    Coord3D bgC       = leds.sharedData.read<Coord3D>();
-    // Coord3D bgC       = mdl->getValue("Background or Overlay Color").as<Coord3D>();
     byte ruleset      = leds.sharedData.read<byte>();
     uint8_t speed     = leds.sharedData.read<uint8_t>();
     byte lifeChance   = leds.sharedData.read<byte>();
@@ -1407,7 +1404,7 @@ class GameOfLife: public Effect {
     byte *setUp       = leds.sharedData.readWrite<byte>(); // call == 0 not working temp fix
     CRGB *prevPalette = leds.sharedData.readWrite<CRGB>();
 
-    CRGB bgColor = CRGB(bgC.x, bgC.y, bgC.z);                 // Overlay color if toggled
+    CRGB bgColor = CRGB::Black;
     CRGB color   = ColorFromPalette(leds.palette, random8()); // Used if all parents died
 
     // Start New Game of Life
@@ -1424,7 +1421,7 @@ class GameOfLife: public Effect {
         if (random8(100) < lifeChance) setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
       }
       memcpy(futureCells, cells, dataSize); 
-      drawGrid(leds, cells, bgColor, overlay, true, true, false);
+      drawGrid(leds, cells, bgColor, false, true, true, false);
 
       // Change CRCs
       uint16_t crc = crc16((const unsigned char*)cells, dataSize);
@@ -1438,12 +1435,11 @@ class GameOfLife: public Effect {
 
     byte blendVal = leds.fixture->globalBlend; // Used for different blend mode
     bool bgBlendMode = blendVal > 200;
-    if (overlay) drawGrid(leds, cells, bgColor, overlay); // Immediately redraw overlay
     if (*prevPalette != ColorFromPalette(leds.palette, 0)) {   // Palette changed, redraw grid
       drawGrid(leds, cells, bgColor, false, true, true);
       *prevPalette = ColorFromPalette(leds.palette, 0);
     } 
-    if (*step > sys->now && !overlay && !bgBlendMode) drawGrid(leds, cells, bgColor, 0, false, true, true); // Blend dead cells while paused
+    if (*step > sys->now && !bgBlendMode) drawGrid(leds, cells, bgColor, 0, false, true, true); // Blend dead cells while paused
 
     if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) return; // Check if enough time has passed for updating
 
@@ -1508,24 +1504,21 @@ class GameOfLife: public Effect {
         // Loneliness or Overpopulation
         cellChanged = true;
         setBitValue(futureCells, cIndex, false);
-        if (!overlay) leds.setPixelColor(cPos, bgColor, bgBlendMode ? blendVal - 190 : blendVal);
-        else if (overlay == 2) leds.setPixelColor(cPos, bgColor);
+        leds.setPixelColor(cPos, bgColor, bgBlendMode ? blendVal - 190 : blendVal);
       }
       else if (!cellValue && birthNumbers[neighbors]){
         // Reproduction
         setBitValue(futureCells, cIndex, true);
         cellChanged = true;
-        if (overlay == 2) continue;
         CRGB randomParentColor = color; // last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8(colorCount)];
         if (randomParentColor == bgColor) randomParentColor = ColorFromPalette(leds.palette, random8()); // needed for tilt, pan, roll
         if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8());      // mutate
-        if (overlay == 1) randomParentColor = bgColor;
         leds.setPixelColor(cPos, randomParentColor, 0);
       }
       else {
         // Blending, fade dead cells further causing blurring effect to moving cells
-        if (!cellValue && !overlay && !bgBlendMode) leds.setPixelColor(cPos, bgColor);
+        if (!cellValue && !bgBlendMode) leds.setPixelColor(cPos, bgColor);
       }
     }
 
@@ -1549,27 +1542,8 @@ class GameOfLife: public Effect {
     *step = sys->now;
   }
 
-  //Todo:
-  // - Fix 3D bug
-  // - Allow background blending (option 1)
-  // - Color based on age? (Start green fade to red using blend on draw loop for alive cells)
-  // - Infinite Option (track born cells, spawn random glider/exploder)
-  // - Infinite Option (change ruleset every x generations)
-
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
-    ui->initSelect(parentVar, "Overlay", leds.sharedData.write<byte>(0), false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
-      case f_UIFun: {
-        JsonArray options = ui->setOptions(var);
-        options.add("None");
-        options.add("Background");
-        options.add("Alive Cells");
-        return true;
-      }
-      default: return false;
-    }});
-    ui->initCoord3D(parentVar, "Background or Overlay Color", leds.sharedData.write<Coord3D>({0,0,0}), 0, 255);
-    // ui->initCoord3D(parentVar, "Background or Overlay Color", {0,0,0}, 0, 255);
     ui->initSelect(parentVar, "ruleset", leds.sharedData.write<uint8_t>(1), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case f_UIFun: {
         JsonArray options = ui->setOptions(var);
