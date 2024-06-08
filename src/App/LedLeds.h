@@ -303,7 +303,7 @@ public:
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
   bool isMapped(unsigned16 indexV) {
-    return mappingTable[indexV].indexes;
+    return indexV < mappingTable.size() && mappingTable[indexV].indexes;
   }
 
   void blur1d(fract8 blur_amount)
