@@ -1374,6 +1374,7 @@ class GameOfLife: public Effect {
     uint8_t mutation  = leds.sharedData.read<uint8_t>();
     bool wrap         = leds.sharedData.read<bool>();
     bool disablePause = leds.sharedData.read<bool>();
+    bool colorByAge   = leds.sharedData.read<bool>();
 
     //Binding of loop persistent values (pointers)
     const uint16_t dataSize = ((leds.size.x * leds.size.y * leds.size.z + 7) / 8);
@@ -1398,7 +1399,7 @@ class GameOfLife: public Effect {
     // Start New Game of Life
     if (call == 0  || *setUp != 123|| (*generation == 0 && *step < sys->now)) {
       *setUp = 123; // quick fix for effect starting up
-      *prevPalette = ColorFromPalette(leds.palette, 0);
+      *prevPalette = colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, 0);
       *generation = 1;
       disablePause ? *step = sys->now : *step = sys->now + 1500;
 
@@ -1408,7 +1409,7 @@ class GameOfLife: public Effect {
         if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
         if (random8(100) < lifeChance) {
           setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
-          leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0);
+          leds.setPixelColor({x,y,z}, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, random8()), 0);
         }
         else leds.setPixelColor({x,y,z}, bgColor, 0);
       }
@@ -1426,12 +1427,12 @@ class GameOfLife: public Effect {
 
     byte blur = leds.fixture->globalBlend;
     int fadedBackground = 0;
-    if (blur > 220) {
+    if (blur > 220 && !colorByAge) {
       fadedBackground = bgColor.r + bgColor.g + bgColor.b + 20 + (blur-220);
       blur -= (blur-220);
     }
     bool blurDead = *step > sys->now && !overlay && !fadedBackground;
-    bool paletteChanged = *prevPalette != ColorFromPalette(leds.palette, 0);
+    bool paletteChanged = *prevPalette != ColorFromPalette(leds.palette, 0) && !colorByAge;
 
     if (paletteChanged) *prevPalette = ColorFromPalette(leds.palette, 0);
     // Redraw Loop
@@ -1439,10 +1440,11 @@ class GameOfLife: public Effect {
       if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
       bool alive = getBitValue(cells, leds.XYZNoSpin({x,y,z}));
       // Redraw alive if palette changed or overlay1
-      if      (alive && paletteChanged)  leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0); // Random color if palette changed
-      else if (alive && overlay == 1)    leds.setPixelColor({x,y,z}, bgColor, 0);   // Overlay color
+      if      (alive && paletteChanged)         leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0); // Random color if palette changed
+      else if (alive && overlay == 1)           leds.setPixelColor({x,y,z}, bgColor, 0);     // Overlay color
+      else if (alive && colorByAge && !*generation) leds.setPixelColor({x,y,z}, CRGB::Red, 248); // Age alive cells while paused
       // Redraw dead if palette changed or overlay2 or blur paused game
-      if      (!alive && paletteChanged)   leds.setPixelColor({x,y,z}, bgColor, 0); // Remove blended dead cells
+      if      (!alive && paletteChanged)   leds.setPixelColor({x,y,z}, bgColor, 0);       // Remove blended dead cells
       else if (!alive && overlay == 2)     leds.setPixelColor({x,y,z}, bgColor, blur);    // Overlay color
       else if (!alive && blurDead)         leds.setPixelColor({x,y,z}, bgColor, blur);    // Blend dead cells while paused
     }
@@ -1524,7 +1526,9 @@ class GameOfLife: public Effect {
         if (randomParentColor == bgColor) randomParentColor = ColorFromPalette(leds.palette, random8()); // needed for tilt, pan, roll
         if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8());      // mutate
         if (overlay == 1) randomParentColor = bgColor;
-        leds.setPixelColor(cPos, randomParentColor, 0);
+        // leds.setPixelColor(cPos, randomParentColor, 0);
+        leds.setPixelColor(cPos, colorByAge ? CRGB::Green : randomParentColor, 0);
+
       }
       else {
         // Blending, fade dead cells further causing blurring effect to moving cells
@@ -1532,6 +1536,7 @@ class GameOfLife: public Effect {
           CRGB val = leds.getPixelColor(cPos);
           if (fadedBackground < val.r + val.g + val.b) leds.setPixelColor(cPos, bgColor, blur);
         }
+        if (cellValue && colorByAge) leds.setPixelColor(cPos, CRGB::Red, 248);
       }
     }
 
@@ -1554,12 +1559,6 @@ class GameOfLife: public Effect {
     (*generation)++;
     *step = sys->now;
   }
-
-  //Todo:
-  // - Allow background blending (option 1)
-  // - Color based on age? (Start green fade to red using blend on draw loop for alive cells)
-  // - Infinite Option (track born cells, spawn random glider/exploder)
-  // - Infinite Option (change ruleset every x generations)
 
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
@@ -1589,12 +1588,13 @@ class GameOfLife: public Effect {
       }
       default: return false;
     }});
-    ui->initText(parentVar, "Custom Rule String", "B/S");
-    ui->initSlider(parentVar, "Game Speed (FPS)", leds.sharedData.write<uint8_t>(20), 0, 60);    
-    ui->initSlider(parentVar, "Starting Life Density", leds.sharedData.write<uint8_t>(32), 10, 90);
-    ui->initSlider(parentVar, "Mutation Chance", leds.sharedData.write<uint8_t>(2), 0, 100);    
-    ui->initCheckBox(parentVar, "Wrap", leds.sharedData.write<bool>(true));
-    ui->initCheckBox(parentVar, "Disable Pause", leds.sharedData.write<bool>(false));
+    ui->initText    (parentVar, "Custom Rule String", "B/S");
+    ui->initSlider  (parentVar, "Game Speed (FPS)",      leds.sharedData.write<uint8_t>(20), 0, 60);    
+    ui->initSlider  (parentVar, "Starting Life Density", leds.sharedData.write<uint8_t>(32), 10, 90);
+    ui->initSlider  (parentVar, "Mutation Chance",       leds.sharedData.write<uint8_t>(2), 0, 100);    
+    ui->initCheckBox(parentVar, "Wrap",                  leds.sharedData.write<bool>(true));
+    ui->initCheckBox(parentVar, "Disable Pause",         leds.sharedData.write<bool>(false));
+    ui->initCheckBox(parentVar, "Color By Age",          leds.sharedData.write<bool>(false));
   }
 }; //GameOfLife
 
