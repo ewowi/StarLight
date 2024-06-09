@@ -1425,6 +1425,7 @@ class GameOfLife: public Effect {
       return;
     }
 
+    int aliveCount = 0; 
     byte blur = leds.fixture->globalBlend;
     int fadedBackground = 0;
     if (blur > 220 && !colorByAge) {
@@ -1439,6 +1440,7 @@ class GameOfLife: public Effect {
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
       if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
       bool alive = getBitValue(cells, leds.XYZNoSpin({x,y,z}));
+      if (alive) aliveCount++;
       // Redraw alive if palette changed or overlay1
       if      (alive && paletteChanged)         leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0); // Random color if palette changed
       else if (alive && overlay == 1)           leds.setPixelColor({x,y,z}, bgColor, 0);     // Overlay color
@@ -1492,7 +1494,7 @@ class GameOfLife: public Effect {
       for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) { // iterate through 3*3*3 matrix
         if (i==0 && j==0 && k==0) continue; // ignore itself
         Coord3D nPos = {x+i, y+j, z+k};     // neighbor position
-        if (!wrap || leds.size.z > 1 || (*generation) % 1500 == 0) { //no wrap, never wrap 3D, disable wrap every 1500 generations to prevent undetected repeats
+        if (!wrap || leds.size.z > 1 || (*generation) % 1500 == 0 || aliveCount == 5) { //no wrap, never wrap 3D, disable wrap every 1500 generations to prevent undetected repeats
           if (nPos.isOutofBounds(leds.size)) continue;
         } else { // wrap around 2D
           if (k != 0) continue; //no z axis (wrap around only for x and y
