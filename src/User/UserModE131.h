@@ -34,7 +34,7 @@ public:
       default: return false;
     }});
 
-    JsonObject currentVar = ui->initNumber(parentVar, "dch", 1, 1, 512, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    JsonObject currentVar = ui->initNumber(parentVar, "dch", &channel, 1, 512, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun:
         ui->setLabel(var, "DMX Channel");
         ui->setComment(var, "First channel");
@@ -57,7 +57,7 @@ public:
     ui->initNumber(tableVar, "e131Channel", UINT16_MAX, 1, 512, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
         for (forUnsigned8 rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
-          mdl->setValue(var, varsToWatch[rowNr].channel + mdl->getValue("dch").as<unsigned8>(), rowNr);
+          mdl->setValue(var, channel + varsToWatch[rowNr].channelOffset, rowNr);
         return true;
       case f_UIFun:
         ui->setLabel(var, "Channel");
@@ -130,7 +130,7 @@ public:
       e131Created = true;
     }
     else {
-      // e131.end()???
+      // e131.end();//???
       e131Created = false;
     }
   }
@@ -146,7 +146,7 @@ public:
 
       for (VarToWatch &varToWatch : varsToWatch) {
         for (int i=0; i < maxChannels; i++) {
-          if (i == varToWatch.channel) {
+          if (i == channel + varToWatch.channelOffset) {
             if (packet.property_values[i] != varToWatch.savedValue) {
 
               ppf("Universe %u / %u Channels | Packet#: %u / Errors: %u / CH%d: %u -> %u",
@@ -173,9 +173,9 @@ public:
     } //!e131.isEmpty()
   } //loop
 
-  void patchChannel(unsigned8 channel, const char * id, unsigned8 max = 255) {
+  void patchChannel(unsigned8 channelOffset, const char * id, unsigned8 max = 255) {
     VarToWatch varToWatch;
-    varToWatch.channel = channel;
+    varToWatch.channelOffset = channelOffset;
     varToWatch.id = id;
     varToWatch.savedValue = 0; // Always reset when (re)patching so variable gets set to DMX value even if unchanged
     varToWatch.max = max;
@@ -194,7 +194,7 @@ public:
 
   private:
     struct VarToWatch {
-      unsigned16 channel;
+      unsigned16 channelOffset;
       const char * id = nullptr;
       unsigned16 max = -1;
       unsigned8 savedValue = -1;
@@ -204,6 +204,7 @@ public:
 
     ESPAsyncE131 e131;
     boolean e131Created = false;
+    unsigned16 channel = 1;
     unsigned16 universe = 1;
     unsigned8 universeCount = 1;
 
