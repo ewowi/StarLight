@@ -1363,6 +1363,31 @@ class GameOfLife: public Effect {
   uint8_t dim() {return _3D;} //supports 3D but also 2D (1D as well?)
   const char * tags() {return "💡💫";}
 
+  void placePentomino(Leds &leds, byte *futureCells) {
+    byte pattern[5][2] = {{1, 0}, {0, 1}, {1, 1}, {2, 1}, {2, 2}}; // R-pentomino
+    if (!random8(5)) pattern[0][1] = 3; // 1/5 chance to use glider
+    for (int attempts = 0; attempts < 100; attempts++) {
+      int x = random8(1, leds.size.x - 3);
+      int y = random8(1, leds.size.y - 5);
+      int z = random8(2) * (leds.size.z - 1);
+      bool canPlace = true;
+      for (int i = 0; i < 5; i++) {
+        int nx = x + pattern[i][0];
+        int ny = y + pattern[i][1];
+        if (getBitValue(futureCells, leds.XYZNoSpin({nx, ny, z}))) {canPlace = false; break;}
+      }
+      if (canPlace || attempts == 99) {
+        for (int i = 0; i < 5; i++) {
+          int nx = x + pattern[i][0];
+          int ny = y + pattern[i][1];
+          setBitValue(futureCells, leds.XYZNoSpin({nx, ny, z}), true);
+          leds.setPixelColor({nx, ny, z}, ColorFromPalette(leds.palette, random8()), 0);
+        }
+        return;   
+      }
+    }
+  }
+
   void loop(Leds &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     byte overlay      = leds.sharedData.read<byte>();
@@ -1375,6 +1400,7 @@ class GameOfLife: public Effect {
     bool wrap         = leds.sharedData.read<bool>();
     bool disablePause = leds.sharedData.read<bool>();
     bool colorByAge   = leds.sharedData.read<bool>();
+    bool infinite     = leds.sharedData.read<bool>();
 
     //Binding of loop persistent values (pointers)
     const uint16_t dataSize = ((leds.size.x * leds.size.y * leds.size.z + 7) / 8);
@@ -1549,6 +1575,11 @@ class GameOfLife: public Effect {
 
     bool repetition = false;
     if (!cellChanged || crc == *oscillatorCRC || crc == *spaceshipCRC || crc == *cubeGliderCRC) repetition = true; //check if cell changed this gen and compare previous stored crc values
+    if ((repetition && infinite) || (infinite && !random8(50))) {
+      placePentomino(leds, futureCells); // place R-pentomino/Glider if infinite mode is enabled
+      memcpy(cells, futureCells, dataSize);
+      repetition = false;
+    }
     if (repetition) {
       *generation = 0; //reset on next call
       disablePause ? *step = sys->now : *step = sys->now + 1000;
@@ -1597,6 +1628,7 @@ class GameOfLife: public Effect {
     ui->initCheckBox(parentVar, "Wrap",                  leds.sharedData.write<bool>(true));
     ui->initCheckBox(parentVar, "Disable Pause",         leds.sharedData.write<bool>(false));
     ui->initCheckBox(parentVar, "Color By Age",          leds.sharedData.write<bool>(false));
+    ui->initCheckBox(parentVar, "Infinite",              leds.sharedData.write<bool>(false));
   }
 }; //GameOfLife
 
