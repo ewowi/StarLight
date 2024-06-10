@@ -133,7 +133,7 @@ class SharedData {
     // free(data);
   }
 
-  void clear() {
+  void reset() {
     memset(data, 0, bytesAllocated);
     index = 0;
   }
@@ -142,8 +142,9 @@ class SharedData {
     index = 0;
   }
 
+  //returns the next pointer to a specified type (length for arrays)
   template <typename Type>
-  Type * bind(Type * returnValue, int length = 1) {
+  Type * readWrite(int length = 1) {
     size_t newIndex = index + length * sizeof(Type);
     if (newIndex > bytesAllocated) {
       size_t newSize = bytesAllocated + (1 + ( newIndex - bytesAllocated)/1024) * 1024; // add a multitude of 1024 bytes
@@ -155,9 +156,24 @@ class SharedData {
       bytesAllocated = newSize;
     }
     // ppf("bind %d->%d %d\n", index, newIndex, bytesAllocated);
-    returnValue = reinterpret_cast<Type *>(data + index);
+    Type * returnValue  = reinterpret_cast<Type *>(data + index);
     index = newIndex; //add consumed amount of bytes, index is next byte which will be pointed to
     return returnValue;
+  }
+
+  //returns the next pointer initialized by a value (length for arrays not supported yet)
+  template <typename Type>
+  Type * write(Type initValue) {
+    Type * returnValue =  readWrite<Type>();
+    *returnValue = initValue;
+    return returnValue;
+  }
+
+  //returns the next value (length for arrays not supported yet)
+  template <typename Type>
+  Type read() {
+    Type *result = readWrite<Type>(); //not supported for arrays yet
+    return *result;
   }
 
 };
@@ -183,6 +199,7 @@ public:
   uint16_t fx = -1;
   unsigned8 projectionNr = -1;
   unsigned8 effectDimension = -1;
+  unsigned8 projectionDimension = -1;
 
   Coord3D startPos = {0,0,0}, endPos = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
   unsigned8 proTiltSpeed = 128;
@@ -286,7 +303,7 @@ public:
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
   bool isMapped(unsigned16 indexV) {
-    return mappingTable[indexV].indexes;
+    return indexV < mappingTable.size() && mappingTable[indexV].indexes;
   }
 
   void blur1d(fract8 blur_amount)

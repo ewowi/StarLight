@@ -102,8 +102,40 @@ public:
           ppf("projections fx[%d] changeFun %d %s\n", rowNr, fixture.projections.size(), mdl->findVar("fx")["value"].as<String>().c_str());
           fixture.projections.push_back(new Leds(fixture));
         }
-        if (rowNr < fixture.projections.size())
-          effects.setEffect(*fixture.projections[rowNr], var, rowNr);
+
+        if (rowNr < fixture.projections.size()) {
+          Leds *leds = fixture.projections[rowNr];
+
+          leds->fx = mdl->getValue(var, rowNr);
+
+          ppf("setEffect fx[%d]: %d\n", rowNr, leds->fx);
+
+          if (leds->fx < effects.effects.size()) {
+
+            leds->sharedData.reset(); //make sure all values are 0 and reset for a fresh start of the effect
+
+            Effect* effect = effects.effects[leds->fx];
+
+            // effect->loop(leds); //do a loop to set sharedData right
+            // leds->sharedData.loop();
+            mdl->varPreDetails(var, rowNr);
+            effect->controls(*leds, var);
+            mdl->varPostDetails(var, rowNr);
+
+            effect->setup(*leds); //if changed then run setup once (like call==0 in WLED)
+
+            ppf("control ");
+            print->printVar(var);
+            ppf("\n");
+
+            if (effects.effects[leds->fx]->dim() != leds->effectDimension) {
+              leds->effectDimension = effects.effects[leds->fx]->dim();
+              leds->doMap = true;
+              leds->fixture->doMap = true;
+            }
+          } // fx < size
+
+        }
         return true;
       default: return false;
     }});
@@ -307,12 +339,7 @@ public:
     //   default: return false;
     // }}); //fxLayout
 
-    ui->initSlider(parentVar, "Blending", fixture.globalBlend, 0, 255, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ChangeFun:
-        fixture.globalBlend = var["value"];
-        return true;
-      default: return false;
-    }});
+    ui->initSlider(parentVar, "Blending", &fixture.globalBlend);
 
     #ifdef STARBASE_USERMOD_E131
       // if (e131mod->isEnabled) {
@@ -326,7 +353,7 @@ public:
           // ui->dashVarChanged = true;
           // //rebuild the table
           for (JsonObject childVar: mdl->varChildren("e131Tbl"))
-            ui->callVarFun(childVar, UINT8_MAX, f_ValueFun);
+            ui->callVarFun(childVar);
 
       // }
       // else

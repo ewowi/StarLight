@@ -2,12 +2,8 @@ Reading model from /model.json... (deserializeConfigFromFS)
 File /model.json open to read, size 6847 bytes
 Read model [{"id":"Preview","type":"appmod","ro":false,"o":1,"n":[{"id":"pview","type":"canvas","ro":false,"o":2,"loopFun":0,"interval":160}]},{"id":"Leds","type":"appmod","ro":false,"o":3,"n":[{"id":"on","type":"checkbox","ro":false,"o":4,"value":1,"dash":true},{"id":"bri","type":"range","ro":false,"o":5,"value":10,"max":255,"log":true,"dash":true},{"id":"fxTbl","type":"table","ro":false,"o":6,"n":[{"id":"pro","type":"select","ro":false,"o":13,"value":2,"dash":true},{"id":"fxStart","type":"coord3D","ro":false,"o":14,"value":[{"x":0,"y":0,"z":0}],"max":127},{"id":"fxEnd","type":"coord3D","ro":false,"o":15,"value":[{"x":32,"y":32,"z":0}],"max":127},{"id":"fxSize","type":"coord3D","ro":true,"o":16,"max":127},{"id":"fxCount","type":"number","ro":true,"o":17,"max":255}]},{"id":"fx","type":"select","ro":false,"o":7,"value":13,"dash":true,"n":[{"id":"pal","type":"select","ro":false,"o":8,"value":4,"dash":true},{"id":"speed","type":"range","ro":false,"o":9,"min":1,"max":255,"value":128},{"id":"Offset X","type":"range","ro":false,"o":10,"max":255,"value":128},{"id":"Offset Y","type":"range","ro":false,"o":11,"max":255,"value":128},{"id":"Legs","type":"range","ro":false,"o":12,"min":1,"max":8,"value":4}]},{"id":"fixture","type":"select","ro":false,"o":18,"value":0},{"id":"fixSize","type":"coord3D","ro":true,"o":19,"max":127},{"id":"fixCount","type":"number","ro":true,"o":20,"max":255},{"id":"fps","type":"number","ro":false,"o":21,"value":60,"min":1,"max":999},{"id":"realFps","type":"text","ro":true,"o":22,"max":10}]},{"id":"Fixture Generator","type":"usermod","ro":false,"o":23,"n":[{"id":"fixtureGen","type":"select","ro":false,"o":24,"value":0,"n":[{"id":"ledCount","type":"number","ro":false,"o":25,"min":1,"max":4096,"value":64}]},{"id":"pinList","type":"text","ro":false,"o":26,"value":"16","max":32},{"id":"generate","type":"button","ro":false,"o":27}]},{"id":"Files","type":"sysmod","ro":false,"o":28,"n":[{"id":"fileTbl","type":"table","ro":false,"o":29,"n":[{"id":"flName","type":"text","ro":true,"o":30,"max":32},{"id":"flSize","type":"number","ro":true,"o":31},{"id":"flLink","type":"url","ro":true,"o":32}]},{"id":"drsize","type":"text","ro":true,"o":33,"max":32}]},{"id":"System","type":"sysmod","ro":false,"o":34,"n":[{"id":"name","type":"text","ro":false,"o":35,"value":"StarBase16MB","max":32},{"id":"upTime","type":"text","ro":true,"o":36,"max":16},{"id":"loops","type":"text","ro":true,"o":37,"max":16},{"id":"chip","type":"text","ro":true,"o":38,"max":16},{"id":"heap","type":"text","ro":true,"o":39,"max":32},{"id":"stack","type":"text","ro":true,"o":40,"max":16},{"id":"reboot","type":"button","ro":false,"o":41},{"id":"reset0","type":"select","ro":true,"o":42},{"id":"reset1","type":"select","ro":true,"o":43},{"id":"restartReason","type":"select","ro":true,"o":44},{"id":"version","type":"text","ro":true,"o":45,"max":16}],"view":"vAll"},{"id":"Pins","type":"sysmod","ro":false,"o":46,"n":[{"id":"pinTbl","type":"table","ro":true,"o":47,"n":[{"id":"pinNr","type":"number","ro":true,"o":48,"max":50},{"id":"pinOwner","type":"text","ro":true,"o":49,"max":32},{"id":"pinDetails","type":"text","ro":true,"o":50,"max":256}]},{"id":"board","type":"canvas","ro":true,"o":51,"loopFun":1,"interval":1000},{"id":"pin19","type":"checkbox","ro":false,"o":52,"value":1}]},{"id":"Print","type":"sysmod","ro":false,"o":53,"n":[{"id":"pOut","type":"select","ro":false,"o":54,"value":1},{"id":"log","type":"textarea","ro":true,"o":55}]},{"id":"Web","type":"sysmod","ro":false,"o":56,"n":[{"id":"clTbl","type":"table","ro":true,"o":57,"n":[{"id":"clNr","type":"number","ro":true,"o":58,"max":999},{"id":"clIp","type":"text","ro":true,"o":59,"max":16},{"id":"clIsFull","type":"checkbox","ro":true,"o":60},{"id":"clStatus","type":"select","ro":true,"o":61},{"id":"clLength","type":"number","ro":true,"o":62,"max":64}]},{"id":"wsCounter","type":"text","ro":true,"o":63,"max":16},{"id":"queueLength","type":"number","ro":true,"o":64,"max":64}]},{"id":"Network","type":"sysmod","ro":false,"o":65,"n":[{"id":"ssid","type":"text","ro":false,"o":66,"value":"ewtr","max":32},{"id":"pw","type":"password","ro":false,"o":67,"value":"zonledmod"},{"id":"connect","type":"button","ro":false,"o":68},{"id":"nwstatus","type":"text","ro":true,"o":69,"max":32},{"id":"rssi","type":"text","ro":true,"o":70,"max":32}]},{"id":"DDP","type":"usermod","ro":false,"o":71,"n":[{"id":"ddpInst","type":"select","ro":false,"o":72}]},{"id":"ArtNet","type":"usermod","ro":false,"o":73,"n":[{"id":"artInst","type":"select","ro":false,"o":74}]},{"id":"E131","type":"usermod","ro":false,"o":75,"n":[{"id":"dun","type":"number","ro":false,"o":76,"value":1,"max":7},{"id":"dch","type":"number","ro":false,"o":77,"value":1,"min":1,"max":512,"dash":true},{"id":"e131Tbl","type":"table","ro":true,"o":78,"n":[{"id":"e131Channel","type":"number","ro":true,"o":79,"min":1,"max":512},{"id":"e131Name","type":"text","ro":true,"o":80,"max":32},{"id":"e131Max","type":"number","ro":true,"o":81},{"id":"e131Value","type":"number","ro":true,"o":82,"max":255}]}]},{"id":"Model","type":"sysmod","ro":false,"o":83,"n":[{"id":"mSize","type":"text","ro":true,"o":84,"max":32},{"id":"saveModel","type":"button","ro":false,"o":85},{"id":"showObsolete","type":"checkbox","ro":false,"o":86,"value":0},{"id":"deleteObsolete","type":"button","ro":false,"o":87}]},{"id":"UI","type":"sysmod","ro":false,"o":88,"n":[{"id":"vlTbl","type":"table","ro":true,"o":89,"n":[{"id":"vlVar","type":"text","ro":true,"o":90,"max":32},{"id":"vlLoopps","type":"number","ro":true,"o":91,"max":999}]}]},{"id":"Instances","type":"sysmod","ro":false,"o":92,"n":[{"id":"insTbl","type":"table","ro":true,"o":93,"n":[{"id":"insName","type":"text","ro":true,"o":94,"max":32},{"id":"insLink","type":"url","ro":true,"o":95},{"id":"insIp","type":"text","ro":true,"o":96,"max":16},{"id":"insType","type":"text","ro":true,"o":97,"max":16},{"id":"insVersion","type":"number","ro":true,"o":98,"max":-1},{"id":"insUp","type":"number","ro":true,"o":99,"max":-1},{"id":"inson","type":"checkbox","ro":false,"o":101},{"id":"insbri","type":"range","ro":false,"o":102,"max":255,"log":true},{"id":"inspro","type":"select","ro":false,"o":103},{"id":"insfx","type":"select","ro":false,"o":104},{"id":"insdch","type":"number","ro":false,"o":106,"min":1,"max":512},{"id":"inssma","type":"select","ro":false,"o":107},{"id":"inspal","type":"select","ro":false,"o":105}]},{"id":"sma","type":"select","ro":false,"o":100,"value":0,"dash":true}]},{"id":"Modules","type":"sysmod","ro":false,"o":108,"n":[{"id":"mdlTbl","type":"table","ro":true,"o":109,"n":[{"id":"mdlName","type":"text","ro":true,"o":110,"max":32},{"id":"mdlSuccess","type":"checkbox","ro":true,"o":111},{"id":"mdlEnabled","type":"checkbox","ro":false,"o":112,"value":[true,true,true,true,true,true,true,true,true,false,false,true,true,true,true,true,true]}]}]}]
 sendDataWs no ws
-setValue value removed Preview 
-setValue value removed pview 
-setValue value removed Leds 
 initVarAndUpdate chFun init bri v:10
 Set Brightness to 10 -> b:10 r:1
-setValue value removed fxTbl 
 initVarAndUpdate chFun init fx v:13
 setEffect 13
 initVar create new select var: fx->pal
@@ -31,92 +27,30 @@ Coord3D assign 32 32 0
 fxEnd chFun 0 0 0 - 32 32 0
 Coord3D toJson 8,8,1 -> {"x":8,"y":8,"z":1}
 setValue changed fxSize ->{"x":8,"y":8,"z":1}
-setValueChangeFun fxSize unknown type for {"x":8,"y":8,"z":1}
+callVarChangeFun fxSize unknown type for {"x":8,"y":8,"z":1}
 setValue changed fxCount ->64
 initVarAndUpdate chFun init fixture v:0
 seqNrToName: 2DMatrix3232.json 9640
 fixture chFun send ws done {"pview":{"file":"/2DMatrix3232.json"}}
 Coord3D toJson 8,8,1 -> {"x":8,"y":8,"z":1}
 setValue changed fixSize ->{"x":8,"y":8,"z":1}
-setValueChangeFun fixSize unknown type for {"x":8,"y":8,"z":1}
+callVarChangeFun fixSize unknown type for {"x":8,"y":8,"z":1}
 setValue changed fixCount ->64
 initVarAndUpdate chFun init fps v:60
-setValue value removed realFps 
-setValue value removed Fixture Generator 
 initVarAndUpdate chFun init fixtureGen v:0
 initVar create new number var: fixtureGen->ledCount
 setValue changed ledCount ->64
 parentVar {"details":{"id":"fixtureGen","type":"select","ro":false,"o":-24,"value":0,"fun":16,"chFun":8,"n":[{"id":"ledCount","type":"number","ro":false,"o":-25,"min":1,"max":4096,"value":64}]}}
-setValue value removed generate 
-setValue value removed Files 
-setValue value removed fileTbl 
-setValue value removed flName 
-setValue value removed flSize 
-setValue value removed flLink 
-setValue value removed drsize 
-setValue value removed System 
-setValue value removed upTime 
-setValue value removed loops 
-setValue value removed chip 
-setValue value removed heap 
-setValue value removed stack 
-setValue value removed reboot 
 setValue changed reset0 ->12
 setValue changed reset1 ->12
 setValue changed restartReason ->3
 version 24012822 Jan 28 2024 22:33:18 22:33:18
-setValue value removed version 
-setValue value removed Pins 
-setValue value removed pinTbl 
-setValue value removed pinNr 
-setValue value removed pinOwner 
-setValue value removed pinDetails 
-setValue value removed board 
 initVarAndUpdate chFun init pin19 v:1
-setValue value removed Print 
 setValue changed log ->WIP
-setValue value removed Web 
-setValue value removed clTbl 
-setValue value removed clNr 
-setValue value removed clIp 
-setValue value removed clIsFull 
-setValue value removed clStatus 
-setValue value removed clLength 
-setValue value removed wsCounter 
 setValue changed queueLength ->64
-setValue value removed Network 
-setValue value removed connect 
-setValue value removed nwstatus 
-setValue value removed rssi 
-setValue value removed DDP 
-setValue value removed ddpInst 
-setValue value removed ArtNet 
-setValue value removed artInst 
-setValue value removed E131 
 initVarAndUpdate chFun init dun v:1
 initVarAndUpdate chFun init dch v:1
-setValue value removed e131Tbl 
-setValue value removed e131Channel 
-setValue value removed e131Name 
-setValue value removed e131Max 
-setValue value removed e131Value 
-setValue value removed Model 
-setValue value removed mSize 
-setValue value removed saveModel 
 initVarAndUpdate chFun init showObsolete v:0
-setValue value removed deleteObsolete 
-setValue value removed UI 
-setValue value removed vlTbl 
-setValue value removed vlVar 
-setValue value removed vlLoopps 
-setValue value removed Instances 
-setValue value removed insTbl 
-setValue value removed insName 
-setValue value removed insLink 
-setValue value removed insIp 
-setValue value removed insType 
-setValue value removed insVersion 
-setValue value removed insUp 
 dash on 1 found
 dash bri 10 found
 dash pro 2 found
@@ -125,8 +59,6 @@ dash pal 4 found
 dash dch 1 found
 dash sma 0 found
 UDPWLEDSyncMessage 44 1460 1193
-setValue value removed Modules 
-setValue value removed mdlTbl 
 initVarAndUpdate valueFun mdlName count:17
 setValue var mdlName[0] value null not array, creating
 initVarAndUpdate valueFun mdlSuccess count:17
@@ -140,11 +72,11 @@ StarJson found all what it was looking for 1030 >= 6
 projectAndMap P:32x32x1 V:15x15x1 and P:1024 V:225
 Coord3D toJson 15,15,1 -> {"x":15,"y":15,"z":1}
 setValue changed fxSize ->{"x":15,"y":15,"z":1}
-setValueChangeFun fxSize unknown type for {"x":15,"y":15,"z":1}
+callVarChangeFun fxSize unknown type for {"x":15,"y":15,"z":1}
 setValue changed fxCount ->225
 Coord3D toJson 32,32,1 -> {"x":32,"y":32,"z":1}
 setValue changed fixSize ->{"x":32,"y":32,"z":1}
-setValueChangeFun fixSize unknown type for {"x":32,"y":32,"z":1}
+callVarChangeFun fixSize unknown type for {"x":32,"y":32,"z":1}
 setValue changed fixCount ->1024
 StarJson destructing
 FastLED.addLeds new 16: 0-1024

@@ -39,7 +39,7 @@ void Fixture::projectAndMap() {
           }
         }
         leds->mappingTable.clear();
-        leds->sharedData.clear();
+        // leds->sharedData.reset(); //do not reset as want to save settings.
       }
       rowNr++;
     }
@@ -97,10 +97,10 @@ void Fixture::projectAndMap() {
               Coord3D sizeAdjusted = (endPosAdjusted - startPosAdjusted)/10 + Coord3D{1,1,1};
 
               // 0 to 3D depending on start and endpos (e.g. to display ScrollingText on one side of a cube)
-              stackUnsigned8 projectionDimension = 0;
-              if (sizeAdjusted.x > 1) projectionDimension++;
-              if (sizeAdjusted.y > 1) projectionDimension++;
-              if (sizeAdjusted.z > 1) projectionDimension++;
+              leds->projectionDimension = 0;
+              if (sizeAdjusted.x > 1) leds->projectionDimension++;
+              if (sizeAdjusted.y > 1) leds->projectionDimension++;
+              if (sizeAdjusted.z > 1) leds->projectionDimension++;
 
               Coord3D proCenter;
               if (leds->projectionNr == p_DistanceFromPoint || leds->projectionNr == p_Preset1) {
@@ -122,7 +122,7 @@ void Fixture::projectAndMap() {
               }
               bool mirror = mdl->getValue("mirror", rowNr);
 
-              // ppf("projectionNr p:%d f:%d s:%d, %d-%d-%d %d-%d-%d %d-%d-%d\n", projectionNr, effectDimension, projectionDimension, x, y, z, uint16CollectList[0], uint16CollectList[1], uint16CollectList[2], size.x, size.y, size.z);
+              // ppf("projectionNr p:%d f:%d s:%d, %d-%d-%d %d-%d-%d %d-%d-%d\n", leds->projectionNr, leds->effectDimension, leds->projectionDimension, x, y, z, uint16CollectList[0], uint16CollectList[1], uint16CollectList[2], size.x, size.y, size.z);
 
               if (leds->size == Coord3D{0,0,0}) { // first
                 ppf("projectAndMap first leds[%d] size:%d,%d,%d s:%d,%d,%d e:%d,%d,%d\n", rowNr, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, startPosAdjusted.x, startPosAdjusted.y, startPosAdjusted.z, endPosAdjusted.x, endPosAdjusted.y, endPosAdjusted.z);
@@ -156,7 +156,7 @@ void Fixture::projectAndMap() {
                   indexV = leds->XYZNoSpin(mapped);
                   break;
                 case _2D: //effectDimension
-                  switch(projectionDimension) {
+                  switch(leds->projectionDimension) {
                     case _1D: //2D1D
                       if (leds->size == Coord3D{0,0,0}) { // first
                         leds->size.x = sqrt(sizeAdjusted.x * sizeAdjusted.y * sizeAdjusted.z); //only one is > 1, square root
@@ -215,7 +215,7 @@ void Fixture::projectAndMap() {
                 case _3D: //effectDimension
                   mapped = pixelAdjusted;
                   
-                  switch(projectionDimension) {
+                  switch(leds->projectionDimension) {
                     case _1D:
                       if (leds->size == Coord3D{0,0,0}) { // first
                         leds->size.x = std::pow(sizeAdjusted.x * sizeAdjusted.y * sizeAdjusted.z, 1/3.); //only one is > 1, cube root
@@ -260,7 +260,7 @@ void Fixture::projectAndMap() {
                   case p_DistanceFromPoint:
                     switch (leds->effectDimension) {
                     case _2D: 
-                      switch (projectionDimension) {
+                      switch (leds->projectionDimension) {
                       case _2D: //2D2D: inverse mapping
                         float minDistance = 10;
                         // ppf("checking indexV %d\n", indexV);

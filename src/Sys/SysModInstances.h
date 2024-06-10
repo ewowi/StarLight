@@ -129,10 +129,11 @@ public:
       case f_UIFun:
         ui->setLabel(var, "Name");
         return true;
-      case f_ChangeFun:
-        strcpy(instances[rowNr].name, mdl->getValue(var, rowNr));
-        sendMessageUDP(instances[rowNr].ip, "name", mdl->getValue(var, rowNr));
-        return true;
+      // comment this out for the time being as causes corrupted instance names
+      // case f_ChangeFun:
+      //   strcpy(instances[rowNr].name, mdl->getValue(var, rowNr));
+      //   sendMessageUDP(instances[rowNr].ip, "name", mdl->getValue(var, rowNr));
+      //   return true;
       default: return false;
     }});
 
@@ -346,7 +347,7 @@ public:
 
   }
 
-  void loop1s() {
+  void loop10s() {
     sendSysInfoUDP();  //temporary every second
   }
 
@@ -463,7 +464,7 @@ public:
 
           ppf("insTbl handleNotifications %d\n", notifierUdp.remoteIP()[3]);
           for (JsonObject childVar: mdl->varChildren("insTbl"))
-            ui->callVarFun(childVar, UINT8_MAX, f_ValueFun); //rowNr //instance - instances.begin()
+            ui->callVarFun(childVar); //rowNr //instance - instances.begin()
 
           web->recvUDPCounter++;
           web->recvUDPBytes+=packetSize;
@@ -557,10 +558,10 @@ public:
     if (erased) {
       ppf("insTbl remove inactive instances\n");
       for (JsonObject childVar: mdl->varChildren("insTbl"))
-        ui->callVarFun(childVar, UINT8_MAX, f_ValueFun); //no rowNr so all rows updated
+        ui->callVarFun(childVar); //no rowNr so all rows updated
 
-      ui->callVarFun("ddpInst", UINT8_MAX, f_UIFun);
-      ui->callVarFun("artInst", UINT8_MAX, f_UIFun);
+      ui->callVarFun("ddpInst", UINT8_MAX, f_UIFun); //rebuild options
+      ui->callVarFun("artInst", UINT8_MAX, f_UIFun); //rebuild options
     }
   }
 
@@ -795,7 +796,7 @@ public:
           // ppf("updateInstance updRow\n");
 
           for (JsonObject childVar: mdl->varChildren("insTbl"))
-            ui->callVarFun(childVar, UINT8_MAX, f_ValueFun); //rowNr instance - instances.begin()
+            ui->callVarFun(childVar); //rowNr instance - instances.begin()
 
           //tbd: now done for all rows, should be done only for updated rows!
         }
@@ -807,15 +808,15 @@ public:
     if (!instanceFound) {
       ppf("insTbl new instance %s\n", messageIP.toString().c_str());
       
-      ui->callVarFun("ddpInst", UINT8_MAX, f_UIFun); //UiFun as select changes
-      ui->callVarFun("artInst", UINT8_MAX, f_UIFun);
+      ui->callVarFun("ddpInst", UINT8_MAX, f_UIFun); //rebuild options
+      ui->callVarFun("artInst", UINT8_MAX, f_UIFun); //rebuild options
 
       // ui->processUiFun("insTbl");
       //run though it sorted to find the right rowNr
       // for (std::vector<InstanceInfo>::iterator instance=instances.begin(); instance!=instances.end(); ++instance) {
       //   if (instance->ip == messageIP) {
           for (JsonObject childVar: mdl->varChildren("insTbl")) {
-            ui->callVarFun(childVar, UINT8_MAX, f_ValueFun); //no rowNr, update all
+            ui->callVarFun(childVar); //no rowNr, update all
           }
       //   }
       // }
