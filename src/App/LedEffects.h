@@ -1363,29 +1363,44 @@ class GameOfLife: public Effect {
   uint8_t dim() {return _3D;} //supports 3D but also 2D (1D as well?)
   const char * tags() {return "💡💫";}
 
-  void drawGrid(Leds &leds, byte *cells, CRGB bgColor, byte overlay = 0, bool drawAliveRandomColor = false, bool drawDead =false, bool blur = false) {
-    // Redraws the grid. drawAliveRandomColor is used when palettes change or new game is started drawDead is used to blur dead cells further
-    for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-      if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
-      bool alive = getBitValue(cells, leds.XYZNoSpin({x,y,z}));
-      if (overlay) {
-        if (overlay == 1 && alive) leds.setPixelColor({x,y,z}, bgColor, 0);
-        else if (overlay == 2 && !alive) leds.setPixelColor({x,y,z}, bgColor);
-        continue;
+  void placePentomino(Leds &leds, byte *futureCells, bool colorByAge) {
+    byte pattern[5][2] = {{1, 0}, {0, 1}, {1, 1}, {2, 1}, {2, 2}}; // R-pentomino
+    if (!random8(5)) pattern[0][1] = 3; // 1/5 chance to use glider
+    CRGB color = ColorFromPalette(leds.palette, random8());
+    for (int attempts = 0; attempts < 100; attempts++) {
+      int x = random8(1, leds.size.x - 3);
+      int y = random8(1, leds.size.y - 5);
+      int z = random8(2) * (leds.size.z - 1);
+      bool canPlace = true;
+      for (int i = 0; i < 5; i++) {
+        int nx = x + pattern[i][0];
+        int ny = y + pattern[i][1];
+        if (getBitValue(futureCells, leds.XYZNoSpin({nx, ny, z}))) {canPlace = false; break;}
       }
-      else if (drawAliveRandomColor && alive) leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0);
-      else if (drawDead && !alive) blur ? leds.setPixelColor({x,y,z}, bgColor) : leds.setPixelColor({x,y,z}, bgColor, 0);
+      if (canPlace || attempts == 99) {
+        for (int i = 0; i < 5; i++) {
+          int nx = x + pattern[i][0];
+          int ny = y + pattern[i][1];
+          setBitValue(futureCells, leds.XYZNoSpin({nx, ny, z}), true);
+          leds.setPixelColor({nx, ny, z}, colorByAge ? CRGB::Green : color, 0);
+        }
+        return;   
+      }
     }
   }
 
   void loop(Leds &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
+    byte overlay      = leds.sharedData.read<byte>();
+    Coord3D bgC       = leds.sharedData.read<Coord3D>();
     byte ruleset      = leds.sharedData.read<byte>();
     uint8_t speed     = leds.sharedData.read<uint8_t>();
     byte lifeChance   = leds.sharedData.read<byte>();
     uint8_t mutation  = leds.sharedData.read<uint8_t>();
     bool wrap         = leds.sharedData.read<bool>();
     bool disablePause = leds.sharedData.read<bool>();
+    bool colorByAge   = leds.sharedData.read<bool>();
+    bool infinite     = leds.sharedData.read<bool>();
 
     //Binding of loop persistent values (pointers)
     const uint16_t dataSize = ((leds.size.x * leds.size.y * leds.size.z + 7) / 8);
@@ -1404,13 +1419,13 @@ class GameOfLife: public Effect {
     byte *setUp       = leds.sharedData.readWrite<byte>(); // call == 0 not working temp fix
     CRGB *prevPalette = leds.sharedData.readWrite<CRGB>();
 
-    CRGB bgColor = CRGB::Black;
+    CRGB bgColor = CRGB(bgC.x, bgC.y, bgC.z);                 // Overlay color if toggled
     CRGB color   = ColorFromPalette(leds.palette, random8()); // Used if all parents died
 
     // Start New Game of Life
     if (call == 0  || *setUp != 123|| (*generation == 0 && *step < sys->now)) {
       *setUp = 123; // quick fix for effect starting up
-      *prevPalette = ColorFromPalette(leds.palette, 0);
+      *prevPalette = colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, 0);
       *generation = 1;
       disablePause ? *step = sys->now : *step = sys->now + 1500;
 
@@ -1418,10 +1433,13 @@ class GameOfLife: public Effect {
       memset(cells, 0, dataSize);
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
         if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
-        if (random8(100) < lifeChance) setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
+        if (random8(100) < lifeChance) {
+          setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
+          leds.setPixelColor({x,y,z}, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, random8()), 0);
+        }
+        else leds.setPixelColor({x,y,z}, bgColor, 0);
       }
       memcpy(futureCells, cells, dataSize); 
-      drawGrid(leds, cells, bgColor, false, true, true, false);
 
       // Change CRCs
       uint16_t crc = crc16((const unsigned char*)cells, dataSize);
@@ -1433,14 +1451,33 @@ class GameOfLife: public Effect {
       return;
     }
 
-    byte blendVal = leds.fixture->globalBlend; // Used for different blend mode
-    bool bgBlendMode = blendVal > 200;
-    if (*prevPalette != ColorFromPalette(leds.palette, 0)) {   // Palette changed, redraw grid
-      drawGrid(leds, cells, bgColor, false, true, true);
-      *prevPalette = ColorFromPalette(leds.palette, 0);
-    } 
-    if (*step > sys->now && !bgBlendMode) drawGrid(leds, cells, bgColor, 0, false, true, true); // Blend dead cells while paused
+    int aliveCount = 0;
+    int deadCount = 0;
+    byte blur = leds.fixture->globalBlend;
+    int fadedBackground = 0;
+    if (blur > 220 && !colorByAge) {
+      fadedBackground = bgColor.r + bgColor.g + bgColor.b + 20 + (blur-220);
+      blur -= (blur-220);
+    }
+    bool blurDead = *step > sys->now && !overlay && !fadedBackground;
+    bool paletteChanged = *prevPalette != ColorFromPalette(leds.palette, 0) && !colorByAge;
 
+    if (paletteChanged) *prevPalette = ColorFromPalette(leds.palette, 0);
+    // Redraw Loop
+    for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
+      if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
+      bool alive = getBitValue(cells, leds.XYZNoSpin({x,y,z}));
+      if (alive) aliveCount++; else deadCount++;
+      // Redraw alive if palette changed or overlay1
+      if      (alive && paletteChanged)    leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0); // Random color if palette changed
+      else if (alive && overlay == 1)      leds.setPixelColor({x,y,z}, bgColor, 0);                                   // Overlay color
+      else if (alive && colorByAge && !*generation) leds.setPixelColor({x,y,z}, CRGB::Red, 248);                      // Age alive cells while paused
+      // Redraw dead if palette changed or overlay2 or blur paused game
+      if      (!alive && paletteChanged)   leds.setPixelColor({x,y,z}, bgColor, 0);       // Remove blended dead cells
+      else if (!alive && overlay == 2)     leds.setPixelColor({x,y,z}, bgColor, blur);    // Overlay color
+      else if (!alive && blurDead)         leds.setPixelColor({x,y,z}, bgColor, blur);    // Blend dead cells while paused
+    }
+  
     if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) return; // Check if enough time has passed for updating
 
     //Rule set for game of life
@@ -1455,7 +1492,7 @@ class GameOfLife: public Effect {
       else if (ruleset == 6) ruleString = "B367/S23";       //DrighLife
 
       *prevRuleset = ruleset;
-      memset(birthNumbers, 0, sizeof(bool) * 9);
+      memset(birthNumbers,   0, sizeof(bool) * 9);
       memset(surviveNumbers, 0, sizeof(bool) * 9);
 
       //Rule String Parsing
@@ -1483,7 +1520,7 @@ class GameOfLife: public Effect {
       for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) { // iterate through 3*3*3 matrix
         if (i==0 && j==0 && k==0) continue; // ignore itself
         Coord3D nPos = {x+i, y+j, z+k};     // neighbor position
-        if (!wrap || leds.size.z > 1 || (*generation) % 1500 == 0) { //no wrap, never wrap 3D, disable wrap every 1500 generations to prevent undetected repeats
+        if (!wrap || leds.size.z > 1 || (*generation) % 1500 == 0 || aliveCount == 5) { //no wrap, never wrap 3D, disable wrap every 1500 generations to prevent undetected repeats
           if (nPos.isOutofBounds(leds.size)) continue;
         } else { // wrap around 2D
           if (k != 0) continue; //no z axis (wrap around only for x and y
@@ -1493,8 +1530,9 @@ class GameOfLife: public Effect {
         // count neighbors and store up to 9 neighbor colors
         if (getBitValue(cells, nIndex)) { //if alive
           neighbors++;
-          if (!getBitValue(futureCells, nIndex)) continue; //skip if parent died in this loop (color lost or blended)
-          nColors[colorCount % 9] = leds.getPixelColor(nPos);
+          if (!getBitValue(futureCells, nIndex) || leds.getPixelColor(nPos) == bgColor) continue; //skip if parent died in this loop (color lost or blended)
+          color = leds.getPixelColor(nPos);
+          nColors[colorCount % 9] = color;
           colorCount++;
         }
       }
@@ -1504,21 +1542,28 @@ class GameOfLife: public Effect {
         // Loneliness or Overpopulation
         cellChanged = true;
         setBitValue(futureCells, cIndex, false);
-        leds.setPixelColor(cPos, bgColor, bgBlendMode ? blendVal - 190 : blendVal);
+        if (!overlay) leds.setPixelColor(cPos, bgColor, blur);
+        else if (overlay == 2) leds.setPixelColor(cPos, bgColor, blur);
       }
       else if (!cellValue && birthNumbers[neighbors]){
         // Reproduction
         setBitValue(futureCells, cIndex, true);
         cellChanged = true;
+        if (overlay == 2) continue;
         CRGB randomParentColor = color; // last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8(colorCount)];
-        if (randomParentColor == bgColor) randomParentColor = ColorFromPalette(leds.palette, random8()); // needed for tilt, pan, roll
-        if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8());      // mutate
-        leds.setPixelColor(cPos, randomParentColor, 0);
+        if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8());
+        if (overlay == 1) randomParentColor = bgColor;
+        leds.setPixelColor(cPos, colorByAge ? CRGB::Green : randomParentColor, 0);
+
       }
       else {
         // Blending, fade dead cells further causing blurring effect to moving cells
-        if (!cellValue && !bgBlendMode) leds.setPixelColor(cPos, bgColor);
+        if (!cellValue && !overlay) {
+          CRGB val = leds.getPixelColor(cPos);
+          if (fadedBackground < val.r + val.g + val.b) leds.setPixelColor(cPos, bgColor, blur);
+        }
+        if (cellValue && colorByAge) leds.setPixelColor(cPos, CRGB::Red, 248);
       }
     }
 
@@ -1529,6 +1574,11 @@ class GameOfLife: public Effect {
 
     bool repetition = false;
     if (!cellChanged || crc == *oscillatorCRC || crc == *spaceshipCRC || crc == *cubeGliderCRC) repetition = true; //check if cell changed this gen and compare previous stored crc values
+    if ((repetition && infinite) || (infinite && !random8(50)) || (infinite && float(aliveCount)/(aliveCount + deadCount) < 0.05)) {
+      placePentomino(leds, futureCells, colorByAge); // place R-pentomino/Glider if infinite mode is enabled
+      memcpy(cells, futureCells, dataSize);
+      repetition = false;
+    }
     if (repetition) {
       *generation = 0; //reset on next call
       disablePause ? *step = sys->now : *step = sys->now + 1000;
@@ -1544,7 +1594,18 @@ class GameOfLife: public Effect {
 
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
-    ui->initSelect(parentVar, "ruleset", leds.sharedData.write<uint8_t>(1), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+    ui->initSelect(parentVar, "Overlay", leds.sharedData.write<byte>(0), false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+      case f_UIFun: {
+        JsonArray options = ui->setOptions(var);
+        options.add("None");
+        options.add("Background");
+        options.add("Alive Cells");
+        return true;
+      }
+      default: return false;
+    }});
+    ui->initCoord3D(parentVar, "Background or Overlay Color", leds.sharedData.write<Coord3D>({0,0,0}), 0, 255);
+    ui->initSelect (parentVar, "ruleset", leds.sharedData.write<uint8_t>(1), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case f_UIFun: {
         JsonArray options = ui->setOptions(var);
         options.add("Custom B/S");
@@ -1558,12 +1619,14 @@ class GameOfLife: public Effect {
       }
       default: return false;
     }});
-    ui->initText(parentVar, "Custom Rule String", "B/S");
-    ui->initSlider(parentVar, "Game Speed (FPS)", leds.sharedData.write<uint8_t>(20), 0, 60);    
-    ui->initSlider(parentVar, "Starting Life Density", leds.sharedData.write<uint8_t>(32), 10, 90);
-    ui->initSlider(parentVar, "Mutation Chance", leds.sharedData.write<uint8_t>(2), 0, 100);    
-    ui->initCheckBox(parentVar, "Wrap", leds.sharedData.write<bool>(true));
-    ui->initCheckBox(parentVar, "Disable Pause", leds.sharedData.write<bool>(false));
+    ui->initText    (parentVar, "Custom Rule String", "B/S");
+    ui->initSlider  (parentVar, "Game Speed (FPS)",      leds.sharedData.write<uint8_t>(20), 0, 60);    
+    ui->initSlider  (parentVar, "Starting Life Density", leds.sharedData.write<uint8_t>(32), 10, 90);
+    ui->initSlider  (parentVar, "Mutation Chance",       leds.sharedData.write<uint8_t>(2), 0, 100);    
+    ui->initCheckBox(parentVar, "Wrap",                  leds.sharedData.write<bool>(true));
+    ui->initCheckBox(parentVar, "Disable Pause",         leds.sharedData.write<bool>(false));
+    ui->initCheckBox(parentVar, "Color By Age",          leds.sharedData.write<bool>(false));
+    ui->initCheckBox(parentVar, "Infinite",              leds.sharedData.write<bool>(false));
   }
 }; //GameOfLife
 
