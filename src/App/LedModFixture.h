@@ -14,6 +14,7 @@ class LedModFixture:public SysModule {
 public:
 
   uint8_t viewRotation = 0;
+  uint8_t bri = 10;
 
   LedModFixture() :SysModule("Fixture") {};
 
@@ -34,13 +35,12 @@ public:
     currentVar["dash"] = true;
 
     //logarithmic slider (10)
-    currentVar = ui->initSlider(parentVar, "bri", 10, 0, 255, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    currentVar = ui->initSlider(parentVar, "bri", &bri, 0, 255, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun:
         ui->setLabel(var, "Brightness");
         return true;
       case f_ChangeFun: {
-        stackUnsigned8 bri = var["value"];
-
+        //bri set by StarMod during changeFun
         stackUnsigned8 result = mdl->getValue("on").as<bool>()?mdl->varLinearToLogarithm(var, bri):0;
 
         FastLED.setBrightness(result);
