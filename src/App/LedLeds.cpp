@@ -42,13 +42,18 @@ unsigned16 Leds::XYZ(unsigned16 x, unsigned16 y, unsigned16 z) {
 // maps the virtual led to the physical led(s) and assign a color to it
 void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
   if (indexV < mappingTable.size()) {
-    if (isMapped(indexV)) {
-      for (forUnsigned16 indexP:*mappingTable[indexV].indexes) {
+    if (mappingTable[indexV].size() > 0 && mappingTable[indexV][0] != UINT16_MAX) { //isMapped
+      for (size_t p=0; p<mappingTable[indexV].size(); p++) {
+        uint16_t indexP = mappingTable[indexV][p];
         fixture->ledsP[indexP] = blend(color, fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount);
       }
     }
     else {
-      mappingTable[indexV].color = color;
+      while (mappingTable[indexV].size() < 4) mappingTable[indexV].push_back(0); //create space for CRGB
+      mappingTable[indexV][0] = UINT16_MAX; //not mapped, color stored
+      mappingTable[indexV][1] = color.r;
+      mappingTable[indexV][2] = color.g;
+      mappingTable[indexV][3] = color.b;
     }
   }
   else if (indexV < NUM_LEDS_Max) //no projection
@@ -59,10 +64,10 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
 
 CRGB Leds::getPixelColor(unsigned16 indexV) {
   if (indexV < mappingTable.size()) {
-    if (isMapped(indexV)) // && mappingTable[indexV].indexes->size()
-      return fixture->ledsP[*mappingTable[indexV].indexes->begin()]; //any would do as they are all the same
-    else 
-      return mappingTable[indexV].color;
+    if (mappingTable[indexV].size() > 0 && mappingTable[indexV][0] != UINT16_MAX) //isMapped
+      return fixture->ledsP[mappingTable[indexV][0]]; //any would do as they are all the same
+    else
+      return CRGB(mappingTable[indexV][1], mappingTable[indexV][2], mappingTable[indexV][3]);
   }
   else if (indexV < NUM_LEDS_Max) //no mapping
     return fixture->ledsP[indexV];
@@ -76,13 +81,15 @@ void Leds::fadeToBlackBy(unsigned8 fadeBy) {
   if (projectionNr == p_None || projectionNr == p_Random) {
     fastled_fadeToBlackBy(fixture->ledsP, fixture->nrOfLeds, fadeBy);
   } else {
-    for (PhysMap &map:mappingTable) {
-      if (map.indexes)
-        for (forUnsigned16 indexP:*map.indexes) {
+    for (size_t indexV=0; indexV<mappingTable.size(); indexV++) {
+      if (mappingTable[indexV][0] != UINT16_MAX) {
+        for (size_t p=0; p<mappingTable[indexV].size(); p++) {
+          uint16_t indexP = mappingTable[indexV][p];
           CRGB oldValue = fixture->ledsP[indexP];
           fixture->ledsP[indexP].nscale8(255-fadeBy); //this overrides the old value
           fixture->ledsP[indexP] = blend(fixture->ledsP[indexP], oldValue, fixture->globalBlend); // we want to blend in the old value
         }
+      }
     }
   }
 }
@@ -91,11 +98,13 @@ void Leds::fill_solid(const struct CRGB& color, bool noBlend) {
   if (projectionNr == p_None || projectionNr == p_Random) {
     fastled_fill_solid(fixture->ledsP, fixture->nrOfLeds, color);
   } else {
-    for (PhysMap &map:mappingTable) {
-      if (map.indexes)
-        for (forUnsigned16 indexP:*map.indexes) {
+    for (size_t indexV=0; indexV<mappingTable.size(); indexV++) {
+      if (mappingTable[indexV][0] != UINT16_MAX) {
+        for (size_t p=0; p<mappingTable[indexV].size(); p++) {
+          uint16_t indexP = mappingTable[indexV][p];
           fixture->ledsP[indexP] = noBlend?color:blend(color, fixture->ledsP[indexP], fixture->globalBlend);
         }
+      }
     }
   }
 }
@@ -109,11 +118,13 @@ void Leds::fill_rainbow(unsigned8 initialhue, unsigned8 deltahue) {
     hsv.val = 255;
     hsv.sat = 240;
 
-    for (PhysMap &map:mappingTable) {
-      if (map.indexes)
-        for (forUnsigned16 indexP:*map.indexes) {
+    for (size_t indexV=0; indexV<mappingTable.size(); indexV++) {
+      if (mappingTable[indexV][0] != UINT16_MAX) {
+        for (size_t p=0; p<mappingTable[indexV].size(); p++) {
+          uint16_t indexP = mappingTable[indexV][p];
           fixture->ledsP[indexP] = blend(hsv, fixture->ledsP[indexP], fixture->globalBlend);
         }
+      }
       hsv.hue += deltahue;
     }
   }

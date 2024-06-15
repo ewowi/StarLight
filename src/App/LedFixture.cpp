@@ -31,14 +31,7 @@ void Fixture::projectAndMap() {
 
         ppf("projectAndMap clear leds[%d] fx:%d pro:%d\n", rowNr, leds->fx, leds->projectionNr);
         leds->size = Coord3D{0,0,0};
-        //vectors really gone now?
-        for (PhysMap &map:leds->mappingTable) {
-          if (map.indexes) {
-            map.indexes->clear();
-            delete map.indexes;
-          }
-        }
-        leds->mappingTable.clear();
+        leds->mappingTable.clear(); //tbd; check if vector2D completely cleared
         // leds->sharedData.reset(); //do not reset as want to save settings.
       }
       rowNr++;
@@ -316,14 +309,10 @@ void Fixture::projectAndMap() {
                       if (indexV >= leds->mappingTable.size()) {
                         for (size_t i = leds->mappingTable.size(); i <= indexV; i++) {
                           // ppf("mapping %d,%d,%d add physMap before %d %d\n", pixel.y, pixel.y, pixel.z, indexV, leds->mappingTable.size());
-                          leds->mappingTable.push_back(PhysMap()); //abort() was called at PC 0x40191473 on core 1 std::allocator<unsigned short> >&&)
+                          leds->mappingTable.push_back({}); //abort() was called at PC 0x40191473 on core 1 std::allocator<unsigned short> >&&)
                         }
                       }
-                      //indexV is within the square
-                      if (!leds->isMapped(indexV)) {
-                        leds->mappingTable[indexV].indexes = new std::vector<unsigned16>;
-                      }
-                      leds->mappingTable[indexV].indexes->push_back(indexP); //add the current led to indexes
+                      leds->mappingTable[indexV].push_back(indexP); //add the current led to indexes
                     }
                     else 
                       ppf("dev post [%d] indexP too high %d>=%d or %d (p:%d m:%d) p:%d,%d,%d\n", rowNr, indexP, nrOfLeds, NUM_LEDS_Max, leds->mappingTable.size(), indexP, pixel.x, pixel.y, pixel.z);
@@ -406,20 +395,18 @@ void Fixture::projectAndMap() {
             leds->nrOfLeds = leds->mappingTable.size();
 
             //debug info + summary values
-            stackUnsigned16 indexV = 0;
-            for (PhysMap &map:leds->mappingTable) {
-              if (map.indexes) { // && map.indexes->size()
+            for (size_t indexV=0; indexV<leds->mappingTable.size(); indexV++) {
+              if (leds->mappingTable[indexV].size() > 0 && leds->mappingTable[indexV][0] != UINT16_MAX) {
                 // if (nrOfMappings < 10 || map.indexes->size() - indexV < 10) //first 10 and last 10
                 // if (nrOfMappings%(leds->nrOfLeds/10+1) == 0)
                   // ppf("ledV %d mapping: #ledsP (%d):", indexV, nrOfMappings);
-
-                for (forUnsigned16 indexP:*map.indexes) {
+                for (size_t p=0; p<leds->mappingTable[indexV].size(); p++) {
+                  uint16_t indexP = leds->mappingTable[indexV][p];
                   // if (nrOfPixels < 10 || map.indexes->size() - indexV < 10)
                   // if (nrOfMappings%(leds->nrOfLeds/10+1) == 0)
                     // ppf(" %d", indexP);
                   nrOfPixels++;
                 }
-
                 // if (nrOfPixels < 10 || map.indexes->size() - indexV < 10)
                 // if (nrOfMappings%(leds->nrOfLeds/10+1) == 0)
                   // ppf("\n");
@@ -427,7 +414,6 @@ void Fixture::projectAndMap() {
               nrOfMappings++;
               // else
               //   ppf("ledV %d no mapping\n", x);
-              indexV++;
             }
           }
 

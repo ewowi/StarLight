@@ -178,14 +178,6 @@ class SharedData {
 
 };
 
-struct PhysMap {
-  // bool isPhys = false; // 1 byte
-  // union {
-    std::vector<unsigned16> * indexes;
-    CRGB color;
-  // }; // 4 bytes
-}; // expected to be 5 bytes but is 8 bytes!!!
-
 class Leds {
 
 public:
@@ -208,7 +200,7 @@ public:
 
   SharedData sharedData;
 
-  std::vector<PhysMap> mappingTable;
+  std::vector<std::vector<uint16_t>> mappingTable; //2D vector
 
   unsigned16 indexVLocal = 0; //set in operator[], used by operator=
 
@@ -231,7 +223,7 @@ public:
   unsigned16 XYZ(unsigned16 x, unsigned16 y, unsigned16 z);
 
   Leds(Fixture &fixture) {
-    ppf("Leds constructor (PhysMap:%d)\n", sizeof(PhysMap));
+    ppf("Leds constructor (MT:%d)\n", sizeof(mappingTable));
     this->fixture = &fixture;
   }
 
@@ -239,13 +231,7 @@ public:
     ppf("Leds destructor\n");
     fadeToBlackBy(100);
     doMap = true; // so loop is not running while deleting
-    for (PhysMap &map:mappingTable) {
-      if (map.indexes) {
-        map.indexes->clear();
-        delete map.indexes;
-      }
-    }
-    mappingTable.clear();
+    mappingTable.clear(); //tbd: check if completely cleared
   }
 
   // indexVLocal stored to be used by other operators
@@ -303,7 +289,7 @@ public:
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
   bool isMapped(unsigned16 indexV) {
-    return indexV < mappingTable.size() && mappingTable[indexV].indexes;
+    return indexV < mappingTable.size() && mappingTable[indexV].size() && mappingTable[indexV][0] != UINT16_MAX;
   }
 
   void blur1d(fract8 blur_amount)
