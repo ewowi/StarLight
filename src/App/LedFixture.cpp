@@ -307,8 +307,8 @@ void Fixture::projectAndMap() {
                     else if (indexP < NUM_LEDS_Max) {
                       //create new physMaps if needed
                       if (indexV >= leds->mappingTable.size()) {
+                        // ppf("mapping %d,%d,%d add physMap before %d %d\n", pixel.y, pixel.y, pixel.z, indexV, leds->mappingTable.size());
                         for (size_t i = leds->mappingTable.size(); i <= indexV; i++) {
-                          // ppf("mapping %d,%d,%d add physMap before %d %d\n", pixel.y, pixel.y, pixel.z, indexV, leds->mappingTable.size());
                           leds->mappingTable.push_back({}); //abort() was called at PC 0x40191473 on core 1 std::allocator<unsigned short> >&&)
                         }
                       }

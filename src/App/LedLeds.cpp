@@ -82,7 +82,7 @@ void Leds::fadeToBlackBy(unsigned8 fadeBy) {
     fastled_fadeToBlackBy(fixture->ledsP, fixture->nrOfLeds, fadeBy);
   } else {
     for (size_t indexV=0; indexV<mappingTable.size(); indexV++) {
-      if (mappingTable[indexV][0] != UINT16_MAX) {
+      if (mappingTable[indexV].size() && mappingTable[indexV][0] != UINT16_MAX) {
         for (size_t p=0; p<mappingTable[indexV].size(); p++) {
           uint16_t indexP = mappingTable[indexV][p];
           CRGB oldValue = fixture->ledsP[indexP];
@@ -99,7 +99,7 @@ void Leds::fill_solid(const struct CRGB& color, bool noBlend) {
     fastled_fill_solid(fixture->ledsP, fixture->nrOfLeds, color);
   } else {
     for (size_t indexV=0; indexV<mappingTable.size(); indexV++) {
-      if (mappingTable[indexV][0] != UINT16_MAX) {
+      if (mappingTable[indexV].size() && mappingTable[indexV][0] != UINT16_MAX) {
         for (size_t p=0; p<mappingTable[indexV].size(); p++) {
           uint16_t indexP = mappingTable[indexV][p];
           fixture->ledsP[indexP] = noBlend?color:blend(color, fixture->ledsP[indexP], fixture->globalBlend);
@@ -119,7 +119,7 @@ void Leds::fill_rainbow(unsigned8 initialhue, unsigned8 deltahue) {
     hsv.sat = 240;
 
     for (size_t indexV=0; indexV<mappingTable.size(); indexV++) {
-      if (mappingTable[indexV][0] != UINT16_MAX) {
+      if (mappingTable[indexV].size() && mappingTable[indexV][0] != UINT16_MAX) {
         for (size_t p=0; p<mappingTable[indexV].size(); p++) {
           uint16_t indexP = mappingTable[indexV][p];
           fixture->ledsP[indexP] = blend(hsv, fixture->ledsP[indexP], fixture->globalBlend);
