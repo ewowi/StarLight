@@ -1315,13 +1315,14 @@ class Noise2D: public Effect {
   }
 }; //Noise2D
 
-
+//utility function
 static bool getBitValue(const byte* byteArray, size_t n) {
     size_t byteIndex = n / 8;
     size_t bitIndex = n % 8;
     uint8_t byte = byteArray[byteIndex];
     return (byte >> bitIndex) & 1;
 }
+//utility function
 static void setBitValue(byte* byteArray, size_t n, bool value) {
     size_t byteIndex = n / 8;
     size_t bitIndex = n % 8;
