@@ -33,7 +33,7 @@ void Fixture::projectAndMap() {
         leds->size = Coord3D{0,0,0};
         //vectors really gone now?
         for (PhysMap &map:leds->mappingTable) {
-          if (map.indexes) {
+          if (map.isMultipleIndexes()) {
             map.indexes->clear();
             delete map.indexes;
           }
@@ -250,8 +250,8 @@ void Fixture::projectAndMap() {
               leds->nrOfLeds = leds->size.x * leds->size.y * leds->size.z;
 
               if (indexV != UINT16_MAX) {
-                if (indexV >= leds->nrOfLeds || indexV >= NUM_LEDS_Max) {
-                  ppf("dev pre [%d] indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, leds->nrOfLeds, NUM_LEDS_Max, leds->mappingTable.size(), indexP, pixel.x, pixel.y, pixel.z, leds->size.x, leds->size.y, leds->size.z);
+                if (indexV >= leds->nrOfLeds || indexV >= NUM_VLEDS_Max) {
+                  ppf("dev pre [%d] indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, leds->nrOfLeds, NUM_VLEDS_Max, leds->mappingTable.size(), indexP, pixel.x, pixel.y, pixel.z, leds->size.x, leds->size.y, leds->size.z);
                 }
                 else {
                   Trigo trigo(leds->size.x-1); // 8 bits trigo with period leds->size.x-1 (currentl Float trigo as same performance)
@@ -308,8 +308,8 @@ void Fixture::projectAndMap() {
 
                   if (indexV != UINT16_MAX) { //can be nulled by inverse mapping 
                     //add physical tables if not present
-                    if (indexV >= leds->nrOfLeds || indexV >= NUM_LEDS_Max) {
-                      ppf("dev post [%d] indexV too high %d>=%d or %d (p:%d m:%d) p:%d,%d,%d\n", rowNr, indexV, leds->nrOfLeds, NUM_LEDS_Max, leds->mappingTable.size(), indexP, pixel.x, pixel.y, pixel.z);
+                    if (indexV >= leds->nrOfLeds || indexV >= NUM_VLEDS_Max) {
+                      ppf("dev post [%d] indexV too high %d>=%d or %d (p:%d m:%d) p:%d,%d,%d\n", rowNr, indexV, leds->nrOfLeds, NUM_VLEDS_Max, leds->mappingTable.size(), indexP, pixel.x, pixel.y, pixel.z);
                     }
                     else if (indexP < NUM_LEDS_Max) {
                       //create new physMaps if needed
@@ -319,11 +319,8 @@ void Fixture::projectAndMap() {
                           leds->mappingTable.push_back(PhysMap()); //abort() was called at PC 0x40191473 on core 1 std::allocator<unsigned short> >&&)
                         }
                       }
-                      //indexV is within the square
-                      if (!leds->isMapped(indexV)) {
-                        leds->mappingTable[indexV].indexes = new std::vector<unsigned16>;
-                      }
-                      leds->mappingTable[indexV].indexes->push_back(indexP); //add the current led to indexes
+
+                      leds->mappingTable[indexV].addIndexP(indexP);
                     }
                     else 
                       ppf("dev post [%d] indexP too high %d>=%d or %d (p:%d m:%d) p:%d,%d,%d\n", rowNr, indexP, nrOfLeds, NUM_LEDS_Max, leds->mappingTable.size(), indexP, pixel.x, pixel.y, pixel.z);
@@ -408,7 +405,11 @@ void Fixture::projectAndMap() {
             //debug info + summary values
             stackUnsigned16 indexV = 0;
             for (PhysMap &map:leds->mappingTable) {
-              if (map.indexes) { // && map.indexes->size()
+            // for (auto map=leds->mappingTable.begin(); map!=leds->mappingTable.end(); ++map) {
+              if (map.isOneIndex()) {
+                  nrOfPixels++;
+              }
+              else if (map.isMultipleIndexes()) { // && map.indexes->size()
                 // if (nrOfMappings < 10 || map.indexes->size() - indexV < 10) //first 10 and last 10
                 // if (nrOfMappings%(leds->nrOfLeds/10+1) == 0)
                   // ppf("ledV %d mapping: #ledsP (%d):", indexV, nrOfMappings);

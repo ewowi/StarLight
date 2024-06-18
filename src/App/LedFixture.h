@@ -15,7 +15,7 @@
 
 #include "LedLeds.h"
 
-#define NUM_LEDS_Max 4096
+#define NUM_LEDS_Max 8192
 
 #define _1D 1
 #define _2D 2

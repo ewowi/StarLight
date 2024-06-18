@@ -28,6 +28,8 @@
 #include "../data/font/console_font_6x8.h"
 #include "../data/font/console_font_7x9.h"
 
+#define NUM_VLEDS_Max 8192
+
 enum Projections
 {
   p_Default,
@@ -179,12 +181,74 @@ class SharedData {
 };
 
 struct PhysMap {
-  // bool isPhys = false; // 1 byte
-  // union {
+  union {
     std::vector<unsigned16> * indexes;
     CRGB color;
-  // }; // 4 bytes
-}; // expected to be 5 bytes but is 8 bytes!!!
+    uint16_t indexP[2];
+    byte type[4]; //type[3] == 63 for indexes pointers 
+  }; // 4 bytes
+
+  PhysMap() {
+    indexes = nullptr; //all zero's
+    setInitType();
+  }
+
+  void setInitType() {
+    type[3] = 255;
+  }
+  void setColorType() {
+    type[3] = 254;
+  }
+  void setOneIndexType() {
+    type[3] = 253;
+  }
+
+  bool isInit() {
+    return type[3] == 255;
+  }
+  bool isColor() {
+    return type[3] == 254;
+  }
+  bool isOneIndex() {
+    return type[3] == 253;
+  }
+  bool isMultipleIndexes() {
+    return type[3] < 253;
+  }
+  bool isOneOrMoreIndex() {
+    return type[3] <= 253;
+  }
+
+  void setColor(CRGB color) {
+    this->color = color;
+    setColorType();
+    // ppf("dev new color %d,%d,%d t: %d,%d,%d,%d\n", this->color.r, this->color.g, this->color.b, type[0], type[1], type[2], type[3]);
+    //dev new color 245,0,10 t: 245,0,10,255
+  }
+
+  void addIndexP(uint16_t indexP) {
+    if (isInit()) { //no indexes stored yet
+      this->indexP[0] = indexP;
+      // ppf("dev new indexP:%d type:%d,%d,%d,%d %d-%d\n", indexP, type[0], type[1], type[2], type[3], this->indexP[0], this->indexP[1]);
+      //dev new indexP:672 type:160,2,0,255 672-65280
+      setOneIndexType();
+    } else if (isOneIndex()) { //move to indexes
+      uint16_t oldIndex = this->indexP[0];
+      indexes = new std::vector<unsigned16>; //overwrite the oneIndex
+      // ppf("dev new indexes %d type:%d,%d,%d,%d p:%p\n", indexP, type[0], type[1], type[2], type[3], indexes);
+      //dev new indexes 894 type:88,122,254,63 p:0x3ffe7a58
+      if (!isMultipleIndexes()) //check if pointer is not setting the type[3] value
+        ppf("dev new PhysMap type:%d t3:%d b:%d p:%p\n", type, type[3], type[3] & 0x80, indexes);
+
+
+      if (isMultipleIndexes()) {
+        indexes->push_back(oldIndex); //add the old to the indexes vector
+        indexes->push_back(indexP); //add the new index to the indexesvector
+      }
+    }
+  }
+
+}; // 4 bytes
 
 class Leds {
 
@@ -240,7 +304,7 @@ public:
     fadeToBlackBy(100);
     doMap = true; // so loop is not running while deleting
     for (PhysMap &map:mappingTable) {
-      if (map.indexes) {
+      if (map.isMultipleIndexes()) {
         map.indexes->clear();
         delete map.indexes;
       }
@@ -303,7 +367,7 @@ public:
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
   bool isMapped(unsigned16 indexV) {
-    return indexV < mappingTable.size() && mappingTable[indexV].indexes;
+    return indexV < mappingTable.size() && mappingTable[indexV].isOneOrMoreIndex();
   }
 
   void blur1d(fract8 blur_amount)
