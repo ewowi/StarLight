@@ -1893,14 +1893,21 @@ struct Cube {
     //   }
     }
 
-    void drawCube2(Leds &leds) {
+    void drawCube2(Leds &leds, byte offset = 0) {
       int sizeX = leds.size.x-1;
       int sizeY = leds.size.y-1;
       int sizeZ = leds.size.z-1;
 
-      float scaleX = (SIZE - 1.0) / sizeX;
-      float scaleY = (SIZE - 1.0) / sizeY;
-      float scaleZ = (SIZE - 1.0) / sizeZ;
+      // 3 Sided Cube Cheat
+      if (leds.isMapped(leds.XYZNoSpin({0, leds.size.y/2, leds.size.z/2})) || leds.isMapped(leds.XYZNoSpin({leds.size.x-1, leds.size.y/2, leds.size.z/2}))) sizeX++;
+      if (leds.isMapped(leds.XYZNoSpin({leds.size.x/2, 0, leds.size.z/2})) || leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y-1, leds.size.z/2}))) sizeY++;
+      if (leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, 0})) || leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, leds.size.z-1}))) sizeZ++;
+
+
+
+      float scaleX = (SIZE + offset - 1.0) / sizeX;
+      float scaleY = (SIZE + offset - 1.0) / sizeY;
+      float scaleZ = (SIZE + offset - 1.0) / sizeZ;
 
       int halfX = sizeX / 2;
       int halfY = sizeY / 2;
@@ -1911,16 +1918,19 @@ struct Cube {
         if (leds.isMapped(leds.XYZNoSpin(led)) == 0) continue; // skip if not a physical LED
 
         // Normalize the coordinates to the Rubik's cube range
-        int normalizedX = round(x * scaleX);
-        int normalizedY = round(y * scaleY);
-        int normalizedZ = round(z * scaleZ);
-
+        int normalizedX = constrain(round(x * scaleX) - (offset / 2), 0, SIZE - 1);
+        int normalizedY = constrain(round(y * scaleY) - (offset / 2), 0, SIZE - 1);
+        int normalizedZ = constrain(round(z * scaleZ) - (offset / 2), 0, SIZE - 1);
+        
         // Calculate the distance to the closest face
         int distX = min(x, sizeX - x);
         int distY = min(y, sizeY - y);
         int distZ = min(z, sizeZ - z);
         int dist = min(distX, min(distY, distZ));
 
+        // if (y==1 && z == 0) {
+        //   ppf("Led: (%d, %d, %d) -> (%d, %d, %d) distX: %d, distY: %d, distZ: %d, dist: %d scaleX: %f, scaleY: %f, scaleZ: %f\n", led.x, led.y, led.z, normalizedX, normalizedY, normalizedZ, distX, distY, distZ, dist, scaleX, scaleY, scaleZ);
+        // }
         // ppf("Led: (%d, %d, %d) -> (%d, %d, %d) distX: %d, distY: %d, distZ: %d, dist: %d\n", led.x, led.y, led.z, normalizedX, normalizedY, normalizedZ, distX, distY, distZ, dist);
 
         if      (z == 0 || dist == distZ && z < halfZ)              leds.setPixelColor(led, getColor(front[normalizedY][normalizedX]));
@@ -1930,6 +1940,30 @@ struct Cube {
         else if (x == leds.size.x-1 || dist == distX && x >= halfX) leds.setPixelColor(led, getColor(right[normalizedY][normalizedZ]));
         else if (y == leds.size.y-1 || dist == distY && y >= halfY) leds.setPixelColor(led, getColor(bottom[normalizedZ][normalizedX]));
 
+      }
+    }
+
+    void printCube() {
+      ppf("-------------------\n");
+      for (int i = 0; i < SIZE; i++) {
+        for (int space = 0; space <= SIZE; space++) ppf("  ");
+        for (int j = 0; j < SIZE; ++j) ppf("%d ", top[i][j]);
+        ppf("\n");
+      }
+      for (int i = 0; i < SIZE; i++) {
+        for (int j = 0; j < SIZE; ++j) ppf("%d ", left[i][j]);
+        ppf("  ");
+        for (int j = 0; j < SIZE; ++j) ppf("%d ", front[i][j]);
+        ppf("  ");
+        for (int j = 0; j < SIZE; ++j) ppf("%d ", right[i][j]);
+        ppf("  ");
+        for (int j = 0; j < SIZE; ++j) ppf("%d ", back[i][j]);
+        ppf("\n");
+      }
+      for (int i = 0; i < SIZE; i++) {
+        for (int space = 0; space <= SIZE; space++) ppf("  ");
+        for (int j = 0; j < SIZE; ++j) ppf("%d ", bottom[i][j]);
+        ppf("\n");
       }
     }
 };
@@ -1974,7 +2008,7 @@ class RubiksCube: public Effect {
     // UI control variables
     uint8_t speed    = leds.sharedData.read<uint8_t>();
     uint8_t cubeSize = leds.sharedData.read<uint8_t>();
-    bool altDrawing  = leds.sharedData.read<bool>();
+    byte drawMethod  = leds.sharedData.read<byte>();
 
     // Effect variables
     uint8_t *setup        = leds.sharedData.readWrite<uint8_t>();
@@ -1983,6 +2017,7 @@ class RubiksCube: public Effect {
     uint8_t *prevCubeSize = leds.sharedData.readWrite<byte>();
     uint8_t *moveList     = leds.sharedData.readWrite<byte>(100);
     uint8_t *moveIndex    = leds.sharedData.readWrite<byte>();
+    byte *prevDrawMethod  = leds.sharedData.readWrite<byte>();
 
     if (cubeSize != *prevCubeSize || (*setup != 123 && sys->now > *step)) {
       *step = sys->now + 1000;
@@ -2012,8 +2047,16 @@ class RubiksCube: public Effect {
 
       *moveIndex = moveCount - 1;
 
-      if (altDrawing) cube->drawCube2(leds);
-      else            cube->drawCube(leds);
+      if (drawMethod == 0) cube->drawCube(leds);
+      else if (drawMethod == 1) cube->drawCube2(leds);
+      else if (drawMethod == 2) cube->drawCube2(leds, 2);
+    }
+
+    if (drawMethod != *prevDrawMethod) {
+      if (drawMethod == 0) cube->drawCube(leds);
+      else if (drawMethod == 1) cube->drawCube2(leds);
+      else if (drawMethod == 2) cube->drawCube2(leds, 2);
+      *prevDrawMethod = drawMethod;
     }
     
     if (!speed || sys->now - *step < 1000 / speed || sys->now < *step) return;
@@ -2026,9 +2069,10 @@ class RubiksCube: public Effect {
     else if (move.face == 3) cube->rotateRight (!move.direction, move.width+1);
     else if (move.face == 4) cube->rotateTop   (!move.direction, move.width+1);
     else if (move.face == 5) cube->rotateBottom(!move.direction, move.width+1);
-
-    if (altDrawing) cube->drawCube2(leds);
-    else            cube->drawCube(leds);
+      
+    if (drawMethod == 0) cube->drawCube(leds);
+    else if (drawMethod == 1) cube->drawCube2(leds);
+    else if (drawMethod == 2) cube->drawCube2(leds, 2);
     
     if (*moveIndex == 0) {
       *step = sys->now + 3000;
@@ -2042,7 +2086,16 @@ class RubiksCube: public Effect {
     Effect::controls(leds, parentVar);
     ui->initSlider  (parentVar, "Turns Per Second", leds.sharedData.write<uint8_t>(1), 0, 20);   
     ui->initSlider  (parentVar, "Cube Size",        leds.sharedData.write<uint8_t>(2), 1, 8);
-    ui->initCheckBox(parentVar, "Alt Drawing",      leds.sharedData.write<bool>(false));
+    ui->initSelect  (parentVar, "Draw Method",      leds.sharedData.write<byte>(0), false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+      case f_UIFun: {
+        JsonArray options = ui->setOptions(var);
+        options.add("CubeBox (Even sizes)");
+        options.add("Alt Draw");
+        options.add("Alt Draw 2");
+        return true;
+      }
+      default: return false;
+    }});
   }
 };
 
