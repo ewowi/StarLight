@@ -43,7 +43,7 @@ public:
   unsigned8 fixtureNr = -1;
   Coord3D fixSize = {8,8,1};
 
-  std::vector<Leds *> projections; //virtual leds
+  std::vector<Leds *> listOfLeds; //virtual leds
 
   Coord3D head = {0,0,0};
 

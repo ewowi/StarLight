@@ -25,7 +25,7 @@ void Fixture::projectAndMap() {
 
     // reset leds
     stackUnsigned8 rowNr = 0;
-    for (Leds *leds: projections) {
+    for (Leds *leds: listOfLeds) {
       if (leds->doMap) {
         leds->fill_solid(CRGB::Black, true); //no blend
 
@@ -78,9 +78,9 @@ void Fixture::projectAndMap() {
         // ppf("led %d,%d,%d start %d,%d,%d end %d,%d,%d\n",x,y,z, startPos.x, startPos.y, startPos.z, endPos.x, endPos.y, endPos.z);
 
         stackUnsigned8 rowNr = 0;
-        for (Leds *leds: projections) {
+        for (Leds *leds: listOfLeds) {
 
-          if (leds->projectionNr != p_Random && leds->projectionNr != p_None)
+          if (leds->projectionNr != p_Random && leds->projectionNr != p_None) //only real projections
           if (leds->doMap) { //add pixel in leds mappingtable
 
             //set start and endPos between bounderies of fixture
@@ -92,9 +92,9 @@ void Fixture::projectAndMap() {
 
             if (pixel >= startPosAdjusted && pixel <= endPosAdjusted ) { //if pixel between start and end pos
 
-              Coord3D pixelAdjusted = (pixel - startPosAdjusted)/10;
+              Coord3D pixelAdjusted = (pixel - startPosAdjusted)/10; //pixelRelative to startPos in cm
 
-              Coord3D sizeAdjusted = (endPosAdjusted - startPosAdjusted)/10 + Coord3D{1,1,1};
+              Coord3D sizeAdjusted = (endPosAdjusted - startPosAdjusted)/10 + Coord3D{1,1,1}; // in cm
 
               // 0 to 3D depending on start and endpos (e.g. to display ScrollingText on one side of a cube)
               leds->projectionDimension = 0;
@@ -332,7 +332,7 @@ void Fixture::projectAndMap() {
             } //if x,y,z between start and endpos
           } //leds->doMap
           rowNr++;
-        } //projections
+        } //listOfLeds
         indexP++; //also increase if no buffer created
       } //if 1D-3D pixel
 
@@ -376,7 +376,7 @@ void Fixture::projectAndMap() {
       //after processing each led
       stackUnsigned8 rowNr = 0;
 
-      for (Leds *leds: projections) {
+      for (Leds *leds: listOfLeds) {
         if (leds->doMap) {
           ppf("projectAndMap post leds[%d] fx:%d pro:%d\n", rowNr, leds->fx, leds->projectionNr);
 
