@@ -55,20 +55,20 @@ public:
         ui->setComment(var, "List of effects");
         return true;
       case f_AddRow: {
-        rowNr = fixture.projections.size();
+        rowNr = fixture.listOfLeds.size();
         // ppf("chFun addRow %s[%d]\n", mdl->varID(var), rowNr);
 
         web->getResponseObject()["addRow"]["rowNr"] = rowNr;
 
-        if (rowNr >= fixture.projections.size())
-          fixture.projections.push_back(new Leds(fixture));
+        if (rowNr >= fixture.listOfLeds.size())
+          fixture.listOfLeds.push_back(new Leds(fixture));
         return true; }
       case f_DelRow: {
         // ppf("chFun delrow %s[%d]\n", mdl->varID(var), rowNr);
         //tbd: fade to black
-        if (rowNr <fixture.projections.size()) {
-          Leds *leds = fixture.projections[rowNr];
-          fixture.projections.erase(fixture.projections.begin() + rowNr); //remove from vector
+        if (rowNr <fixture.listOfLeds.size()) {
+          Leds *leds = fixture.listOfLeds[rowNr];
+          fixture.listOfLeds.erase(fixture.listOfLeds.begin() + rowNr); //remove from vector
           delete leds; //remove leds itself
         }
         return true; }
@@ -77,8 +77,8 @@ public:
 
     currentVar = ui->initSelect(tableVar, "fx", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.projections.size(); rowNr++)
-          mdl->setValue(var, fixture.projections[rowNr]->fx, rowNr);
+        for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++)
+          mdl->setValue(var, fixture.listOfLeds[rowNr]->fx, rowNr);
         return true;
       case f_UIFun: {
         ui->setLabel(var, "Effect");
@@ -98,13 +98,13 @@ public:
         if (rowNr == UINT8_MAX) rowNr = 0; // in case fx without a rowNr
 
         //create a new leds instance if a new row is created
-        if (rowNr >= fixture.projections.size()) {
-          ppf("projections fx[%d] changeFun %d %s\n", rowNr, fixture.projections.size(), mdl->findVar("fx")["value"].as<String>().c_str());
-          fixture.projections.push_back(new Leds(fixture));
+        if (rowNr >= fixture.listOfLeds.size()) {
+          ppf("listOfLeds fx[%d] changeFun %d %s\n", rowNr, fixture.listOfLeds.size(), mdl->findVar("fx")["value"].as<String>().c_str());
+          fixture.listOfLeds.push_back(new Leds(fixture));
         }
 
-        if (rowNr < fixture.projections.size()) {
-          Leds *leds = fixture.projections[rowNr];
+        if (rowNr < fixture.listOfLeds.size()) {
+          Leds *leds = fixture.listOfLeds[rowNr];
 
           leds->fx = mdl->getValue(var, rowNr);
 
@@ -143,8 +143,8 @@ public:
 
     currentVar = ui->initSelect(tableVar, "pro", 2, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.projections.size(); rowNr++)
-          mdl->setValue(var, fixture.projections[rowNr]->projectionNr, rowNr);
+        for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++)
+          mdl->setValue(var, fixture.listOfLeds[rowNr]->projectionNr, rowNr);
         return true;
       case f_UIFun: {
         ui->setLabel(var, "Projection");
@@ -165,11 +165,11 @@ public:
 
         if (rowNr == UINT8_MAX) rowNr = 0; // in case fx without a rowNr
 
-        if (rowNr < fixture.projections.size()) {
-          fixture.projections[rowNr]->doMap = true;
+        if (rowNr < fixture.listOfLeds.size()) {
+          fixture.listOfLeds[rowNr]->doMap = true;
 
           stackUnsigned8 proValue = mdl->getValue(var, rowNr);
-          fixture.projections[rowNr]->projectionNr = proValue;
+          fixture.listOfLeds[rowNr]->projectionNr = proValue;
 
           mdl->varPreDetails(var, rowNr); //set all positive var N orders to negative
           if (proValue == p_DistanceFromPoint || proValue == p_Preset1) {
@@ -179,9 +179,9 @@ public:
                 return true;
               case f_ChangeFun:
                 //initiate projectAndMap
-                ppf("proCenter %d %d\n", rowNr, fixture.projections.size());
-                if (rowNr < fixture.projections.size()) {
-                  fixture.projections[rowNr]->doMap = true; //Guru Meditation Error: Core  1 panic'ed (StoreProhibited). Exception was unhandled.
+                ppf("proCenter %d %d\n", rowNr, fixture.listOfLeds.size());
+                if (rowNr < fixture.listOfLeds.size()) {
+                  fixture.listOfLeds[rowNr]->doMap = true; //Guru Meditation Error: Core  1 panic'ed (StoreProhibited). Exception was unhandled.
                   fixture.doMap = true;
                 }
                 // ui->setLabel(var, "Size");
@@ -197,15 +197,15 @@ public:
               case f_ChangeFun:
                 ui->initCheckBox(var, "mirror", false, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
                   case f_ChangeFun:
-                    if (rowNr < fixture.projections.size()) {
-                      fixture.projections[rowNr]->doMap = true;
+                    if (rowNr < fixture.listOfLeds.size()) {
+                      fixture.listOfLeds[rowNr]->doMap = true;
                       fixture.doMap = true;
                     }
                     return true;
                   default: return false;
                 }});
-                if (rowNr < fixture.projections.size()) {
-                  fixture.projections[rowNr]->doMap = true;
+                if (rowNr < fixture.listOfLeds.size()) {
+                  fixture.listOfLeds[rowNr]->doMap = true;
                   fixture.doMap = true;
                 }
                 return true;
@@ -215,15 +215,15 @@ public:
           if (proValue == p_TiltPanRoll || proValue == p_Preset1) {
             ui->initSlider(var, "proTilt", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
               case f_ChangeFun:
-                if (rowNr < fixture.projections.size())
-                  fixture.projections[rowNr]->proTiltSpeed = mdl->getValue(var, rowNr);
+                if (rowNr < fixture.listOfLeds.size())
+                  fixture.listOfLeds[rowNr]->proTiltSpeed = mdl->getValue(var, rowNr);
                 return true;
               default: return false;
             }});
             ui->initSlider(var, "proPan", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
               case f_ChangeFun:
-                if (rowNr < fixture.projections.size())
-                  fixture.projections[rowNr]->proPanSpeed = mdl->getValue(var, rowNr);
+                if (rowNr < fixture.listOfLeds.size())
+                  fixture.listOfLeds[rowNr]->proPanSpeed = mdl->getValue(var, rowNr);
                 return true;
               default: return false;
             }});
@@ -234,15 +234,15 @@ public:
                 ui->setLabel(var, "Roll speed");
                 return true;
               case f_ChangeFun:
-                if (rowNr < fixture.projections.size())
-                  fixture.projections[rowNr]->proRollSpeed = mdl->getValue(var, rowNr);
+                if (rowNr < fixture.listOfLeds.size())
+                  fixture.listOfLeds[rowNr]->proRollSpeed = mdl->getValue(var, rowNr);
                 return true;
               default: return false;
             }});
           }
           mdl->varPostDetails(var, rowNr);
 
-          // ppf("chFun pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.projections.size());
+          // ppf("chFun pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.listOfLeds.size());
 
           fixture.doMap = true;
         }
@@ -253,9 +253,9 @@ public:
 
     ui->initCoord3D(tableVar, "fxStart", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.projections.size(); rowNr++) {
-          ppf("fxStart[%d] valueFun %d,%d,%d\n", rowNr, fixture.projections[rowNr]->startPos.x, fixture.projections[rowNr]->startPos.y, fixture.projections[rowNr]->startPos.z);
-          mdl->setValue(var, fixture.projections[rowNr]->startPos, rowNr);
+        for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++) {
+          ppf("fxStart[%d] valueFun %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->startPos.x, fixture.listOfLeds[rowNr]->startPos.y, fixture.listOfLeds[rowNr]->startPos.z);
+          mdl->setValue(var, fixture.listOfLeds[rowNr]->startPos, rowNr);
         }
         return true;
       case f_UIFun:
@@ -263,17 +263,17 @@ public:
         ui->setComment(var, "In pixels");
         return true;
       case f_ChangeFun:
-        if (rowNr < fixture.projections.size()) {
-          fixture.projections[rowNr]->startPos = mdl->getValue(var, rowNr).as<Coord3D>();
+        if (rowNr < fixture.listOfLeds.size()) {
+          fixture.listOfLeds[rowNr]->startPos = mdl->getValue(var, rowNr).as<Coord3D>();
 
-          ppf("fxStart[%d] chFun %d,%d,%d\n", rowNr, fixture.projections[rowNr]->startPos.x, fixture.projections[rowNr]->startPos.y, fixture.projections[rowNr]->startPos.z);
+          ppf("fxStart[%d] chFun %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->startPos.x, fixture.listOfLeds[rowNr]->startPos.y, fixture.listOfLeds[rowNr]->startPos.z);
 
-          fixture.projections[rowNr]->fadeToBlackBy();
-          fixture.projections[rowNr]->doMap = true;
+          fixture.listOfLeds[rowNr]->fadeToBlackBy();
+          fixture.listOfLeds[rowNr]->doMap = true;
           fixture.doMap = true;
         }
         else {
-          ppf("fxStart[%d] chfun rownr not in range > %d\n", rowNr, fixture.projections.size());
+          ppf("fxStart[%d] chfun rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
         }
         return true;
       default: return false;
@@ -281,9 +281,9 @@ public:
 
     ui->initCoord3D(tableVar, "fxEnd", {8,8,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.projections.size(); rowNr++) {
-          ppf("fxEnd[%d] valueFun %d,%d,%d\n", rowNr, fixture.projections[rowNr]->endPos.x, fixture.projections[rowNr]->endPos.y, fixture.projections[rowNr]->endPos.z);
-          mdl->setValue(var, fixture.projections[rowNr]->endPos, rowNr);
+        for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++) {
+          ppf("fxEnd[%d] valueFun %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->endPos.x, fixture.listOfLeds[rowNr]->endPos.y, fixture.listOfLeds[rowNr]->endPos.z);
+          mdl->setValue(var, fixture.listOfLeds[rowNr]->endPos, rowNr);
         }
         return true;
       case f_UIFun:
@@ -291,17 +291,17 @@ public:
         ui->setComment(var, "In pixels");
         return true;
       case f_ChangeFun:
-        if (rowNr < fixture.projections.size()) {
-          fixture.projections[rowNr]->endPos = mdl->getValue(var, rowNr).as<Coord3D>();
+        if (rowNr < fixture.listOfLeds.size()) {
+          fixture.listOfLeds[rowNr]->endPos = mdl->getValue(var, rowNr).as<Coord3D>();
 
-          ppf("fxEnd[%d] chFun %d,%d,%d\n", rowNr, fixture.projections[rowNr]->endPos.x, fixture.projections[rowNr]->endPos.y, fixture.projections[rowNr]->endPos.z);
+          ppf("fxEnd[%d] chFun %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->endPos.x, fixture.listOfLeds[rowNr]->endPos.y, fixture.listOfLeds[rowNr]->endPos.z);
 
-          fixture.projections[rowNr]->fadeToBlackBy();
-          fixture.projections[rowNr]->doMap = true;
+          fixture.listOfLeds[rowNr]->fadeToBlackBy();
+          fixture.listOfLeds[rowNr]->doMap = true;
           fixture.doMap = true;
         }
         else {
-          ppf("fxEnd[%d] chfun rownr not in range > %d\n", rowNr, fixture.projections.size());
+          ppf("fxEnd[%d] chfun rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
         }
         return true;
       default: return false;
@@ -309,9 +309,9 @@ public:
 
     ui->initText(tableVar, "fxSize", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun: {
-        // for (std::vector<Leds *>::iterator leds=fixture.projections.begin(); leds!=fixture.projections.end(); ++leds) {
+        // for (std::vector<Leds *>::iterator leds=fixture.listOfLeds.begin(); leds!=fixture.listOfLeds.end(); ++leds) {
         stackUnsigned8 rowNr = 0;
-        for (Leds *leds:fixture.projections) {
+        for (Leds *leds:fixture.listOfLeds) {
           char message[32];
           print->fFormat(message, sizeof(message)-1, "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           ppf("valueFun fxSize[%d] = %s\n", rowNr, message);
@@ -379,7 +379,7 @@ public:
       //for each programmed effect
       //  run the next frame of the effect
       stackUnsigned8 rowNr = 0;
-      for (Leds *leds: fixture.projections) {
+      for (Leds *leds: fixture.listOfLeds) {
         if (!leds->doMap) { // don't run effect while remapping
           // ppf(" %d %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->fx, leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
           mdl->getValueRowNr = rowNr++;
@@ -415,8 +415,8 @@ public:
       ppf("LedModEffects loop canvasData %s\n", canvasData);
 
       uint8_t rowNr = 0; //currently only leds[0] supported
-      if (fixture.projections.size()) {
-        fixture.projections[rowNr]->fadeToBlackBy();
+      if (fixture.listOfLeds.size()) {
+        fixture.listOfLeds[rowNr]->fadeToBlackBy();
 
         char * token = strtok((char *)canvasData, ":");
         bool isStart = strcmp(token, "start") == 0;
@@ -424,7 +424,7 @@ public:
 
         Coord3D midCoord; //placeHolder for mid
 
-        Coord3D *newCoord = isStart? &fixture.projections[rowNr]->startPos: isEnd? &fixture.projections[rowNr]->endPos : &midCoord;
+        Coord3D *newCoord = isStart? &fixture.listOfLeds[rowNr]->startPos: isEnd? &fixture.listOfLeds[rowNr]->endPos : &midCoord;
 
         if (newCoord) {
           token = strtok(NULL, ",");
@@ -436,7 +436,7 @@ public:
 
           mdl->setValue(isStart?"fxStart":isEnd?"fxEnd":"proCenter", *newCoord, 0); //assuming row 0 for the moment
 
-          fixture.projections[rowNr]->doMap = true; //recalc projection
+          fixture.listOfLeds[rowNr]->doMap = true; //recalc projection
           fixture.doMap = true;
         }
 

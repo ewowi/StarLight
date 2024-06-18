@@ -140,8 +140,8 @@ public:
         eff->fixture.doAllocPins = true;
 
         //remap all leds
-        // for (std::vector<Leds *>::iterator leds=eff->fixture.projections.begin(); leds!=eff->fixture.projections.end(); ++leds) {
-        for (Leds *leds: eff->fixture.projections) {
+        // for (std::vector<Leds *>::iterator leds=eff->fixture.listOfLeds.begin(); leds!=eff->fixture.listOfLeds.end(); ++leds) {
+        for (Leds *leds: eff->fixture.listOfLeds) {
           leds->doMap = true;
         }
 

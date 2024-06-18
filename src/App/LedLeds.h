@@ -30,7 +30,7 @@
 
 #define NUM_VLEDS_Max 8192
 
-enum Projections
+enum ProjectionsE
 {
   p_Default,
   p_Multiply,
@@ -240,11 +240,14 @@ struct PhysMap {
       if (!isMultipleIndexes()) //check if pointer is not setting the type[3] value
         ppf("dev new PhysMap type:%d t3:%d b:%d p:%p\n", type, type[3], type[3] & 0x80, indexes);
 
-
       if (isMultipleIndexes()) {
         indexes->push_back(oldIndex); //add the old to the indexes vector
-        indexes->push_back(indexP); //add the new index to the indexesvector
       }
+
+    }
+
+    if (isMultipleIndexes()) {
+      indexes->push_back(indexP); //add the new index to the indexesvector
     }
   }
 
