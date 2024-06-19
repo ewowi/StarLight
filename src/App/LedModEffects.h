@@ -33,13 +33,63 @@ public:
 
   unsigned16 fps = 60;
   unsigned long lastMappingMillis = 0;
-  Effects effects;
+
+  std::vector<Effect *> effects;
 
   Fixture fixture = Fixture();
 
   bool fShow = true;
 
   LedModEffects() :SysModule("Effects") {
+    //1D Basis
+    effects.push_back(new SolidEffect);
+    // 1D FastLed
+    effects.push_back(new RainbowEffect);
+    effects.push_back(new RainbowWithGlitterEffect);
+    effects.push_back(new SinelonEffect);
+    effects.push_back(new ConfettiEffect);
+    effects.push_back(new BPMEffect);
+    effects.push_back(new JuggleEffect);
+    //1D StarLeds
+    effects.push_back(new RunningEffect);
+    effects.push_back(new RingRandomFlow);
+    // 1D WLED
+    effects.push_back(new BouncingBalls);
+    effects.push_back(new RainEffect);
+    effects.push_back(new DripEffect);
+    effects.push_back(new HeartBeatEffect);
+
+    #ifdef STARLEDS_USERMOD_WLEDAUDIO
+      //1D Volume
+      effects.push_back(new FreqMatrix);
+      effects.push_back(new PopCorn);
+      effects.push_back(new NoiseMeter);
+      //1D frequency
+      effects.push_back(new AudioRings);
+      effects.push_back(new DJLight);
+    #endif
+
+    //2D StarLeds
+    effects.push_back(new Lines);
+    //2D WLED
+    effects.push_back(new BlackHole);
+    effects.push_back(new DNA);
+    effects.push_back(new DistortionWaves);
+    effects.push_back(new Octopus);
+    effects.push_back(new Lissajous);
+    effects.push_back(new Frizzles);
+    effects.push_back(new ScrollingText);
+    effects.push_back(new Noise2D);
+    effects.push_back(new GameOfLife);
+    #ifdef STARLEDS_USERMOD_WLEDAUDIO
+      //2D WLED
+      effects.push_back(new Waverly);
+      effects.push_back(new GEQEffect);
+      effects.push_back(new FunkyPlank);
+    #endif
+    //3D
+    effects.push_back(new RipplesEffect);
+    effects.push_back(new SphereMoveEffect);
   };
 
   void setup() {
@@ -84,7 +134,7 @@ public:
         ui->setLabel(var, "Effect");
         ui->setComment(var, "Effect to show");
         JsonArray options = ui->setOptions(var);
-        for (Effect *effect:effects.effects) {
+        for (Effect *effect:effects) {
           char buf[32] = "";
           strcat(buf, effect->name());
           strcat(buf, effect->dim()==_1D?" ┊":effect->dim()==_2D?" ▦":" 🧊");
@@ -110,11 +160,11 @@ public:
 
           ppf("setEffect fx[%d]: %d\n", rowNr, leds->fx);
 
-          if (leds->fx < effects.effects.size()) {
+          if (leds->fx < effects.size()) {
 
             leds->sharedData.reset(); //make sure all values are 0 and reset for a fresh start of the effect
 
-            Effect* effect = effects.effects[leds->fx];
+            Effect* effect = effects[leds->fx];
 
             // effect->loop(leds); //do a loop to set sharedData right
             // leds->sharedData.loop();
@@ -128,8 +178,8 @@ public:
             print->printVar(var);
             ppf("\n");
 
-            if (effects.effects[leds->fx]->dim() != leds->effectDimension) {
-              leds->effectDimension = effects.effects[leds->fx]->dim();
+            if (effects[leds->fx]->dim() != leds->effectDimension) {
+              leds->effectDimension = effects[leds->fx]->dim();
               leds->doMap = true;
               leds->fixture->doMap = true;
             }
@@ -344,7 +394,7 @@ public:
     #ifdef STARBASE_USERMOD_E131
       // if (e131mod->isEnabled) {
           e131mod->patchChannel(0, "bri", 255); //should be 256??
-          e131mod->patchChannel(1, "fx", effects.effects.size());
+          e131mod->patchChannel(1, "fx", effects.size());
           e131mod->patchChannel(2, "pal", 8); //tbd: calculate nr of palettes (from select)
           // //add these temporary to test remote changing of this values do not crash the system
           // e131mod->patchChannel(3, "pro", Projections::count);
@@ -359,8 +409,6 @@ public:
       // else
       //   ppf("Leds e131 not enabled\n");
     #endif
-
-    effects.setup();
 
     FastLED.setMaxPowerInVoltsAndMilliamps(5,2000); // 5v, 2000mA
   }
@@ -383,7 +431,10 @@ public:
         if (!leds->doMap) { // don't run effect while remapping
           // ppf(" %d %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->fx, leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
           mdl->getValueRowNr = rowNr++;
-          effects.loop(*leds);
+
+          leds->sharedData.loop(); //sets the sharedData pointer back to 0 so loop effect can go through it
+          effects[leds->fx]->loop(*leds);
+
           mdl->getValueRowNr = UINT8_MAX;
           if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
             leds->fadeToBlackBy(50);

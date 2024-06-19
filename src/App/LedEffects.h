@@ -16,9 +16,6 @@
   #include "../User/UserModE131.h"
 #endif
 
-uint8_t gHue = 0; // rotating "base color" used by many of the patterns
-unsigned long call = 0; //not used at the moment (don't use in effect calculations), well this is not entirely true.
-
 //utility function
 float distance(float x1, float y1, float z1, float x2, float y2, float z2) {
   return sqrtf((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
@@ -105,7 +102,7 @@ public:
 
   void loop(Leds &leds) {
     // FastLED's built-in rainbow generator
-    leds.fill_rainbow(gHue, 7);
+    leds.fill_rainbow(sys->now/50, 7);
   }
 
   void controls(Leds &leds, JsonObject parentVar) {} //so no palette control is created
@@ -142,7 +139,7 @@ class SinelonEffect: public Effect {
     leds.fadeToBlackBy(20);
 
     int pos = beatsin16( bpm, 0, leds.nrOfLeds-1 );
-    leds[pos] = leds.getPixelColor(pos) + CHSV( gHue, 255, 255);
+    leds[pos] = leds.getPixelColor(pos) + CHSV( sys->now/50, 255, 255);
   }
   
   void controls(Leds &leds, JsonObject parentVar) {
@@ -159,7 +156,7 @@ class ConfettiEffect: public Effect {
     // random colored speckles that blink in and fade smoothly
     leds.fadeToBlackBy(10);
     int pos = random16(leds.nrOfLeds);
-    leds[pos] += CHSV( gHue + random8(64), 200, 255);
+    leds[pos] += CHSV( sys->now/50 + random8(64), 200, 255);
   }
 
   void controls(Leds &leds, JsonObject parentVar) {} //so no palette control is created
@@ -175,7 +172,7 @@ class BPMEffect: public Effect {
     uint8_t BeatsPerMinute = 62;
     uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
     for (forUnsigned16 i = 0; i < leds.nrOfLeds; i++) { //9948
-      leds[i] = ColorFromPalette(leds.palette, gHue+(i*2), beat-gHue+(i*10));
+      leds[i] = ColorFromPalette(leds.palette, sys->now/50+(i*2), beat-sys->now/50+(i*10));
     }
   }
   
@@ -216,8 +213,8 @@ class RunningEffect: public Effect {
     leds.fadeToBlackBy(fade); //physical leds
     int pos = map(beat16( bpm), 0, UINT16_MAX, 0, leds.nrOfLeds-1 ); //instead of call%leds.nrOfLeds
     // int pos2 = map(beat16( bpm, 1000), 0, UINT16_MAX, 0, leds.nrOfLeds-1 ); //one second later
-    leds[pos] = CHSV( gHue, 255, 255); //make sure the right physical leds get their value
-    // leds[leds.nrOfLeds -1 - pos2] = CHSV( gHue, 255, 255); //make sure the right physical leds get their value
+    leds[pos] = CHSV( sys->now/50, 255, 255); //make sure the right physical leds get their value
+    // leds[leds.nrOfLeds -1 - pos2] = CHSV( sys->now/50, 255, 255); //make sure the right physical leds get their value
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
@@ -922,12 +919,12 @@ class Lines: public Effect {
       pos.x = map(beat16( bpm), 0, UINT16_MAX, 0, leds.size.x-1 ); //instead of call%width
 
       for (pos.y = 0; pos.y <  leds.size.y; pos.y++) {
-        leds[pos] = CHSV( gHue, 255, 255);
+        leds[pos] = CHSV( sys->now/50, 255, 255);
       }
     } else {
       pos.y = map(beat16( bpm), 0, UINT16_MAX, 0, leds.size.y-1 ); //instead of call%height
       for (pos.x = 0; pos.x <  leds.size.x; pos.x++) {
-        leds[pos] = CHSV( gHue, 255, 255);
+        leds[pos] = CHSV( sys->now/50, 255, 255);
       }
     }
   }
@@ -1266,7 +1263,7 @@ class ScrollingText: public Effect {
     // tbd: this should be removed and fx.changeFUn (setEffect) must make sure this cannot happen!!
     if (text && strlen(text)>0) {
       leds.fadeToBlackBy();
-      leds.drawText(text, 0, 0, font, CRGB::Red, - (call*speed/256));
+      leds.drawText(text, 0, 0, font, CRGB::Red, - (sys->now/25*speed/256));
     }
 
   }
@@ -1424,8 +1421,8 @@ class GameOfLife: public Effect {
     CRGB color   = ColorFromPalette(leds.palette, random8()); // Used if all parents died
 
     // Start New Game of Life
-    if (call == 0  || *setUp != 123|| (*generation == 0 && *step < sys->now)) {
-      *setUp = 123; // quick fix for effect starting up
+    if (*setUp != 123|| (*generation == 0 && *step < sys->now)) {
+      *setUp = 123; // quick fix for effect starting up (instead of call == 0  || )
       *prevPalette = colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, 0);
       *generation = 1;
       disablePause ? *step = sys->now : *step = sys->now + 1500;
@@ -2041,7 +2038,7 @@ class GEQEffect: public Effect {
       }
 
       if ((ripple > 0) && (previousBarHeight[pos.x] > 0) && (previousBarHeight[pos.x] < leds.size.y))  // WLEDMM avoid "overshooting" into other segments
-        leds.setPixelColor(leds.XY(pos.x, leds.size.y - previousBarHeight[pos.x]), CHSV( gHue, 255, 255)); // take gHue color for the time being
+        leds.setPixelColor(leds.XY(pos.x, leds.size.y - previousBarHeight[pos.x]), CHSV( sys->now/50, 255, 255)); // take sys->now/50 color for the time being
 
       if (rippleTime && previousBarHeight[pos.x]>0) previousBarHeight[pos.x]--;    //delay/ripple effect
 
@@ -2148,7 +2145,7 @@ class RipplesEffect: public Effect {
         uint32_t time_interval = sys->now/(100 - speed)/((256.0f-128.0f)/20.0f);
         pos.y = floor(leds.size.y/2.0f + sinf(d/ripple_interval + time_interval) * leds.size.y/2.0f); //between 0 and leds.size.y
 
-        leds[pos] = CHSV( gHue + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri, LINEARBLEND);
+        leds[pos] = CHSV( sys->now/50 + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri, LINEARBLEND);
       }
     }
   }
@@ -2186,7 +2183,7 @@ class SphereMoveEffect: public Effect {
                 uint16_t d = distance(pos.x, pos.y, pos.z, origin.x, origin.y, origin.z);
 
                 if (d>diameter && d<diameter+1) {
-                  leds[pos] = CHSV( gHue + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri, LINEARBLEND);
+                  leds[pos] = CHSV( sys->now/50 + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri, LINEARBLEND);
                 }
             }
         }
@@ -2197,100 +2194,3 @@ class SphereMoveEffect: public Effect {
     ui->initSlider(parentVar, "speed", leds.sharedData.write<uint8_t>(50), 0, 99);
   }
 }; // SphereMove3DEffect
-
-class Effects {
-public:
-  std::vector<Effect *> effects;
-
-  Effects() {
-    //create effects before fx.chFun is called
-
-    //1D Basis
-    effects.push_back(new SolidEffect);
-    // 1D FastLed
-    effects.push_back(new RainbowEffect);
-    effects.push_back(new RainbowWithGlitterEffect);
-    effects.push_back(new SinelonEffect);
-    effects.push_back(new ConfettiEffect);
-    effects.push_back(new BPMEffect);
-    effects.push_back(new JuggleEffect);
-    //1D StarLeds
-    effects.push_back(new RunningEffect);
-    effects.push_back(new RingRandomFlow);
-    // 1D WLED
-    effects.push_back(new BouncingBalls);
-    effects.push_back(new RainEffect);
-    effects.push_back(new DripEffect);
-    effects.push_back(new HeartBeatEffect);
-
-    #ifdef STARLEDS_USERMOD_WLEDAUDIO
-      //1D Volume
-      effects.push_back(new FreqMatrix);
-      effects.push_back(new PopCorn);
-      effects.push_back(new NoiseMeter);
-      //1D frequency
-      effects.push_back(new AudioRings);
-      effects.push_back(new DJLight);
-    #endif
-
-    //2D StarLeds
-    effects.push_back(new Lines);
-    //2D WLED
-    effects.push_back(new BlackHole);
-    effects.push_back(new DNA);
-    effects.push_back(new DistortionWaves);
-    effects.push_back(new Octopus);
-    effects.push_back(new Lissajous);
-    effects.push_back(new Frizzles);
-    effects.push_back(new ScrollingText);
-    effects.push_back(new Noise2D);
-    effects.push_back(new GameOfLife);
-    effects.push_back(new RubiksCube);
-    #ifdef STARLEDS_USERMOD_WLEDAUDIO
-      //2D WLED
-      effects.push_back(new Waverly);
-      effects.push_back(new GEQEffect);
-      effects.push_back(new FunkyPlank);
-    #endif
-    //3D
-    effects.push_back(new RipplesEffect);
-    effects.push_back(new SphereMoveEffect);
-}
-
-  void setup() {
-    //check of no local variables (should be only 4 bytes): tbd: can we loop over effects (sizeof(effect does not work))
-    // for (Effect *effect:effects) {
-    //     ppf("Size of %s is %d\n", effect->name(), sizeof(*effect));
-    // }
-    // ppf("Size of %s is %d\n", "RainbowEffect", sizeof(RainbowEffect));
-    // ppf("Size of %s is %d\n", "RainbowWithGlitterEffect", sizeof(RainbowWithGlitterEffect));
-    // ppf("Size of %s is %d\n", "SinelonEffect", sizeof(SinelonEffect));
-    // ppf("Size of %s is %d\n", "RunningEffect", sizeof(RunningEffect));
-    // ppf("Size of %s is %d\n", "ConfettiEffect", sizeof(ConfettiEffect));
-    // ppf("Size of %s is %d\n", "BPMEffect", sizeof(BPMEffect));
-    // ppf("Size of %s is %d\n", "JuggleEffect", sizeof(JuggleEffect));
-    // ppf("Size of %s is %d\n", "RipplesEffect", sizeof(RipplesEffect));
-    // ppf("Size of %s is %d\n", "SphereMoveEffect", sizeof(SphereMoveEffect));
-    // ppf("Size of %s is %d\n", "Frizzles", sizeof(Frizzles));
-    // ppf("Size of %s is %d\n", "Lines", sizeof(Lines));
-    // ppf("Size of %s is %d\n", "DistortionWaves", sizeof(DistortionWaves));
-    // ppf("Size of %s is %d\n", "Octopus", sizeof(Octopus));
-    // ppf("Size of %s is %d\n", "Lissajous", sizeof(Lissajous));
-    // ppf("Size of %s is %d\n", "BouncingBalls", sizeof(BouncingBalls));
-    // ppf("Size of %s is %d\n", "RingRandomFlow", sizeof(RingRandomFlow));
-    // #ifdef STARLEDS_USERMOD_WLEDAUDIO
-    //   ppf("Size of %s is %d\n", "GEQEffect", sizeof(GEQEffect));
-    //   ppf("Size of %s is %d\n", "AudioRings", sizeof(AudioRings));
-    // #endif
-  }
-
-  void loop(Leds &leds) {
-    leds.sharedData.loop(); //sets the sharedData pointer back to 0 so loop effect can go through it
-    effects[leds.fx%effects.size()]->loop(leds);
-
-    call++;
-
-    EVERY_N_MILLISECONDS( 20 ) { gHue++; } // slowly cycle the "base color" through the rainbow
-  }
-
-};
