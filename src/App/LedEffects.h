@@ -1628,229 +1628,234 @@ class GameOfLife: public Effect {
   }
 }; //GameOfLife
 
-struct Cube {
-    uint8_t SIZE = 4;
-    static const uint8_t MAX_SIZE = 8;
-    using Face = std::array<std::array<uint8_t, MAX_SIZE>, MAX_SIZE>;
-    Face front;
-    Face back;
-    Face left;
-    Face right;
-    Face top;
-    Face bottom;
 
-    Cube() {
-      init(SIZE);
-    }
-    
-    void init(uint8_t cubeSize) {
-      SIZE = cubeSize;
-      for (int i = 0; i < MAX_SIZE; i++) for (int j = 0; j < MAX_SIZE; j++) {
-        front[i][j]  = 0;
-        back[i][j]   = 1;  
-        left[i][j]   = 2;  
-        right[i][j]  = 3; 
-        top[i][j]    = 4;   
-        bottom[i][j] = 5;
-      }
-    }
-
-    void rotateFace(Face& face, bool clockwise) {
-      Face temp = face;
-      if (clockwise) for (int i = 0; i < SIZE; i++) for (int j = 0; j < SIZE; j++) {
-        face[j][SIZE - 1 - i] = temp[i][j]; 
-      }  
-      else for (int i = 0; i < SIZE; i++) for (int j = 0; j < SIZE; j++) {
-        face[SIZE - 1 - j][i] = temp[i][j];
-      }
-    }
-
-    void rotateRow(int startRow, int stopRow, bool clockwise) {
-      std::array<uint8_t, MAX_SIZE> temp;
-      for (int row = startRow; row <= stopRow; row++) {
-        if (clockwise) for (int i = 0; i < SIZE; i++) {
-          temp[i]       = left[row][i];
-          left[row][i]  = front[row][i];
-          front[row][i] = right[row][i];
-          right[row][i] = back[row][i];
-          back[row][i]  = temp[i];
-        } 
-        else for (int i = 0; i < SIZE; i++) {
-          temp[i]       = left[row][i];
-          left[row][i]  = back[row][i];
-          back[row][i]  = right[row][i];
-          right[row][i] = front[row][i];
-          front[row][i] = temp[i];
-        }
-      }
-    }
-
-    void rotateColumn(int startCol, int stopCol, bool clockwise) {
-      std::array<uint8_t, MAX_SIZE> temp;
-      for (int col = startCol; col <= stopCol; col++) {
-        if (clockwise) for (int i = 0; i < SIZE; i++) {
-          temp[i]        = top[i][col];
-          top[i][col]    = front[i][col];
-          front[i][col]  = bottom[i][col];
-          bottom[i][col] = back[SIZE - 1 - i][SIZE - 1 - col];
-          back[SIZE - 1 - i][SIZE - 1 - col] = temp[i];   
-        }    
-        else for (int i = 0; i < SIZE; i++) {
-          temp[i]        = top[i][col];
-          top[i][col]    = back[SIZE - 1 - i][SIZE - 1 - col];
-          back[SIZE - 1 - i][SIZE - 1 - col] = bottom[i][col];
-          bottom[i][col] = front[i][col];
-          front[i][col]  = temp[i];
-        }
-      }
-    }
-
-    void rotateFaceLayer(bool clockwise, int startLayer, int endLayer) {
-      for (int layer = startLayer; layer <= endLayer; layer++) {
-        std::array<uint8_t, MAX_SIZE> temp;
-        for (int i = 0; i < SIZE; i++) temp[i] = clockwise ? top[SIZE - 1 - layer][i] : bottom[layer][i];
-        for (int i = 0; i < SIZE; i++) {
-          if (clockwise) {
-            top[SIZE - 1 - layer][i] = left[SIZE - 1 - i][SIZE - 1 - layer];
-            left[SIZE - 1 - i][SIZE - 1 - layer] = bottom[layer][SIZE - 1 - i];
-            bottom[layer][SIZE - 1 - i] = right[i][layer];
-            right[i][layer] = temp[i];
-          } else {
-            bottom[layer][SIZE - 1 - i] = left[SIZE - 1 - i][SIZE - 1 - layer];
-            left[SIZE - 1 - i][SIZE - 1 - layer] = top[SIZE - 1 - layer][i];
-            top[SIZE - 1 - layer][i] = right[i][layer];
-            right[i][layer] = temp[SIZE - 1 - i];
-          }
-        }
-      }
-    }
-
-    void rotateFront(bool clockwise, uint8_t width) {
-      rotateFaceLayer(clockwise, 0, width - 1);
-      rotateFace(front, clockwise);
-      if (width >= SIZE) rotateFace(back, !clockwise);
-    }
-    void rotateBack(bool clockwise, uint8_t width) {
-      rotateFaceLayer(!clockwise, SIZE - width, SIZE - 1);
-      rotateFace(back, clockwise);
-      if (width >= SIZE) rotateFace(front, !clockwise);
-    }
-    void rotateLeft(bool clockwise, uint8_t width) {
-      rotateFace(left, clockwise);
-      rotateColumn(0, width - 1, !clockwise);
-      if (width >= SIZE) rotateFace(right, !clockwise);
-    }
-    void rotateRight(bool clockwise, uint8_t width) {
-      rotateFace(right, clockwise);
-      rotateColumn(SIZE - width, SIZE - 1, clockwise);
-      if (width >= SIZE) rotateFace(left, !clockwise);
-    }
-    void rotateTop(bool clockwise, uint8_t width) {
-      rotateFace(top, clockwise);
-      rotateRow(0, width - 1, clockwise);
-      if (width >= SIZE) rotateFace(bottom, !clockwise);
-    }
-    void rotateBottom(bool clockwise, uint8_t width) {
-      rotateFace(bottom, clockwise);
-      rotateRow(SIZE - width, SIZE - 1, !clockwise);
-      if (width >= SIZE) rotateFace(top, !clockwise);
-    }
-
-    void drawCube(Leds &leds) {
-      int sizeX = leds.size.x-1;
-      int sizeY = leds.size.y-1;
-      int sizeZ = leds.size.z-1;
-
-      // 3 Sided Cube Cheat add 1 to led size if "panels" missing. May affect different fixture types
-      if (!leds.isMapped(leds.XYZNoSpin({0, leds.size.y/2, leds.size.z/2})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x-1, leds.size.y/2, leds.size.z/2}))) sizeX++;
-      if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, 0, leds.size.z/2})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y-1, leds.size.z/2}))) sizeY++;
-      if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, 0})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, leds.size.z-1}))) sizeZ++;
-
-      // Previously SIZE - 1. Cube size expanded by 2, makes edges thicker. Constrains are used to prevent out of bounds
-      const float scaleX = (SIZE + 1.0) / sizeX;
-      const float scaleY = (SIZE + 1.0) / sizeY;
-      const float scaleZ = (SIZE + 1.0) / sizeZ;
-
-      // Calculate once for optimization
-      const int halfX = sizeX / 2;
-      const int halfY = sizeY / 2;
-      const int halfZ = sizeZ / 2;
-
-      const CRGB COLOR_MAP[] = {CRGB::Red, CRGB::DarkOrange, CRGB::Blue, CRGB::Green, CRGB::Yellow, CRGB::White};
-      
-      for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++) { 
-        Coord3D led = {x, y, z};
-        if (leds.isMapped(leds.XYZNoSpin(led)) == 0) continue; // skip if not a physical LED
-
-        // Normalize the coordinates to the Rubik's cube range. Subtract 1 since cube expanded by 2
-        int normalizedX = constrain(round(x * scaleX) - 1, 0, SIZE - 1);
-        int normalizedY = constrain(round(y * scaleY) - 1, 0, SIZE - 1);
-        int normalizedZ = constrain(round(z * scaleZ) - 1, 0, SIZE - 1);
-        
-        // Calculate the distance to the closest face
-        int distX = min(x, sizeX - x);
-        int distY = min(y, sizeY - y);
-        int distZ = min(z, sizeZ - z);
-        int dist  = min(distX, min(distY, distZ));
-
-        if      (dist == distZ && z < halfZ)  leds.setPixelColor(led, COLOR_MAP[front[normalizedY][normalizedX]]);
-        else if (dist == distX && x < halfX)  leds.setPixelColor(led, COLOR_MAP[left[normalizedY][SIZE - 1 - normalizedZ]]);
-        else if (dist == distY && y < halfY)  leds.setPixelColor(led, COLOR_MAP[top[SIZE - 1 - normalizedZ][normalizedX]]);
-        else if (dist == distZ && z >= halfZ) leds.setPixelColor(led, COLOR_MAP[back[normalizedY][SIZE - 1 - normalizedX]]);
-        else if (dist == distX && x >= halfX) leds.setPixelColor(led, COLOR_MAP[right[normalizedY][normalizedZ]]);
-        else if (dist == distY && y >= halfY) leds.setPixelColor(led, COLOR_MAP[bottom[normalizedZ][normalizedX]]);
-      }
-    }
-};
-
-struct Move {
-    uint8_t face;      // 0-5 (3 bits)
-    uint8_t width;     // 0-7 (3 bits)
-    uint8_t direction; // 0 or 1 (1 bit)
-};
-
-Move createRandomMoveStruct(uint8_t cubeSize, uint8_t prevFace) {
-    Move move;
-    do {
-      move.face = random(6);
-    } while (move.face/2 == prevFace/2);
-    move.width     = random(cubeSize-2);
-    move.direction = random(2);
-    return move;
-}
-
-uint8_t packMove(Move move) {
-    uint8_t packed = (move.face & 0b00000111) | 
-                     ((move.width << 3) & 0b00111000) | 
-                     ((move.direction << 6) & 0b01000000);
-    return packed;
-}
-
-Move unpackMove(uint8_t packedMove) {
-    Move move;
-    move.face      = packedMove & 0b00000111;
-    move.width     = (packedMove >> 3) & 0b00000111;
-    move.direction = (packedMove >> 6) & 0b00000001;
-    return move;
-}
 
 class RubiksCube: public Effect {
   const char * name() {return "Rubik's Cube";}
   unsigned8     dim() {return _3D;}
   const char * tags() {return "💡💫";}
 
+  struct Cube {
+      uint8_t SIZE = 4;
+      static const uint8_t MAX_SIZE = 8;
+      using Face = std::array<std::array<uint8_t, MAX_SIZE>, MAX_SIZE>;
+      Face front;
+      Face back;
+      Face left;
+      Face right;
+      Face top;
+      Face bottom;
+
+      Cube() {
+        init(SIZE);
+      }
+      
+      void init(uint8_t cubeSize) {
+        SIZE = cubeSize;
+        for (int i = 0; i < MAX_SIZE; i++) for (int j = 0; j < MAX_SIZE; j++) {
+          front[i][j]  = 0;
+          back[i][j]   = 1;  
+          left[i][j]   = 2;  
+          right[i][j]  = 3; 
+          top[i][j]    = 4;   
+          bottom[i][j] = 5;
+        }
+      }
+
+      void rotateFace(Face& face, bool clockwise) {
+        Face temp = face;
+        if (clockwise) for (int i = 0; i < SIZE; i++) for (int j = 0; j < SIZE; j++) {
+          face[j][SIZE - 1 - i] = temp[i][j]; 
+        }  
+        else for (int i = 0; i < SIZE; i++) for (int j = 0; j < SIZE; j++) {
+          face[SIZE - 1 - j][i] = temp[i][j];
+        }
+      }
+
+      void rotateRow(int startRow, int stopRow, bool clockwise) {
+        std::array<uint8_t, MAX_SIZE> temp;
+        for (int row = startRow; row <= stopRow; row++) {
+          if (clockwise) for (int i = 0; i < SIZE; i++) {
+            temp[i]       = left[row][i];
+            left[row][i]  = front[row][i];
+            front[row][i] = right[row][i];
+            right[row][i] = back[row][i];
+            back[row][i]  = temp[i];
+          } 
+          else for (int i = 0; i < SIZE; i++) {
+            temp[i]       = left[row][i];
+            left[row][i]  = back[row][i];
+            back[row][i]  = right[row][i];
+            right[row][i] = front[row][i];
+            front[row][i] = temp[i];
+          }
+        }
+      }
+
+      void rotateColumn(int startCol, int stopCol, bool clockwise) {
+        std::array<uint8_t, MAX_SIZE> temp;
+        for (int col = startCol; col <= stopCol; col++) {
+          if (clockwise) for (int i = 0; i < SIZE; i++) {
+            temp[i]        = top[i][col];
+            top[i][col]    = front[i][col];
+            front[i][col]  = bottom[i][col];
+            bottom[i][col] = back[SIZE - 1 - i][SIZE - 1 - col];
+            back[SIZE - 1 - i][SIZE - 1 - col] = temp[i];   
+          }    
+          else for (int i = 0; i < SIZE; i++) {
+            temp[i]        = top[i][col];
+            top[i][col]    = back[SIZE - 1 - i][SIZE - 1 - col];
+            back[SIZE - 1 - i][SIZE - 1 - col] = bottom[i][col];
+            bottom[i][col] = front[i][col];
+            front[i][col]  = temp[i];
+          }
+        }
+      }
+
+      void rotateFaceLayer(bool clockwise, int startLayer, int endLayer) {
+        for (int layer = startLayer; layer <= endLayer; layer++) {
+          std::array<uint8_t, MAX_SIZE> temp;
+          for (int i = 0; i < SIZE; i++) temp[i] = clockwise ? top[SIZE - 1 - layer][i] : bottom[layer][i];
+          for (int i = 0; i < SIZE; i++) {
+            if (clockwise) {
+              top[SIZE - 1 - layer][i] = left[SIZE - 1 - i][SIZE - 1 - layer];
+              left[SIZE - 1 - i][SIZE - 1 - layer] = bottom[layer][SIZE - 1 - i];
+              bottom[layer][SIZE - 1 - i] = right[i][layer];
+              right[i][layer] = temp[i];
+            } else {
+              bottom[layer][SIZE - 1 - i] = left[SIZE - 1 - i][SIZE - 1 - layer];
+              left[SIZE - 1 - i][SIZE - 1 - layer] = top[SIZE - 1 - layer][i];
+              top[SIZE - 1 - layer][i] = right[i][layer];
+              right[i][layer] = temp[SIZE - 1 - i];
+            }
+          }
+        }
+      }
+
+      void rotateFront(bool clockwise, uint8_t width) {
+        rotateFaceLayer(clockwise, 0, width - 1);
+        rotateFace(front, clockwise);
+        if (width >= SIZE) rotateFace(back, !clockwise);
+      }
+      void rotateBack(bool clockwise, uint8_t width) {
+        rotateFaceLayer(!clockwise, SIZE - width, SIZE - 1);
+        rotateFace(back, clockwise);
+        if (width >= SIZE) rotateFace(front, !clockwise);
+      }
+      void rotateLeft(bool clockwise, uint8_t width) {
+        rotateFace(left, clockwise);
+        rotateColumn(0, width - 1, !clockwise);
+        if (width >= SIZE) rotateFace(right, !clockwise);
+      }
+      void rotateRight(bool clockwise, uint8_t width) {
+        rotateFace(right, clockwise);
+        rotateColumn(SIZE - width, SIZE - 1, clockwise);
+        if (width >= SIZE) rotateFace(left, !clockwise);
+      }
+      void rotateTop(bool clockwise, uint8_t width) {
+        rotateFace(top, clockwise);
+        rotateRow(0, width - 1, clockwise);
+        if (width >= SIZE) rotateFace(bottom, !clockwise);
+      }
+      void rotateBottom(bool clockwise, uint8_t width) {
+        rotateFace(bottom, clockwise);
+        rotateRow(SIZE - width, SIZE - 1, !clockwise);
+        if (width >= SIZE) rotateFace(top, !clockwise);
+      }
+
+      void drawCube(Leds &leds) {
+        int sizeX = leds.size.x-1;
+        int sizeY = leds.size.y-1;
+        int sizeZ = leds.size.z-1;
+
+        // 3 Sided Cube Cheat add 1 to led size if "panels" missing. May affect different fixture types
+        if (!leds.isMapped(leds.XYZNoSpin({0, leds.size.y/2, leds.size.z/2})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x-1, leds.size.y/2, leds.size.z/2}))) sizeX++;
+        if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, 0, leds.size.z/2})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y-1, leds.size.z/2}))) sizeY++;
+        if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, 0})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, leds.size.z-1}))) sizeZ++;
+
+        // Previously SIZE - 1. Cube size expanded by 2, makes edges thicker. Constrains are used to prevent out of bounds
+        const float scaleX = (SIZE + 1.0) / sizeX;
+        const float scaleY = (SIZE + 1.0) / sizeY;
+        const float scaleZ = (SIZE + 1.0) / sizeZ;
+
+        // Calculate once for optimization
+        const int halfX = sizeX / 2;
+        const int halfY = sizeY / 2;
+        const int halfZ = sizeZ / 2;
+
+        const CRGB COLOR_MAP[] = {CRGB::Red, CRGB::DarkOrange, CRGB::Blue, CRGB::Green, CRGB::Yellow, CRGB::White};
+        
+        for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++) { 
+          Coord3D led = {x, y, z};
+          if (leds.isMapped(leds.XYZNoSpin(led)) == 0) continue; // skip if not a physical LED
+
+          // Normalize the coordinates to the Rubik's cube range. Subtract 1 since cube expanded by 2
+          int normalizedX = constrain(round(x * scaleX) - 1, 0, SIZE - 1);
+          int normalizedY = constrain(round(y * scaleY) - 1, 0, SIZE - 1);
+          int normalizedZ = constrain(round(z * scaleZ) - 1, 0, SIZE - 1);
+          
+          // Calculate the distance to the closest face
+          int distX = min(x, sizeX - x);
+          int distY = min(y, sizeY - y);
+          int distZ = min(z, sizeZ - z);
+          int dist  = min(distX, min(distY, distZ));
+
+          if      (dist == distZ && z < halfZ)  leds.setPixelColor(led, COLOR_MAP[front[normalizedY][normalizedX]]);
+          else if (dist == distX && x < halfX)  leds.setPixelColor(led, COLOR_MAP[left[normalizedY][SIZE - 1 - normalizedZ]]);
+          else if (dist == distY && y < halfY)  leds.setPixelColor(led, COLOR_MAP[top[SIZE - 1 - normalizedZ][normalizedX]]);
+          else if (dist == distZ && z >= halfZ) leds.setPixelColor(led, COLOR_MAP[back[normalizedY][SIZE - 1 - normalizedX]]);
+          else if (dist == distX && x >= halfX) leds.setPixelColor(led, COLOR_MAP[right[normalizedY][normalizedZ]]);
+          else if (dist == distY && y >= halfY) leds.setPixelColor(led, COLOR_MAP[bottom[normalizedZ][normalizedX]]);
+        }
+      }
+  };
+
+  struct Move {
+      uint8_t face;      // 0-5 (3 bits)
+      uint8_t width;     // 0-7 (3 bits)
+      uint8_t direction; // 0 or 1 (1 bit)
+  };
+
+  Move createRandomMoveStruct(uint8_t cubeSize, uint8_t prevFace) {
+      Move move;
+      do {
+        move.face = random(6);
+      } while (move.face/2 == prevFace/2);
+      move.width     = random(cubeSize-2);
+      move.direction = random(2);
+      return move;
+  }
+
+  uint8_t packMove(Move move) {
+      uint8_t packed = (move.face & 0b00000111) | 
+                      ((move.width << 3) & 0b00111000) | 
+                      ((move.direction << 6) & 0b01000000);
+      return packed;
+  }
+
+  Move unpackMove(uint8_t packedMove) {
+      Move move;
+      move.face      = packedMove & 0b00000111;
+      move.width     = (packedMove >> 3) & 0b00000111;
+      move.direction = (packedMove >> 6) & 0b00000001;
+      return move;
+  }
+
   void loop(Leds &leds) {
     // UI control variables
     uint8_t speed    = leds.sharedData.read<uint8_t>();
     uint8_t cubeSize = leds.sharedData.read<uint8_t>();
+    bool randomTurning = leds.sharedData.read<bool>();
 
     // Effect variables
-    uint8_t *setup        = leds.sharedData.readWrite<uint8_t>();
-    unsigned long *step   = leds.sharedData.readWrite<unsigned long>();
-    Cube *cube            = leds.sharedData.readWrite<Cube>();
-    uint8_t *prevCubeSize = leds.sharedData.readWrite<byte>();
-    uint8_t *moveList     = leds.sharedData.readWrite<byte>(100);
-    uint8_t *moveIndex    = leds.sharedData.readWrite<byte>();
+    unsigned long *step    = leds.sharedData.readWrite<unsigned long>();
+    uint8_t *setup         = leds.sharedData.readWrite<uint8_t>();
+    Cube    *cube          = leds.sharedData.readWrite<Cube>();
+    uint8_t *prevCubeSize  = leds.sharedData.readWrite<byte>();
+    uint8_t *moveList      = leds.sharedData.readWrite<byte>(100);
+    uint8_t *moveIndex     = leds.sharedData.readWrite<byte>();
+    uint8_t *prevFaceMoved = leds.sharedData.readWrite<byte>();
+    bool    *prevMode      = leds.sharedData.readWrite<bool>();
 
     typedef void (Cube::*RotateFunc)(bool direction, uint8_t width);
     const RotateFunc rotateFuncs[] = {&Cube::rotateFront, &Cube::rotateBack, &Cube::rotateLeft, &Cube::rotateRight, &Cube::rotateTop, &Cube::rotateBottom};
@@ -1858,10 +1863,10 @@ class RubiksCube: public Effect {
     if (cubeSize != *prevCubeSize || (*setup != 123 && sys->now > *step)) {
       *step = sys->now + 1000;
       *prevCubeSize = cubeSize;
+      *prevMode = 0;
       *setup = 123;
       cube->init(cubeSize);
       uint8_t moveCount = cubeSize * 10 + random(20);
-      uint8_t prevFace  = 255;
       // Randomly turn entire cube
       for (int x = 0; x < 3; x++) {
         if (random(2)) cube->rotateRight(1, cubeSize);
@@ -1870,8 +1875,8 @@ class RubiksCube: public Effect {
       }
       // Generate scramble
       for (int i = 0; i < moveCount; i++) {
-        Move move = createRandomMoveStruct(cubeSize, prevFace);
-        prevFace = move.face;
+        Move move = createRandomMoveStruct(cubeSize, *prevFaceMoved);
+        *prevFaceMoved = move.face;
         moveList[i] = packMove(move);
 
         (cube->*rotateFuncs[move.face])(move.direction, move.width + 1);
@@ -1882,26 +1887,33 @@ class RubiksCube: public Effect {
       cube->drawCube(leds);
     }
 
+    if (*prevMode != randomTurning) {
+      *prevMode = randomTurning;
+      if (!randomTurning) {*setup = 0; return;}
+    }
+
     if (!speed || sys->now - *step < 1000 / speed || sys->now < *step) return;
 
-    Move move = unpackMove(moveList[*moveIndex]);
+    Move move = randomTurning ? createRandomMoveStruct(cubeSize, *prevFaceMoved) : unpackMove(moveList[*moveIndex]);
 
-    (cube->*rotateFuncs[move.face])(move.direction, move.width + 1);
+    (cube->*rotateFuncs[move.face])(!move.direction, move.width + 1);
       
     cube->drawCube(leds);
     
-    if (*moveIndex == 0) {
+    if (!randomTurning && *moveIndex == 0) {
       *step = sys->now + 3000;
       *setup = 0;
+      return;
     }
-    else *step = sys->now;
-    (*moveIndex)--;
+    if (!randomTurning) (*moveIndex)--;
+    *step = sys->now;
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
-    ui->initSlider(parentVar, "Turns Per Second", leds.sharedData.write<uint8_t>(1), 0, 20);   
-    ui->initSlider(parentVar, "Cube Size",        leds.sharedData.write<uint8_t>(2), 1, 8);
+    ui->initSlider  (parentVar, "Turns Per Second", leds.sharedData.write<uint8_t>(1), 0, 20);   
+    ui->initSlider  (parentVar, "Cube Size",        leds.sharedData.write<uint8_t>(2), 1, 8);
+    ui->initCheckBox(parentVar, "Random Turning", leds.sharedData.write<bool>(false));
   }
 };
 
