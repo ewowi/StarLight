@@ -76,7 +76,7 @@ void setup() {
   instances = new SysModInstances();
   mdns = new UserModMDNS();
   #ifdef STARLEDS
-    eff= new LedModEffects();
+    eff = new LedModEffects();
     fix = new LedModFixture();
     lfg = new LedModFixtureGen();
     #ifdef STARLEDS_USERMOD_ARTNET

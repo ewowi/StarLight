@@ -13,6 +13,7 @@
 
 #include "LedFixture.h"
 #include "LedEffects.h"
+#include "LedProjections.h"
 
 // #define FASTLED_RGBW
 
@@ -35,12 +36,16 @@ public:
   unsigned long lastMappingMillis = 0;
 
   std::vector<Effect *> effects;
+  std::vector<Projection *> projections;
 
   Fixture fixture = Fixture();
 
   bool fShow = true;
 
   LedModEffects() :SysModule("Effects") {
+
+    //load effects
+
     //1D Basis
     effects.push_back(new SolidEffect);
     // 1D FastLed
@@ -90,6 +95,18 @@ public:
     //3D
     effects.push_back(new RipplesEffect);
     effects.push_back(new SphereMoveEffect);
+
+    //load projections
+    projections.push_back(new DefaultProjection);
+    projections.push_back(new MultiplyProjection);
+    projections.push_back(new TiltPanRollProjection);
+    projections.push_back(new DistanceFromPointProjection);
+    projections.push_back(new Preset1Projection);
+    projections.push_back(new NoneProjection);
+    projections.push_back(new RandomProjection);
+    projections.push_back(new ReverseProjection);
+    projections.push_back(new MirrorProjection);
+    projections.push_back(new KaleidoscopeProjection);
   };
 
   void setup() {
@@ -178,8 +195,8 @@ public:
             print->printVar(var);
             ppf("\n");
 
-            if (effects[leds->fx]->dim() != leds->effectDimension) {
-              leds->effectDimension = effects[leds->fx]->dim();
+            if (effect->dim() != leds->effectDimension) {
+              leds->effectDimension = effect->dim();
               leds->doMap = true;
               leds->fixture->doMap = true;
             }
@@ -199,17 +216,16 @@ public:
       case f_UIFun: {
         ui->setLabel(var, "Projection");
         ui->setComment(var, "How to project fx");
-        JsonArray options = ui->setOptions(var); // see enum Projections in LedFixture.h and keep the same order !
-        options.add("Default");
-        options.add("Multiply");
-        options.add("TiltPanRoll");
-        options.add("Distance ⌛");
-        options.add("Preset 1");
-        options.add("None");
-        options.add("Random");
-        options.add("Mirror WIP");
-        options.add("Reverse WIP");
-        // options.add("Kaleidoscope WIP");
+
+        JsonArray options = ui->setOptions(var);
+        for (Projection *projection:projections) {
+          char buf[32] = "";
+          strcat(buf, projection->name());
+          strcat(buf, projection->dim()==_1D?" ┊":projection->dim()==_2D?" ▦":" 🧊");
+          strcat(buf, " ");
+          strcat(buf, projection->tags());
+          options.add(JsonString(buf, JsonString::Copied)); //copy!
+        }
         return true; }
       case f_ChangeFun:
 
@@ -221,75 +237,10 @@ public:
           stackUnsigned8 proValue = mdl->getValue(var, rowNr);
           fixture.listOfLeds[rowNr]->projectionNr = proValue;
 
+          Projection* projection = projections[proValue];
+
           mdl->varPreDetails(var, rowNr); //set all positive var N orders to negative
-          if (proValue == p_DistanceFromPoint || proValue == p_Preset1) {
-            ui->initCoord3D(var, "proCenter", Coord3D{8,8,8}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-              case f_UIFun:
-                ui->setLabel(var, "Center");
-                return true;
-              case f_ChangeFun:
-                //initiate projectAndMap
-                ppf("proCenter %d %d\n", rowNr, fixture.listOfLeds.size());
-                if (rowNr < fixture.listOfLeds.size()) {
-                  fixture.listOfLeds[rowNr]->doMap = true; //Guru Meditation Error: Core  1 panic'ed (StoreProhibited). Exception was unhandled.
-                  fixture.doMap = true;
-                }
-                // ui->setLabel(var, "Size");
-                return true;
-              default: return false;
-            }});
-          }
-          if (proValue == p_Multiply || proValue == p_Preset1) {
-            ui->initCoord3D(var, "proMulti", Coord3D{2,2,1}, 0, 10, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-              case f_UIFun:
-                ui->setLabel(var, "Multiply");
-                return true;
-              case f_ChangeFun:
-                ui->initCheckBox(var, "mirror", false, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-                  case f_ChangeFun:
-                    if (rowNr < fixture.listOfLeds.size()) {
-                      fixture.listOfLeds[rowNr]->doMap = true;
-                      fixture.doMap = true;
-                    }
-                    return true;
-                  default: return false;
-                }});
-                if (rowNr < fixture.listOfLeds.size()) {
-                  fixture.listOfLeds[rowNr]->doMap = true;
-                  fixture.doMap = true;
-                }
-                return true;
-              default: return false;
-            }});
-          }
-          if (proValue == p_TiltPanRoll || proValue == p_Preset1) {
-            ui->initSlider(var, "proTilt", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-              case f_ChangeFun:
-                if (rowNr < fixture.listOfLeds.size())
-                  fixture.listOfLeds[rowNr]->proTiltSpeed = mdl->getValue(var, rowNr);
-                return true;
-              default: return false;
-            }});
-            ui->initSlider(var, "proPan", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-              case f_ChangeFun:
-                if (rowNr < fixture.listOfLeds.size())
-                  fixture.listOfLeds[rowNr]->proPanSpeed = mdl->getValue(var, rowNr);
-                return true;
-              default: return false;
-            }});
-          }
-          if (proValue == p_Preset1 || proValue == p_TiltPanRoll) {
-            ui->initSlider(var, "proRoll", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-              case f_UIFun:
-                ui->setLabel(var, "Roll speed");
-                return true;
-              case f_ChangeFun:
-                if (rowNr < fixture.listOfLeds.size())
-                  fixture.listOfLeds[rowNr]->proRollSpeed = mdl->getValue(var, rowNr);
-                return true;
-              default: return false;
-            }});
-          }
+          projection->controls(*fixture.listOfLeds[rowNr], var);
           mdl->varPostDetails(var, rowNr);
 
           // ppf("chFun pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.listOfLeds.size());

@@ -140,6 +140,7 @@ class SharedData {
     index = 0;
   }
 
+  //sets the sharedData pointer back to 0 so loop effect can go through it
   void loop() {
     index = 0;
   }
@@ -240,10 +241,9 @@ struct PhysMap {
       if (!isMultipleIndexes()) //check if pointer is not setting the type[3] value
         ppf("dev new PhysMap type:%d t3:%d b:%d p:%p\n", type, type[3], type[3] & 0x80, indexes);
 
-      if (isMultipleIndexes()) {
+      else {
         indexes->push_back(oldIndex); //add the old to the indexes vector
       }
-
     }
 
     if (isMultipleIndexes()) {
