@@ -1728,16 +1728,6 @@ struct Cube {
       }
     }
 
-    CRGB getColor(uint8_t num) {
-      if      (num == 0) return CRGB::Red;        //front color
-      else if (num == 1) return CRGB::DarkOrange; //back color
-      else if (num == 2) return CRGB::Blue;       //left color
-      else if (num == 3) return CRGB::Green;      //right color
-      else if (num == 4) return CRGB::Yellow;     //top color
-      else if (num == 5) return CRGB::White;      //bottom color
-      else return CRGB::Black;
-    }
-
     void rotateFront(bool clockwise, uint8_t width) {
       rotateFaceLayer(clockwise, 0, width - 1);
       rotateFace(front, clockwise);
@@ -1780,16 +1770,17 @@ struct Cube {
       if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, 0})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, leds.size.z-1}))) sizeZ++;
 
       // Previously SIZE - 1. Cube size expanded by 2, makes edges thicker. Constrains are used to prevent out of bounds
-      float scaleX = (SIZE + 1.0) / sizeX;
-      float scaleY = (SIZE + 1.0) / sizeY;
-      float scaleZ = (SIZE + 1.0) / sizeZ;
+      const float scaleX = (SIZE + 1.0) / sizeX;
+      const float scaleY = (SIZE + 1.0) / sizeY;
+      const float scaleZ = (SIZE + 1.0) / sizeZ;
 
       // Calculate once for optimization
-      int halfX = sizeX / 2;
-      int halfY = sizeY / 2;
-      int halfZ = sizeZ / 2;
+      const int halfX = sizeX / 2;
+      const int halfY = sizeY / 2;
+      const int halfZ = sizeZ / 2;
+
+      const CRGB COLOR_MAP[] = {CRGB::Red, CRGB::DarkOrange, CRGB::Blue, CRGB::Green, CRGB::Yellow, CRGB::White};
       
-      // for (int x = sizeX; x >= 0; x--) for (int y = sizeY; y >= 0; y--) for (int z = sizeZ; z >= 0; z--) {
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++) { 
         Coord3D led = {x, y, z};
         if (leds.isMapped(leds.XYZNoSpin(led)) == 0) continue; // skip if not a physical LED
@@ -1805,12 +1796,12 @@ struct Cube {
         int distZ = min(z, sizeZ - z);
         int dist  = min(distX, min(distY, distZ));
 
-        if      (dist == distZ && z < halfZ)  leds.setPixelColor(led, getColor(front[normalizedY][normalizedX]));
-        else if (dist == distX && x < halfX)  leds.setPixelColor(led, getColor(left[normalizedY][SIZE - 1 - normalizedZ]));
-        else if (dist == distY && y < halfY)  leds.setPixelColor(led, getColor(top[SIZE - 1 - normalizedZ][normalizedX]));
-        else if (dist == distZ && z >= halfZ) leds.setPixelColor(led, getColor(back[normalizedY][SIZE - 1 - normalizedX]));
-        else if (dist == distX && x >= halfX) leds.setPixelColor(led, getColor(right[normalizedY][normalizedZ]));
-        else if (dist == distY && y >= halfY) leds.setPixelColor(led, getColor(bottom[normalizedZ][normalizedX]));
+        if      (dist == distZ && z < halfZ)  leds.setPixelColor(led, COLOR_MAP[front[normalizedY][normalizedX]]);
+        else if (dist == distX && x < halfX)  leds.setPixelColor(led, COLOR_MAP[left[normalizedY][SIZE - 1 - normalizedZ]]);
+        else if (dist == distY && y < halfY)  leds.setPixelColor(led, COLOR_MAP[top[SIZE - 1 - normalizedZ][normalizedX]]);
+        else if (dist == distZ && z >= halfZ) leds.setPixelColor(led, COLOR_MAP[back[normalizedY][SIZE - 1 - normalizedX]]);
+        else if (dist == distX && x >= halfX) leds.setPixelColor(led, COLOR_MAP[right[normalizedY][normalizedZ]]);
+        else if (dist == distY && y >= halfY) leds.setPixelColor(led, COLOR_MAP[bottom[normalizedZ][normalizedX]]);
       }
     }
 };
@@ -1864,6 +1855,9 @@ class RubiksCube: public Effect {
     uint8_t *moveList     = leds.sharedData.readWrite<byte>(100);
     uint8_t *moveIndex    = leds.sharedData.readWrite<byte>();
 
+    typedef void (Cube::*RotateFunc)(bool direction, uint8_t width);
+    const RotateFunc rotateFuncs[] = {&Cube::rotateFront, &Cube::rotateBack, &Cube::rotateLeft, &Cube::rotateRight, &Cube::rotateTop, &Cube::rotateBottom};
+      
     if (cubeSize != *prevCubeSize || (*setup != 123 && sys->now > *step)) {
       *step = sys->now + 1000;
       *prevCubeSize = cubeSize;
@@ -1872,22 +1866,18 @@ class RubiksCube: public Effect {
       uint8_t moveCount = cubeSize * 10 + random(20);
       uint8_t prevFace  = 255;
       // Randomly turn entire cube
-      for (int x = 0; x < 2; x++) {
-        if (random(2)) cube->rotateRight(random(2), cubeSize);
-        if (random(2)) cube->rotateTop  (random(2), cubeSize);
-        if (random(2)) cube->rotateFront(random(2), cubeSize);
+      for (int x = 0; x < 3; x++) {
+        if (random(2)) cube->rotateRight(1, cubeSize);
+        if (random(2)) cube->rotateTop  (1, cubeSize);
+        if (random(2)) cube->rotateFront(1, cubeSize);
       }
       // Generate scramble
       for (int i = 0; i < moveCount; i++) {
         Move move = createRandomMoveStruct(cubeSize, prevFace);
         prevFace = move.face;
         moveList[i] = packMove(move);
-        if      (move.face == 0) cube->rotateFront (move.direction, move.width+1);
-        else if (move.face == 1) cube->rotateBack  (move.direction, move.width+1);
-        else if (move.face == 2) cube->rotateLeft  (move.direction, move.width+1);
-        else if (move.face == 3) cube->rotateRight (move.direction, move.width+1);
-        else if (move.face == 4) cube->rotateTop   (move.direction, move.width+1);
-        else if (move.face == 5) cube->rotateBottom(move.direction, move.width+1);
+
+        (cube->*rotateFuncs[move.face])(move.direction, move.width + 1);
       }
 
       *moveIndex = moveCount - 1;
@@ -1899,12 +1889,7 @@ class RubiksCube: public Effect {
 
     Move move = unpackMove(moveList[*moveIndex]);
 
-    if      (move.face == 0) cube->rotateFront (!move.direction, move.width+1);
-    else if (move.face == 1) cube->rotateBack  (!move.direction, move.width+1);
-    else if (move.face == 2) cube->rotateLeft  (!move.direction, move.width+1);
-    else if (move.face == 3) cube->rotateRight (!move.direction, move.width+1);
-    else if (move.face == 4) cube->rotateTop   (!move.direction, move.width+1);
-    else if (move.face == 5) cube->rotateBottom(!move.direction, move.width+1);
+    (cube->*rotateFuncs[move.face])(move.direction, move.width + 1);
       
     cube->drawCube(leds);
     
@@ -1918,8 +1903,8 @@ class RubiksCube: public Effect {
 
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
-    ui->initSlider  (parentVar, "Turns Per Second", leds.sharedData.write<uint8_t>(1), 0, 20);   
-    ui->initSlider  (parentVar, "Cube Size",        leds.sharedData.write<uint8_t>(2), 1, 8);
+    ui->initSlider(parentVar, "Turns Per Second", leds.sharedData.write<uint8_t>(1), 0, 20);   
+    ui->initSlider(parentVar, "Cube Size",        leds.sharedData.write<uint8_t>(2), 1, 8);
   }
 };
 
