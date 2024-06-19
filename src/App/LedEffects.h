@@ -1672,11 +1672,11 @@ struct Cube {
       std::array<uint8_t, MAX_SIZE> temp;
       for (int row = startRow; row <= stopRow; row++) {
         if (clockwise) for (int i = 0; i < SIZE; i++) {
-            temp[i]       = left[row][i];
-            left[row][i]  = front[row][i];
-            front[row][i] = right[row][i];
-            right[row][i] = back[row][i];
-            back[row][i]  = temp[i];
+          temp[i]       = left[row][i];
+          left[row][i]  = front[row][i];
+          front[row][i] = right[row][i];
+          right[row][i] = back[row][i];
+          back[row][i]  = temp[i];
         } 
         else for (int i = 0; i < SIZE; i++) {
           temp[i]       = left[row][i];
@@ -1769,19 +1769,6 @@ struct Cube {
       if (width >= SIZE) rotateFace(top, !clockwise);
     }
 
-    void rotateRandom() {
-      // no slice moves
-      uint8_t layer = random8(6);
-      bool clockwise = random8(2);
-      uint8_t width = random8(1, SIZE);
-           if (layer == 0) rotateFront (clockwise, width);
-      else if (layer == 1) rotateBack  (clockwise, width);
-      else if (layer == 2) rotateLeft  (clockwise, width);
-      else if (layer == 3) rotateRight (clockwise, width);
-      else if (layer == 4) rotateTop   (clockwise, width);
-      else if (layer == 5) rotateBottom(clockwise, width);
-    }
-
     void drawCube(Leds &leds) {
       int sizeX = leds.size.x-1;
       int sizeY = leds.size.y-1;
@@ -1818,12 +1805,12 @@ struct Cube {
         int distZ = min(z, sizeZ - z);
         int dist  = min(distX, min(distY, distZ));
 
-        if      (z == 0 || dist == distZ && z < halfZ)              leds.setPixelColor(led, getColor(front[normalizedY][normalizedX]));
-        else if (x == 0 || dist == distX && x < halfX)              leds.setPixelColor(led, getColor(left[normalizedY][SIZE - 1 - normalizedZ]));
-        else if (y == 0 || dist == distY && y < halfY)              leds.setPixelColor(led, getColor(top[SIZE - 1 - normalizedZ][normalizedX]));
-        else if (z == leds.size.z-1 || dist == distZ && z >= halfZ) leds.setPixelColor(led, getColor(back[normalizedY][SIZE - 1 - normalizedX]));
-        else if (x == leds.size.x-1 || dist == distX && x >= halfX) leds.setPixelColor(led, getColor(right[normalizedY][normalizedZ]));
-        else if (y == leds.size.y-1 || dist == distY && y >= halfY) leds.setPixelColor(led, getColor(bottom[normalizedZ][normalizedX]));
+        if      (dist == distZ && z < halfZ)  leds.setPixelColor(led, getColor(front[normalizedY][normalizedX]));
+        else if (dist == distX && x < halfX)  leds.setPixelColor(led, getColor(left[normalizedY][SIZE - 1 - normalizedZ]));
+        else if (dist == distY && y < halfY)  leds.setPixelColor(led, getColor(top[SIZE - 1 - normalizedZ][normalizedX]));
+        else if (dist == distZ && z >= halfZ) leds.setPixelColor(led, getColor(back[normalizedY][SIZE - 1 - normalizedX]));
+        else if (dist == distX && x >= halfX) leds.setPixelColor(led, getColor(right[normalizedY][normalizedZ]));
+        else if (dist == distY && y >= halfY) leds.setPixelColor(led, getColor(bottom[normalizedZ][normalizedX]));
       }
     }
 };
