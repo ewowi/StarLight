@@ -287,10 +287,10 @@ bool SysModModel::callVarChangeFun(JsonObject var, unsigned8 rowNr, bool init) {
       Coord3D *valuePointer = (Coord3D *)pointer;
       if (valuePointer != nullptr) {
         *valuePointer = value;
-        ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+        // ppf("pointer set coord3D %s: v:%d,%d,%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), (*valuePointer).x, (*valuePointer).y, (*valuePointer).z, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
       }
       else
-        ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+        ppf("dev pointer set coord3D %s: v:%d,%d,%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), (*valuePointer).x, (*valuePointer).y, (*valuePointer).z, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
     }
     else
       ppf("dev pointer of type %s not supported yet\n", var["type"].as<String>().c_str());

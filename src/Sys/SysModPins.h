@@ -11,6 +11,9 @@
 
 #pragma once
 #include "SysModule.h"
+#include "SysModPrint.h"
+
+#include "Wire.h" //for I2S
 
 #define pinTypeIO 0
 #define pinTypeReadOnly 1
@@ -111,6 +114,15 @@ public:
       pinType = pinTypeInvalid;
 
     return pinType;
+  }
+
+  bool initI2S () {
+    //tbd: set pins in ui!!
+    allocatePin(21, "Pins", "I2S SDA");
+    allocatePin(22, "Pins", "I2S SCL");
+    bool success = Wire.begin(21,22);
+    ppf("initI2S Wire begin ...\n", success?"success":"failure");
+    return success;
   }
 };
 
