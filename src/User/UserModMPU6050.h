@@ -9,8 +9,8 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
-#include "../sys/SysModUI.h" //why needed here and not in other sysmods?
-#include "../sys/SysModPins.h"
+#include "../Sys/SysModUI.h" //why needed here and not in other sysmods?
+#include "../Sys/SysModPins.h"
 
 #include <MPU6050_6Axis_MotionApps20.h>
 
