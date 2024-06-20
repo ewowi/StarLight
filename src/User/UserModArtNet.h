@@ -87,8 +87,6 @@ public:
 
     WiFiUDP ddpUdp;
 
-    int bri = mdl->getValue("bri");
-
     for (size_t currentPacket = 0; currentPacket < packetCount; currentPacket++) {
 
       if (sequenceNumber > 255) sequenceNumber = 0;
@@ -119,10 +117,10 @@ public:
 
       for (size_t i = 0; i < eff->fixture.nrOfLeds; i++) {
         CRGB pixel = eff->fixture.ledsP[i];
-        ddpUdp.write(scale8(pixel.r, bri)); // R
-        ddpUdp.write(scale8(pixel.g, bri)); // G
-        ddpUdp.write(scale8(pixel.b, bri)); // B
-        // if (isRGBW) ddpUdp.write(scale8(buffer[bufferOffset++], bri)); // W
+        ddpUdp.write(scale8(pixel.r, fix->bri)); // R
+        ddpUdp.write(scale8(pixel.g, fix->bri)); // G
+        ddpUdp.write(scale8(pixel.b, fix->bri)); // B
+        // if (isRGBW) ddpUdp.write(scale8(buffer[bufferOffset++], fix->bri)); // W
       }
 
       if (!ddpUdp.endPacket()) {
