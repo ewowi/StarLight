@@ -263,6 +263,17 @@ public:
             }});
           }
           if (proValue == p_TiltPanRoll || proValue == p_Preset1) {
+            //tbd: implement variable by reference for rowNrs
+            #ifdef STARBASE_USERMOD_MPU6050
+              ui->initCheckBox(var, "proGyro", false, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+                case f_ChangeFun:
+                  if (rowNr < fixture.listOfLeds.size())
+                    fixture.listOfLeds[rowNr]->proGyro = mdl->getValue(var, rowNr);
+                  return true;
+                default: return false;
+              }});
+            #endif
+
             ui->initSlider(var, "proTilt", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
               case f_ChangeFun:
                 if (rowNr < fixture.listOfLeds.size())
@@ -277,8 +288,6 @@ public:
                 return true;
               default: return false;
             }});
-          }
-          if (proValue == p_Preset1 || proValue == p_TiltPanRoll) {
             ui->initSlider(var, "proRoll", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
               case f_UIFun:
                 ui->setLabel(var, "Roll speed");

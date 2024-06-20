@@ -269,6 +269,9 @@ public:
   unsigned8 projectionDimension = -1;
 
   Coord3D startPos = {0,0,0}, endPos = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
+  #ifdef STARBASE_USERMOD_MPU6050
+    bool proGyro = false;
+  #endif
   unsigned8 proTiltSpeed = 128;
   unsigned8 proPanSpeed = 128;
   unsigned8 proRollSpeed = 128;
