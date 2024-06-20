@@ -56,6 +56,10 @@ UserModMDNS *mdns;
   #include "User/UserModHA.h"
   UserModHA *hamod;
 #endif
+#ifdef STARBASE_USERMOD_MPU6050
+  #include "User/UserModMPU6050.h"
+  UserModMPU6050 *mpu6050;
+#endif
 #ifdef STARLEDS_USERMOD_WLEDAUDIO
   #include "User/UserModWLEDAudio.h"
   UserModWLEDAudio *wledAudioMod;
@@ -92,6 +96,9 @@ void setup() {
   #ifdef STARBASE_USERMOD_HA
     hamod = new UserModHA();
   #endif
+  #ifdef STARBASE_USERMOD_MPU6050
+    mpu6050 = new UserModMPU6050();
+  #endif
   #ifdef STARLEDS_USERMOD_WLEDAUDIO
     wledAudioMod = new UserModWLEDAudio();
   #endif
@@ -123,6 +130,9 @@ void setup() {
   #endif
   #ifdef STARBASE_USERMOD_HA
     mdls->add(hamod); //no ui
+  #endif
+  #ifdef STARBASE_USERMOD_MPU6050
+    mdls->add(mpu6050);
   #endif
   mdls->add(mdl);
   mdls->add(ui);
