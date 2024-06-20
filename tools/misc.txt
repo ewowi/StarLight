@@ -11,6 +11,7 @@ cp ./src/Sys/* ../../ewowi/StarBase/src/Sys
 cp ./src/User/* ../../ewowi/StarBase/src/User
 cp ./tools/* ../../ewowi/StarBase/tools
 cp ./data/index* ../../ewowi/StarBase/data
+cp ./platformio.ini ../../ewowi/StarBase
 
 
 search range-based for loop

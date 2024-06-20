@@ -10,7 +10,6 @@
 */
 
 #include "SysModPins.h"
-#include "SysModPrint.h"
 #include "SysModUI.h"
 #include "SysModWeb.h"
 
