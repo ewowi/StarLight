@@ -9,6 +9,8 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
+#pragma once
+
 #include "../Sys/SysModUI.h" //why needed here and not in other sysmods?
 #include "../Sys/SysModPins.h"
 
@@ -20,6 +22,8 @@ class UserModMPU6050: public SysModule {
 
 public:
 
+  bool motionTrackingReady = false;  // set true if DMP init was successful
+
   Coord3D gyro; // in degrees (not radians)
   Coord3D accell;
 
@@ -30,6 +34,13 @@ public:
   void setup() {
     SysModule::setup();
     parentVar = ui->initUserMod(parentVar, name, 6305);
+
+    ui->initCheckBox(parentVar, "mtReady", &motionTrackingReady, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case f_UIFun:
+        ui->setLabel(var, "tracking ready");
+        return true;
+      default: return false;
+    }}); 
 
     ui->initCoord3D(parentVar, "gyro", &gyro, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_UIFun:
@@ -49,31 +60,35 @@ public:
       mpu.initialize();
 
       // verify connection
-      ppf("Testing device connections %s\n", mpu.testConnection() ? "MPU6050 connection successful" : "MPU6050 connection failed");
+      if (mpu.testConnection()) {
+        ppf("MPU6050 connection successful Initializing DMP...\n");
+        uint8_t devStatus = mpu.dmpInitialize();
 
-      ppf("Initializing DMP...\n");
-      uint8_t devStatus = mpu.dmpInitialize();
+        if (devStatus == 0) {
+          // // Calibration Time: generate offsets and calibrate our MPU6050
+          mpu.CalibrateAccel(6);
+          mpu.CalibrateGyro(6);
+          // mpu.PrintActiveOffsets();
+          
+          mpu.setDMPEnabled(true); //mandatory
 
-      if (devStatus == 0) {
-        // // Calibration Time: generate offsets and calibrate our MPU6050
-        mpu.CalibrateAccel(6);
-        mpu.CalibrateGyro(6);
-        // mpu.PrintActiveOffsets();
-        
-        mpu.setDMPEnabled(true); //mandatory
+          // mpuIntStatus = mpu.getIntStatus();
 
-        // mpuIntStatus = mpu.getIntStatus();
-
-        dmpReady = true;
+          motionTrackingReady = true;
+        }
+        else {
+          // ERROR!
+          // 1 = initial memory load failed
+          // 2 = DMP configuration updates failed
+          // (if it's going to break, usually the code will be 1)
+          ppf("DMP Initialization failed (code %d)\n", devStatus);
+        }
       }
-      else {
-        // ERROR!
-        // 1 = initial memory load failed
-        // 2 = DMP configuration updates failed
-        // (if it's going to break, usually the code will be 1)
-        ppf("DMP Initialization failed (code %d)\n", devStatus);
-      }
+      else
+        ppf("Testing device connections MPU6050 connection failed\n");
     }
+
+    mdl->setValue("mtReady", motionTrackingReady);
   }
 
   void loop() {
@@ -82,7 +97,7 @@ public:
     // ppf("mpu6050 %d,%d,%d %d,%d,%d\n", accell.x, accell.y, accell.z, gyro.x, gyro.y, gyro.z);
 
     // if programming failed, don't try to do anything
-    if (!dmpReady) return;
+    if (!motionTrackingReady) return;
     // read a packet from FIFO
     if (mpu.dmpGetCurrentFIFOPacket(fifoBuffer)) { // Get the Latest packet 
       mpu.dmpGetQuaternion(&q, fifoBuffer);
@@ -120,7 +135,6 @@ public:
     MPU6050 mpu;
 
     // MPU control/status vars
-    bool dmpReady = false;  // set true if DMP init was successful
     uint8_t devStatus;      // return status after each device operation (0 = success, !0 = error)
     uint8_t fifoBuffer[64]; // FIFO storage buffer
 
