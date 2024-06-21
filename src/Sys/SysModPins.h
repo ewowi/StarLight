@@ -121,7 +121,7 @@ public:
     allocatePin(21, "Pins", "I2S SDA");
     allocatePin(22, "Pins", "I2S SCL");
     bool success = Wire.begin(21,22);
-    ppf("initI2S Wire begin ...\n", success?"success":"failure");
+    ppf("initI2S Wire begin %s\n", success?"success":"failure");
     return success;
   }
 };
