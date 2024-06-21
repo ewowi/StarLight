@@ -119,6 +119,10 @@ struct Coord3D {
     Coord3D delta = (*this-rhs);
     return sqrt((delta.x)*(delta.x) + (delta.y)*(delta.y) + (delta.z)*(delta.z));
   }
+  float distanceFloat(Coord3D rhs) {
+    Coord3D delta = (*this-rhs);
+    return sqrt((delta.x)*(delta.x) + (delta.y)*(delta.y) + (delta.z)*(delta.z));
+  }
   bool isOutofBounds(Coord3D rhs) {
     return x < 0 || y < 0 || z < 0 || x >= rhs.x || y >= rhs.y || z >= rhs.z;
   }

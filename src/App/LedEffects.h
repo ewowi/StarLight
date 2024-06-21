@@ -1919,6 +1919,128 @@ class RubiksCube: public Effect {
   }
 };
 
+class ParticleTest: public Effect {
+  const char * name() {return "Particle Test";}
+  unsigned8     dim() {return _3D;}
+  const char * tags() {return "💡💫";}
+  
+  struct Particle {
+    Coord3D pos;
+    CRGB color;
+  };
+
+  void loop(Leds &leds) {
+    // UI Variables
+    uint8_t speed        = leds.sharedData.read<uint8_t>();
+    uint8_t numParticles = leds.sharedData.read<uint8_t>();
+    Coord3D vel          = leds.sharedData.read<Coord3D>();
+    bool gyro            = leds.sharedData.read<bool>();
+    bool debugPrint      = leds.sharedData.read<bool>();
+
+    // Effect Variables
+    unsigned long *step  = leds.sharedData.readWrite<unsigned long>();
+    Particle *particles  = leds.sharedData.readWrite<Particle>(256);
+    byte *setup          = leds.sharedData.readWrite<byte>();
+    uint8_t *activeParticles = leds.sharedData.readWrite<uint8_t>();
+
+    if (*setup != 123 || *activeParticles != numParticles) {
+      ppf("Setting Up Particles\n");
+      *setup = 123;
+      *activeParticles = numParticles;
+      leds.fill_solid(CRGB::Black, true);
+      for (int index = 0 ; index < numParticles; index++) {
+        Coord3D rPos; 
+        do { // Get random mapped position that isn't colored (infinite loop is small fixture size and high particle count)
+          rPos = {random8(leds.size.x), random8(leds.size.y), random8(leds.size.z)};
+        } while (!leds.isMapped(leds.XYZNoSpin(rPos)) || leds.getPixelColor(rPos) != CRGB::Black);
+        particles[index].pos = rPos;
+        particles[index].color = ColorFromPalette(leds.palette, random8());
+        leds.setPixelColor(particles[index].pos, particles[index].color, 0);
+      }
+      *step = sys->now;
+    }
+
+    if (!speed || sys->now - *step < 1000 / speed) return; // Not enough time passed
+
+    #ifdef STARBASE_USERMOD_MPU6050
+    if (gyro) {
+      int gyroX = mpu6050->gyro.x;
+      int gyroY = mpu6050->gyro.y;
+      int gyroZ = mpu6050->gyro.z;
+
+      // This is really bad and not accurate for gyro motion.
+      if      (abs(gyroX) < 60)   vel.x = 0;
+      else if (abs(gyroX) < 120)  vel.x = -1;
+      else                        vel.x = 1;
+
+      if      (abs(gyroY) < 60)   vel.y = 1;
+      else if (abs(gyroY) < 120)  vel.y = -1;
+      else                        vel.y = 0;
+
+      if      (abs(gyroZ) < 60)   vel.z = 0;
+      else if (abs(gyroZ) < 120)  vel.z = 1;
+      else                        vel.z = -1;
+
+      if (leds.projectionDimension == _2D) vel.z = 0;
+    }
+    #endif
+
+    for (int index = 0; index < *activeParticles; index++) {
+      leds.setPixelColor(particles[index].pos, CRGB::Black, 0); 
+      // Update particle position
+      Coord3D newPos = particles[index].pos + vel;
+
+      if (leds.isMapped(leds.XYZNoSpin(newPos)) && !newPos.isOutofBounds(leds.size) && leds.getPixelColor(newPos) == CRGB::Black) {
+        particles[index].pos = newPos;
+        if (debugPrint) ppf("Particle %d: %d %d %d New Pos was mapped\n", index, newPos.x, newPos.y, newPos.z);
+      }
+      else {
+        // Particle is not mapped, find nearest mapped pixel
+        Coord3D nearestMapped = particles[index].pos; // Set nearest to previous position
+        float nearestDist = newPos.distanceFloat(particles[index].pos); 
+        int diff = 0; // If distance the same check how many coordinates are different (larger is better)
+
+        if (debugPrint) ppf("Particle: %d: %d, %d, %d Not Mapped! Nearest: %d, %d, %d dist: %f diff: %d\n", index, newPos.x, newPos.y, newPos.z, nearestMapped.x, nearestMapped.y, nearestMapped.z, nearestDist, diff);
+        for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
+          Coord3D testPos = newPos + Coord3D({i, j, k});
+          if (testPos == particles[index].pos)            continue; // Skip current position
+          if (!leds.isMapped(leds.XYZNoSpin(testPos)))    continue; // Skip if not mapped
+          if (testPos.isOutofBounds(leds.size))           continue; // Skip out of bounds
+          if (leds.getPixelColor(testPos) != CRGB::Black) continue; // Skip if already colored by another particle
+          float dist = testPos.distanceFloat(newPos);
+          int differences = (particles[index].pos.x != testPos.x) + (particles[index].pos.y != testPos.y) + (particles[index].pos.z != testPos.z);
+          if (debugPrint) ppf ("Particle %d Origin: %d, %d, %d -> ", index, particles[index].pos.x, particles[index].pos.y, particles[index].pos.z);
+          if (debugPrint) ppf ("TestPos: %d %d %d Dist: %f Diff: %d\n", testPos.x, testPos.y, testPos.z, dist, differences);
+          if (dist <= nearestDist && differences >= diff) {
+            nearestDist = dist;
+            nearestMapped = testPos;
+            diff = differences;
+          }
+        }
+        if(debugPrint) ppf("i: %d, Curr: %d, %d, %d -> OoB: %d, %d, %d -> New: %d, %d, %d Dist: %f Diff: %d\n", index, particles[index].pos.x, particles[index].pos.y, particles[index].pos.z, newPos.x, newPos.y, newPos.z, nearestMapped.x, nearestMapped.y, nearestMapped.z, nearestDist, diff);
+        particles[index].pos = nearestMapped;
+      } 
+      leds.setPixelColor(particles[index].pos, particles[index].color, 0);
+    }
+    *step = sys->now;
+  }
+
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    ui->initSlider (parentVar, "Speed",               leds.sharedData.write<uint8_t>(1), 0, 30);
+    ui->initSlider (parentVar, "Number of Particles", leds.sharedData.write<uint8_t>(1), 1, 255);
+    ui->initCoord3D(parentVar, "Velocity",            leds.sharedData.write<Coord3D>({0,0,0}), -1, 1);
+    ui->initCheckBox(parentVar, "Gyro",               leds.sharedData.write<bool>(false));
+    ui->initCheckBox(parentVar, "Debug Print",        leds.sharedData.write<bool>(false));
+  }
+};
+
+
+
+
+
+
+
 #ifdef STARLEDS_USERMOD_WLEDAUDIO
 
 class Waverly: public Effect {
