@@ -1964,22 +1964,13 @@ class ParticleTest: public Effect {
 
     #ifdef STARBASE_USERMOD_MPU6050
     if (gyro) {
-      int gyroX = mpu6050->gyro.x;
-      int gyroY = mpu6050->gyro.y;
-      int gyroZ = mpu6050->gyro.z;
+      int gravX = round(mpu6050->gravityVector.x);
+      int gravY = round(mpu6050->gravityVector.y);
+      int gravZ = round(mpu6050->gravityVector.z);
 
-      // This is really bad and not accurate for gyro motion.
-      if      (abs(gyroX) < 60)   vel.x = 0;
-      else if (abs(gyroX) < 120)  vel.x = -1;
-      else                        vel.x = 1;
-
-      if      (abs(gyroY) < 60)   vel.y = 1;
-      else if (abs(gyroY) < 120)  vel.y = -1;
-      else                        vel.y = 0;
-
-      if      (abs(gyroZ) < 60)   vel.z = 0;
-      else if (abs(gyroZ) < 120)  vel.z = 1;
-      else                        vel.z = -1;
+      vel.x = -gravX;
+      vel.y = gravZ; // Swap Y and Z axis
+      vel.z = -gravY;
 
       if (leds.projectionDimension == _2D) vel.z = 0;
     }
