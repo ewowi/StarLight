@@ -32,12 +32,12 @@
 
 enum ProjectionsE
 {
+  p_None,
   p_Default,
   p_Multiply,
   p_TiltPanRoll,
   p_DistanceFromPoint,
   p_Preset1,
-  p_None,
   p_Random,
   p_Reverse,
   p_Mirror,
@@ -287,15 +287,18 @@ public:
     return XYZ(x, y, 0);
   }
 
-  unsigned16 XYZNoSpin(Coord3D coord) {
-    return coord.x + coord.y * size.x + coord.z * size.x * size.y;
+  unsigned16 XYZUnprojected(Coord3D pixel) {
+    if (pixel >= 0 && pixel < size)
+      return pixel.x + pixel.y * size.x + pixel.z * size.x * size.y;
+    else
+      return UINT16_MAX;
   }
 
-  unsigned16 XYZ(Coord3D coord) {
-    return XYZ(coord.x, coord.y, coord.z);
+  unsigned16 XYZ(unsigned16 x, unsigned16 y, unsigned16 z) {
+    return XYZ({x, y, z});
   }
 
-  unsigned16 XYZ(unsigned16 x, unsigned16 y, unsigned16 z);
+  unsigned16 XYZ(Coord3D pixel);
 
   Leds(Fixture &fixture) {
     ppf("Leds constructor (PhysMap:%d)\n", sizeof(PhysMap));

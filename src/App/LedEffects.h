@@ -1373,13 +1373,13 @@ class GameOfLife: public Effect {
       for (int i = 0; i < 5; i++) {
         int nx = x + pattern[i][0];
         int ny = y + pattern[i][1];
-        if (getBitValue(futureCells, leds.XYZNoSpin({nx, ny, z}))) {canPlace = false; break;}
+        if (getBitValue(futureCells, leds.XYZUnprojected({nx, ny, z}))) {canPlace = false; break;}
       }
       if (canPlace || attempts == 99) {
         for (int i = 0; i < 5; i++) {
           int nx = x + pattern[i][0];
           int ny = y + pattern[i][1];
-          setBitValue(futureCells, leds.XYZNoSpin({nx, ny, z}), true);
+          setBitValue(futureCells, leds.XYZUnprojected({nx, ny, z}), true);
           leds.setPixelColor({nx, ny, z}, colorByAge ? CRGB::Green : color, 0);
         }
         return;   
@@ -1430,9 +1430,9 @@ class GameOfLife: public Effect {
       // Setup Grid
       memset(cells, 0, dataSize);
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-        if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
+        if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZUnprojected({x,y,z}))) continue;
         if (random8(100) < lifeChance) {
-          setBitValue(cells, leds.XYZNoSpin({x,y,z}), true);
+          setBitValue(cells, leds.XYZUnprojected({x,y,z}), true);
           leds.setPixelColor({x,y,z}, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, random8()), 0);
         }
         else leds.setPixelColor({x,y,z}, bgColor, 0);
@@ -1463,8 +1463,8 @@ class GameOfLife: public Effect {
     if (paletteChanged) *prevPalette = ColorFromPalette(leds.palette, 0);
     // Redraw Loop
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-      if (!leds.isMapped(leds.XYZNoSpin({x,y,z}))) continue;
-      bool alive = getBitValue(cells, leds.XYZNoSpin({x,y,z}));
+      if (!leds.isMapped(leds.XYZUnprojected({x,y,z}))) continue;
+      bool alive = getBitValue(cells, leds.XYZUnprojected({x,y,z}));
       if (alive) aliveCount++; else deadCount++;
       // Redraw alive if palette changed or overlay1
       if      (alive && paletteChanged)    leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0); // Random color if palette changed
@@ -1509,7 +1509,7 @@ class GameOfLife: public Effect {
     //Loop through all cells. Count neighbors, apply rules, setPixel
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
       Coord3D cPos = {x, y, z}; //current cells position
-      uint16_t cIndex = leds.XYZNoSpin(cPos);
+      uint16_t cIndex = leds.XYZUnprojected(cPos);
       if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZ(x,y,z))) continue; //skip if not physical led
       byte neighbors = 0;
       byte colorCount = 0; //track number of valid colors
@@ -1524,7 +1524,7 @@ class GameOfLife: public Effect {
           if (k != 0) continue; //no z axis (wrap around only for x and y
           nPos = (nPos + leds.size) % leds.size;
         }
-        uint16_t nIndex = leds.XYZNoSpin(nPos);
+        uint16_t nIndex = leds.XYZUnprojected(nPos);
         // count neighbors and store up to 9 neighbor colors
         if (getBitValue(cells, nIndex)) { //if alive
           neighbors++;

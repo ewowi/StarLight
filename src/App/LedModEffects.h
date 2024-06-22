@@ -36,7 +36,6 @@ public:
   unsigned long lastMappingMillis = 0;
 
   std::vector<Effect *> effects;
-  std::vector<Projection *> projections;
 
   Fixture fixture = Fixture();
 
@@ -97,16 +96,16 @@ public:
     effects.push_back(new SphereMoveEffect);
 
     //load projections
-    projections.push_back(new DefaultProjection);
-    projections.push_back(new MultiplyProjection);
-    projections.push_back(new TiltPanRollProjection);
-    projections.push_back(new DistanceFromPointProjection);
-    projections.push_back(new Preset1Projection);
-    projections.push_back(new NoneProjection);
-    projections.push_back(new RandomProjection);
-    projections.push_back(new ReverseProjection);
-    projections.push_back(new MirrorProjection);
-    projections.push_back(new KaleidoscopeProjection);
+    fixture.projections.push_back(new NoneProjection);
+    fixture.projections.push_back(new DefaultProjection);
+    fixture.projections.push_back(new MultiplyProjection);
+    fixture.projections.push_back(new TiltPanRollProjection);
+    fixture.projections.push_back(new DistanceFromPointProjection);
+    fixture.projections.push_back(new Preset1Projection);
+    fixture.projections.push_back(new RandomProjection);
+    fixture.projections.push_back(new ReverseProjection);
+    fixture.projections.push_back(new MirrorProjection);
+    fixture.projections.push_back(new KaleidoscopeProjection);
   };
 
   void setup() {
@@ -208,7 +207,8 @@ public:
     }});
     currentVar["dash"] = true;
 
-    currentVar = ui->initSelect(tableVar, "pro", 2, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    //projection, default projection is 'default'
+    currentVar = ui->initSelect(tableVar, "pro", 1, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
         for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++)
           mdl->setValue(var, fixture.listOfLeds[rowNr]->projectionNr, rowNr);
@@ -218,7 +218,7 @@ public:
         ui->setComment(var, "How to project fx");
 
         JsonArray options = ui->setOptions(var);
-        for (Projection *projection:projections) {
+        for (Projection *projection:fixture.projections) {
           char buf[32] = "";
           strcat(buf, projection->name());
           strcat(buf, projection->dim()==_1D?" ┊":projection->dim()==_2D?" ▦":" 🧊");
@@ -232,15 +232,15 @@ public:
         if (rowNr == UINT8_MAX) rowNr = 0; // in case fx without a rowNr
 
         if (rowNr < fixture.listOfLeds.size()) {
-          fixture.listOfLeds[rowNr]->doMap = true;
+          Leds *leds = fixture.listOfLeds[rowNr];
+          leds->doMap = true;
 
           stackUnsigned8 proValue = mdl->getValue(var, rowNr);
-          fixture.listOfLeds[rowNr]->projectionNr = proValue;
-
-          Projection* projection = projections[proValue];
+          leds->projectionNr = proValue;
+          Projection* projection = fixture.projections[proValue];
 
           mdl->varPreDetails(var, rowNr); //set all positive var N orders to negative
-          projection->controls(*fixture.listOfLeds[rowNr], var);
+          projection->controls(*leds, var);
           mdl->varPostDetails(var, rowNr);
 
           // ppf("chFun pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.listOfLeds.size());
@@ -387,8 +387,8 @@ public:
           effects[leds->fx]->loop(*leds);
 
           mdl->getValueRowNr = UINT8_MAX;
-          if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
-            leds->fadeToBlackBy(50);
+          // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
+          //   leds->fadeToBlackBy(50);
         }
       }
 
