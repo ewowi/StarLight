@@ -85,6 +85,8 @@ public:
     effects.push_back(new ScrollingText);
     effects.push_back(new Noise2D);
     effects.push_back(new GameOfLife);
+    effects.push_back(new RubiksCube);
+    effects.push_back(new ParticleTest);
     #ifdef STARLEDS_USERMOD_WLEDAUDIO
       //2D WLED
       effects.push_back(new Waverly);
