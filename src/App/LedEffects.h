@@ -1771,9 +1771,9 @@ class RubiksCube: public Effect {
         int sizeZ = leds.size.z-1;
 
         // 3 Sided Cube Cheat add 1 to led size if "panels" missing. May affect different fixture types
-        if (!leds.isMapped(leds.XYZNoSpin({0, leds.size.y/2, leds.size.z/2})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x-1, leds.size.y/2, leds.size.z/2}))) sizeX++;
-        if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, 0, leds.size.z/2})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y-1, leds.size.z/2}))) sizeY++;
-        if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, 0})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, leds.size.z-1}))) sizeZ++;
+        if (!leds.isMapped(leds.XYZUnprojected({0, leds.size.y/2, leds.size.z/2})) || !leds.isMapped(leds.XYZUnprojected({leds.size.x-1, leds.size.y/2, leds.size.z/2}))) sizeX++;
+        if (!leds.isMapped(leds.XYZUnprojected({leds.size.x/2, 0, leds.size.z/2})) || !leds.isMapped(leds.XYZUnprojected({leds.size.x/2, leds.size.y-1, leds.size.z/2}))) sizeY++;
+        if (!leds.isMapped(leds.XYZUnprojected({leds.size.x/2, leds.size.y/2, 0})) || !leds.isMapped(leds.XYZUnprojected({leds.size.x/2, leds.size.y/2, leds.size.z-1}))) sizeZ++;
 
         // Previously SIZE - 1. Cube size expanded by 2, makes edges thicker. Constrains are used to prevent out of bounds
         const float scaleX = (SIZE + 1.0) / sizeX;
@@ -1789,7 +1789,7 @@ class RubiksCube: public Effect {
         
         for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++) { 
           Coord3D led = {x, y, z};
-          if (leds.isMapped(leds.XYZNoSpin(led)) == 0) continue; // skip if not a physical LED
+          if (leds.isMapped(leds.XYZUnprojected(led)) == 0) continue; // skip if not a physical LED
 
           // Normalize the coordinates to the Rubik's cube range. Subtract 1 since cube expanded by 2
           int normalizedX = constrain(round(x * scaleX) - 1, 0, SIZE - 1);
@@ -1952,7 +1952,7 @@ class ParticleTest: public Effect {
         Coord3D rPos; 
         do { // Get random mapped position that isn't colored (infinite loop is small fixture size and high particle count)
           rPos = {random8(leds.size.x), random8(leds.size.y), random8(leds.size.z)};
-        } while (!leds.isMapped(leds.XYZNoSpin(rPos)) || leds.getPixelColor(rPos) != CRGB::Black);
+        } while (!leds.isMapped(leds.XYZUnprojected(rPos)) || leds.getPixelColor(rPos) != CRGB::Black);
         particles[index].pos = rPos;
         particles[index].color = ColorFromPalette(leds.palette, random8());
         leds.setPixelColor(particles[index].pos, particles[index].color, 0);
@@ -1981,7 +1981,7 @@ class ParticleTest: public Effect {
       // Update particle position
       Coord3D newPos = particles[index].pos + vel;
 
-      if (leds.isMapped(leds.XYZNoSpin(newPos)) && !newPos.isOutofBounds(leds.size) && leds.getPixelColor(newPos) == CRGB::Black) {
+      if (leds.isMapped(leds.XYZUnprojected(newPos)) && !newPos.isOutofBounds(leds.size) && leds.getPixelColor(newPos) == CRGB::Black) {
         particles[index].pos = newPos;
         if (debugPrint) ppf("Particle %d: %d %d %d New Pos was mapped\n", index, newPos.x, newPos.y, newPos.z);
       }
@@ -1995,7 +1995,7 @@ class ParticleTest: public Effect {
         for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
           Coord3D testPos = newPos + Coord3D({i, j, k});
           if (testPos == particles[index].pos)            continue; // Skip current position
-          if (!leds.isMapped(leds.XYZNoSpin(testPos)))    continue; // Skip if not mapped
+          if (!leds.isMapped(leds.XYZUnprojected(testPos)))    continue; // Skip if not mapped
           if (testPos.isOutofBounds(leds.size))           continue; // Skip out of bounds
           if (leds.getPixelColor(testPos) != CRGB::Black) continue; // Skip if already colored by another particle
           float dist = testPos.distanceFloat(newPos);
