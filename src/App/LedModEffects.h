@@ -13,6 +13,7 @@
 
 #include "LedFixture.h"
 #include "LedEffects.h"
+#include "LedProjections.h"
 
 // #define FASTLED_RGBW
 
@@ -41,6 +42,9 @@ public:
   bool fShow = true;
 
   LedModEffects() :SysModule("Effects") {
+
+    //load effects
+
     //1D Basis
     effects.push_back(new SolidEffect);
     // 1D FastLed
@@ -90,6 +94,18 @@ public:
     //3D
     effects.push_back(new RipplesEffect);
     effects.push_back(new SphereMoveEffect);
+
+    //load projections
+    fixture.projections.push_back(new NoneProjection);
+    fixture.projections.push_back(new DefaultProjection);
+    fixture.projections.push_back(new MultiplyProjection);
+    fixture.projections.push_back(new TiltPanRollProjection);
+    fixture.projections.push_back(new DistanceFromPointProjection);
+    fixture.projections.push_back(new Preset1Projection);
+    fixture.projections.push_back(new RandomProjection);
+    fixture.projections.push_back(new ReverseProjection);
+    fixture.projections.push_back(new MirrorProjection);
+    fixture.projections.push_back(new KaleidoscopeProjection);
   };
 
   void setup() {
@@ -178,8 +194,8 @@ public:
             print->printVar(var);
             ppf("\n");
 
-            if (effects[leds->fx]->dim() != leds->effectDimension) {
-              leds->effectDimension = effects[leds->fx]->dim();
+            if (effect->dim() != leds->effectDimension) {
+              leds->effectDimension = effect->dim();
               leds->doMap = true;
               leds->fixture->doMap = true;
             }
@@ -191,7 +207,8 @@ public:
     }});
     currentVar["dash"] = true;
 
-    currentVar = ui->initSelect(tableVar, "pro", 2, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    //projection, default projection is 'default'
+    currentVar = ui->initSelect(tableVar, "pro", 1, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case f_ValueFun:
         for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++)
           mdl->setValue(var, fixture.listOfLeds[rowNr]->projectionNr, rowNr);
@@ -199,106 +216,31 @@ public:
       case f_UIFun: {
         ui->setLabel(var, "Projection");
         ui->setComment(var, "How to project fx");
-        JsonArray options = ui->setOptions(var); // see enum Projections in LedFixture.h and keep the same order !
-        options.add("Default");
-        options.add("Multiply");
-        options.add("TiltPanRoll");
-        options.add("Distance ⌛");
-        options.add("Preset 1");
-        options.add("None");
-        options.add("Random");
-        options.add("Mirror WIP");
-        options.add("Reverse WIP");
-        // options.add("Kaleidoscope WIP");
+
+        JsonArray options = ui->setOptions(var);
+        for (Projection *projection:fixture.projections) {
+          char buf[32] = "";
+          strcat(buf, projection->name());
+          strcat(buf, projection->dim()==_1D?" ┊":projection->dim()==_2D?" ▦":" 🧊");
+          strcat(buf, " ");
+          strcat(buf, projection->tags());
+          options.add(JsonString(buf, JsonString::Copied)); //copy!
+        }
         return true; }
       case f_ChangeFun:
 
         if (rowNr == UINT8_MAX) rowNr = 0; // in case fx without a rowNr
 
         if (rowNr < fixture.listOfLeds.size()) {
-          fixture.listOfLeds[rowNr]->doMap = true;
+          Leds *leds = fixture.listOfLeds[rowNr];
+          leds->doMap = true;
 
           stackUnsigned8 proValue = mdl->getValue(var, rowNr);
-          fixture.listOfLeds[rowNr]->projectionNr = proValue;
+          leds->projectionNr = proValue;
+          Projection* projection = fixture.projections[proValue];
 
           mdl->varPreDetails(var, rowNr); //set all positive var N orders to negative
-          if (proValue == p_DistanceFromPoint || proValue == p_Preset1) {
-            ui->initCoord3D(var, "proCenter", Coord3D{8,8,8}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-              case f_UIFun:
-                ui->setLabel(var, "Center");
-                return true;
-              case f_ChangeFun:
-                //initiate projectAndMap
-                ppf("proCenter %d %d\n", rowNr, fixture.listOfLeds.size());
-                if (rowNr < fixture.listOfLeds.size()) {
-                  fixture.listOfLeds[rowNr]->doMap = true; //Guru Meditation Error: Core  1 panic'ed (StoreProhibited). Exception was unhandled.
-                  fixture.doMap = true;
-                }
-                // ui->setLabel(var, "Size");
-                return true;
-              default: return false;
-            }});
-          }
-          if (proValue == p_Multiply || proValue == p_Preset1) {
-            ui->initCoord3D(var, "proMulti", Coord3D{2,2,1}, 0, 10, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-              case f_UIFun:
-                ui->setLabel(var, "Multiply");
-                return true;
-              case f_ChangeFun:
-                ui->initCheckBox(var, "mirror", false, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-                  case f_ChangeFun:
-                    if (rowNr < fixture.listOfLeds.size()) {
-                      fixture.listOfLeds[rowNr]->doMap = true;
-                      fixture.doMap = true;
-                    }
-                    return true;
-                  default: return false;
-                }});
-                if (rowNr < fixture.listOfLeds.size()) {
-                  fixture.listOfLeds[rowNr]->doMap = true;
-                  fixture.doMap = true;
-                }
-                return true;
-              default: return false;
-            }});
-          }
-          if (proValue == p_TiltPanRoll || proValue == p_Preset1) {
-            //tbd: implement variable by reference for rowNrs
-            #ifdef STARBASE_USERMOD_MPU6050
-              ui->initCheckBox(var, "proGyro", false, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-                case f_ChangeFun:
-                  if (rowNr < fixture.listOfLeds.size())
-                    fixture.listOfLeds[rowNr]->proGyro = mdl->getValue(var, rowNr);
-                  return true;
-                default: return false;
-              }});
-            #endif
-
-            ui->initSlider(var, "proTilt", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-              case f_ChangeFun:
-                if (rowNr < fixture.listOfLeds.size())
-                  fixture.listOfLeds[rowNr]->proTiltSpeed = mdl->getValue(var, rowNr);
-                return true;
-              default: return false;
-            }});
-            ui->initSlider(var, "proPan", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-              case f_ChangeFun:
-                if (rowNr < fixture.listOfLeds.size())
-                  fixture.listOfLeds[rowNr]->proPanSpeed = mdl->getValue(var, rowNr);
-                return true;
-              default: return false;
-            }});
-            ui->initSlider(var, "proRoll", 128, 0, 254, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-              case f_UIFun:
-                ui->setLabel(var, "Roll speed");
-                return true;
-              case f_ChangeFun:
-                if (rowNr < fixture.listOfLeds.size())
-                  fixture.listOfLeds[rowNr]->proRollSpeed = mdl->getValue(var, rowNr);
-                return true;
-              default: return false;
-            }});
-          }
+          projection->controls(*leds, var);
           mdl->varPostDetails(var, rowNr);
 
           // ppf("chFun pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.listOfLeds.size());
@@ -445,8 +387,8 @@ public:
           effects[leds->fx]->loop(*leds);
 
           mdl->getValueRowNr = UINT8_MAX;
-          if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
-            leds->fadeToBlackBy(50);
+          // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
+          //   leds->fadeToBlackBy(50);
         }
       }
 

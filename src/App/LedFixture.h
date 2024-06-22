@@ -24,6 +24,22 @@
 
 class Leds; //forward
 
+class Projection {
+public:
+  virtual const char * name() {return "noname";}
+  virtual const char * tags() {return "";}
+  virtual uint8_t dim() {return _1D;};
+
+  virtual void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &proCenter) {}
+
+  virtual void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted) {}
+
+  virtual void adjustXYZ(Leds &leds, Coord3D &pixel) {}
+  
+  virtual void controls(Leds &leds, JsonObject parentVar) {}
+
+};
+
 class Fixture {
 
 public:
@@ -38,6 +54,8 @@ public:
   // if (leds) free(leds);
   // leds = (CRGB*)malloc(nrOfLeds * sizeof(CRGB));
   // leds = (CRGB*)reallocarray
+
+  std::vector<Projection *> projections;
 
   unsigned16 nrOfLeds = 64; //amount of physical leds
   unsigned8 fixtureNr = -1;

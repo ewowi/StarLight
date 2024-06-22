@@ -32,12 +32,12 @@
 
 enum ProjectionsE
 {
+  p_None,
   p_Default,
   p_Multiply,
   p_TiltPanRoll,
   p_DistanceFromPoint,
   p_Preset1,
-  p_None,
   p_Random,
   p_Reverse,
   p_Mirror,
@@ -140,6 +140,7 @@ class SharedData {
     index = 0;
   }
 
+  //sets the sharedData pointer back to 0 so loop effect can go through it
   void loop() {
     index = 0;
   }
@@ -239,11 +240,9 @@ struct PhysMap {
       //dev new indexes 894 type:88,122,254,63 p:0x3ffe7a58
       if (!isMultipleIndexes()) //check if pointer is not setting the type[3] value
         ppf("dev new PhysMap type:%d t3:%d b:%d p:%p\n", type, type[3], type[3] & 0x80, indexes);
-
-      if (isMultipleIndexes()) {
+      else {
         indexes->push_back(oldIndex); //add the old to the indexes vector
       }
-
     }
 
     if (isMultipleIndexes()) {
@@ -290,15 +289,18 @@ public:
     return XYZ(x, y, 0);
   }
 
-  unsigned16 XYZNoSpin(Coord3D coord) {
-    return coord.x + coord.y * size.x + coord.z * size.x * size.y;
+  unsigned16 XYZUnprojected(Coord3D pixel) {
+    if (pixel >= 0 && pixel < size)
+      return pixel.x + pixel.y * size.x + pixel.z * size.x * size.y;
+    else
+      return UINT16_MAX;
   }
 
-  unsigned16 XYZ(Coord3D coord) {
-    return XYZ(coord.x, coord.y, coord.z);
+  unsigned16 XYZ(unsigned16 x, unsigned16 y, unsigned16 z) {
+    return XYZ({x, y, z});
   }
 
-  unsigned16 XYZ(unsigned16 x, unsigned16 y, unsigned16 z);
+  unsigned16 XYZ(Coord3D pixel);
 
   Leds(Fixture &fixture) {
     ppf("Leds constructor (PhysMap:%d)\n", sizeof(PhysMap));

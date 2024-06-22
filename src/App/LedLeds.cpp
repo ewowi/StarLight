@@ -10,7 +10,7 @@
 */
 
 #include "LedLeds.h"
-#include "../Sys/SysModSystem.h"
+#include "../Sys/SysModSystem.h"  //for sys->now
 #ifdef STARBASE_USERMOD_MPU6050
   #include "../User/UserModMPU6050.h"
 #endif
@@ -26,32 +26,15 @@ void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, unsigned8 in
   fill_rainbow(targetArray, numToFill, initialhue, deltahue);
 }
 
-unsigned16 Leds::XYZ(unsigned16 x, unsigned16 y, unsigned16 z) {
-  if (projectionNr == p_TiltPanRoll || projectionNr == p_Preset1) {
-    Coord3D result = Coord3D{x, y, z};
+unsigned16 Leds::XYZ(Coord3D pixel) {
 
-    #ifdef STARBASE_USERMOD_MPU6050
-      if (proGyro) {
-        result = trigoTiltPanRoll.tilt(result, size/2, mpu6050->gyro.x);
-        result = trigoTiltPanRoll.pan(result, size/2, mpu6050->gyro.y);
-        result = trigoTiltPanRoll.roll(result, size/2, mpu6050->gyro.z);
-      }
-      else 
-    #endif
-    {
-      if (proTiltSpeed) result = trigoTiltPanRoll.tilt(result, size/2, sys->now * 5 / (255 - proTiltSpeed));
-      if (proPanSpeed) result = trigoTiltPanRoll.pan(result, size/2, sys->now * 5 / (255 - proPanSpeed));
-      if (proRollSpeed) result = trigoTiltPanRoll.roll(result, size/2, sys->now * 5 / (255 - proRollSpeed));
-    }
+  //as this is a call to a virtual function it reduces the theoretical (no show) speed by half, even if XYZ is not implemented
+  //  the real speed is hardly affected, but room for improvement!
+  //  so as a workaround we list them here explicetly
+  if (projectionNr == p_TiltPanRoll || projectionNr == p_Preset1)
+    fixture->projections[projectionNr]->adjustXYZ(*this, pixel);
 
-    if (fixture->fixSize.z == 1) result.z = 0; // 3d effects will be flattened on 2D fixtures
-    if (result >= 0 && result < size)
-      return result.x + result.y * size.x + result.z * size.x * size.y;
-    else 
-      return UINT16_MAX;
-  }
-  else
-    return x + y * size.x + z * size.x * size.y;
+  return XYZUnprojected(pixel);
 }
 
 // maps the virtual led to the physical led(s) and assign a color to it
@@ -70,7 +53,7 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
     }
   }
   else if (indexV < NUM_LEDS_Max) //no projection
-    fixture->ledsP[projectionNr==p_Random?random(fixture->nrOfLeds):indexV] = color;
+    fixture->ledsP[(projectionNr == p_Random)?random(fixture->nrOfLeds):indexV] = color;
   else if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
     ppf(" dev sPC V:%d >= %d", indexV, NUM_LEDS_Max);
 }

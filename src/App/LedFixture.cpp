@@ -102,27 +102,12 @@ void Fixture::projectAndMap() {
               if (sizeAdjusted.y > 1) leds->projectionDimension++;
               if (sizeAdjusted.z > 1) leds->projectionDimension++;
 
-              Coord3D proCenter;
-              if (leds->projectionNr == p_DistanceFromPoint || leds->projectionNr == p_Preset1) {
-                proCenter = mdl->getValue("proCenter", rowNr);
-              }
-              else 
-                proCenter = Coord3D{0,0,0};
+              Projection *projection = projections[leds->projectionNr];
+              mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
 
-              Coord3D mirrors = Coord3D{0,0,0}; // no mirrors
-              if (leds->projectionNr == p_Multiply || leds->projectionNr == p_Preset1) {
-                Coord3D proMulti;
-                proMulti = mdl->getValue("proMulti", rowNr);
-                //promultu can be 0,0,0 but /= protects from /div0
-                sizeAdjusted /= proMulti; sizeAdjusted = sizeAdjusted.maximum(Coord3D{1,1,1}); //size min 1,1,1
-                proCenter /= proMulti;
-                mirrors = pixelAdjusted / sizeAdjusted; //place the pixel in the right quadrant
-                pixelAdjusted = pixelAdjusted%sizeAdjusted; // pixel % size
-                // ppf("Multiply %d,%d,%d\n", leds->size.x, leds->size.y, leds->size.z);
-              }
-              bool mirror = mdl->getValue("mirror", rowNr);
+              Coord3D proCenter = mdl->getValue("proCenter", rowNr);
 
-              // ppf("projectionNr p:%d f:%d s:%d, %d-%d-%d %d-%d-%d %d-%d-%d\n", leds->projectionNr, leds->effectDimension, leds->projectionDimension, x, y, z, uint16CollectList[0], uint16CollectList[1], uint16CollectList[2], size.x, size.y, size.z);
+              projection->adjustSizeAndPixel(sizeAdjusted, pixelAdjusted, proCenter);
 
               if (leds->size == Coord3D{0,0,0}) { // first
                 ppf("projectAndMap first leds[%d] size:%d,%d,%d s:%d,%d,%d e:%d,%d,%d\n", rowNr, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, startPosAdjusted.x, startPosAdjusted.y, startPosAdjusted.z, endPosAdjusted.x, endPosAdjusted.y, endPosAdjusted.z);
@@ -142,18 +127,13 @@ void Fixture::projectAndMap() {
 
                   mapped = pixelAdjusted;
 
-                  // if mirrored find the indexV of the mirrored pixel
-                  if (mirror) {
-                    if (mirrors.x %2 != 0) mapped.x = sizeAdjusted.x - 1 - mapped.x;
-                    if (mirrors.y %2 != 0) mapped.y = sizeAdjusted.y - 1 - mapped.y;
-                    if (mirrors.z %2 != 0) mapped.z = sizeAdjusted.z - 1 - mapped.z;
-                  }
+                  projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
 
                   mapped.x = mapped.distance(proCenter);
                   mapped.y = 0;
                   mapped.z = 0;
 
-                  indexV = leds->XYZNoSpin(mapped);
+                  indexV = leds->XYZUnprojected(mapped);
                   break;
                 case _2D: //effectDimension
                   switch(leds->projectionDimension) {
@@ -205,12 +185,9 @@ void Fixture::projectAndMap() {
                       break;
                   }
 
-                  if (mirror) {
-                    if (mirrors.x %2 != 0) mapped.x = sizeAdjusted.x - 1 - mapped.x;
-                    if (mirrors.y %2 != 0) mapped.y = sizeAdjusted.y - 1 - mapped.y;
-                    if (mirrors.z %2 != 0) mapped.z = sizeAdjusted.z - 1 - mapped.z;
-                  }
-                  indexV = leds->XYZNoSpin(mapped);
+                  projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
+
+                  indexV = leds->XYZUnprojected(mapped);
                   break;
                 case _3D: //effectDimension
                   mapped = pixelAdjusted;
@@ -238,12 +215,10 @@ void Fixture::projectAndMap() {
                       }
                       break;
                   }
-                  if (mirror) {
-                    if (mirrors.x %2 != 0) mapped.x = sizeAdjusted.x - 1 - mapped.x;
-                    if (mirrors.y %2 != 0) mapped.y = sizeAdjusted.y - 1 - mapped.y;
-                    if (mirrors.z %2 != 0) mapped.z = sizeAdjusted.z - 1 - mapped.z;
-                  }
-                  indexV = leds->XYZNoSpin(mapped);
+
+                  projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
+
+                  indexV = leds->XYZUnprojected(mapped);
                   
                   break; //effectDimension _3D
               } //effectDimension
@@ -329,10 +304,12 @@ void Fixture::projectAndMap() {
                 } //indexV not too high
               } //indexV
 
+              mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
+
             } //if x,y,z between start and endpos
-          } //leds->doMap
+          } //if leds->doMap
           rowNr++;
-        } //listOfLeds
+        } //for listOfLeds
         indexP++; //also increase if no buffer created
       } //if 1D-3D pixel
 
