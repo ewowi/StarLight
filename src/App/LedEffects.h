@@ -1771,9 +1771,11 @@ class RubiksCube: public Effect {
         int sizeZ = leds.size.z-1;
 
         // 3 Sided Cube Cheat add 1 to led size if "panels" missing. May affect different fixture types
-        if (!leds.isMapped(leds.XYZNoSpin({0, leds.size.y/2, leds.size.z/2})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x-1, leds.size.y/2, leds.size.z/2}))) sizeX++;
-        if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, 0, leds.size.z/2})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y-1, leds.size.z/2}))) sizeY++;
-        if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, 0})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, leds.size.z-1}))) sizeZ++;
+        if (leds.projectionDimension == _3D) {
+          if (!leds.isMapped(leds.XYZNoSpin({0, leds.size.y/2, leds.size.z/2})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x-1, leds.size.y/2, leds.size.z/2}))) sizeX++;
+          if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, 0, leds.size.z/2})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y-1, leds.size.z/2}))) sizeY++;
+          if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, 0})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, leds.size.z-1}))) sizeZ++;
+        }
 
         // Previously SIZE - 1. Cube size expanded by 2, makes edges thicker. Constrains are used to prevent out of bounds
         const float scaleX = (SIZE + 1.0) / sizeX;
