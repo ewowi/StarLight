@@ -110,6 +110,7 @@ public:
     fixture.projections.push_back(new ReverseProjection);
     fixture.projections.push_back(new MirrorProjection);
     fixture.projections.push_back(new KaleidoscopeProjection);
+    fixture.projections.push_back(new PinwheelProjection);
   };
 
   void setup() {
