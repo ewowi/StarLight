@@ -1766,9 +1766,9 @@ class RubiksCube: public Effect {
       }
 
       void drawCube(Leds &leds) {
-        int sizeX = leds.size.x-1;
-        int sizeY = leds.size.y-1;
-        int sizeZ = leds.size.z-1;
+        int sizeX = max(leds.size.x-1, 1);
+        int sizeY = max(leds.size.y-1, 1);
+        int sizeZ = max(leds.size.z-1, 1);
 
         // 3 Sided Cube Cheat add 1 to led size if "panels" missing. May affect different fixture types
         if (leds.projectionDimension == _3D) {
