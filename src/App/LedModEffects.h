@@ -239,12 +239,14 @@ public:
 
           stackUnsigned8 proValue = mdl->getValue(var, rowNr);
           leds->projectionNr = proValue;
-          Projection* projection = fixture.projections[proValue];
+          
+          if (proValue < fixture.projections.size()) {
+            Projection* projection = fixture.projections[proValue];
 
-          mdl->varPreDetails(var, rowNr); //set all positive var N orders to negative
-          projection->controls(*leds, var);
-          mdl->varPostDetails(var, rowNr);
-
+            mdl->varPreDetails(var, rowNr); //set all positive var N orders to negative
+            projection->controls(*leds, var);
+            mdl->varPostDetails(var, rowNr);
+          }
           // ppf("chFun pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.listOfLeds.size());
 
           fixture.doMap = true;

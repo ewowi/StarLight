@@ -31,7 +31,7 @@ unsigned16 Leds::XYZ(Coord3D pixel) {
   //as this is a call to a virtual function it reduces the theoretical (no show) speed by half, even if XYZ is not implemented
   //  the real speed is hardly affected, but room for improvement!
   //  so as a workaround we list them here explicetly
-  if (projectionNr == p_TiltPanRoll || projectionNr == p_Preset1)
+  if ((projectionNr == p_TiltPanRoll || projectionNr == p_Preset1) && projectionNr < fixture->projections.size())
     fixture->projections[projectionNr]->adjustXYZ(*this, pixel);
 
   return XYZUnprojected(pixel);

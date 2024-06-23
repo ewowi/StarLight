@@ -102,12 +102,15 @@ void Fixture::projectAndMap() {
               if (sizeAdjusted.y > 1) leds->projectionDimension++;
               if (sizeAdjusted.z > 1) leds->projectionDimension++;
 
-              Projection *projection = projections[leds->projectionNr];
+              Projection *projection = nullptr;
+              if (leds->projectionNr < projections.size())
+                projection = projections[leds->projectionNr];
+
               mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
 
               Coord3D proCenter = mdl->getValue("proCenter", rowNr);
 
-              projection->adjustSizeAndPixel(sizeAdjusted, pixelAdjusted, proCenter);
+              if (projection) projection->adjustSizeAndPixel(sizeAdjusted, pixelAdjusted, proCenter);
 
               if (leds->size == Coord3D{0,0,0}) { // first
                 ppf("projectAndMap first leds[%d] size:%d,%d,%d s:%d,%d,%d e:%d,%d,%d\n", rowNr, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, startPosAdjusted.x, startPosAdjusted.y, startPosAdjusted.z, endPosAdjusted.x, endPosAdjusted.y, endPosAdjusted.z);
@@ -127,7 +130,7 @@ void Fixture::projectAndMap() {
 
                   mapped = pixelAdjusted;
 
-                  projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
+                  if (projection) projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
 
                   mapped.x = mapped.distance(proCenter);
                   mapped.y = 0;
@@ -185,7 +188,7 @@ void Fixture::projectAndMap() {
                       break;
                   }
 
-                  projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
+                  if (projection) projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
 
                   indexV = leds->XYZUnprojected(mapped);
                   break;
@@ -216,7 +219,7 @@ void Fixture::projectAndMap() {
                       break;
                   }
 
-                  projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
+                  if (projection) projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
 
                   indexV = leds->XYZUnprojected(mapped);
                   
