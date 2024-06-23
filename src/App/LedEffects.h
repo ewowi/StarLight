@@ -1928,104 +1928,224 @@ class ParticleTest: public Effect {
   const char * tags() {return "💡💫";}
   
   struct Particle {
-    Coord3D pos;
+    float x, y, z;
+    float vx, vy, vz;
     CRGB color;
+
+    void update() {
+      x += vx;
+      y += vy;
+      z += vz;
+    }
+    void revert() {
+      x -= vx;
+      y -= vy;
+      z -= vz;
+    }
+
+    Coord3D toCoord3DRounded() {
+      return Coord3D({int(round(x)), int(round(y)), int(round(z))});
+    }
+
+    void updatePositionandDraw(Leds &leds, int particleIndex = 0, bool debugPrint = false) {
+      if (debugPrint) ppf("Particle %d: Pos: %f, %f, %f Velocity: %f, %f, %f\n", particleIndex, x, y, z, vx, vy, vz);
+
+      Coord3D prevPos = toCoord3DRounded();
+      if (debugPrint) ppf("     PrevPos: %d, %d, %d\n", prevPos.x, prevPos.y, prevPos.z);
+      
+      update();
+      Coord3D newPos = toCoord3DRounded();
+      if (debugPrint) ppf("     NewPos: %d, %d, %d\n", newPos.x, newPos.y, newPos.z);
+
+      if (newPos == prevPos) return; // Skip if no change in position
+
+      leds.setPixelColor(prevPos, CRGB::Black, 0); // Clear previous position
+
+      if (leds.isMapped(leds.XYZNoSpin(newPos)) && !newPos.isOutofBounds(leds.size) && leds.getPixelColor(newPos) == CRGB::Black) {
+        if (debugPrint) ppf("     New Pos was mapped and particle placed\n");
+        leds.setPixelColor(newPos, color, 0); // Set new position
+        return;
+      }
+      
+      // Particle is not mapped, find nearest mapped pixel
+      Coord3D nearestMapped = prevPos;                          // Set nearest to previous position
+      unsigned nearestDist = newPos.distanceSquared(prevPos);   // Set distance to previous position
+      int diff = 0;                                             // If distance the same check how many coordinates are different (larger is better)
+      bool changed = false;
+
+      if (debugPrint) ppf("     %d, %d, %d, Not Mapped! Nearest: %d, %d, %d dist: %d diff: %d\n", newPos.x, newPos.y, newPos.z, nearestMapped.x, nearestMapped.y, nearestMapped.z, nearestDist, diff);
+      
+      // Check neighbors for nearest mapped pixel. This should be changed to check neighbors with similar velocity
+      for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
+        Coord3D testPos = newPos + Coord3D({i, j, k});
+        if (testPos == prevPos)                         continue; // Skip current position
+        if (!leds.isMapped(leds.XYZNoSpin(testPos)))    continue; // Skip if not mapped
+        if (testPos.isOutofBounds(leds.size))           continue; // Skip out of bounds
+        if (leds.getPixelColor(testPos) != CRGB::Black) continue; // Skip if already colored by another particle
+        unsigned dist = testPos.distanceSquared(newPos);
+        int differences = (prevPos.x != testPos.x) + (prevPos.y != testPos.y) + (prevPos.z != testPos.z);
+        if (debugPrint) ppf ("     TestPos: %d %d %d Dist: %d Diff: %d", testPos.x, testPos.y, testPos.z, dist, differences);
+        if (debugPrint) ppf ("     New Velocities: %d, %d, %d\n", (testPos.x - prevPos.x), (testPos.y - prevPos.y), (testPos.z - prevPos.z));
+        if (dist < nearestDist || (dist == nearestDist && differences >= diff)) {
+          nearestDist = dist;
+          nearestMapped = testPos;
+          diff = differences;
+          changed = true;
+        }
+      }
+      if (changed) { // Change velocity to move towards nearest mapped pixel. Update position.
+        if (newPos.x != nearestMapped.x) vx = constrain(nearestMapped.x - prevPos.x, -1, 1);
+        if (newPos.y != nearestMapped.y) vy = constrain(nearestMapped.y - prevPos.y, -1, 1);
+        if (newPos.z != nearestMapped.z) vz = constrain(nearestMapped.z - prevPos.z, -1, 1);
+
+        x = nearestMapped.x; 
+        y = nearestMapped.y; 
+        z = nearestMapped.z;
+        
+        if (debugPrint) ppf("     New Position: %d, %d, %d New Velocity: %f, %f, %f\n", nearestMapped.x, nearestMapped.y, nearestMapped.z, vx, vy, vz);
+      }
+      else {
+        // No valid position found, revert to previous position
+        // Find which direction is causing OoB / not mapped and set velocity to 0
+        Coord3D testing = toCoord3DRounded();
+        revert();
+        // change X val
+        testing.x = newPos.x;
+        if (testing.isOutofBounds(leds.size) || !leds.isMapped(leds.XYZNoSpin(testing))) vx = 0;
+        // change Y val
+        testing = toCoord3DRounded();
+        testing.y = newPos.y;
+        if (testing.isOutofBounds(leds.size) || !leds.isMapped(leds.XYZNoSpin(testing))) vy = 0;
+        // change Z val
+        testing = toCoord3DRounded();
+        testing.z = newPos.z;
+        if (testing.isOutofBounds(leds.size) || !leds.isMapped(leds.XYZNoSpin(testing))) vz = 0;
+        
+        if (debugPrint) ppf("     No valid position found, reverted. Velocity Updated\n");
+        if (debugPrint) ppf("     New Pos: %f, %f, %f Velo: %f, %f, %f\n", x, y, z, vx, vy, vz);
+      }
+
+      leds.setPixelColor(toCoord3DRounded(), color, 0); // Set new position
+    }
   };
 
   void loop(Leds &leds) {
     // UI Variables
     uint8_t speed        = leds.sharedData.read<uint8_t>();
     uint8_t numParticles = leds.sharedData.read<uint8_t>();
-    Coord3D vel          = leds.sharedData.read<Coord3D>();
+    bool barriers        = leds.sharedData.read<bool>();
     bool gyro            = leds.sharedData.read<bool>();
+    bool randomGravity   = leds.sharedData.read<bool>();
+    uint8_t gravityChangeInterval = leds.sharedData.read<uint8_t>();
     bool debugPrint      = leds.sharedData.read<bool>();
 
     // Effect Variables
     unsigned long *step  = leds.sharedData.readWrite<unsigned long>();
     Particle *particles  = leds.sharedData.readWrite<Particle>(256);
     byte *setup          = leds.sharedData.readWrite<byte>();
-    uint8_t *activeParticles = leds.sharedData.readWrite<uint8_t>();
+    uint8_t *activeParticles  = leds.sharedData.readWrite<uint8_t>();
+    float *Gravity            = leds.sharedData.readWrite<float>(3);
+    unsigned long *gravUpdate = leds.sharedData.readWrite<unsigned long>();
+
+    EVERY_N_SECONDS(10) {
+      ppf("UI Variables: Speed: %d, numParticles: %d, Barriers: %d, Gyro: %d, Random Gravity: %d, Gravity Change Interval: %d, Debug Print: %d\n", speed, numParticles, barriers, gyro, randomGravity, gravityChangeInterval, debugPrint);
+    }
 
     if (*setup != 123 || *activeParticles != numParticles) {
       ppf("Setting Up Particles\n");
       *setup = 123;
       *activeParticles = numParticles;
       leds.fill_solid(CRGB::Black, true);
+
+      if (barriers) {
+        // create a 2 pixel thick barrier around middle y value with gaps
+        for (int x = 0; x < leds.size.x; x++) for (int z = 0; z < leds.size.z; z++) {
+          if (!random8(5)) continue;
+          leds.setPixelColor({x, leds.size.y/2, z}, CRGB::White, 0);
+          leds.setPixelColor({x, leds.size.y/2 - 1, z}, CRGB::White, 0);
+        }
+      }
+
       for (int index = 0 ; index < numParticles; index++) {
         Coord3D rPos; 
         do { // Get random mapped position that isn't colored (infinite loop is small fixture size and high particle count)
           rPos = {random8(leds.size.x), random8(leds.size.y), random8(leds.size.z)};
         } while (!leds.isMapped(leds.XYZNoSpin(rPos)) || leds.getPixelColor(rPos) != CRGB::Black);
-        particles[index].pos = rPos;
+        // rPos = {1,1,0};
+        particles[index].x = rPos.x;
+        particles[index].y = rPos.y;
+        particles[index].z = rPos.z;
+
+        particles[index].vx = (random8() / 256.0f) * 2.0f - 1.0f;
+        particles[index].vy = (random8() / 256.0f) * 2.0f - 1.0f;
+        if (leds.projectionDimension == _3D) particles[index].vz = (random8() / 256.0f) * 2.0f - 1.0f;
+        else particles[index].vz = 0;
+
         particles[index].color = ColorFromPalette(leds.palette, random8());
-        leds.setPixelColor(particles[index].pos, particles[index].color, 0);
+        Coord3D initPos = particles[index].toCoord3DRounded();
+        leds.setPixelColor(initPos, particles[index].color, 0);
       }
+      ppf("Particles Set Up\n");
       *step = sys->now;
     }
 
     if (!speed || sys->now - *step < 1000 / speed) return; // Not enough time passed
 
+    float gravityX, gravityY, gravityZ; // Gravity if using gyro or random gravity
+
     #ifdef STARBASE_USERMOD_MPU6050
     if (gyro) {
-      int gravX = round(mpu6050->gravityVector.x);
-      int gravY = round(mpu6050->gravityVector.y);
-      int gravZ = round(mpu6050->gravityVector.z);
+      Gravity[0] = -mpu6050->gravityVector.x;
+      Gravity[1] = mpu6050->gravityVector.z; // Swap Y and Z axis
+      Gravity[2] = -mpu6050->gravityVector.y;
 
-      vel.x = -gravX;
-      vel.y = gravZ; // Swap Y and Z axis
-      vel.z = -gravY;
-
-      if (leds.projectionDimension == _2D) vel.z = 0;
+      if (leds.projectionDimension == _2D) { // Swap back Y and Z axis set Z to 0
+        Gravity[1] = -mpu6050->gravityVector.z;
+        Gravity[2] = 0;
+      }
     }
     #endif
 
-    for (int index = 0; index < *activeParticles; index++) {
-      leds.setPixelColor(particles[index].pos, CRGB::Black, 0); 
-      // Update particle position
-      Coord3D newPos = particles[index].pos + vel;
+    if (randomGravity) {
+      if (sys->now - *gravUpdate > gravityChangeInterval * 1000) {
+        *gravUpdate = sys->now;
+        float scale = 5.0f;
+        // Generate Perlin noise values and scale them
+        Gravity[0] = (inoise8(*step, 0, 0) / 128.0f - 1.0f) * scale;
+        Gravity[1] = (inoise8(0, *step, 0) / 128.0f - 1.0f) * scale;
+        Gravity[2] = (inoise8(0, 0, *step) / 128.0f - 1.0f) * scale;
 
-      if (leds.isMapped(leds.XYZNoSpin(newPos)) && !newPos.isOutofBounds(leds.size) && leds.getPixelColor(newPos) == CRGB::Black) {
-        particles[index].pos = newPos;
-        if (debugPrint) ppf("Particle %d: %d %d %d New Pos was mapped\n", index, newPos.x, newPos.y, newPos.z);
+        Gravity[0] = constrain(Gravity[0], -1.0f, 1.0f);
+        Gravity[1] = constrain(Gravity[1], -1.0f, 1.0f);
+        Gravity[2] = constrain(Gravity[2], -1.0f, 1.0f);
+
+        if (leds.projectionDimension == _2D) Gravity[2] = 0;
+        ppf("Random Gravity: %f, %f, %f\n", Gravity[0], Gravity[1], Gravity[2]);
       }
-      else {
-        // Particle is not mapped, find nearest mapped pixel
-        Coord3D nearestMapped = particles[index].pos; // Set nearest to previous position
-        float nearestDist = newPos.distanceFloat(particles[index].pos); 
-        int diff = 0; // If distance the same check how many coordinates are different (larger is better)
-
-        if (debugPrint) ppf("Particle: %d: %d, %d, %d Not Mapped! Nearest: %d, %d, %d dist: %f diff: %d\n", index, newPos.x, newPos.y, newPos.z, nearestMapped.x, nearestMapped.y, nearestMapped.z, nearestDist, diff);
-        for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
-          Coord3D testPos = newPos + Coord3D({i, j, k});
-          if (testPos == particles[index].pos)            continue; // Skip current position
-          if (!leds.isMapped(leds.XYZNoSpin(testPos)))    continue; // Skip if not mapped
-          if (testPos.isOutofBounds(leds.size))           continue; // Skip out of bounds
-          if (leds.getPixelColor(testPos) != CRGB::Black) continue; // Skip if already colored by another particle
-          float dist = testPos.distanceFloat(newPos);
-          int differences = (particles[index].pos.x != testPos.x) + (particles[index].pos.y != testPos.y) + (particles[index].pos.z != testPos.z);
-          if (debugPrint) ppf ("Particle %d Origin: %d, %d, %d -> ", index, particles[index].pos.x, particles[index].pos.y, particles[index].pos.z);
-          if (debugPrint) ppf ("TestPos: %d %d %d Dist: %f Diff: %d\n", testPos.x, testPos.y, testPos.z, dist, differences);
-          if (dist <= nearestDist && differences >= diff) {
-            nearestDist = dist;
-            nearestMapped = testPos;
-            diff = differences;
-          }
-        }
-        if(debugPrint) ppf("i: %d, Curr: %d, %d, %d -> OoB: %d, %d, %d -> New: %d, %d, %d Dist: %f Diff: %d\n", index, particles[index].pos.x, particles[index].pos.y, particles[index].pos.z, newPos.x, newPos.y, newPos.z, nearestMapped.x, nearestMapped.y, nearestMapped.z, nearestDist, diff);
-        particles[index].pos = nearestMapped;
-      } 
-      leds.setPixelColor(particles[index].pos, particles[index].color, 0);
     }
+
+    for (int index = 0; index < *activeParticles; index++) {
+      if (gyro || randomGravity) { // Lerp gravity towards gyro or random gravity if enabled
+        float lerpFactor = .75;
+        particles[index].vx += (Gravity[0] - particles[index].vx) * lerpFactor;
+        particles[index].vy += (Gravity[1] - particles[index].vy) * lerpFactor; // Swap Y and Z axis
+        particles[index].vz += (Gravity[2] - particles[index].vz) * lerpFactor;
+      }
+      particles[index].updatePositionandDraw(leds, index, debugPrint);  
+    }
+
     *step = sys->now;
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
-    ui->initSlider (parentVar, "Speed",               leds.sharedData.write<uint8_t>(1), 0, 30);
-    ui->initSlider (parentVar, "Number of Particles", leds.sharedData.write<uint8_t>(1), 1, 255);
-    ui->initCoord3D(parentVar, "Velocity",            leds.sharedData.write<Coord3D>({0,0,0}), -1, 1);
-    ui->initCheckBox(parentVar, "Gyro",               leds.sharedData.write<bool>(false));
-    ui->initCheckBox(parentVar, "Debug Print",        leds.sharedData.write<bool>(false));
+    ui->initSlider  (parentVar, "Speed",                   leds.sharedData.write<uint8_t>(1), 0, 30);
+    ui->initSlider  (parentVar, "Number of Particles",     leds.sharedData.write<uint8_t>(10), 1, 255);
+    ui->initCheckBox(parentVar, "Barriers",                leds.sharedData.write<bool>(0));
+    ui->initCheckBox(parentVar, "Gyro",                    leds.sharedData.write<bool>(0));
+    ui->initCheckBox(parentVar, "Random Gravity",          leds.sharedData.write<bool>(1));
+    ui->initSlider  (parentVar, "Gravity Change Interval", leds.sharedData.write<uint8_t>(5), 1, 10);
+    ui->initCheckBox(parentVar, "Debug Print",             leds.sharedData.write<bool>(0));
   }
 };
 
