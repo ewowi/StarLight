@@ -2096,11 +2096,11 @@ class ParticleTest: public Effect {
     #ifdef STARBASE_USERMOD_MPU6050
     if (gyro) {
       Gravity[0] = -mpu6050->gravityVector.x;
-      Gravity[1] = mpu6050->gravityVector.z; // Swap Y and Z axis
+      Gravity[1] =  mpu6050->gravityVector.z; // Swap Y and Z axis
       Gravity[2] = -mpu6050->gravityVector.y;
 
       if (leds.projectionDimension == _2D) { // Swap back Y and Z axis set Z to 0
-        Gravity[1] = -mpu6050->gravityVector.z;
+        Gravity[1] = -Gravity[2];
         Gravity[2] = 0;
       }
     }
