@@ -1775,9 +1775,9 @@ class RubiksCube: public Effect {
 
         // 3 Sided Cube Cheat add 1 to led size if "panels" missing. May affect different fixture types
         if (leds.projectionDimension == _3D) {
-          if (!leds.isMapped(leds.XYZNoSpin({0, leds.size.y/2, leds.size.z/2})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x-1, leds.size.y/2, leds.size.z/2}))) sizeX++;
-          if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, 0, leds.size.z/2})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y-1, leds.size.z/2}))) sizeY++;
-          if (!leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, 0})) || !leds.isMapped(leds.XYZNoSpin({leds.size.x/2, leds.size.y/2, leds.size.z-1}))) sizeZ++;
+          if (!leds.isMapped(leds.XYZUnprojected({0, leds.size.y/2, leds.size.z/2})) || !leds.isMapped(leds.XYZUnprojected({leds.size.x-1, leds.size.y/2, leds.size.z/2}))) sizeX++;
+          if (!leds.isMapped(leds.XYZUnprojected({leds.size.x/2, 0, leds.size.z/2})) || !leds.isMapped(leds.XYZUnprojected({leds.size.x/2, leds.size.y-1, leds.size.z/2}))) sizeY++;
+          if (!leds.isMapped(leds.XYZUnprojected({leds.size.x/2, leds.size.y/2, 0})) || !leds.isMapped(leds.XYZUnprojected({leds.size.x/2, leds.size.y/2, leds.size.z-1}))) sizeZ++;
         }
 
         // Previously SIZE - 1. Cube size expanded by 2, makes edges thicker. Constrains are used to prevent out of bounds
@@ -1963,7 +1963,7 @@ class ParticleTest: public Effect {
 
       leds.setPixelColor(prevPos, CRGB::Black, 0); // Clear previous position
 
-      if (leds.isMapped(leds.XYZNoSpin(newPos)) && !newPos.isOutofBounds(leds.size) && leds.getPixelColor(newPos) == CRGB::Black) {
+      if (leds.isMapped(leds.XYZUnprojected(newPos)) && !newPos.isOutofBounds(leds.size) && leds.getPixelColor(newPos) == CRGB::Black) {
         if (debugPrint) ppf("     New Pos was mapped and particle placed\n");
         leds.setPixelColor(newPos, color, 0); // Set new position
         return;
@@ -1981,7 +1981,7 @@ class ParticleTest: public Effect {
       for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) {
         Coord3D testPos = newPos + Coord3D({i, j, k});
         if (testPos == prevPos)                         continue; // Skip current position
-        if (!leds.isMapped(leds.XYZNoSpin(testPos)))    continue; // Skip if not mapped
+        if (!leds.isMapped(leds.XYZUnprojected(testPos)))    continue; // Skip if not mapped
         if (testPos.isOutofBounds(leds.size))           continue; // Skip out of bounds
         if (leds.getPixelColor(testPos) != CRGB::Black) continue; // Skip if already colored by another particle
         unsigned dist = testPos.distanceSquared(newPos);
@@ -2013,15 +2013,15 @@ class ParticleTest: public Effect {
         revert();
         // change X val
         testing.x = newPos.x;
-        if (testing.isOutofBounds(leds.size) || !leds.isMapped(leds.XYZNoSpin(testing))) vx = 0;
+        if (testing.isOutofBounds(leds.size) || !leds.isMapped(leds.XYZUnprojected(testing))) vx = 0;
         // change Y val
         testing = toCoord3DRounded();
         testing.y = newPos.y;
-        if (testing.isOutofBounds(leds.size) || !leds.isMapped(leds.XYZNoSpin(testing))) vy = 0;
+        if (testing.isOutofBounds(leds.size) || !leds.isMapped(leds.XYZUnprojected(testing))) vy = 0;
         // change Z val
         testing = toCoord3DRounded();
         testing.z = newPos.z;
-        if (testing.isOutofBounds(leds.size) || !leds.isMapped(leds.XYZNoSpin(testing))) vz = 0;
+        if (testing.isOutofBounds(leds.size) || !leds.isMapped(leds.XYZUnprojected(testing))) vz = 0;
         
         if (debugPrint) ppf("     No valid position found, reverted. Velocity Updated\n");
         if (debugPrint) ppf("     New Pos: %f, %f, %f Velo: %f, %f, %f\n", x, y, z, vx, vy, vz);
@@ -2036,7 +2036,11 @@ class ParticleTest: public Effect {
     uint8_t speed        = leds.sharedData.read<uint8_t>();
     uint8_t numParticles = leds.sharedData.read<uint8_t>();
     bool barriers        = leds.sharedData.read<bool>();
-    bool gyro            = leds.sharedData.read<bool>();
+    #ifdef STARBASE_USERMOD_MPU6050
+      bool gyro            = leds.sharedData.read<bool>();
+    #else
+      bool gyro = false;
+    #endif
     bool randomGravity   = leds.sharedData.read<bool>();
     uint8_t gravityChangeInterval = leds.sharedData.read<uint8_t>();
     bool debugPrint      = leds.sharedData.read<bool>();
@@ -2072,7 +2076,7 @@ class ParticleTest: public Effect {
         Coord3D rPos; 
         do { // Get random mapped position that isn't colored (infinite loop is small fixture size and high particle count)
           rPos = {random8(leds.size.x), random8(leds.size.y), random8(leds.size.z)};
-        } while (!leds.isMapped(leds.XYZNoSpin(rPos)) || leds.getPixelColor(rPos) != CRGB::Black);
+        } while (!leds.isMapped(leds.XYZUnprojected(rPos)) || leds.getPixelColor(rPos) != CRGB::Black);
         // rPos = {1,1,0};
         particles[index].x = rPos.x;
         particles[index].y = rPos.y;
@@ -2144,7 +2148,9 @@ class ParticleTest: public Effect {
     ui->initSlider  (parentVar, "Speed",                   leds.sharedData.write<uint8_t>(1), 0, 30);
     ui->initSlider  (parentVar, "Number of Particles",     leds.sharedData.write<uint8_t>(10), 1, 255);
     ui->initCheckBox(parentVar, "Barriers",                leds.sharedData.write<bool>(0));
-    ui->initCheckBox(parentVar, "Gyro",                    leds.sharedData.write<bool>(0));
+    #ifdef STARBASE_USERMOD_MPU6050
+      ui->initCheckBox(parentVar, "Gyro",                    leds.sharedData.write<bool>(0));
+    #endif
     ui->initCheckBox(parentVar, "Random Gravity",          leds.sharedData.write<bool>(1));
     ui->initSlider  (parentVar, "Gravity Change Interval", leds.sharedData.write<uint8_t>(5), 1, 10);
     ui->initCheckBox(parentVar, "Debug Print",             leds.sharedData.write<bool>(0));
