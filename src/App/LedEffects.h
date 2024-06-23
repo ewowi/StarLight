@@ -16,7 +16,9 @@
   #include "../User/UserModE131.h"
 #endif
 
-#include "../User/UserModMPU6050.h"
+#ifdef STARBASE_USERMOD_MPU6050
+  #include "../User/UserModMPU6050.h"
+#endif
 
 //utility function
 float distance(float x1, float y1, float z1, float x2, float y2, float z2) {
@@ -1934,7 +1936,9 @@ class ParticleTest: public Effect {
     uint8_t speed        = leds.sharedData.read<uint8_t>();
     uint8_t numParticles = leds.sharedData.read<uint8_t>();
     Coord3D vel          = leds.sharedData.read<Coord3D>();
-    bool gyro            = leds.sharedData.read<bool>();
+    #ifdef STARBASE_USERMOD_MPU6050
+      bool gyro            = leds.sharedData.read<bool>();
+    #endif
     bool debugPrint      = leds.sharedData.read<bool>();
 
     // Effect Variables
@@ -2021,7 +2025,9 @@ class ParticleTest: public Effect {
     ui->initSlider (parentVar, "Speed",               leds.sharedData.write<uint8_t>(1), 0, 30);
     ui->initSlider (parentVar, "Number of Particles", leds.sharedData.write<uint8_t>(1), 1, 255);
     ui->initCoord3D(parentVar, "Velocity",            leds.sharedData.write<Coord3D>({0,0,0}), -1, 1);
-    ui->initCheckBox(parentVar, "Gyro",               leds.sharedData.write<bool>(false));
+    #ifdef STARBASE_USERMOD_MPU6050
+      ui->initCheckBox(parentVar, "Gyro",               leds.sharedData.write<bool>(false));
+    #endif
     ui->initCheckBox(parentVar, "Debug Print",        leds.sharedData.write<bool>(false));
   }
 };
