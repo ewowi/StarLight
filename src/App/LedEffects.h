@@ -130,6 +130,32 @@ class RainbowWithGlitterEffect: public RainbowEffect {
   }
 };
 
+class RainbowWLED: public Effect {
+  const char * name() {return "Rainbow WLED";}
+  uint8_t      dim()  {return _1D;}
+  const char * tags() {return "⚡";}
+
+  void loop(Leds &leds) {
+    // UI Variables
+    uint8_t speed = leds.sharedData.read<uint8_t>();
+    uint8_t scale = leds.sharedData.read<uint8_t>();
+
+    uint16_t counter = (sys->now * ((speed >> 2) +2)) & 0xFFFF;
+    counter = counter >> 8;
+
+    for (forUnsigned16 i = 0; i < leds.nrOfLeds; i++) {
+      uint8_t index = (i * (16 << (scale / 29)) / leds.nrOfLeds) + counter;
+      leds.setPixelColor(i, ColorFromPalette(leds.palette, index, 255));
+    }
+  }
+
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    ui->initSlider(parentVar, "Speed", leds.sharedData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "Scale", leds.sharedData.write<uint8_t>(128));
+  }
+};
+
 // a colored dot sweeping back and forth, with fading trails
 class SinelonEffect: public Effect {
   const char * name() {return "Sinelon";}

@@ -50,6 +50,7 @@ public:
     // 1D FastLed
     effects.push_back(new RainbowEffect);
     effects.push_back(new RainbowWithGlitterEffect);
+    effects.push_back(new RainbowWLED);
     effects.push_back(new SinelonEffect);
     effects.push_back(new ConfettiEffect);
     effects.push_back(new BPMEffect);
