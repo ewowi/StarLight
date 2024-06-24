@@ -99,41 +99,9 @@ class SolidEffect: public Effect {
 };
 
 class RainbowEffect: public Effect {
-public:
-  const char * name() {return "Rainbow";}
-  uint8_t dim() {return _1D;}
-  const char * tags() {return "⚡";}
-
-  void loop(Leds &leds) {
-    // FastLED's built-in rainbow generator
-    leds.fill_rainbow(sys->now/50, 7);
-  }
-
-  void controls(Leds &leds, JsonObject parentVar) {} //so no palette control is created
-};
-
-class RainbowWithGlitterEffect: public RainbowEffect {
-  const char * name() {return "Rainbow with glitter";}
-  uint8_t dim() {return _1D;}
-  const char * tags() {return "⚡";}
-
-  void loop(Leds &leds) {
-    // built-in FastLED rainbow, plus some random sparkly glitter
-    RainbowEffect::loop(leds);
-    addGlitter(leds, 80);
-  }
-  void addGlitter(Leds &leds, fract8 chanceOfGlitter) 
-  {
-    if( random8() < chanceOfGlitter) {
-      leds[ random16(leds.nrOfLeds) ] += CRGB::White;
-    }
-  }
-};
-
-class RainbowWLED: public Effect {
-  const char * name() {return "Rainbow WLED";}
+  const char * name() {return "Rainbow";} //make one rainbow? remove the fastled rainbow?
   uint8_t      dim()  {return _1D;}
-  const char * tags() {return "⚡";}
+  const char * tags() {return "💡";} //💡 means wled origin
 
   void loop(Leds &leds) {
     // UI Variables
@@ -156,11 +124,41 @@ class RainbowWLED: public Effect {
   }
 };
 
+class RainbowWithGlitterEffect: public Effect {
+  const char * name() {return "Rainbow with glitter";}
+  uint8_t dim() {return _1D;}
+  const char * tags() {return "⚡";} //⚡ means FastLED origin
+
+  void loop(Leds &leds) {
+    uint8_t glitter = leds.sharedData.read<bool>();
+
+    // built-in FastLED rainbow, plus some random sparkly glitter
+    // FastLED's built-in rainbow generator
+    leds.fill_rainbow(sys->now/50, 7);
+
+    if (glitter)
+      addGlitter(leds, 80);
+  }
+
+  void addGlitter(Leds &leds, fract8 chanceOfGlitter) 
+  {
+    if( random8() < chanceOfGlitter) {
+      leds[ random16(leds.nrOfLeds) ] += CRGB::White;
+    }
+  }
+
+  void controls(Leds &leds, JsonObject parentVar) {
+    //no palette control is created
+    ui->initCheckBox(parentVar, "glitter", leds.sharedData.write<bool>(false));
+  }
+
+};
+
 // Best of both worlds from Palette and Spot effects. By Aircoookie
-class FlowWLED: public Effect {
-  const char * name() {return "Flow WLED";}
+class FlowEffect: public Effect {
+  const char * name() {return "Flow";}
   uint8_t      dim()  {return _1D;}
-  const char * tags() {return "⚡";}
+  const char * tags() {return "💡";} //💡 means wled origin
 
   void loop(Leds &leds) {
     // UI Variables

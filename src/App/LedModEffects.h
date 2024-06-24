@@ -50,8 +50,7 @@ public:
     // 1D FastLed
     effects.push_back(new RainbowEffect);
     effects.push_back(new RainbowWithGlitterEffect);
-    effects.push_back(new RainbowWLED);
-    effects.push_back(new FlowWLED);
+    effects.push_back(new FlowEffect);
     effects.push_back(new SinelonEffect);
     effects.push_back(new ConfettiEffect);
     effects.push_back(new BPMEffect);
@@ -226,7 +225,7 @@ public:
         for (Projection *projection:fixture.projections) {
           char buf[32] = "";
           strcat(buf, projection->name());
-          strcat(buf, projection->dim()==_1D?" ┊":projection->dim()==_2D?" ▦":" 🧊");
+          // strcat(buf, projection->dim()==_1D?" ┊":projection->dim()==_2D?" ▦":" 🧊");
           strcat(buf, " ");
           strcat(buf, projection->tags());
           options.add(JsonString(buf, JsonString::Copied)); //copy!

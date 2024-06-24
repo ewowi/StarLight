@@ -28,7 +28,7 @@ class Projection {
 public:
   virtual const char * name() {return "noname";}
   virtual const char * tags() {return "";}
-  virtual uint8_t dim() {return _1D;};
+  // virtual uint8_t dim() {return _1D;};
 
   virtual void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &proCenter) {}
 

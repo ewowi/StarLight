@@ -13,8 +13,8 @@
 
 class NoneProjection: public Projection {
   const char * name() {return "None";}
-  uint8_t dim() {return _1D;}
-  const char * tags() {return "💡";}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
+  const char * tags() {return "💫";}
 
   void controls(Leds &leds, JsonObject parentVar) {
   }
@@ -23,15 +23,15 @@ class NoneProjection: public Projection {
 
 class DefaultProjection: public Projection {
   const char * name() {return "Default";}
-  uint8_t dim() {return _1D;}
-  const char * tags() {return "💡";}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
+  const char * tags() {return "💫";}
 
 }; //DefaultProjection
 
 class MultiplyProjection: public Projection {
   const char * name() {return "Multiply";}
-  uint8_t dim() {return _1D;}
-  const char * tags() {return "💡";}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
+  const char * tags() {return "💫";}
 
   public: //to use in Preset1Projection
 
@@ -83,8 +83,8 @@ class MultiplyProjection: public Projection {
 
 class TiltPanRollProjection: public Projection {
   const char * name() {return "TiltPanRoll";}
-  uint8_t dim() {return _1D;}
-  const char * tags() {return "💡";}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
+  const char * tags() {return "💫";}
 
   public: //to use in Preset1Projection
 
@@ -145,8 +145,8 @@ class TiltPanRollProjection: public Projection {
 
 class DistanceFromPointProjection: public Projection {
   const char * name() {return "Distance ⌛";}
-  uint8_t dim() {return _1D;}
-  const char * tags() {return "💡";}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
+  const char * tags() {return "💫";}
 
   public: //to use in Preset1Projection
 
@@ -171,8 +171,8 @@ class DistanceFromPointProjection: public Projection {
 
 class Preset1Projection: public Projection {
   const char * name() {return "Preset1";}
-  uint8_t dim() {return _1D;}
-  const char * tags() {return "💡";}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
+  const char * tags() {return "💫";}
 
   void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &proCenter) {
     MultiplyProjection mp;
@@ -201,8 +201,8 @@ class Preset1Projection: public Projection {
 
 class RandomProjection: public Projection {
   const char * name() {return "Random";}
-  uint8_t dim() {return _1D;}
-  const char * tags() {return "💡";}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
+  const char * tags() {return "💫";}
 
   void controls(Leds &leds, JsonObject parentVar) {
   }
@@ -210,7 +210,7 @@ class RandomProjection: public Projection {
 
 class ReverseProjection: public Projection {
   const char * name() {return "Reverse WIP";}
-  uint8_t dim() {return _1D;}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
   const char * tags() {return "💡";}
 
   void controls(Leds &leds, JsonObject parentVar) {
@@ -219,7 +219,7 @@ class ReverseProjection: public Projection {
 
 class MirrorProjection: public Projection {
   const char * name() {return "Mirror WIP";}
-  uint8_t dim() {return _1D;}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
   const char * tags() {return "💡";}
 
   void controls(Leds &leds, JsonObject parentVar) {
@@ -228,8 +228,8 @@ class MirrorProjection: public Projection {
 
 class KaleidoscopeProjection: public Projection {
   const char * name() {return "Kaleidoscope WIP";}
-  uint8_t dim() {return _1D;}
-  const char * tags() {return "💡";}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
+  const char * tags() {return "💫";}
 
   void controls(Leds &leds, JsonObject parentVar) {
   }
@@ -279,12 +279,13 @@ class PinwheelProjection: public Projection {
     // UI swirlVal
     // UI arms? arms currently 360, reduce for diff effect?
     // UI add multiply / mirror / reverse / tilt pan roll
+    //  ui->initCheckBox(parentVar, "pw test", true);
   }
 }; //PinwheelProjection
 
 class TestProjection: public Projection {
   const char * name() {return "Test";}
-  uint8_t dim() {return _1D;}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
   const char * tags() {return "💡";}
 
   void controls(Leds &leds, JsonObject parentVar) {
