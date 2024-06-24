@@ -118,11 +118,11 @@ public:
     JsonObject currentVar;
 
     JsonObject tableVar = ui->initTable(parentVar, "fxTbl", nullptr, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Effects");
         ui->setComment(var, "List of effects");
         return true;
-      case f_AddRow: {
+      case onAddRow: {
         rowNr = fixture.listOfLeds.size();
         // ppf("chFun addRow %s[%d]\n", mdl->varID(var), rowNr);
 
@@ -131,7 +131,7 @@ public:
         if (rowNr >= fixture.listOfLeds.size())
           fixture.listOfLeds.push_back(new Leds(fixture));
         return true; }
-      case f_DelRow: {
+      case onDeleteRow: {
         // ppf("chFun delrow %s[%d]\n", mdl->varID(var), rowNr);
         //tbd: fade to black
         if (rowNr <fixture.listOfLeds.size()) {
@@ -144,11 +144,11 @@ public:
     }});
 
     currentVar = ui->initSelect(tableVar, "fx", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ValueFun:
+      case onSetValue:
         for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++)
           mdl->setValue(var, fixture.listOfLeds[rowNr]->fx, rowNr);
         return true;
-      case f_UIFun: {
+      case onUI: {
         ui->setLabel(var, "Effect");
         ui->setComment(var, "Effect to show");
         JsonArray options = ui->setOptions(var);
@@ -161,13 +161,13 @@ public:
           options.add(JsonString(buf, JsonString::Copied)); //copy!
         }
         return true; }
-      case f_ChangeFun:
+      case onChange:
 
         if (rowNr == UINT8_MAX) rowNr = 0; // in case fx without a rowNr
 
         //create a new leds instance if a new row is created
         if (rowNr >= fixture.listOfLeds.size()) {
-          ppf("listOfLeds fx[%d] changeFun %d %s\n", rowNr, fixture.listOfLeds.size(), mdl->findVar("fx")["value"].as<String>().c_str());
+          ppf("listOfLeds fx[%d] onChange %d %s\n", rowNr, fixture.listOfLeds.size(), mdl->findVar("fx")["value"].as<String>().c_str());
           fixture.listOfLeds.push_back(new Leds(fixture));
         }
 
@@ -211,11 +211,11 @@ public:
 
     //projection, default projection is 'default'
     currentVar = ui->initSelect(tableVar, "pro", 1, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ValueFun:
+      case onSetValue:
         for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++)
           mdl->setValue(var, fixture.listOfLeds[rowNr]->projectionNr, rowNr);
         return true;
-      case f_UIFun: {
+      case onUI: {
         ui->setLabel(var, "Projection");
         ui->setComment(var, "How to project fx");
 
@@ -229,7 +229,7 @@ public:
           options.add(JsonString(buf, JsonString::Copied)); //copy!
         }
         return true; }
-      case f_ChangeFun:
+      case onChange:
 
         if (rowNr == UINT8_MAX) rowNr = 0; // in case fx without a rowNr
 
@@ -257,17 +257,17 @@ public:
     currentVar["dash"] = true;
 
     ui->initCoord3D(tableVar, "fxStart", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ValueFun:
+      case onSetValue:
         for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++) {
-          ppf("fxStart[%d] valueFun %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->startPos.x, fixture.listOfLeds[rowNr]->startPos.y, fixture.listOfLeds[rowNr]->startPos.z);
+          ppf("fxStart[%d] onSetValue %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->startPos.x, fixture.listOfLeds[rowNr]->startPos.y, fixture.listOfLeds[rowNr]->startPos.z);
           mdl->setValue(var, fixture.listOfLeds[rowNr]->startPos, rowNr);
         }
         return true;
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Start");
         ui->setComment(var, "In pixels");
         return true;
-      case f_ChangeFun:
+      case onChange:
         if (rowNr < fixture.listOfLeds.size()) {
           fixture.listOfLeds[rowNr]->startPos = mdl->getValue(var, rowNr).as<Coord3D>();
 
@@ -285,17 +285,17 @@ public:
     }});
 
     ui->initCoord3D(tableVar, "fxEnd", {8,8,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ValueFun:
+      case onSetValue:
         for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++) {
-          ppf("fxEnd[%d] valueFun %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->endPos.x, fixture.listOfLeds[rowNr]->endPos.y, fixture.listOfLeds[rowNr]->endPos.z);
+          ppf("fxEnd[%d] onSetValue %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->endPos.x, fixture.listOfLeds[rowNr]->endPos.y, fixture.listOfLeds[rowNr]->endPos.z);
           mdl->setValue(var, fixture.listOfLeds[rowNr]->endPos, rowNr);
         }
         return true;
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "End");
         ui->setComment(var, "In pixels");
         return true;
-      case f_ChangeFun:
+      case onChange:
         if (rowNr < fixture.listOfLeds.size()) {
           fixture.listOfLeds[rowNr]->endPos = mdl->getValue(var, rowNr).as<Coord3D>();
 
@@ -313,25 +313,25 @@ public:
     }});
 
     ui->initText(tableVar, "fxSize", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ValueFun: {
+      case onSetValue: {
         // for (std::vector<Leds *>::iterator leds=fixture.listOfLeds.begin(); leds!=fixture.listOfLeds.end(); ++leds) {
         stackUnsigned8 rowNr = 0;
         for (Leds *leds:fixture.listOfLeds) {
           char message[32];
           print->fFormat(message, sizeof(message)-1, "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
-          ppf("valueFun fxSize[%d] = %s\n", rowNr, message);
+          ppf("onSetValue fxSize[%d] = %s\n", rowNr, message);
           mdl->setValue(var, JsonString(message, JsonString::Copied), rowNr); //rowNr
           rowNr++;
         }
         return true; }
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Size");
         return true;
       default: return false;
     }});
 
     // ui->initSelect(parentVar, "fxLayout", 0, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    //   case f_UIFun: {
+    //   case onUI: {
     //     ui->setLabel(var, "Layout");
     //     ui->setComment(var, "WIP");
     //     JsonArray options = ui->setOptions(var);

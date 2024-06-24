@@ -24,10 +24,10 @@ public:
     parentVar = ui->initAppMod(parentVar, name, 1100);
 
     JsonObject currentVar = ui->initCheckBox(parentVar, "on", true, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "On");
         return true;
-      case f_ChangeFun:
+      case onChange:
         mdl->callVarChangeFun(mdl->findVar("bri"), UINT8_MAX, true); //set FastLed brightness (init is true so bri value not send via udp)
         return true;
       default: return false;
@@ -36,11 +36,11 @@ public:
 
     //logarithmic slider (10)
     currentVar = ui->initSlider(parentVar, "bri", &bri, 0, 255, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Brightness");
         return true;
-      case f_ChangeFun: {
-        //bri set by StarMod during changeFun
+      case onChange: {
+        //bri set by StarMod during onChange
         stackUnsigned8 result = mdl->getValue("on").as<bool>()?mdl->varLinearToLogarithm(var, bri):0;
 
         FastLED.setBrightness(result);
@@ -53,12 +53,12 @@ public:
     currentVar["dash"] = true; //these values override model.json???
 
     currentVar = ui->initCanvas(parentVar, "pview", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Preview");
         // ui->setComment(var, "Shows the fixture");
         // ui->setComment(var, "Click to enlarge");
         return true;
-      case f_LoopFun: {
+      case onLoop: {
         var["interval"] =  max(eff->fixture.nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
 
         web->sendDataWs([this](AsyncWebSocketMessageBuffer * wsBuf) {
@@ -108,7 +108,7 @@ public:
     }});
 
     ui->initSelect(currentVar, "viewRot", &viewRotation, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun: {
+      case onUI: {
         ui->setLabel(var, "Rotation");
         // ui->setComment(var, "View rotation");
         JsonArray options = ui->setOptions(var);
@@ -124,7 +124,7 @@ public:
     }});
 
     currentVar = ui->initSelect(parentVar, "fixture", &eff->fixture.fixtureNr, false ,[](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun: {
+      case onUI: {
         // ui->setComment(var, "Fixture to display effect on");
         JsonArray options = ui->setOptions(var);
         files->dirToJson(options, true, "F_"); //only files containing F(ixture), alphabetically
@@ -135,7 +135,7 @@ public:
           web->addResponse("pview", "file", JsonString(fileName, JsonString::Copied));
         }
         return true; }
-      case f_ChangeFun: {
+      case onChange: {
         eff->fixture.doMap = true;
         eff->fixture.doAllocPins = true;
 
@@ -155,20 +155,20 @@ public:
     }}); //fixture
 
     ui->initCoord3D(currentVar, "fixSize", eff->fixture.fixSize, 0, NUM_LEDS_Max, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ValueFun:
+      case onSetValue:
         mdl->setValue(var, eff->fixture.fixSize);
         return true;
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Size");
         return true;
       default: return false;
     }});
 
     ui->initNumber(currentVar, "fixCount", eff->fixture.nrOfLeds, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ValueFun:
+      case onSetValue:
         mdl->setValue(var, eff->fixture.nrOfLeds);
         return true;
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Count");
         web->addResponseV(var["id"], "comment", "Max %d", NUM_LEDS_Max);
         return true;
@@ -176,21 +176,21 @@ public:
     }});
 
     ui->initNumber(parentVar, "fps", &eff->fps, 1, 999, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setComment(var, "Frames per second");
         return true;
       default: return false; 
     }});
 
     ui->initText(parentVar, "realFps", nullptr, 10, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         web->addResponseV(var["id"], "comment", "f(%d leds)", eff->fixture.nrOfLeds);
         return true;
       default: return false;
     }});
 
     ui->initCheckBox(parentVar, "fShow", &eff->fShow, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "FastLed show");
         ui->setComment(var, "dev performance tuning");
         return true;

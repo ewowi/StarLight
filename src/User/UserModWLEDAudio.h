@@ -38,7 +38,7 @@ public:
     parentVar = ui->initUserMod(parentVar, name, 6300);
   
     ui->initText(parentVar, "wledAudioStatus", nullptr, 16, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Status:");
       return true;
     default: return false;

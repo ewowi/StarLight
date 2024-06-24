@@ -58,12 +58,12 @@ class MultiplyProjection: public Projection {
 
   void controls(Leds &leds, JsonObject parentVar) {
     ui->initCoord3D(parentVar, "proMulti", {2,2,1}, 0, 10, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "MultiplyX");
         return true;
-      case f_ChangeFun:
+      case onChange:
         ui->initCheckBox(var, "mirror", false, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-          case f_ChangeFun:
+          case onChange:
             if (rowNr < leds.fixture->listOfLeds.size()) {
               leds.fixture->listOfLeds[rowNr]->doMap = true;
               leds.fixture->doMap = true;
@@ -109,7 +109,7 @@ class TiltPanRollProjection: public Projection {
     //tbd: implement variable by reference for rowNrs
     #ifdef STARBASE_USERMOD_MPU6050
       ui->initCheckBox(parentVar, "proGyro", false, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-        case f_ChangeFun:
+        case onChange:
           if (rowNr < leds.fixture->listOfLeds.size())
             leds.fixture->listOfLeds[rowNr]->proGyro = mdl->getValue(var, rowNr);
           return true;
@@ -117,24 +117,24 @@ class TiltPanRollProjection: public Projection {
       }});
     #endif
     ui->initSlider(parentVar, "proTilt", 128, 0, 254, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ChangeFun:
+      case onChange:
         if (rowNr < leds.fixture->listOfLeds.size())
           leds.fixture->listOfLeds[rowNr]->proTiltSpeed = mdl->getValue(var, rowNr);
         return true;
       default: return false;
     }});
     ui->initSlider(parentVar, "proPan", 128, 0, 254, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ChangeFun:
+      case onChange:
         if (rowNr < leds.fixture->listOfLeds.size())
           leds.fixture->listOfLeds[rowNr]->proPanSpeed = mdl->getValue(var, rowNr);
         return true;
       default: return false;
     }});
     ui->initSlider(parentVar, "proRoll", 128, 0, 254, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Roll speed");
         return true;
-      case f_ChangeFun:
+      case onChange:
         if (rowNr < leds.fixture->listOfLeds.size())
           leds.fixture->listOfLeds[rowNr]->proRollSpeed = mdl->getValue(var, rowNr);
         return true;
@@ -152,10 +152,10 @@ class DistanceFromPointProjection: public Projection {
 
   void controls(Leds &leds, JsonObject parentVar) {
     ui->initCoord3D(parentVar, "proCenter", {8,8,8}, 0, NUM_LEDS_Max, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Center");
         return true;
-      case f_ChangeFun:
+      case onChange:
         //initiate projectAndMap
         ppf("proCenter %d %d\n", rowNr, leds.fixture->listOfLeds.size());
         if (rowNr < leds.fixture->listOfLeds.size()) {

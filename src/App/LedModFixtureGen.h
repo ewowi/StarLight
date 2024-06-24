@@ -460,7 +460,7 @@ public:
     parentVar["s"] = true; //setup
 
     JsonObject currentVar = ui->initSelect(parentVar, "fixtureVar", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun: {
+      case onUI: {
         ui->setLabel(var, "Fixture");
         ui->setComment(var, "Predefined fixture");
         JsonArray options1 = ui->setOptions(var); //See enum Fixtures for order of options
@@ -491,7 +491,7 @@ public:
         // else
         //   print->printJson("OPTIONS", options1);
         return true; }
-      case f_ChangeFun:
+      case onChange:
         this->fixtureVarChFun();
         return true;
       default: return false; 
@@ -620,13 +620,13 @@ public:
         }
 
         ui->initNumber(fixtureVar, "width", width, 1, NUM_LEDS_Max, false, [this,fgText](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-          case f_ChangeFun:
+          case onChange:
             rebuildMatrix(fgText);
             return true;
           default: return false; 
         }});
         ui->initNumber(fixtureVar, "height", height, 1, NUM_LEDS_Max, false, [this,fgText](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-          case f_ChangeFun:
+          case onChange:
             rebuildMatrix(fgText);
             return true;
           default: return false; 
@@ -641,7 +641,7 @@ public:
           length = 8;
 
         ui->initNumber(fixtureVar, "length", length, 1, NUM_LEDS_Max, false, [this,fgText](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-          case f_ChangeFun:
+          case onChange:
             rebuildCube(fgText);
             return true;
           default: return false; 
@@ -650,16 +650,16 @@ public:
     }
 
     ui->initButton(fixtureVar, "generate", false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setComment(var, "Create F_ixture.json");
         return true;
-      case f_ChangeFun: {
+      case onChange: {
 
         char fileName[32]; 
         generateChFun(var, fileName);
 
         //set fixture in fixture module
-        ui->callVarFun("fixture", UINT8_MAX, f_UIFun); //rebuild options
+        ui->callVarFun("fixture", UINT8_MAX, onUI); //rebuild options
 
         uint8_t value = ui->selectOptionToValue("fixture", fileName);
         if (value != UINT8_MAX)
@@ -678,21 +678,21 @@ public:
     if (showTable) {
 
       parentVar = ui->initTable(fixtureVar, "fixTbl", nullptr, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-        case f_UIFun:
+        case onUI:
           ui->setLabel(var, "Fixtures");
           ui->setComment(var, "Multiple parts");
           return true;
-        case f_AddRow:
+        case onAddRow:
           web->getResponseObject()["addRow"]["rowNr"] = rowNr;
           return true;
-        case f_DelRow:
+        case onDeleteRow:
           // web->getResponseObject()["addRow"]["rowNr"] = rowNr;
           return true;
         default: return false;
       }});
 
       ui->initCoord3D(parentVar, "fixFirst", {0,0,0}, 0, NUM_LEDS_Max, false, [fgGroup](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-        case f_UIFun:
+        case onUI:
           //show Top Left for all fixture except Matrix as it has its own
           if (strcmp(fgGroup, "Matrices") == 0 || strcmp(fgGroup, "Cubes") == 0)
             ui->setLabel(var, "First LED");
@@ -708,7 +708,7 @@ public:
     if (strcmp(fgGroup, "Strips") == 0) {
       if (strstr(fgText, "Spiral") != nullptr) {
         ui->initNumber(parentVar, "fixLeds", 64, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-          case f_UIFun:
+          case onUI:
             ui->setLabel(var, "Leds");
             return true;
           default: return false; 
@@ -717,7 +717,7 @@ public:
       }
       else if (strstr(fgText, "Helix") != nullptr) {
         ui->initNumber(parentVar, "fixLeds", 100, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-          case f_UIFun:
+          case onUI:
             ui->setLabel(var, "Leds");
             return true;
           default: return false; 
@@ -730,7 +730,7 @@ public:
     else if (strcmp(fgGroup, "Matrices") == 0 || strcmp(fgGroup, "Cubes") == 0) {
 
       ui->initCoord3D(parentVar, "mrxRowEnd", {7,0,0}, 0, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-        case f_UIFun:
+        case onUI:
           ui->setLabel(var, "Row end");
           ui->setComment(var, "-> Orientation");
           return true;
@@ -738,7 +738,7 @@ public:
       }});
 
       ui->initCoord3D(parentVar, "mrxColEnd", {7,7,0}, 0, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-        case f_UIFun:
+        case onUI:
           ui->setLabel(var, "Column end");
           ui->setComment(var, "Last LED -> nrOfLeds, Serpentine");
           return true;
@@ -747,7 +747,7 @@ public:
     }
     else if (strcmp(fgGroup, "Rings") == 0) {
       ui->initNumber(parentVar, "fixLeds", 24, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-        case f_UIFun:
+        case onUI:
           ui->setLabel(var, "Leds");
           return true;
         default: return false; 
@@ -790,7 +790,7 @@ public:
     //default variables - part 2
     if (strcmp(fgGroup, "Matrices") == 0 || strcmp(fgGroup, "Cubes") == 0 || strstr(fgText, "Rings241") != nullptr || strstr(fgText, "Helix") != nullptr) { //tbd: the rest
       ui->initCoord3D(parentVar, "fixRotate", {0,0,0}, 0, 359, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-        case f_UIFun:
+        case onUI:
           ui->setLabel(var, "Rotate");
           ui->setComment(var, "Tilt, Pan, Roll");
           return true;
@@ -799,7 +799,7 @@ public:
     }
 
     ui->initNumber(parentVar, "fixIP", WiFi.localIP()[3], 1, 256, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "IP");
         ui->setComment(var, "Super-Sync WIP");
         return true;
@@ -807,10 +807,10 @@ public:
     }});
 
     ui->initPin(parentVar, "fixPin", 2, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun: {
+      case onUI: {
         ui->setLabel(var, "Pin");
         return true; }
-      case f_ChangeFun: {
+      case onChange: {
         //set remaining rows to same pin
         JsonArray valArray = mdl->varValArray(var);
 

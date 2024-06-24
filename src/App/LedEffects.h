@@ -38,7 +38,7 @@ public:
 
   virtual void controls(Leds &leds, JsonObject parentVar) {
     ui->initSelect(parentVar, "pal", 4, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-      case f_UIFun: {
+      case onUI: {
         ui->setLabel(var, "Palette");
         JsonArray options = ui->setOptions(var);
         options.add("CloudColors");
@@ -51,7 +51,7 @@ public:
         options.add("HeatColors");
         options.add("RandomColors");
         return true; }
-      case f_ChangeFun:
+      case onChange:
         switch (var["value"][rowNr].as<uint8_t>()) {
           case 0: leds.palette = CloudColors_p; break;
           case 1: leds.palette = LavaColors_p; break;
@@ -223,7 +223,7 @@ class RunningEffect: public Effect {
 
   void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "BPM", leds.sharedData.write<uint8_t>(60), 0, 255, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setComment(var, "in BPM!");
         return true;
       default: return false;
@@ -1276,7 +1276,7 @@ class ScrollingText: public Effect {
     ui->initText(parentVar, "text", "StarLeds"); //sharedData to be implemented!
     ui->initSlider(parentVar, "speed", leds.sharedData.write<uint8_t>(128));
     ui->initSelect(parentVar, "font", leds.sharedData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-      case f_UIFun: {
+      case onUI: {
         JsonArray options = ui->setOptions(var);
         options.add("4x6");
         options.add("5x8");
@@ -1597,7 +1597,7 @@ class GameOfLife: public Effect {
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSelect(parentVar, "Overlay", leds.sharedData.write<byte>(0), false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
-      case f_UIFun: {
+      case onUI: {
         JsonArray options = ui->setOptions(var);
         options.add("None");
         options.add("Background");
@@ -1608,7 +1608,7 @@ class GameOfLife: public Effect {
     }});
     ui->initCoord3D(parentVar, "Background or Overlay Color", leds.sharedData.write<Coord3D>({0,0,0}), 0, 255);
     ui->initSelect (parentVar, "ruleset", leds.sharedData.write<uint8_t>(1), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
-      case f_UIFun: {
+      case onUI: {
         JsonArray options = ui->setOptions(var);
         options.add("Custom B/S");
         options.add("Conway's Game of Life B3/S23");
@@ -2318,7 +2318,7 @@ class GEQEffect: public Effect {
     //     e131mod->patchChannel(3, "fadeOut", 255); // TODO: add constant for name
     //     e131mod->patchChannel(4, "ripple", 255);
     //     for (JsonObject childVar: mdl->findVar("e131Tbl")["n"].as<JsonArray>()) {
-    //       ui->callVarFun(childVar, UINT8_MAX, f_UIFun);
+    //       ui->callVarFun(childVar, UINT8_MAX, onUI);
     //     }
     //   }
 

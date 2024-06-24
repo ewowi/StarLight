@@ -31,7 +31,7 @@ public:
     parentVar = ui->initUserMod(parentVar, name, 6100);
 
     ui->initIP(parentVar, "artInst", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun: {
+      case onUI: {
         ui->setLabel(var, "Instance");
         ui->setComment(var, "Instance to send data");
         JsonArray options = ui->setOptions(var);
@@ -51,7 +51,7 @@ public:
           }
         }
         return true; }
-      case f_ChangeFun: {
+      case onChange: {
         uint8_t value = var["value"]; //ip[3] chosen
         for (InstanceInfo &instance : instances->instances) {
           if (instance.ip[3] == value) {
