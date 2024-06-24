@@ -42,8 +42,8 @@ enum ProjectionsE
   p_Reverse,
   p_Mirror,
   p_Kaleidoscope,
-  p_count,
-  p_Pinwheel
+  p_Pinwheel,
+  p_count // keep as last entry
 };
 
 //     sin8/cos8   sin16/cos16
