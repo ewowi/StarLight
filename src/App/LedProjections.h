@@ -235,6 +235,53 @@ class KaleidoscopeProjection: public Projection {
   }
 }; //KaleidoscopeProjection
 
+// Pinwheel WIP
+// Currently 1D to 2D/3D May be possible to make 2D to 2D/3D
+class PinwheelProjection: public Projection {
+  const char * name() {return "Pinwheel WIP";}
+  uint8_t      dim()  {return _1D;}
+  const char * tags() {return "💡";}
+
+  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &proCenter) {
+    sizeAdjusted.x = 360; // make this a UI variable?
+    sizeAdjusted.y = 1;
+    sizeAdjusted.z = 1; 
+  }
+  
+  void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted) {
+    int centerX = 16; // make this a UI variable
+    int centerY = 16; // make this a UI variable
+
+    int x = pixelAdjusted.x;
+    int y = pixelAdjusted.y;
+    // take z into account for 3D effect
+    
+    int swirlVal = 5; // make this a UI variable -15 to 15 ?
+    float swirlFactor = sqrt(sq(x - centerX) + sq(y - centerY)) * swirlVal; // calculate once?
+
+    float radians = atan2(y - centerY, x - centerX);
+    float angle = degrees(radians);
+    angle += 180;
+    angle = fmod(angle + swirlFactor, 360);
+
+    mapped.x = angle;
+    mapped.y = 0;
+    mapped.z = 0;
+
+    // ppf("Pinwheel Center: %d,%d", centerX, centerY);
+    // ppf(" SizeAdjusted: %d,%d,%d", sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z);
+    // ppf(" pixelAdjusted: %d,%d,%d", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
+    // ppf(" mapped %d,%d,%d", mapped.x, mapped.y, mapped.z);
+    // ppf(" angle %f\n", angle);
+  }
+  void controls(Leds &leds, JsonObject parentVar) {
+    // UI Center x, y (z?) can be any value positive or negative
+    // UI swirlVal
+    // UI arms? arms currently 360, reduce for diff effect?
+    // UI add multiply / mirror / reverse / tilt pan roll
+  }
+}; //PinwheelProjection
+
 class TestProjection: public Projection {
   const char * name() {return "Test";}
   uint8_t dim() {return _1D;}

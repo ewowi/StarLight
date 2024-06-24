@@ -130,6 +130,75 @@ class RainbowWithGlitterEffect: public RainbowEffect {
   }
 };
 
+class RainbowWLED: public Effect {
+  const char * name() {return "Rainbow WLED";}
+  uint8_t      dim()  {return _1D;}
+  const char * tags() {return "⚡";}
+
+  void loop(Leds &leds) {
+    // UI Variables
+    uint8_t speed = leds.sharedData.read<uint8_t>();
+    uint8_t scale = leds.sharedData.read<uint8_t>();
+
+    uint16_t counter = (sys->now * ((speed >> 2) +2)) & 0xFFFF;
+    counter = counter >> 8;
+
+    for (forUnsigned16 i = 0; i < leds.nrOfLeds; i++) {
+      uint8_t index = (i * (16 << (scale / 29)) / leds.nrOfLeds) + counter;
+      leds.setPixelColor(i, ColorFromPalette(leds.palette, index, 255));
+    }
+  }
+
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    ui->initSlider(parentVar, "Speed", leds.sharedData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "Scale", leds.sharedData.write<uint8_t>(128));
+  }
+};
+
+// Best of both worlds from Palette and Spot effects. By Aircoookie
+class FlowWLED: public Effect {
+  const char * name() {return "Flow WLED";}
+  uint8_t      dim()  {return _1D;}
+  const char * tags() {return "⚡";}
+
+  void loop(Leds &leds) {
+    // UI Variables
+    uint8_t speed   = leds.sharedData.read<uint8_t>();
+    uint8_t zonesUI = leds.sharedData.read<uint8_t>();
+
+    uint16_t counter = 0;
+    if (speed != 0) {
+      counter = sys->now * ((speed >> 2) +1);
+      counter = counter >> 8;
+    }
+
+    uint16_t maxZones = leds.nrOfLeds / 6; //only looks good if each zone has at least 6 LEDs
+    uint16_t zones    = (zonesUI * maxZones) >> 8;
+    if (zones & 0x01) zones++; //zones must be even
+    if (zones < 2)    zones = 2;
+    uint16_t zoneLen = leds.nrOfLeds / zones;
+    uint16_t offset  = (leds.nrOfLeds - zones * zoneLen) >> 1;
+
+    leds.fill_solid(ColorFromPalette(leds.palette, -counter, 255));
+
+    for (int z = 0; z < zones; z++) {
+      uint16_t pos = offset + z * zoneLen;
+      for (int i = 0; i < zoneLen; i++) {
+        uint8_t  colorIndex = (i * 255 / zoneLen) - counter;
+        uint16_t led = (z & 0x01) ? i : (zoneLen -1) -i;
+        leds[pos + led] = ColorFromPalette(leds.palette, colorIndex, 255);
+      }
+    }
+  }
+  
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    ui->initSlider(parentVar, "Speed", leds.sharedData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "Zones", leds.sharedData.write<uint8_t>(128));
+  }
+};
+
 // a colored dot sweeping back and forth, with fading trails
 class SinelonEffect: public Effect {
   const char * name() {return "Sinelon";}

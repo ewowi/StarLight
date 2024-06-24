@@ -50,6 +50,8 @@ public:
     // 1D FastLed
     effects.push_back(new RainbowEffect);
     effects.push_back(new RainbowWithGlitterEffect);
+    effects.push_back(new RainbowWLED);
+    effects.push_back(new FlowWLED);
     effects.push_back(new SinelonEffect);
     effects.push_back(new ConfettiEffect);
     effects.push_back(new BPMEffect);
@@ -108,6 +110,7 @@ public:
     fixture.projections.push_back(new ReverseProjection);
     fixture.projections.push_back(new MirrorProjection);
     fixture.projections.push_back(new KaleidoscopeProjection);
+    fixture.projections.push_back(new PinwheelProjection);
   };
 
   void setup() {
