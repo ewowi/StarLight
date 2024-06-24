@@ -57,12 +57,12 @@ class MultiplyProjection: public Projection {
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
-    ui->initCoord3D(parentVar, "proMulti", {2,2,1}, 0, 10, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "proMulti", {2,2,1}, 0, 10, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "MultiplyX");
         return true;
       case onChange:
-        ui->initCheckBox(var, "mirror", false, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        ui->initCheckBox(var, "mirror", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
           case onChange:
             if (rowNr < leds.fixture->listOfLeds.size()) {
               leds.fixture->listOfLeds[rowNr]->doMap = true;
@@ -108,7 +108,7 @@ class TiltPanRollProjection: public Projection {
   void controls(Leds &leds, JsonObject parentVar) {
     //tbd: implement variable by reference for rowNrs
     #ifdef STARBASE_USERMOD_MPU6050
-      ui->initCheckBox(parentVar, "proGyro", false, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "proGyro", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
           if (rowNr < leds.fixture->listOfLeds.size())
             leds.fixture->listOfLeds[rowNr]->proGyro = mdl->getValue(var, rowNr);
@@ -116,21 +116,21 @@ class TiltPanRollProjection: public Projection {
         default: return false;
       }});
     #endif
-    ui->initSlider(parentVar, "proTilt", 128, 0, 254, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "proTilt", 128, 0, 254, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         if (rowNr < leds.fixture->listOfLeds.size())
           leds.fixture->listOfLeds[rowNr]->proTiltSpeed = mdl->getValue(var, rowNr);
         return true;
       default: return false;
     }});
-    ui->initSlider(parentVar, "proPan", 128, 0, 254, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "proPan", 128, 0, 254, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         if (rowNr < leds.fixture->listOfLeds.size())
           leds.fixture->listOfLeds[rowNr]->proPanSpeed = mdl->getValue(var, rowNr);
         return true;
       default: return false;
     }});
-    ui->initSlider(parentVar, "proRoll", 128, 0, 254, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "proRoll", 128, 0, 254, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "Roll speed");
         return true;
@@ -151,7 +151,7 @@ class DistanceFromPointProjection: public Projection {
   public: //to use in Preset1Projection
 
   void controls(Leds &leds, JsonObject parentVar) {
-    ui->initCoord3D(parentVar, "proCenter", {8,8,8}, 0, NUM_LEDS_Max, false, [leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "proCenter", {8,8,8}, 0, NUM_LEDS_Max, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "Center");
         return true;
@@ -297,7 +297,15 @@ class PinwheelProjection: public Projection {
     // UI swirlVal
     // UI arms? arms currently 360, reduce for diff effect?
     // UI add multiply / mirror / reverse / tilt pan roll
-    //  ui->initCheckBox(parentVar, "pw test", true);
+     ui->initCheckBox(parentVar, "pw test", true, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onUI:
+        ui->setLabel(var, "MultiplyX");
+        return true;
+      case onChange:
+        ppf("pw test onChange %s\n", var["value"].as<String>().c_str());
+        return true;
+      default: return false;
+    }});
   }
 }; //PinwheelProjection
 
