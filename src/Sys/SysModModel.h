@@ -353,7 +353,7 @@ public:
   //recursively add values in  a variant
   void varToValues(JsonObject var, JsonArray values);
 
-  //sends dash var change to udp (if init),  sets pointer if pointer var and run changeFun
+  //sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
   bool callVarChangeFun(JsonObject var, unsigned8 rowNr = UINT8_MAX, bool init = false);
 
   //pseudo VarObject: public JsonObject functions

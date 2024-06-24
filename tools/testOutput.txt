@@ -59,9 +59,9 @@ dash pal 4 found
 dash dch 1 found
 dash sma 0 found
 UDPWLEDSyncMessage 44 1460 1193
-initVarAndUpdate valueFun mdlName count:17
+initVarAndUpdate onSetValue mdlName count:17
 setValue var mdlName[0] value null not array, creating
-initVarAndUpdate valueFun mdlSuccess count:17
+initVarAndUpdate onSetValue mdlSuccess count:17
 setValue var mdlSuccess[0] value null not array, creating
 initVarAndUpdate chFun init mdlEnabled v:[true,true,true,true,true,true,true,true,true,false,false,true,true,true,true,true,true]
 seqNrToName: 2DMatrix3232.json 9640

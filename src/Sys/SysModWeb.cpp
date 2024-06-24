@@ -42,51 +42,51 @@ void SysModWeb::setup() {
   parentVar = ui->initSysMod(parentVar, name, 3101);
 
   JsonObject tableVar = ui->initTable(parentVar, "clTbl", nullptr, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Clients");
       return true;
     default: return false;
   }});
 
   ui->initNumber(tableVar, "clNr", UINT16_MAX, 0, 999, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_ValueFun: {
+    case onSetValue: {
       unsigned8 rowNr = 0; for (auto client:ws.getClients())
         mdl->setValue(var, client->id(), rowNr++);
       return true; }
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Nr");
       return true;
     default: return false;
   }});
 
   ui->initText(tableVar, "clIp", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_ValueFun: {
+    case onSetValue: {
       unsigned8 rowNr = 0; for (auto client:ws.getClients())
         mdl->setValue(var, JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
       return true; }
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "IP");
       return true;
     default: return false;
   }});
 
   ui->initCheckBox(tableVar, "clIsFull", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_ValueFun: {
+    case onSetValue: {
       unsigned8 rowNr = 0; for (auto client:ws.getClients())
         mdl->setValue(var, client->queueIsFull(), rowNr++);
       return true; }
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Is full");
       return true;
     default: return false;
   }});
 
   ui->initSelect(tableVar, "clStatus", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_ValueFun: {
+    case onSetValue: {
       unsigned8 rowNr = 0; for (auto client:ws.getClients())
         mdl->setValue(var, client->status(), rowNr++);
       return true; }
-    case f_UIFun:
+    case onUI:
     {
       ui->setLabel(var, "Status");
       //tbd: not working yet in ui
@@ -100,11 +100,11 @@ void SysModWeb::setup() {
   }});
 
   ui->initNumber(tableVar, "clLength", UINT16_MAX, 0, WS_MAX_QUEUED_MESSAGES, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_ValueFun: {
+    case onSetValue: {
       unsigned8 rowNr = 0; for (auto client:ws.getClients())
         mdl->setValue(var, client->queueLength(), rowNr++);
       return true; }
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Length");
       return true;
     default: return false;
@@ -113,7 +113,7 @@ void SysModWeb::setup() {
   ui->initNumber(parentVar, "maxQueue", WS_MAX_QUEUED_MESSAGES, 0, WS_MAX_QUEUED_MESSAGES, true);
 
   ui->initText(parentVar, "wsSend", nullptr, 16, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "WS Send");
       // ui->setComment(var, "web socket calls");
       return true;
@@ -121,7 +121,7 @@ void SysModWeb::setup() {
   }});
 
   ui->initText(parentVar, "wsRecv", nullptr, 16, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "WS Recv");
       // ui->setComment(var, "web socket calls");
       return true;
@@ -129,14 +129,14 @@ void SysModWeb::setup() {
   }});
 
   ui->initText(parentVar, "udpSend", nullptr, 16, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "UDP Send");
       return true;
     default: return false;
   }});
 
   ui->initText(parentVar, "udpRecv", nullptr, 16, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "UDP Recv");
       return true;
     default: return false;
@@ -307,11 +307,11 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
             ppf("wsEvent deserializeJson failed with code %s\n", error.c_str());
             client->text("{\"success\":true}"); // we have to send something back otherwise WS connection closes
           } else {
-            bool isUiFun = !responseObject["uiFun"].isNull();
+            bool isUiFun = !responseObject["onUI"].isNull();
             ui->processJson(responseObject); //adds to responseDoc / responseObject
 
             if (responseObject.size()) {
-              sendResponseObject(isUiFun?client:nullptr); //uiFun only send to requesting client async response
+              sendResponseObject(isUiFun?client:nullptr); //onUI only send to requesting client async response
             }
             else {
               ppf("WS_EVT_DATA no responseDoc\n");
@@ -569,7 +569,7 @@ void SysModWeb::jsonHandler(WebRequest *request, JsonVariant json) {
   }
   else {
   
-    if (responseObject.size()) { //responseObject set by processJson e.g. uiFun
+    if (responseObject.size()) { //responseObject set by processJson e.g. onUI
 
       char resStr[200];
       serializeJson(responseObject, resStr, 200);

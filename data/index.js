@@ -12,7 +12,7 @@ let ws = null;
 
 let nrOfMdlColumns = 4;
 let jsonValues = {};
-let uiFunCommands = [];
+let onUICommands = [];
 let model = []; //model.json (as send by the server), used by FindVar
 let savedView = null;
 
@@ -139,7 +139,7 @@ function makeWS() {
 
             gId("vApp").value = appName(); //tbd: should be set by server
 
-            //send request for uiFun
+            //send request for onUI
             flushUIFunCommands();
           }
           else
@@ -239,10 +239,10 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
     let labelNode = cE("label");
     let parentVar = findParentVar(variable.id);
     if (parentVar && variable.id != parentVar.id && parentVar.id && variable.id.substring(0, parentVar.id.length) == parentVar.id) { // if parent id is beginning of the name of the child id then remove that part
-      labelNode.innerText = initCap(variable.id.substring(parentVar.id.length)); // the default when not overridden by uiFun
+      labelNode.innerText = initCap(variable.id.substring(parentVar.id.length)); // the default when not overridden by onUI
     }
     else
-      labelNode.innerText = initCap(variable.id); // the default when not overridden by uiFun
+      labelNode.innerText = initCap(variable.id); // the default when not overridden by onUI
     
     divNode = cE("div");
     divNode.id = variable.id + (rowNr != UINT8_MAX?"#" + rowNr:"") + "_d";
@@ -327,7 +327,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       // console.log("tableChild", parentNode, variable);
 
       varNode = cE("th");
-      varNode.innerText = initCap(variable.id); //label uiFun response can change it
+      varNode.innerText = initCap(variable.id); //label onUI response can change it
 
     } else if (variable.type == "select" || variable.type == "pin" || variable.type == "ip") {
 
@@ -377,7 +377,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       varNode = cE("label");
       if (parentNodeType != "td") {
         let spanNode = cE("span");
-        spanNode.innerText = initCap(variable.id) + " "; // the default when not overridden by uiFun
+        spanNode.innerText = initCap(variable.id) + " "; // the default when not overridden by onUI
         varNode.appendChild(spanNode);
       }
       let inputNode = cE("input");
@@ -528,12 +528,12 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
         createHTML(variable.n, varNode, rowNr); //details (e.g. module)
     }
 
-    //don't call uiFun on table rows (the table header calls uiFun and propagate this to table row columns in changeHTML when needed - e.g. select)
+    //don't call onUI on table rows (the table header calls onUI and propagate this to table row columns in changeHTML when needed - e.g. select)
     if (variable.fun == null || variable.fun == -2) { //request processed
       variable.chk = "gen2";
       changeHTML(variable, variable, rowNr); // set the variable with its own changed values
     }
-    else { //uiFun
+    else { //onUI
       if (variable.value)
         changeHTML(variable, {"value":variable.value, "chk":"gen1"}, rowNr); //set only the value
 
@@ -542,8 +542,8 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
 
       //call ui Functionality, if defined (to set label, comment, select etc)
       if (variable.fun >= 0) { //>=0 as element in var
-        uiFunCommands.push(variable.id);
-        if (uiFunCommands.length > 4) { //every 4 vars (to respect responseDoc size) check WS_EVT_DATA info
+        onUICommands.push(variable.id);
+        if (onUICommands.length > 4) { //every 4 vars (to respect responseDoc size) check WS_EVT_DATA info
           flushUIFunCommands();
         }
         variable.fun = -1; //requested
@@ -614,7 +614,7 @@ function receiveData(json) {
       //tbd: for each node of a variable (rowNr)
 
       //special commands
-      if (key == "uiFun") {
+      if (key == "onUI") {
         ppf("receiveData no action", key, value); //should not happen anymore
       }
       else if (key == "view") {
@@ -631,7 +631,7 @@ function receiveData(json) {
         let variable = value.var;
         let rowNr = value.rowNr == null?UINT8_MAX:value.rowNr;
         let nodeId = variable.id + ((rowNr != UINT8_MAX)?"#" + rowNr:"");
-        //if var object with .n, create .n (e.g. see fx.changefun (setEffect) and fixtureGenChFun, tbd: )
+        //if var object with .n, create .n (e.g. see fx.onChange (setEffect) and fixtureGenChFun, tbd: )
         ppf("receiveData details", key, variable.id, nodeId, rowNr);
         if (gId(nodeId + "_n")) gId(nodeId + "_n").remove(); //remove old ndiv
 
@@ -646,7 +646,7 @@ function receiveData(json) {
           gId(nodeId).parentNode.appendChild(ndivNode);
           createHTML(modelVar.n, ndivNode, rowNr);
         }
-        flushUIFunCommands(); //make sure uiFuns of new elements are called
+        flushUIFunCommands(); //make sure onUIs of new elements are called
       }
       else if (key == "addRow") { //update the row of a table
         ppf("receiveData", key, value);
@@ -716,7 +716,7 @@ function receiveData(json) {
           //   ppf("receiveData ", variable, value);
           variable.fun = -2; // request processed
 
-          value.chk = "uiFun";
+          value.chk = "onUI";
           changeHTML(variable, value, rowNr); //changeHTML will find the rownumbers if needed
         }
         else
@@ -912,7 +912,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
           newRowNr++;
         }
 
-        flushUIFunCommands(); //make sure uiFuns of new elements are called
+        flushUIFunCommands(); //make sure onUIs of new elements are called
 
         if (variable.id == "insTbl")
           setInstanceTableColumns();
@@ -958,7 +958,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
           changeHTML(variable, {"value":null, "chk":"column"}, newRowNr); //new row cell has no value
       }
 
-      flushUIFunCommands(); //make sure uiFuns of new elements are called
+      flushUIFunCommands(); //make sure onUIs of new elements are called
 
     }
     else if (node.parentNode.parentNode.nodeName.toLocaleLowerCase() == "td" && Array.isArray(commandJson.value)) { //table column, called for each column cell!!!
@@ -1033,7 +1033,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
     else if (node.className == "select" || node.className == "pin" || node.className == "ip") {
       if (variable.ro) {
         var index = 0;
-        if (variable.options && commandJson.value != null) { // not always the case e.g. data / table / uiFun. Then value set if uiFun returns
+        if (variable.options && commandJson.value != null) { // not always the case e.g. data / table / onUI. Then value set if onUI returns
           for (var value of variable.options) {
             if (parseInt(commandJson.value) == index) {
               // console.log("changeHTML select1", value, node, node.textContent, index);
@@ -1172,12 +1172,12 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
 } //changeHTML
 
 function flushUIFunCommands() {
-  if (uiFunCommands.length > 0) { //if something to flush
+  if (onUICommands.length > 0) { //if something to flush
     var command = {};
-    command.uiFun = uiFunCommands; //ask to run uiFun for vars (to add the options)
+    command.onUI = onUICommands; //ask to run onUI for vars (to add the options)
     // console.log("flushUIFunCommands", command);
     requestJson(command);
-    uiFunCommands = [];
+    onUICommands = [];
   }
 }
 

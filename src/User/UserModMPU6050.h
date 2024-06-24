@@ -37,21 +37,21 @@ public:
     parentVar = ui->initUserMod(parentVar, name, 6305);
 
     ui->initCheckBox(parentVar, "mtReady", &motionTrackingReady, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "tracking ready");
         return true;
       default: return false;
     }}); 
 
     ui->initCoord3D(parentVar, "gyro", &gyro, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setComment(var, "in degrees");
         return true;
       default: return false;
     }});
 
     ui->initCoord3D(parentVar, "accell", &accell, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setComment(var, "in m/s²");
         return true;
       default: return false;

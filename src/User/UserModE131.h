@@ -28,18 +28,18 @@ public:
     parentVar = ui->initUserMod(parentVar, name, 6201);
 
     ui->initNumber(parentVar, "dun", &universe, 0, 7, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "DMX Universe");
         return true;
       default: return false;
     }});
 
     JsonObject currentVar = ui->initNumber(parentVar, "dch", &channel, 1, 512, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "DMX Channel");
         ui->setComment(var, "First channel");
         return true;
-      case f_ChangeFun:
+      case onChange:
         for (JsonObject childVar: mdl->varChildren("e131Tbl"))
           ui->callVarFun(childVar);
         return true;
@@ -48,51 +48,51 @@ public:
     currentVar["dash"] = true;
 
     JsonObject tableVar = ui->initTable(parentVar, "e131Tbl", nullptr, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Vars to watch");
         return true;
       default: return false;
     }});
 
     ui->initNumber(tableVar, "e131Channel", UINT16_MAX, 1, 512, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ValueFun:
+      case onSetValue:
         for (forUnsigned8 rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
           mdl->setValue(var, channel + varsToWatch[rowNr].channelOffset, rowNr);
         return true;
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Channel");
         return true;
       default: return false;
     }});
 
     ui->initText(tableVar, "e131Name", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ValueFun:
+      case onSetValue:
         for (forUnsigned8 rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
           mdl->setValue(var, varsToWatch[rowNr].id, rowNr);
         return true;
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Name");
         return true;
       default: return false;
     }});
 
     ui->initNumber(tableVar, "e131Max", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ValueFun:
+      case onSetValue:
         for (forUnsigned8 rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
           mdl->setValue(var, varsToWatch[rowNr].max, rowNr);
         return true;
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Max");
         return true;
       default: return false;
     }});
 
     ui->initNumber(tableVar, "e131Value", UINT16_MAX, 0, 255, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case f_ValueFun:
+      case onSetValue:
         for (forUnsigned8 rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
           mdl->setValue(var, varsToWatch[rowNr].savedValue, rowNr);
         return true;
-      case f_UIFun:
+      case onUI:
         ui->setLabel(var, "Value");
         return true;
       default: return false;

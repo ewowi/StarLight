@@ -37,10 +37,10 @@ void SysModModel::setup() {
   parentVar["s"] = true; //setup
 
   ui->initButton(parentVar, "saveModel", false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setComment(var, "Write to model.json");
       return true;
-    case f_ChangeFun:
+    case onChange:
       doWriteModel = true;
       return true;
     default: return false;
@@ -49,18 +49,18 @@ void SysModModel::setup() {
   #ifdef STARBASE_DEVMODE
 
   ui->initCheckBox(parentVar, "showObsolete", &doShowObsolete, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setComment(var, "Show in UI (refresh)");
       return true;
     default: return false;
   }});
 
   ui->initButton(parentVar, "deleteObsolete", false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Delete obsolete variables");
       ui->setComment(var, "🚧");
       return true;
-    // case f_ChangeFun:
+    // case onChange:
     //   model->to<JsonArray>(); //create
     //   if (files->readObjectFromFile("/model.json", model)) {//not part of success...
     //   }
@@ -244,7 +244,7 @@ bool SysModModel::callVarChangeFun(JsonObject var, unsigned8 rowNr, bool init) {
       instances->changedVarsQueue.push_back(var); //tbd: check value arrays / rowNr is working
   }
 
-  //if var is bound by pointer, set the pointer value before calling changeFun
+  //if var is bound by pointer, set the pointer value before calling onChange
   if (!var["p"].isNull()) {
     JsonVariant value;
     int pointer;
@@ -296,7 +296,7 @@ bool SysModModel::callVarChangeFun(JsonObject var, unsigned8 rowNr, bool init) {
       ppf("dev pointer of type %s not supported yet\n", var["type"].as<String>().c_str());
   }
 
-  return ui->callVarFun(var, rowNr, f_ChangeFun);
+  return ui->callVarFun(var, rowNr, onChange);
 
   // web->sendResponseObject();
 }  

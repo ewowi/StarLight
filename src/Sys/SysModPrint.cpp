@@ -58,7 +58,7 @@ void SysModPrint::setup() {
 
   //default to Serial
   ui->initSelect(parentVar, "pOut", 1, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
     {
       ui->setLabel(var, "Output");
 

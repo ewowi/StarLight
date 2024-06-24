@@ -27,53 +27,53 @@ void SysModPins::setup() {
 
   //show table of allocated pins
   JsonObject tableVar = ui->initTable(parentVar, "pinTbl", nullptr, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun: {
+    case onUI: {
       ui->setLabel(var, "Allocated Pins");
       return true; }
     default: return false;
   }});
 
   ui->initPin(tableVar, "pinNr", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_ValueFun:
+    case onSetValue:
       for (forUnsigned8 rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++)
         mdl->setValue(var, getPinNr(rowNr), rowNr);
       return true;
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Pin");
       return true;
     default: return false;
   }});
 
   ui->initText(tableVar, "pinOwner", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_ValueFun:
+    case onSetValue:
       for (forUnsigned8 rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++)
         mdl->setValue(var, JsonString(getNthAllocatedPinObject(rowNr).owner, JsonString::Copied), rowNr);
       return true;
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Owner");
       return true;
     default: return false;
   }});
 
   ui->initText(tableVar, "pinDetails", nullptr, 256, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_ValueFun:
+    case onSetValue:
       for (forUnsigned8 rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++) {
         // ppf("pinDetails[%d] d:%s\n", rowNr, getNthAllocatedPinObject(rowNr).details);
         mdl->setValue(var, JsonString(getNthAllocatedPinObject(rowNr).details, JsonString::Copied), rowNr);
       }
       return true;
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Details");
       return true;
     default: return false;
   }});
 
   ui->initCanvas(parentVar, "board", UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Pin viewer");
       ui->setComment(var, "🚧");
       return true;
-    case f_LoopFun:
+    case onLoop:
       var["interval"] = 100; //every 100 ms
 
       web->sendDataWs([](AsyncWebSocketMessageBuffer * wsBuf) {
@@ -103,10 +103,10 @@ void SysModPins::setup() {
   pinMode(19, OUTPUT); //tbd: part of allocatePin?
 
   ui->initCheckBox(parentVar, "pin19", true, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setComment(var, "🚧 used for relais on Serg shields");
       return true;
-    case f_ChangeFun: {
+    case onChange: {
       bool pinValue = var["value"];
 
       ppf("chFun pin19 %s:=%d\n", mdl->varID(var), pinValue);

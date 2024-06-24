@@ -30,16 +30,16 @@ void SysModFiles::setup() {
   parentVar = ui->initSysMod(parentVar, name, 2101);
 
   JsonObject tableVar = ui->initTable(parentVar, "fileTbl", nullptr, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Files");
       ui->setComment(var, "List of files");
       return true;
-    case f_AddRow:
+    case onAddRow:
       rowNr = fileList.size();
       web->getResponseObject()["addRow"]["rowNr"] = rowNr;
       //add a row with all defaults
       return true;
-    case f_DelRow:
+    case onDeleteRow:
       if (rowNr != UINT8_MAX && rowNr < fileList.size()) {
         const char * fileName = fileList[rowNr].name;
         // ppf("chFun delRow %s[%d] = %s %s\n", mdl->varID(var), rowNr, var["value"].as<String>().c_str(), fileName);
@@ -53,55 +53,55 @@ void SysModFiles::setup() {
   }});
 
   ui->initText(tableVar, "flName", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_ValueFun:
+    case onSetValue:
       for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++)
         mdl->setValue(var, JsonString(fileList[rowNr].name, JsonString::Copied), rowNr);
       return true;
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Name");
       return true;
     default: return false;
   }});
 
   ui->initNumber(tableVar, "flSize", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_ValueFun:
+    case onSetValue:
       for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++)
         mdl->setValue(var, fileList[rowNr].size, rowNr);
       return true;
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Size (B)");
       return true;
     default: return false;
   }});
 
   ui->initURL(tableVar, "flLink", nullptr, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_ValueFun:
+    case onSetValue:
       for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++) {
         char urlString[32] = "file/";
         strncat(urlString, fileList[rowNr].name, sizeof(urlString)-1);
         mdl->setValue(var, JsonString(urlString, JsonString::Copied), rowNr);
       }
       return true;
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Show");
       return true;
     default: return false;
   }});
 
   ui->initFile(parentVar, "upload", nullptr, UINT16_MAX, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "Upload File");
     default: return false;
   }});
 
   ui->initProgress(parentVar, "drsize", UINT16_MAX, 0, files->totalBytes(), true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case f_ValueFun:
+    case onSetValue:
       mdl->setValue(var, files->usedBytes());
       return true;
-    case f_UIFun:
+    case onUI:
       ui->setLabel(var, "FS Size");
       return true;
-    case f_ChangeFun:
+    case onChange:
       var["max"] = files->totalBytes(); //makes sense?
       web->addResponseV(var["id"], "comment", "%d / %d B", files->usedBytes(), files->totalBytes());
       return true;
