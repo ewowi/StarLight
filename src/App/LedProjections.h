@@ -226,6 +226,24 @@ class MirrorProjection: public Projection {
   }
 }; //MirrorProjection
 
+class GroupingProjection: public Projection {
+  const char * name() {return "Grouping WIP";}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
+  const char * tags() {return "💡";}
+
+  void controls(Leds &leds, JsonObject parentVar) {
+  }
+}; //GroupingProjection
+
+class SpacingProjection: public Projection {
+  const char * name() {return "Spacing WIP";}
+  //uint8_t dim() {return _1D;} // every projection should work for all D
+  const char * tags() {return "💡";}
+
+  void controls(Leds &leds, JsonObject parentVar) {
+  }
+}; //SpacingProjection
+
 class KaleidoscopeProjection: public Projection {
   const char * name() {return "Kaleidoscope WIP";}
   //uint8_t dim() {return _1D;} // every projection should work for all D

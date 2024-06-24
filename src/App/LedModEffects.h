@@ -108,6 +108,8 @@ public:
     fixture.projections.push_back(new RandomProjection);
     fixture.projections.push_back(new ReverseProjection);
     fixture.projections.push_back(new MirrorProjection);
+    fixture.projections.push_back(new GroupingProjection);
+    fixture.projections.push_back(new SpacingProjection);
     fixture.projections.push_back(new KaleidoscopeProjection);
     fixture.projections.push_back(new PinwheelProjection);
   };

@@ -41,6 +41,8 @@ enum ProjectionsE
   p_Random,
   p_Reverse,
   p_Mirror,
+  p_Grouping,
+  p_Spacing,
   p_Kaleidoscope,
   p_Pinwheel,
   p_count // keep as last entry
