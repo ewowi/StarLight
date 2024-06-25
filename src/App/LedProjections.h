@@ -260,14 +260,18 @@ class PinwheelProjection: public Projection {
   const char * tags() {return "💡";}
 
   void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &proCenter) {
-    sizeAdjusted.x = mdl->getValue("stripLen");
+    sizeAdjusted.x = mdl->getValue("Petals");
     sizeAdjusted.y = 1;
     sizeAdjusted.z = 1;
   }
 
   void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted) {
+    // get mdl variables
     Coord3D center = mdl->getValue("Center");
-    float swirlVal = mdl->getValue("swirlVal");
+    int swirlVal   = mdl->getValue("swirlVal");
+    bool reverse   = mdl->getValue("reverse");
+    int angleRange = max(1, int(mdl->getValue("angleRange")));
+    int petals     = max(1, sizeAdjusted.x); // sizeAdjusted.x == mdl->getValue("Petals");
 
     if (swirlVal < 0) { // swap x and y instead of negative swirlVal use transpose later
       swirlVal = abs(swirlVal);
@@ -276,25 +280,29 @@ class PinwheelProjection: public Projection {
       pixelAdjusted.y = temp;
     }
 
-    float swirlFactor = sqrt(sq(pixelAdjusted.x - center.x) + sq(pixelAdjusted.y - center.y)) * swirlVal;
-
+    // float swirlFactor = sqrt(sq(pixelAdjusted.x - center.x) + sq(pixelAdjusted.y - center.y)) * swirlVal;
+    float swirlFactor = hypot(pixelAdjusted.x - center.x, pixelAdjusted.y - center.y) * swirlVal;
     float radians = atan2(pixelAdjusted.y - center.y, pixelAdjusted.x - center.x);
     float angle = degrees(radians);
 
-    int stripLen = sizeAdjusted.x; // instead of calling mdl->getValue("stripLen") every time
-    int value = round(angle) + 180 + swirlFactor; // Keeping values variables separate for debugging
-    int value2 = value % stripLen;
+    int value  = round(angle) + 180 + swirlFactor; // Keeping values variables separate for debugging
+    int value2 = value % angleRange;
     int value3 = value2;
-    if (mdl->getValue("reverse")) value3 = stripLen - value2 - 1; // Reverse
+    if (reverse) value3 = angleRange - value2 - 1; // Reverse
 
-    mapped.x = value3;
+    int value4 = round(value3 / (angleRange / float(petals)));
+    value4 = value4 % petals;
+
+    mapped.x = value4;
     mapped.y = 1;
     mapped.z = 1;
 
-    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %f StripLen: %d\n", center.x, center.y, swirlVal, stripLen);
-    // ppf(" pixelAdjusted: %d,%d,%d sizeAdjusted: %d,%d,%d", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z);
-    // ppf(" mapped %d,%d,%d", mapped.x, mapped.y, mapped.z);
-    // ppf(" angle %f stripLen %d value %d value2 %d value3 %d\n", angle, stripLen, value, value2, value3);
+    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %f angleRange: %d\n", center.x, center.y, swirlVal, angleRange);
+    // if (pixelAdjusted.x == 0) { //print first column
+    //   ppf(" pixelAdjusted: %d,%d,%d sizeAdjusted: %d,%d,%d", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z);
+    //   ppf(" mapped %d,%d,%d", mapped.x, mapped.y, mapped.z);
+    //   ppf(" angle %f angleRange %d value %d value2 %d value3 %d value4 %d\n", angle, angleRange, value, value2, value3, value4);
+    // }
   }
   void controls(Leds &leds, JsonObject parentVar) {
     // Bad idea to use fixture->fixSize? Segments default won't be centered.
@@ -321,14 +329,23 @@ class PinwheelProjection: public Projection {
         return true;
       default: return false;
     }});
-    // StripLen mainly for testing only. Should match virtual strip length but doesn't.
-    ui->initNumber(parentVar, "stripLen", 360, 1, 720, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    // Angle range 0 - angleRange. For testing purposes
+    ui->initNumber(parentVar, "angleRange", 360, 1, 720, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         leds.fixture->listOfLeds[rowNr]->doMap = true;
         leds.fixture->doMap = true;
         return true;
       default: return false;
     }});
+    // Naming petals, arms, blades, rays? Controls virtual strip length.
+    ui->initNumber(parentVar, "Petals", 360, 1, 360, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
+        return true;
+      default: return false;
+    }});
+
     // use reverse class when implemented
     ui->initCheckBox(parentVar, "reverse", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
