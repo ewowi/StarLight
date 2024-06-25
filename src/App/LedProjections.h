@@ -261,14 +261,14 @@ class PinwheelProjection: public Projection {
 
   void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &proCenter) {
     // Only set variables once better than setting them every time?
-    if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) { 
+    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) { 
       // Coord3D center = {sizeAdjusted.x / 2, sizeAdjusted.y / 2, 0};
       // mdl->setValue("proCenter", center);      // Doesn't work, is there a way to set center before it changes?
       sizeAdjusted.x = mdl->getValue("stripLen"); // Doesn't work right?, strip size never matches inputted value or static value. Want to set a 360x1x1 strip for example
       // sizeAdjusted.x = 360;                    // Also doesn't work 
       sizeAdjusted.y = 1; // Tried setting y, z to 0 but didn't fix x value
       sizeAdjusted.z = 1;
-    } 
+    // } 
   }
 
   void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted) {
@@ -318,7 +318,7 @@ class PinwheelProjection: public Projection {
       default: return false;
     }});
     // StripLen mainly for testing only. Should match virtual strip length but doesn't.
-    ui->initNumber(parentVar, "stripLen", 180, 1, 720, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "stripLen", 360, 1, 720, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         leds.fixture->listOfLeds[rowNr]->doMap = true;
         leds.fixture->doMap = true;
