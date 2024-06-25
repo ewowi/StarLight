@@ -288,6 +288,34 @@ public:
       default: return false;
     }});
 
+    ui->initCoord3D(tableVar, "fxMiddle", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onSetValue:
+        for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++) {
+          ppf("fxMiddle[%d] onSetValue %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->midPos.x, fixture.listOfLeds[rowNr]->midPos.y, fixture.listOfLeds[rowNr]->midPos.z);
+          mdl->setValue(var, fixture.listOfLeds[rowNr]->midPos, rowNr);
+        }
+        return true;
+      case onUI:
+        ui->setLabel(var, "Middle");
+        ui->setComment(var, "In pixels");
+        return true;
+      case onChange:
+        if (rowNr < fixture.listOfLeds.size()) {
+          fixture.listOfLeds[rowNr]->midPos = mdl->getValue(var, rowNr).as<Coord3D>();
+
+          ppf("fxStart[%d] chFun %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->midPos.x, fixture.listOfLeds[rowNr]->midPos.y, fixture.listOfLeds[rowNr]->midPos.z);
+
+          fixture.listOfLeds[rowNr]->fadeToBlackBy();
+          fixture.listOfLeds[rowNr]->doMap = true;
+          fixture.doMap = true;
+        }
+        else {
+          ppf("fxStart[%d] chfun rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
+        }
+        return true;
+      default: return false;
+    }});
+
     ui->initCoord3D(tableVar, "fxEnd", {8,8,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onSetValue:
         for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++) {
@@ -444,7 +472,7 @@ public:
           token = strtok(NULL, ",");
           if (token != NULL) newCoord->z = atoi(token) / 10; else newCoord->z = 0;
 
-          mdl->setValue(isStart?"fxStart":isEnd?"fxEnd":"proCenter", *newCoord, 0); //assuming row 0 for the moment
+          mdl->setValue(isStart?"fxStart":isEnd?"fxEnd":"fxMiddle", *newCoord, 0); //assuming row 0 for the moment
 
           fixture.listOfLeds[rowNr]->doMap = true; //recalc projection
           fixture.doMap = true;

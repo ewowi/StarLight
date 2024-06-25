@@ -35,11 +35,11 @@ class MultiplyProjection: public Projection {
 
   public: //to use in Preset1Projection
 
-  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &proCenter) {
+  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     Coord3D proMulti = mdl->getValue("proMulti"); //, rowNr
     //promulti can be 0,0,0 but /= protects from /div0
     sizeAdjusted /= proMulti; sizeAdjusted = sizeAdjusted.maximum(Coord3D{1,1,1}); //size min 1,1,1
-    proCenter /= proMulti;
+    midPosAdjusted /= proMulti;
     pixelAdjusted = pixelAdjusted%sizeAdjusted; // pixel % size
     // ppf("Multiply %d,%d,%d\n", leds->size.x, leds->size.y, leds->size.z);
   }
@@ -151,21 +151,21 @@ class DistanceFromPointProjection: public Projection {
   public: //to use in Preset1Projection
 
   void controls(Leds &leds, JsonObject parentVar) {
-    ui->initCoord3D(parentVar, "proCenter", {8,8,8}, 0, NUM_LEDS_Max, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case onUI:
-        ui->setLabel(var, "Center");
-        return true;
-      case onChange:
-        //initiate projectAndMap
-        ppf("proCenter %d %d\n", rowNr, leds.fixture->listOfLeds.size());
-        if (rowNr < leds.fixture->listOfLeds.size()) {
-          leds.fixture->listOfLeds[rowNr]->doMap = true; //Guru Meditation Error: Core  1 panic'ed (StoreProhibited). Exception was unhandled.
-          leds.fixture->doMap = true;
-        }
-        // ui->setLabel(var, "Size");
-        return true;
-      default: return false;
-    }});
+    // ui->initCoord3D(parentVar, "proCenter", {8,8,8}, 0, NUM_LEDS_Max, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    //   case onUI:
+    //     ui->setLabel(var, "Center");
+    //     return true;
+    //   case onChange:
+    //     //initiate projectAndMap
+    //     ppf("proCenter %d %d\n", rowNr, leds.fixture->listOfLeds.size());
+    //     if (rowNr < leds.fixture->listOfLeds.size()) {
+    //       leds.fixture->listOfLeds[rowNr]->doMap = true; //Guru Meditation Error: Core  1 panic'ed (StoreProhibited). Exception was unhandled.
+    //       leds.fixture->doMap = true;
+    //     }
+    //     // ui->setLabel(var, "Size");
+    //     return true;
+    //   default: return false;
+    // }});
   }
 }; //DistanceFromPointProjection
 
@@ -174,9 +174,9 @@ class Preset1Projection: public Projection {
   //uint8_t dim() {return _1D;} // every projection should work for all D
   const char * tags() {return "💫";}
 
-  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &proCenter) {
+  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     MultiplyProjection mp;
-    mp.adjustSizeAndPixel(sizeAdjusted, pixelAdjusted, proCenter);
+    mp.adjustSizeAndPixel(sizeAdjusted, pixelAdjusted, midPosAdjusted);
   }
 
   void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted) {
@@ -259,7 +259,7 @@ class PinwheelProjection: public Projection {
   const char * name() {return "Pinwheel WIP";}
   const char * tags() {return "💡";}
 
-  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &proCenter) {
+  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     sizeAdjusted.x = mdl->getValue("Petals");
     sizeAdjusted.y = 1;
     sizeAdjusted.z = 1;

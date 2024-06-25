@@ -271,6 +271,7 @@ public:
   unsigned8 projectionDimension = -1;
 
   Coord3D startPos = {0,0,0}, endPos = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
+  Coord3D midPos = {0,0,0};
   #ifdef STARBASE_USERMOD_MPU6050
     bool proGyro = false;
   #endif
