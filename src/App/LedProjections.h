@@ -44,7 +44,7 @@ class MultiplyProjection: public Projection {
     // ppf("Multiply %d,%d,%d\n", leds->size.x, leds->size.y, leds->size.z);
   }
 
-  void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted) {
+  void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
     // if mirrored find the indexV of the mirrored pixel
     bool mirror = mdl->getValue("mirror");
 
@@ -179,9 +179,9 @@ class Preset1Projection: public Projection {
     mp.adjustSizeAndPixel(sizeAdjusted, pixelAdjusted, midPosAdjusted);
   }
 
-  void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted) {
+  void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
     MultiplyProjection mp;
-    mp.adjustMapped(mapped, sizeAdjusted, pixelAdjusted);
+    mp.adjustMapped(mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted);
   }
 
   void adjustXYZ(Leds &leds, Coord3D &pixel) {
@@ -265,13 +265,15 @@ class PinwheelProjection: public Projection {
     sizeAdjusted.z = 1;
   }
 
-  void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted) {
+  void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
     // get mdl variables
-    Coord3D center = mdl->getValue("Center");
+    // Coord3D center = mdl->getValue("Center");
+    Coord3D center = midPosAdjusted; // lazy testing
     int swirlVal   = mdl->getValue("swirlVal");
     bool reverse   = mdl->getValue("reverse");
     int angleRange = max(1, int(mdl->getValue("angleRange")));
     int petals     = max(1, sizeAdjusted.x); // sizeAdjusted.x == mdl->getValue("Petals");
+    int zTwist     = mdl->getValue("zTwist");
 
     if (swirlVal < 0) { // swap x and y instead of negative swirlVal use transpose later
       swirlVal = abs(swirlVal);
@@ -280,37 +282,36 @@ class PinwheelProjection: public Projection {
       pixelAdjusted.y = temp;
     }
 
-    // float swirlFactor = sqrt(sq(pixelAdjusted.x - center.x) + sq(pixelAdjusted.y - center.y)) * swirlVal;
-    float swirlFactor = hypot(pixelAdjusted.x - center.x, pixelAdjusted.y - center.y) * swirlVal;
-    float radians = atan2(pixelAdjusted.y - center.y, pixelAdjusted.x - center.x);
-    float angle = degrees(radians);
+    // 3D distance option 
+    // swirlFactor = sqrt(sq(pixelAdjusted.x - midPosAdjusted.x) + sq(pixelAdjusted.y - midPosAdjusted.y) + sq(pixelAdjusted.z - midPosAdjusted.z)) * swirlVal;
+    float swirlFactor = hypot(pixelAdjusted.x - midPosAdjusted.x, pixelAdjusted.y - midPosAdjusted.y) * swirlVal;
+    float radians     = atan2(pixelAdjusted.y - midPosAdjusted.y, pixelAdjusted.x - midPosAdjusted.x);
+    float angle       = degrees(radians);
 
-    int value  = round(angle) + 180 + swirlFactor; // Keeping values variables separate for debugging
-    int value2 = value % angleRange;
-    int value3 = value2;
-    if (reverse) value3 = angleRange - value2 - 1; // Reverse
+    int value = round(angle) + 180 + swirlFactor + (zTwist * pixelAdjusted.z);
+    value %= angleRange;
+    
+    if (reverse) value = angleRange - value - 1; // Reverse
 
-    int value4 = round(value3 / (angleRange / float(petals)));
-    value4 = value4 % petals;
+    value = round(value / (angleRange / float(petals))); // Petals
+    value %= petals;
 
-    mapped.x = value4;
+    mapped.x = value;
     mapped.y = 1;
     mapped.z = 1;
 
-    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %f angleRange: %d\n", center.x, center.y, swirlVal, angleRange);
+    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) ppf("Pinwheel Center: (%d, %d) SwirlVal: %f angleRange: %d\n", midPosAdjusted.x, midPosAdjusted.y, swirlVal, angleRange);
     // if (pixelAdjusted.x == 0) { //print first column
     //   ppf(" pixelAdjusted: %d,%d,%d sizeAdjusted: %d,%d,%d", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z);
     //   ppf(" mapped %d,%d,%d", mapped.x, mapped.y, mapped.z);
-    //   ppf(" angle %f angleRange %d value %d value2 %d value3 %d value4 %d\n", angle, angleRange, value, value2, value3, value4);
+    //   ppf(" angle %f angleRange %d value %d\n", angle, angleRange, value);
     // }
   }
   void controls(Leds &leds, JsonObject parentVar) {
-    // Bad idea to use fixture->fixSize? Segments default won't be centered.
-    // leds.endPos works for "segmenting" use min(fixSize, endPos)?
-    // min(leds.fixture->fixSize/2, leds.endPos/2) syntax doesn't work CRGB error?
-    ui->initCoord3D(parentVar, "Center", {min(leds.fixture->fixSize.x/2, leds.endPos.x/2), min(leds.fixture->fixSize.y/2, leds.endPos.y/2), min(leds.fixture->fixSize.z/2, leds.endPos.z/2)}, -10, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    // Slider range supposed to be 0 - 255, but -15 to 15 seems to work fine?
+    ui->initSlider(parentVar, "swirlVal", 0, -15, 15, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "Pinwheel Center"); // Does nothing?
+        ui->setLabel(var, "Swirl"); // Does nothing?
         return true;
       case onChange:
         leds.fixture->listOfLeds[rowNr]->doMap = true;
@@ -318,10 +319,11 @@ class PinwheelProjection: public Projection {
         return true;
       default: return false;
     }});
-    // Slider range supposed to be 0 - 255, but -15 to 15 seems to work fine?
-    ui->initSlider(parentVar, "swirlVal", 0, -15, 15, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    // Testing zTwist range -42 to 42 arbitrary values for testing. Hide later if not 3D fixture
+    // Not sure if I like this, need to try on physical setup later.
+    ui->initSlider(parentVar, "zTwist", 0, -42, 42, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "Swirl"); // Does nothing?
+        ui->setLabel(var, "zTwist");
         return true;
       case onChange:
         leds.fixture->listOfLeds[rowNr]->doMap = true;

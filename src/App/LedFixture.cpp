@@ -129,7 +129,7 @@ void Fixture::projectAndMap() {
 
                   mapped = pixelAdjusted;
 
-                  if (projection) projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
+                  if (projection) projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10, midPosAdjusted);
 
                   mapped.x = mapped.distance(midPosAdjusted);
                   mapped.y = 0;
@@ -187,7 +187,7 @@ void Fixture::projectAndMap() {
                       break;
                   }
 
-                  if (projection) projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
+                  if (projection) projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10, midPosAdjusted);
 
                   indexV = leds->XYZUnprojected(mapped);
                   break;
@@ -218,7 +218,7 @@ void Fixture::projectAndMap() {
                       break;
                   }
 
-                  if (projection) projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
+                  if (projection) projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10, midPosAdjusted);
 
                   indexV = leds->XYZUnprojected(mapped);
                   
