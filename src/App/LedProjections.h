@@ -257,55 +257,105 @@ class KaleidoscopeProjection: public Projection {
 // Currently 1D to 2D/3D May be possible to make 2D to 2D/3D
 class PinwheelProjection: public Projection {
   const char * name() {return "Pinwheel WIP";}
-  uint8_t      dim()  {return _1D;}
   const char * tags() {return "💡";}
 
   void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &proCenter) {
-    sizeAdjusted.x = 360; // make this a UI variable?
+    sizeAdjusted.x = mdl->getValue("Petals");
     sizeAdjusted.y = 1;
-    sizeAdjusted.z = 1; 
+    sizeAdjusted.z = 1;
   }
-  
+
   void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted) {
-    int centerX = 16; // make this a UI variable
-    int centerY = 16; // make this a UI variable
+    // get mdl variables
+    Coord3D center = mdl->getValue("Center");
+    int swirlVal   = mdl->getValue("swirlVal");
+    bool reverse   = mdl->getValue("reverse");
+    int angleRange = max(1, int(mdl->getValue("angleRange")));
+    int petals     = max(1, sizeAdjusted.x); // sizeAdjusted.x == mdl->getValue("Petals");
 
-    int x = pixelAdjusted.x;
-    int y = pixelAdjusted.y;
-    // take z into account for 3D effect
-    
-    int swirlVal = 5; // make this a UI variable -15 to 15 ?
-    float swirlFactor = sqrt(sq(x - centerX) + sq(y - centerY)) * swirlVal; // calculate once?
+    if (swirlVal < 0) { // swap x and y instead of negative swirlVal use transpose later
+      swirlVal = abs(swirlVal);
+      int temp = pixelAdjusted.x;
+      pixelAdjusted.x = pixelAdjusted.y;
+      pixelAdjusted.y = temp;
+    }
 
-    float radians = atan2(y - centerY, x - centerX);
+    // float swirlFactor = sqrt(sq(pixelAdjusted.x - center.x) + sq(pixelAdjusted.y - center.y)) * swirlVal;
+    float swirlFactor = hypot(pixelAdjusted.x - center.x, pixelAdjusted.y - center.y) * swirlVal;
+    float radians = atan2(pixelAdjusted.y - center.y, pixelAdjusted.x - center.x);
     float angle = degrees(radians);
-    angle += 180;
-    angle = fmod(angle + swirlFactor, 360);
 
-    mapped.x = angle;
-    mapped.y = 0;
-    mapped.z = 0;
+    int value  = round(angle) + 180 + swirlFactor; // Keeping values variables separate for debugging
+    int value2 = value % angleRange;
+    int value3 = value2;
+    if (reverse) value3 = angleRange - value2 - 1; // Reverse
 
-    // ppf("Pinwheel Center: %d,%d", centerX, centerY);
-    // ppf(" SizeAdjusted: %d,%d,%d", sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z);
-    // ppf(" pixelAdjusted: %d,%d,%d", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
-    // ppf(" mapped %d,%d,%d", mapped.x, mapped.y, mapped.z);
-    // ppf(" angle %f\n", angle);
+    int value4 = round(value3 / (angleRange / float(petals)));
+    value4 = value4 % petals;
+
+    mapped.x = value4;
+    mapped.y = 1;
+    mapped.z = 1;
+
+    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %f angleRange: %d\n", center.x, center.y, swirlVal, angleRange);
+    // if (pixelAdjusted.x == 0) { //print first column
+    //   ppf(" pixelAdjusted: %d,%d,%d sizeAdjusted: %d,%d,%d", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z);
+    //   ppf(" mapped %d,%d,%d", mapped.x, mapped.y, mapped.z);
+    //   ppf(" angle %f angleRange %d value %d value2 %d value3 %d value4 %d\n", angle, angleRange, value, value2, value3, value4);
+    // }
   }
   void controls(Leds &leds, JsonObject parentVar) {
-    // UI Center x, y (z?) can be any value positive or negative
-    // UI swirlVal
-    // UI arms? arms currently 360, reduce for diff effect?
-    // UI add multiply / mirror / reverse / tilt pan roll
-     ui->initCheckBox(parentVar, "pw test", true, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    // Bad idea to use fixture->fixSize? Segments default won't be centered.
+    // leds.endPos works for "segmenting" use min(fixSize, endPos)?
+    // min(leds.fixture->fixSize/2, leds.endPos/2) syntax doesn't work CRGB error?
+    ui->initCoord3D(parentVar, "Center", {min(leds.fixture->fixSize.x/2, leds.endPos.x/2), min(leds.fixture->fixSize.y/2, leds.endPos.y/2), min(leds.fixture->fixSize.z/2, leds.endPos.z/2)}, -10, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "MultiplyX");
+        ui->setLabel(var, "Pinwheel Center"); // Does nothing?
         return true;
       case onChange:
-        ppf("pw test onChange %s\n", var["value"].as<String>().c_str());
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
         return true;
       default: return false;
     }});
+    // Slider range supposed to be 0 - 255, but -15 to 15 seems to work fine?
+    ui->initSlider(parentVar, "swirlVal", 0, -15, 15, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onUI:
+        ui->setLabel(var, "Swirl"); // Does nothing?
+        return true;
+      case onChange:
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
+        return true;
+      default: return false;
+    }});
+    // Angle range 0 - angleRange. For testing purposes
+    ui->initNumber(parentVar, "angleRange", 360, 1, 720, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
+        return true;
+      default: return false;
+    }});
+    // Naming petals, arms, blades, rays? Controls virtual strip length.
+    ui->initNumber(parentVar, "Petals", 360, 1, 360, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
+        return true;
+      default: return false;
+    }});
+
+    // use reverse class when implemented
+    ui->initCheckBox(parentVar, "reverse", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
+        return true;
+      default: return false;
+    }});
+    // UI add multiply / mirror / tilt pan roll
+
   }
 }; //PinwheelProjection
 
