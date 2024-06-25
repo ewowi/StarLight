@@ -257,55 +257,84 @@ class KaleidoscopeProjection: public Projection {
 // Currently 1D to 2D/3D May be possible to make 2D to 2D/3D
 class PinwheelProjection: public Projection {
   const char * name() {return "Pinwheel WIP";}
-  uint8_t      dim()  {return _1D;}
   const char * tags() {return "💡";}
 
   void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &proCenter) {
-    sizeAdjusted.x = 360; // make this a UI variable?
-    sizeAdjusted.y = 1;
-    sizeAdjusted.z = 1; 
+    // Only set variables once better than setting them every time?
+    if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) { 
+      // Coord3D center = {sizeAdjusted.x / 2, sizeAdjusted.y / 2, 0};
+      // mdl->setValue("proCenter", center);      // Doesn't work, is there a way to set center before it changes?
+      sizeAdjusted.x = mdl->getValue("stripLen"); // Doesn't work right?, strip size never matches inputted value or static value. Want to set a 360x1x1 strip for example
+      // sizeAdjusted.x = 360;                    // Also doesn't work 
+      sizeAdjusted.y = 1; // Tried setting y, z to 0 but didn't fix x value
+      sizeAdjusted.z = 1;
+    } 
   }
-  
+
   void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted) {
-    int centerX = 16; // make this a UI variable
-    int centerY = 16; // make this a UI variable
+    Coord3D center = mdl->getValue("proCenter");
+    float swirlVal = mdl->getValue("swirlVal");
+    float swirlFactor = sqrt(sq(pixelAdjusted.x - center.x) + sq(pixelAdjusted.y - center.y)) * swirlVal;
 
-    int x = pixelAdjusted.x;
-    int y = pixelAdjusted.y;
-    // take z into account for 3D effect
-    
-    int swirlVal = 5; // make this a UI variable -15 to 15 ?
-    float swirlFactor = sqrt(sq(x - centerX) + sq(y - centerY)) * swirlVal; // calculate once?
-
-    float radians = atan2(y - centerY, x - centerX);
+    float radians = atan2(pixelAdjusted.y - center.y, pixelAdjusted.x - center.x);
     float angle = degrees(radians);
-    angle += 180;
-    angle = fmod(angle + swirlFactor, 360);
 
-    mapped.x = angle;
-    mapped.y = 0;
-    mapped.z = 0;
+    int stripLen = mdl->getValue("stripLen"); // sizeAdjusted.x doesn't work gives really low value for some reason
+    int value = round(angle) + 180 + swirlFactor; // Keeping values variables separate for debugging
+    int value2 = value % stripLen;
+    int value3 = value2;
+    if (mdl->getValue("reverse")) value3 = stripLen - value2 - 1; // Reverse
 
-    // ppf("Pinwheel Center: %d,%d", centerX, centerY);
-    // ppf(" SizeAdjusted: %d,%d,%d", sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z);
+    mapped.x = value3;
+    mapped.y = 1;
+    mapped.z = 1;
+
+    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %f StripLen: %d\n", center.x, center.y, swirlVal, stripLen);
     // ppf(" pixelAdjusted: %d,%d,%d", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
     // ppf(" mapped %d,%d,%d", mapped.x, mapped.y, mapped.z);
-    // ppf(" angle %f\n", angle);
+    // ppf(" angle %f stripLen %d value %d value2 %d value3 %d\n", angle, stripLen, value, value2, value3);
   }
   void controls(Leds &leds, JsonObject parentVar) {
-    // UI Center x, y (z?) can be any value positive or negative
-    // UI swirlVal
-    // UI arms? arms currently 360, reduce for diff effect?
-    // UI add multiply / mirror / reverse / tilt pan roll
-     ui->initCheckBox(parentVar, "pw test", true, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    // Would like default to be center. Currently defaults to 8,8,0
+    ui->initCoord3D(parentVar, "proCenter", {8,8,0}, -10, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "MultiplyX");
+        ui->setLabel(var, "Pinwheel Center"); // Does nothing?
         return true;
       case onChange:
-        ppf("pw test onChange %s\n", var["value"].as<String>().c_str());
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
         return true;
       default: return false;
     }});
+    // Slider range supposed to be 0 - 255, but -15 to 15 seems to work fine?
+    ui->initSlider(parentVar, "swirlVal", 0, -15, 15, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onUI:
+        ui->setLabel(var, "Swirl"); // Does nothing?
+        return true;
+      case onChange:
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
+        return true;
+      default: return false;
+    }});
+    // StripLen mainly for testing only. Should match virtual strip length but doesn't.
+    ui->initNumber(parentVar, "stripLen", 180, 1, 720, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
+        return true;
+      default: return false;
+    }});
+    // use reverse class when implemented
+    ui->initCheckBox(parentVar, "reverse", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
+        return true;
+      default: return false;
+    }});
+    // UI add multiply / mirror / tilt pan roll
+
   }
 }; //PinwheelProjection
 
