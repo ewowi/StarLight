@@ -2,10 +2,10 @@
 git log v0.14.1-beta.30..HEAD  --pretty=format:'%ad,%<(20)%an,%s' --date=short
 
 
-Copy System Modules from MoonModules/StarLeds to upstream
+Copy System Modules from MoonModules/StarLight to upstream
 (as should only be modified in upstream)
 ============================================================
-cd ~/Developer/GitHub/MoonModules/StarLeds
+cd ~/Developer/GitHub/MoonModules/StarLight
 ls ../../ewowi/StarBase/src/Sys
 cp ./src/Sys/* ../../ewowi/StarBase/src/Sys
 cp ./src/User/* ../../ewowi/StarBase/src/User
@@ -74,14 +74,14 @@ Update instances
 for i in 107 239 143 111 154 177 208 129 157
 do 
     echo upgrade 192.168.168.$i
-    curl -s -F "update=@/Users/ewoudwijma/Downloads/StarLeds_24060113_lolin_s2_mini.bin" 192.168.8.$i/update &
+    curl -s -F "update=@/Users/ewoudwijma/Downloads/StarLight_24060113_lolin_s2_mini.bin" 192.168.8.$i/update &
 done
     curl -X POST "http://192.168.8.$i/json" -d '{"reboot":true}' -H "Content-Type: application/json"
 
 for i in 152 132
 do 
     echo upgrade 192.168.168.$i
-    curl -s -F "update=@/Users/ewoudwijma/Downloads/StarLeds_24060113_esp32dev.bin" 192.168.8.$i/update &
+    curl -s -F "update=@/Users/ewoudwijma/Downloads/StarLight_24060113_esp32dev.bin" 192.168.8.$i/update &
 done
     curl -X POST "http://192.168.8.$i/json" -d '{"reboot":true}' -H "Content-Type: application/json"
 

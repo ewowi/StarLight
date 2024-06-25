@@ -32,18 +32,18 @@ SysModNetwork *net;
 SysModPins *pins;
 SysModInstances *instances;
 UserModMDNS *mdns;
-#ifdef STARLEDS
+#ifdef STARLIGHT
   #include "App/LedModEffects.h"
   #include "App/LedModFixture.h"
   #include "App/LedModFixtureGen.h"
   LedModFixture *fix;
   LedModFixtureGen *lfg;
   LedModEffects *eff;
-  #ifdef STARLEDS_USERMOD_ARTNET
+  #ifdef STARLIGHT_USERMOD_ARTNET
     #include "User/UserModArtNet.h"
     UserModArtNet *artnetmod;
   #endif
-  #ifdef STARLEDS_USERMOD_DDP
+  #ifdef STARLIGHT_USERMOD_DDP
     #include "User/UserModDDP.h"
     UserModDDP *ddpmod;
   #endif
@@ -60,7 +60,7 @@ UserModMDNS *mdns;
   #include "User/UserModMPU6050.h"
   UserModMPU6050 *mpu6050;
 #endif
-#ifdef STARLEDS_USERMOD_WLEDAUDIO
+#ifdef STARLIGHT_USERMOD_WLEDAUDIO
   #include "User/UserModWLEDAudio.h"
   UserModWLEDAudio *wledAudioMod;
 #endif
@@ -79,14 +79,14 @@ void setup() {
   pins = new SysModPins();
   instances = new SysModInstances();
   mdns = new UserModMDNS();
-  #ifdef STARLEDS
+  #ifdef STARLIGHT
     eff = new LedModEffects();
     fix = new LedModFixture();
     lfg = new LedModFixtureGen();
-    #ifdef STARLEDS_USERMOD_ARTNET
+    #ifdef STARLIGHT_USERMOD_ARTNET
       artnetmod = new UserModArtNet();
     #endif
-    #ifdef STARLEDS_USERMOD_DDP
+    #ifdef STARLIGHT_USERMOD_DDP
       ddpmod = new UserModDDP();
     #endif
   #endif
@@ -99,14 +99,14 @@ void setup() {
   #ifdef STARBASE_USERMOD_MPU6050
     mpu6050 = new UserModMPU6050();
   #endif
-  #ifdef STARLEDS_USERMOD_WLEDAUDIO
+  #ifdef STARLIGHT_USERMOD_WLEDAUDIO
     wledAudioMod = new UserModWLEDAudio();
   #endif
 
   //Reorder with care! this is the order in which setup and loop is executed
   //If changed make sure mdlEnabled.chFun executes var["value"].to<JsonArray>(); and saveModel! 
   //Default: add below, not in between
-  #ifdef STARLEDS
+  #ifdef STARLIGHT
     mdls->add(fix);
     mdls->add(eff);
     mdls->add(lfg);
@@ -117,11 +117,11 @@ void setup() {
   mdls->add(print);
   mdls->add(web);
   mdls->add(net);
-  #ifdef STARLEDS
-    #ifdef STARLEDS_USERMOD_DDP
+  #ifdef STARLIGHT
+    #ifdef STARLIGHT_USERMOD_DDP
       mdls->add(ddpmod);
     #endif
-    #ifdef STARLEDS_USERMOD_ARTNET
+    #ifdef STARLIGHT_USERMOD_ARTNET
       mdls->add(artnetmod);
     #endif
   #endif
@@ -136,7 +136,7 @@ void setup() {
   #endif
   mdls->add(mdl);
   mdls->add(ui);
-  #ifdef STARLEDS_USERMOD_WLEDAUDIO
+  #ifdef STARLIGHT_USERMOD_WLEDAUDIO
     mdls->add(wledAudioMod); //no ui
   #endif
   mdls->add(mdns); //no ui

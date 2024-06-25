@@ -1,4 +1,4 @@
-# StarLeds
+# StarLight
 
 See [StarDocs](https://ewowi.github.io/StarDocs/)
 

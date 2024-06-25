@@ -1,10 +1,10 @@
 /*
-   @title     StarLeds
+   @title     StarLight
    @file      UserModWLEDAudio.h
    @date      20240114
-   @repo      https://github.com/MoonModules/StarLeds
-   @Authors   https://github.com/MoonModules/StarLeds/commits/main
-   @Copyright © 2024 Github StarLeds Commit Authors
+   @repo      https://github.com/MoonModules/StarLight
+   @Authors   https://github.com/MoonModules/StarLight/commits/main
+   @Copyright © 2024 Github StarLight Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */

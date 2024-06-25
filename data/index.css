@@ -21,7 +21,7 @@
 		--comment-color: #598a43;
 		--font-size: 10px;
 	}
-	:root.starLeds {
+	:root.starlight {
 		--bg-color: linear-gradient(to bottom, #ffbe33 0%, #b60f62 100%);
 		--text-color: #030303;
 		--th-color: #b60f6281;

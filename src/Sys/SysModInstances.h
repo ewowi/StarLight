@@ -29,7 +29,7 @@ struct SysData {
   uint8_t timeSource; //29
   uint32_t tokiTime; //30 in sec
   uint16_t tokiMs; //34
-  byte type; //0=WLED, 1=StarBase, 2=StarLeds, 3=StarFork
+  byte type; //0=WLED, 1=StarBase, 2=StarLight, 3=StarFork
   DMX dmx;
   uint8_t macAddress[6]; // 48 bits WIP
 };
@@ -176,7 +176,7 @@ public:
     ui->initText(tableVar, "insType", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onSetValue:
         for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, (instances[rowNrL].sysData.type==0)?"WLED":(instances[rowNrL].sysData.type==1)?"StarBase":(instances[rowNrL].sysData.type==2)?"StarLeds":"StarFork", rowNrL);
+          mdl->setValue(var, (instances[rowNrL].sysData.type==0)?"WLED":(instances[rowNrL].sysData.type==1)?"StarBase":(instances[rowNrL].sysData.type==2)?"StarLight":"StarFork", rowNrL);
         return true;
       case onUI:
         ui->setLabel(var, "Type");
@@ -596,7 +596,7 @@ public:
     #endif
     starMessage.header.insId = localIP[3]; //WLED: used in map of instances as index!
     starMessage.header.version = VERSION;
-    starMessage.sysData.type = (strcmp(_INIT(TOSTRING(APP)), "StarBase")==0)?1:(strcmp(_INIT(TOSTRING(APP)), "StarLeds")==0)?2:3; //1=StarBase,2=StarLeds, 3=StarFork
+    starMessage.sysData.type = (strcmp(_INIT(TOSTRING(APP)), "StarBase")==0)?1:(strcmp(_INIT(TOSTRING(APP)), "StarLight")==0)?2:3; //1=StarBase,2=StarLight, 3=StarFork
     starMessage.sysData.upTime = millis()/1000;
     starMessage.sysData.now = millis() + sys->timebase; //similar to now
     starMessage.sysData.timeSource = sys->toki.getTimeSource();
@@ -721,7 +721,7 @@ public:
           // ppf("macaddress %02X:%02X:%02X:%02X:%02X:%02X\n", instance.macAddress[0], instance.macAddress[1], instance.macAddress[2], instance.macAddress[3], instance.macAddress[4], instance.macAddress[5]);
         }
 
-        if (udpStarMessage.sysData.type >= 1) {//StarBase, StarLeds and forks only
+        if (udpStarMessage.sysData.type >= 1) {//StarBase, StarLight and forks only
           instance.sysData = udpStarMessage.sysData;
 
           if (instance.ip != WiFi.localIP()) { //send from localIP will be done after updateInstance

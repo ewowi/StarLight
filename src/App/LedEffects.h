@@ -1,15 +1,15 @@
 /*
-   @title     StarLeds
+   @title     StarLight
    @file      LedEffects.h
    @date      20240228
-   @repo      https://github.com/MoonModules/StarLeds
-   @Authors   https://github.com/MoonModules/StarLeds/commits/main
-   @Copyright © 2024 Github StarLeds Commit Authors
+   @repo      https://github.com/MoonModules/StarLight
+   @Authors   https://github.com/MoonModules/StarLight/commits/main
+   @Copyright © 2024 Github StarLight Commit Authors
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
-#ifdef STARLEDS_USERMOD_WLEDAUDIO
+#ifdef STARLIGHT_USERMOD_WLEDAUDIO
   #include "../User/UserModWLEDAudio.h"
 #endif
 #ifdef STARBASE_USERMOD_E131
@@ -1346,7 +1346,7 @@ class ScrollingText: public Effect {
   }
   
   void controls(Leds &leds, JsonObject parentVar) {
-    ui->initText(parentVar, "text", "StarLeds"); //sharedData to be implemented!
+    ui->initText(parentVar, "text", "StarLight"); //sharedData to be implemented!
     ui->initSlider(parentVar, "speed", leds.sharedData.write<uint8_t>(128));
     ui->initSelect(parentVar, "font", leds.sharedData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
@@ -2236,7 +2236,7 @@ class ParticleTest: public Effect {
 
 
 
-#ifdef STARLEDS_USERMOD_WLEDAUDIO
+#ifdef STARLIGHT_USERMOD_WLEDAUDIO
 
 class Waverly: public Effect {
   const char * name() {return "Waverly";}
