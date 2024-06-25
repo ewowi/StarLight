@@ -260,26 +260,28 @@ class PinwheelProjection: public Projection {
   const char * tags() {return "💡";}
 
   void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &proCenter) {
-    // Only set variables once better than setting them every time?
-    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) { 
-      // Coord3D center = {sizeAdjusted.x / 2, sizeAdjusted.y / 2, 0};
-      // mdl->setValue("proCenter", center);      // Doesn't work, is there a way to set center before it changes?
-      sizeAdjusted.x = mdl->getValue("stripLen"); // Doesn't work right?, strip size never matches inputted value or static value. Want to set a 360x1x1 strip for example
-      // sizeAdjusted.x = 360;                    // Also doesn't work 
-      sizeAdjusted.y = 1; // Tried setting y, z to 0 but didn't fix x value
-      sizeAdjusted.z = 1;
-    // } 
+    sizeAdjusted.x = mdl->getValue("stripLen");
+    sizeAdjusted.y = 1;
+    sizeAdjusted.z = 1;
   }
 
   void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted) {
-    Coord3D center = mdl->getValue("proCenter");
+    Coord3D center = mdl->getValue("Center");
     float swirlVal = mdl->getValue("swirlVal");
+
+    if (swirlVal < 0) { // swap x and y instead of negative swirlVal use transpose later
+      swirlVal = abs(swirlVal);
+      int temp = pixelAdjusted.x;
+      pixelAdjusted.x = pixelAdjusted.y;
+      pixelAdjusted.y = temp;
+    }
+
     float swirlFactor = sqrt(sq(pixelAdjusted.x - center.x) + sq(pixelAdjusted.y - center.y)) * swirlVal;
 
     float radians = atan2(pixelAdjusted.y - center.y, pixelAdjusted.x - center.x);
     float angle = degrees(radians);
 
-    int stripLen = mdl->getValue("stripLen"); // sizeAdjusted.x doesn't work gives really low value for some reason
+    int stripLen = sizeAdjusted.x; // instead of calling mdl->getValue("stripLen") every time
     int value = round(angle) + 180 + swirlFactor; // Keeping values variables separate for debugging
     int value2 = value % stripLen;
     int value3 = value2;
@@ -290,13 +292,15 @@ class PinwheelProjection: public Projection {
     mapped.z = 1;
 
     // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %f StripLen: %d\n", center.x, center.y, swirlVal, stripLen);
-    // ppf(" pixelAdjusted: %d,%d,%d", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
+    // ppf(" pixelAdjusted: %d,%d,%d sizeAdjusted: %d,%d,%d", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z);
     // ppf(" mapped %d,%d,%d", mapped.x, mapped.y, mapped.z);
     // ppf(" angle %f stripLen %d value %d value2 %d value3 %d\n", angle, stripLen, value, value2, value3);
   }
   void controls(Leds &leds, JsonObject parentVar) {
-    // Would like default to be center. Currently defaults to 8,8,0
-    ui->initCoord3D(parentVar, "proCenter", {8,8,0}, -10, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    // Bad idea to use fixture->fixSize? Segments default won't be centered.
+    // leds.endPos works for "segmenting" use min(fixSize, endPos)?
+    // min(leds.fixture->fixSize/2, leds.endPos/2) syntax doesn't work CRGB error?
+    ui->initCoord3D(parentVar, "Center", {min(leds.fixture->fixSize.x/2, leds.endPos.x/2), min(leds.fixture->fixSize.y/2, leds.endPos.y/2), min(leds.fixture->fixSize.z/2, leds.endPos.z/2)}, -10, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "Pinwheel Center"); // Does nothing?
         return true;
