@@ -211,19 +211,20 @@ void SysModModel::findVars(const char * property, bool value, FindFun fun, JsonA
   }
 }
 
-void SysModModel::varToValues(JsonObject var, JsonArray row) {
+//currently not used
+// void SysModModel::varToValues(JsonObject var, JsonArray row) {
 
-    //add value for each child
-    // JsonArray row = rows.add<JsonArray>();
-    for (JsonObject childVar : var["n"].as<JsonArray>()) {
-      print->printJson("fxTbl childs", childVar);
-      row.add(childVar["value"]);
+//     //add value for each child
+//     // JsonArray row = rows.add<JsonArray>();
+//     for (JsonObject childVar : var["n"].as<JsonArray>()) {
+//       print->printJson("varToValues childs", childVar);
+//       row.add(childVar["value"]);
 
-      if (!childVar["n"].isNull()) {
-        varToValues(childVar, row.add<JsonArray>());
-      }
-    }
-}
+//       if (!childVar["n"].isNull()) {
+//         varToValues(childVar, row.add<JsonArray>());
+//       }
+//     }
+// }
 
 bool checkDash(JsonObject var) {
   if (var["dash"])

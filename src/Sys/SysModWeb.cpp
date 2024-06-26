@@ -160,14 +160,14 @@ void SysModWeb::loop() {
 
     // ppf("SysModWeb clientsChanged\n");
     for (JsonObject childVar: mdl->varChildren("clTbl"))
-      ui->callVarFun(childVar);
+      ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
   }
 
 }
 
 void SysModWeb::loop1s() {
   for (JsonObject childVar: mdl->varChildren("clTbl"))
-    ui->callVarFun(childVar);
+    ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
 
   mdl->setUIValueV("wsSend", "#: %d /s T: %d B/s B:%d B/s", sendWsCounter, sendWsTBytes, sendWsBBytes);
   sendWsCounter = 0;

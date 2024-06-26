@@ -294,7 +294,7 @@ public:
   JsonArray setOptions(JsonObject var) {
     return web->addResponseA(var["id"], "options");
   }
-  //return the options from onSetValue (don't forget to clear responseObject)
+  //return the options from onUI (don't forget to clear responseObject)
   JsonArray getOptions(JsonObject var) {
     callVarFun(var, UINT8_MAX, onUI); //rebuild options
     return web->getResponseObject()[mdl->varID(var)]["options"];

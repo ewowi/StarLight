@@ -70,7 +70,7 @@ void SysModUI::loop() {
 
 void SysModUI::loop1s() {
   //if something changed in vloops
-  callVarFun("vlLoopps");
+  callVarFun("vlLoopps", UINT8_MAX, onSetValue); //set the value (WIP)
   for (VarLoop &varLoop : loopFunctions)
     varLoop.counter = 0;
 }

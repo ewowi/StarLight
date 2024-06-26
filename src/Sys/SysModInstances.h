@@ -464,7 +464,7 @@ public:
 
           ppf("insTbl handleNotifications %d\n", notifierUdp.remoteIP()[3]);
           for (JsonObject childVar: mdl->varChildren("insTbl"))
-            ui->callVarFun(childVar); //rowNr //instance - instances.begin()
+            ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP) ); //rowNr //instance - instances.begin()
 
           web->recvUDPCounter++;
           web->recvUDPBytes+=packetSize;
@@ -558,7 +558,7 @@ public:
     if (erased) {
       ppf("insTbl remove inactive instances\n");
       for (JsonObject childVar: mdl->varChildren("insTbl"))
-        ui->callVarFun(childVar); //no rowNr so all rows updated
+        ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //no rowNr so all rows updated
 
       ui->callVarFun("ddpInst", UINT8_MAX, onUI); //rebuild options
       ui->callVarFun("artInst", UINT8_MAX, onUI); //rebuild options
@@ -796,7 +796,7 @@ public:
           // ppf("updateInstance updRow\n");
 
           for (JsonObject childVar: mdl->varChildren("insTbl"))
-            ui->callVarFun(childVar); //rowNr instance - instances.begin()
+            ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //rowNr instance - instances.begin()
 
           //tbd: now done for all rows, should be done only for updated rows!
         }
@@ -816,7 +816,7 @@ public:
       // for (std::vector<InstanceInfo>::iterator instance=instances.begin(); instance!=instances.end(); ++instance) {
       //   if (instance->ip == messageIP) {
           for (JsonObject childVar: mdl->varChildren("insTbl")) {
-            ui->callVarFun(childVar); //no rowNr, update all
+            ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //no rowNr, update all
           }
       //   }
       // }

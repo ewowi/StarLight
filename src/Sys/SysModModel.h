@@ -350,8 +350,8 @@ public:
   JsonObject findParentVar(const char * id, JsonObject parent = JsonObject());
   void findVars(const char * id, bool value, FindFun fun, JsonArray parent = JsonArray());
 
-  //recursively add values in  a variant
-  void varToValues(JsonObject var, JsonArray values);
+  //recursively add values in  a variant, currently not used
+  // void varToValues(JsonObject var, JsonArray values);
 
   //sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
   bool callVarChangeFun(JsonObject var, unsigned8 rowNr = UINT8_MAX, bool init = false);

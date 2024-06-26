@@ -120,7 +120,7 @@
     "max": 255,
     "n": [
       {
-        "id": "fxTbl",
+        "id": "ledsTbl",
         "type": "table",
         "ro": false,
         "o": 14,
@@ -223,7 +223,7 @@
             ]
           },
           {
-            "id": "fxStart",
+            "id": "ledsStart",
             "type": "coord3D",
             "ro": false,
             "o": 22,
@@ -237,7 +237,7 @@
             ]
           },
           {
-            "id": "fxEnd",
+            "id": "ledsEnd",
             "type": "coord3D",
             "ro": false,
             "o": 23,
@@ -251,7 +251,7 @@
             ]
           },
           {
-            "id": "fxSize",
+            "id": "ledsSize",
             "type": "text",
             "ro": true,
             "o": 24,

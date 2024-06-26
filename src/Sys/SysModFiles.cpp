@@ -94,10 +94,7 @@ void SysModFiles::setup() {
     default: return false;
   }});
 
-  ui->initProgress(parentVar, "drsize", UINT16_MAX, 0, files->totalBytes(), true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case onSetValue:
-      mdl->setValue(var, files->usedBytes());
-      return true;
+  ui->initProgress(parentVar, "drsize", files->usedBytes(), 0, files->totalBytes(), true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "FS Size");
       return true;
@@ -131,15 +128,15 @@ void SysModFiles::loop() {
     }
     root.close();
 
-    ui->callVarFun("drsize");
+    mdl->setValue("drsize", files->usedBytes());
 
     for (JsonObject childVar: mdl->varChildren("fileTbl"))
-      ui->callVarFun(childVar);
+      ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
   }
 }
 
 void SysModFiles::loop10s() {
-  ui->callVarFun("drsize");
+  mdl->setValue("drsize", files->usedBytes());
 }
 
 bool SysModFiles::remove(const char * path) {
