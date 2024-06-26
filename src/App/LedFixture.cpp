@@ -88,8 +88,8 @@ void Fixture::projectAndMap() {
             Coord3D endPosAdjusted = (leds->endPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
             Coord3D midPosAdjusted = (leds->midPos).minimum(fixSize - Coord3D{1,1,1}); //not * 10
 
-            // mdl->setValue("fxStart", startPosAdjusted/10, rowNr); //rowNr
-            // mdl->setValue("fxEnd", endPosAdjusted/10, rowNr); //rowNr
+            // mdl->setValue("ledsStart", startPosAdjusted/10, rowNr); //rowNr
+            // mdl->setValue("ledsEnd", endPosAdjusted/10, rowNr); //rowNr
 
             if (pixel >= startPosAdjusted && pixel <= endPosAdjusted ) { //if pixel between start and end pos
 
@@ -413,10 +413,10 @@ void Fixture::projectAndMap() {
 
           ppf("projectAndMap leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d)\n", rowNr, leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds, nrOfMappings, nrOfPixels);
 
-          // mdl->setValueV("fxSize", rowNr, "%d x %d x %d = %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
+          // mdl->setValueV("ledsSize", rowNr, "%d x %d x %d = %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           char buf[32];
           print->fFormat(buf, sizeof(buf)-1,"%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
-          mdl->setValue("fxSize", JsonString(buf, JsonString::Copied), rowNr);
+          mdl->setValue("ledsSize", JsonString(buf, JsonString::Copied), rowNr);
           // web->sendResponseObject();
 
           ppf("projectAndMap leds[%d].size = %d + %d\n", rowNr, sizeof(Leds), leds->mappingTable.size()); //44

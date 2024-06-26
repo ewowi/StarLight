@@ -154,20 +154,14 @@ public:
       default: return false; 
     }}); //fixture
 
-    ui->initCoord3D(currentVar, "fixSize", eff->fixture.fixSize, 0, NUM_LEDS_Max, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case onSetValue:
-        mdl->setValue(var, eff->fixture.fixSize);
-        return true;
+    ui->initCoord3D(currentVar, "fixSize", &eff->fixture.fixSize, 0, NUM_LEDS_Max, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "Size");
         return true;
       default: return false;
     }});
 
-    ui->initNumber(currentVar, "fixCount", eff->fixture.nrOfLeds, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case onSetValue:
-        mdl->setValue(var, eff->fixture.nrOfLeds);
-        return true;
+    ui->initNumber(currentVar, "fixCount", &eff->fixture.nrOfLeds, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "Count");
         web->addResponseV(var["id"], "comment", "Max %d", NUM_LEDS_Max);
