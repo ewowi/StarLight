@@ -307,11 +307,11 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
             ppf("wsEvent deserializeJson failed with code %s\n", error.c_str());
             client->text("{\"success\":true}"); // we have to send something back otherwise WS connection closes
           } else {
-            bool isUiFun = !responseObject["onUI"].isNull();
+            bool isOnUI = !responseObject["onUI"].isNull();
             ui->processJson(responseObject); //adds to responseDoc / responseObject
 
             if (responseObject.size()) {
-              sendResponseObject(isUiFun?client:nullptr); //onUI only send to requesting client async response
+              sendResponseObject(isOnUI?client:nullptr); //onUI only send to requesting client async response
             }
             else {
               ppf("WS_EVT_DATA no responseDoc\n");

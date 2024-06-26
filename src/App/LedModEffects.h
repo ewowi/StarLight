@@ -128,7 +128,7 @@ public:
         return true;
       case onAddRow: {
         rowNr = fixture.listOfLeds.size();
-        // ppf("chFun addRow %s[%d]\n", mdl->varID(var), rowNr);
+        // ppf("fxTbl addRow %s[%d]\n", mdl->varID(var), rowNr);
 
         web->getResponseObject()["addRow"]["rowNr"] = rowNr;
 
@@ -136,7 +136,7 @@ public:
           fixture.listOfLeds.push_back(new Leds(fixture));
         return true; }
       case onDeleteRow: {
-        // ppf("chFun delrow %s[%d]\n", mdl->varID(var), rowNr);
+        // ppf("fxTbl delrow %s[%d]\n", mdl->varID(var), rowNr);
         //tbd: fade to black
         if (rowNr <fixture.listOfLeds.size()) {
           Leds *leds = fixture.listOfLeds[rowNr];
@@ -251,7 +251,7 @@ public:
             projection->controls(*leds, var);
             mdl->varPostDetails(var, rowNr);
           }
-          // ppf("chFun pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.listOfLeds.size());
+          // ppf("onChange pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.listOfLeds.size());
 
           fixture.doMap = true;
         }
@@ -275,14 +275,14 @@ public:
         if (rowNr < fixture.listOfLeds.size()) {
           fixture.listOfLeds[rowNr]->startPos = mdl->getValue(var, rowNr).as<Coord3D>();
 
-          ppf("fxStart[%d] chFun %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->startPos.x, fixture.listOfLeds[rowNr]->startPos.y, fixture.listOfLeds[rowNr]->startPos.z);
+          ppf("fxStart[%d] onChange %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->startPos.x, fixture.listOfLeds[rowNr]->startPos.y, fixture.listOfLeds[rowNr]->startPos.z);
 
           fixture.listOfLeds[rowNr]->fadeToBlackBy();
           fixture.listOfLeds[rowNr]->doMap = true;
           fixture.doMap = true;
         }
         else {
-          ppf("fxStart[%d] chfun rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
+          ppf("fxStart[%d] onChange rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
         }
         return true;
       default: return false;
@@ -303,14 +303,14 @@ public:
         if (rowNr < fixture.listOfLeds.size()) {
           fixture.listOfLeds[rowNr]->midPos = mdl->getValue(var, rowNr).as<Coord3D>();
 
-          ppf("fxStart[%d] chFun %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->midPos.x, fixture.listOfLeds[rowNr]->midPos.y, fixture.listOfLeds[rowNr]->midPos.z);
+          ppf("fxStart[%d] onChange %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->midPos.x, fixture.listOfLeds[rowNr]->midPos.y, fixture.listOfLeds[rowNr]->midPos.z);
 
           fixture.listOfLeds[rowNr]->fadeToBlackBy();
           fixture.listOfLeds[rowNr]->doMap = true;
           fixture.doMap = true;
         }
         else {
-          ppf("fxStart[%d] chfun rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
+          ppf("fxStart[%d] onChange rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
         }
         return true;
       default: return false;
@@ -331,14 +331,14 @@ public:
         if (rowNr < fixture.listOfLeds.size()) {
           fixture.listOfLeds[rowNr]->endPos = mdl->getValue(var, rowNr).as<Coord3D>();
 
-          ppf("fxEnd[%d] chFun %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->endPos.x, fixture.listOfLeds[rowNr]->endPos.y, fixture.listOfLeds[rowNr]->endPos.z);
+          ppf("fxEnd[%d] onChange %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->endPos.x, fixture.listOfLeds[rowNr]->endPos.y, fixture.listOfLeds[rowNr]->endPos.z);
 
           fixture.listOfLeds[rowNr]->fadeToBlackBy();
           fixture.listOfLeds[rowNr]->doMap = true;
           fixture.doMap = true;
         }
         else {
-          ppf("fxEnd[%d] chfun rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
+          ppf("fxEnd[%d] onChange rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
         }
         return true;
       default: return false;

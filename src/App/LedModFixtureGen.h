@@ -492,7 +492,7 @@ public:
         //   print->printJson("OPTIONS", options1);
         return true; }
       case onChange:
-        this->fixtureVarChFun();
+        this->fixtureVarOnChange();
         return true;
       default: return false; 
     }}); //fixtureVar
@@ -591,7 +591,7 @@ public:
   }
 
   //generate dynamic html for fixture controls
-  void fixtureVarChFun() {
+  void fixtureVarOnChange() {
 
     JsonObject fixtureVar = mdl->findVar("fixtureVar");
 
@@ -656,7 +656,7 @@ public:
       case onChange: {
 
         char fileName[32]; 
-        generateChFun(var, fileName);
+        generateOnChange(var, fileName);
 
         //set fixture in fixture module
         ui->callVarFun("fixture", UINT8_MAX, onUI); //rebuild options
@@ -910,7 +910,7 @@ public:
   }
  
   //generate the F-ixture.json file
-  void generateChFun(JsonObject var, char * fileName) {
+  void generateOnChange(JsonObject var, char * fileName) {
 
     JsonObject fixtureVar = mdl->findVar("fixtureVar");
     stackUnsigned8 fgValue = fixtureVar["value"];

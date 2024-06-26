@@ -109,7 +109,7 @@ void SysModPins::setup() {
     case onChange: {
       bool pinValue = var["value"];
 
-      ppf("chFun pin19 %s:=%d\n", mdl->varID(var), pinValue);
+      ppf("onChange pin19 %s:=%d\n", mdl->varID(var), pinValue);
 
       // softhack007: writing these pins on S3/C3/S2 may cause major problems (crashes included)
       digitalWrite(19, pinValue?HIGH:LOW);

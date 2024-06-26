@@ -198,7 +198,7 @@ public:
       }
     }
     else { //do onChange on existing value
-      //no call of chFun for buttons otherwise all buttons will be fired which is highly undesirable
+      //no call of onChange for buttons otherwise all buttons will be fired which is highly undesirable
       if (strcmp(type,"button") != 0 && varFun ) { //!isPointer because 0 is also a value then && (!isPointer || value)
         bool onChangeExists = false;
         if (var["value"].is<JsonArray>()) {
@@ -212,7 +212,7 @@ public:
         }
 
         if (onChangeExists)
-          ppf("initVarAndUpdate chFun init %s[x] <- %s\n", mdl->varID(var), var["value"].as<String>().c_str());
+          ppf("initVarAndUpdate onChange init %s[x] <- %s\n", mdl->varID(var), var["value"].as<String>().c_str());
       }
     }
 
@@ -283,7 +283,7 @@ public:
   void processJson(JsonVariant json); //must be Variant, not object for jsonhandler
 
   //called to rebuild selects and tables (tbd: also label and comments is done again, that is not needed)
-  // void processUiFun(const char * id);
+  // void processOnUI(const char * id);
 
   void setLabel(JsonObject var, const char * text) {
     web->addResponse(var["id"], "label", text);

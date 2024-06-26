@@ -140,7 +140,7 @@ function makeWS() {
             gId("vApp").value = appName(); //tbd: should be set by server
 
             //send request for onUI
-            flushUIFunCommands();
+            flushOnUICommands();
           }
           else
             console.log("html of module already generated", json);
@@ -544,7 +544,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       if (variable.fun >= 0) { //>=0 as element in var
         onUICommands.push(variable.id);
         if (onUICommands.length > 4) { //every 4 vars (to respect responseDoc size) check WS_EVT_DATA info
-          flushUIFunCommands();
+          flushOnUICommands();
         }
         variable.fun = -1; //requested
       }
@@ -587,7 +587,7 @@ function genTableRowHTML(json, parentNode = null, rowNr = UINT8_MAX) {
     tdNode.appendChild(buttonNode);
     trNode.appendChild(tdNode);
   }
-  flushUIFunCommands();
+  flushOnUICommands();
   if (variable.id == "insTbl")
     setInstanceTableColumns();
 }
@@ -631,7 +631,7 @@ function receiveData(json) {
         let variable = value.var;
         let rowNr = value.rowNr == null?UINT8_MAX:value.rowNr;
         let nodeId = variable.id + ((rowNr != UINT8_MAX)?"#" + rowNr:"");
-        //if var object with .n, create .n (e.g. see fx.onChange (setEffect) and fixtureGenChFun, tbd: )
+        //if var object with .n, create .n (e.g. see fx.onChange (setEffect) and fixtureGenonChange, tbd: )
         ppf("receiveData details", key, variable.id, nodeId, rowNr);
         if (gId(nodeId + "_n")) gId(nodeId + "_n").remove(); //remove old ndiv
 
@@ -646,7 +646,7 @@ function receiveData(json) {
           gId(nodeId).parentNode.appendChild(ndivNode);
           createHTML(modelVar.n, ndivNode, rowNr);
         }
-        flushUIFunCommands(); //make sure onUIs of new elements are called
+        flushOnUICommands(); //make sure onUIs of new elements are called
       }
       else if (key == "addRow") { //update the row of a table
         ppf("receiveData", key, value);
@@ -912,7 +912,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
           newRowNr++;
         }
 
-        flushUIFunCommands(); //make sure onUIs of new elements are called
+        flushOnUICommands(); //make sure onUIs of new elements are called
 
         if (variable.id == "insTbl")
           setInstanceTableColumns();
@@ -958,7 +958,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
           changeHTML(variable, {"value":null, "chk":"column"}, newRowNr); //new row cell has no value
       }
 
-      flushUIFunCommands(); //make sure onUIs of new elements are called
+      flushOnUICommands(); //make sure onUIs of new elements are called
 
     }
     else if (node.parentNode.parentNode.nodeName.toLocaleLowerCase() == "td" && Array.isArray(commandJson.value)) { //table column, called for each column cell!!!
@@ -1171,11 +1171,11 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
   }
 } //changeHTML
 
-function flushUIFunCommands() {
+function flushOnUICommands() {
   if (onUICommands.length > 0) { //if something to flush
     var command = {};
     command.onUI = onUICommands; //ask to run onUI for vars (to add the options)
-    // console.log("flushUIFunCommands", command);
+    // console.log("flushOnUICommands", command);
     requestJson(command);
     onUICommands = [];
   }
