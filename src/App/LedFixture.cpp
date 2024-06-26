@@ -86,6 +86,7 @@ void Fixture::projectAndMap() {
             //set start and endPos between bounderies of fixture
             Coord3D startPosAdjusted = (leds->startPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
             Coord3D endPosAdjusted = (leds->endPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
+            Coord3D midPosAdjusted = (leds->midPos).minimum(fixSize - Coord3D{1,1,1}); //not * 10
 
             // mdl->setValue("fxStart", startPosAdjusted/10, rowNr); //rowNr
             // mdl->setValue("fxEnd", endPosAdjusted/10, rowNr); //rowNr
@@ -108,9 +109,7 @@ void Fixture::projectAndMap() {
 
               mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
 
-              Coord3D proCenter = mdl->getValue("proCenter", rowNr);
-
-              if (projection) projection->adjustSizeAndPixel(sizeAdjusted, pixelAdjusted, proCenter);
+              if (projection) projection->adjustSizeAndPixel(sizeAdjusted, pixelAdjusted, midPosAdjusted);
 
               if (leds->size == Coord3D{0,0,0}) { // first
                 ppf("projectAndMap first leds[%d] size:%d,%d,%d s:%d,%d,%d e:%d,%d,%d\n", rowNr, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, startPosAdjusted.x, startPosAdjusted.y, startPosAdjusted.z, endPosAdjusted.x, endPosAdjusted.y, endPosAdjusted.z);
@@ -123,7 +122,7 @@ void Fixture::projectAndMap() {
               switch (leds->effectDimension) {
                 case _1D: //effectDimension 1DxD
                   if (leds->size == Coord3D{0,0,0}) { // first
-                    leds->size.x = sizeAdjusted.distance(proCenter);
+                    leds->size.x = sizeAdjusted.distance(midPosAdjusted);
                     leds->size.y = 1;
                     leds->size.z = 1;
                   }
@@ -132,7 +131,7 @@ void Fixture::projectAndMap() {
 
                   if (projection) projection->adjustMapped(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10);
 
-                  mapped.x = mapped.distance(proCenter);
+                  mapped.x = mapped.distance(midPosAdjusted);
                   mapped.y = 0;
                   mapped.z = 0;
 
