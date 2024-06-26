@@ -255,6 +255,8 @@ struct PhysMap {
 
 }; // 4 bytes
 
+class Projection; //forward for cached virtual class methods!
+
 class Leds {
 
 public:
@@ -267,6 +269,12 @@ public:
 
   uint16_t fx = -1;
   unsigned8 projectionNr = -1;
+
+  //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
+  void (Projection::*adjustSizeAndPixelCached)(Coord3D &, Coord3D &, Coord3D &) = nullptr;
+  void (Projection::*adjustMappedCached)(Coord3D &, Coord3D, Coord3D, Coord3D) = nullptr;
+  void (Projection::*adjustXYZCached)(Leds &, Coord3D &) = nullptr;
+
   unsigned8 effectDimension = -1;
   unsigned8 projectionDimension = -1;
 

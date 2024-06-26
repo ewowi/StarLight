@@ -247,6 +247,12 @@ public:
           if (proValue < fixture.projections.size()) {
             Projection* projection = fixture.projections[proValue];
 
+            //setting cached virtual class methods! (By chatGPT so no source and don't understand how it works - scary!)
+            //   (don't know how it works as it is not refering to derived classes, just to the base class but later it calls the derived class method)
+            leds->adjustMappedCached = &Projection::adjustMapped;
+            leds->adjustSizeAndPixelCached = &Projection::adjustSizeAndPixel;
+            leds->adjustXYZCached = &Projection::adjustXYZ;
+
             mdl->varPreDetails(var, rowNr); //set all positive var N orders to negative
             projection->controls(*leds, var);
             mdl->varPostDetails(var, rowNr);
