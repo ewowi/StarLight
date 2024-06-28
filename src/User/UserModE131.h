@@ -135,8 +135,7 @@ public:
     }
   }
 
-  void loop() {
-    // SysModule::loop();
+  void loop20ms() {
     if(!e131Created) {
       return;
     }

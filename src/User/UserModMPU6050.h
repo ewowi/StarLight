@@ -92,7 +92,7 @@ public:
     mdl->setValue("mtReady", motionTrackingReady);
   }
 
-  void loop() {
+  void loop20ms() { // loop(): 700/s, loop20ms: 3000/s, loop1s(): 5500/s, disabled: 6000/s
     // mpu.getMotion6(&accell.x, &accell.y, &accell.z, &gyro.x, &gyro.y, &gyro.z);
     // // display tab-separated accel/gyro x/y/z values
     // ppf("mpu6050 %d,%d,%d %d,%d,%d\n", accell.x, accell.y, accell.z, gyro.x, gyro.y, gyro.z);

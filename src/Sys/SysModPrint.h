@@ -23,7 +23,7 @@ public:
 
   SysModPrint();
   void setup();
-  void loop();
+  void loop20ms();
 
   //generic print function
   void printf(const char * format, ...);

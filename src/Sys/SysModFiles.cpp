@@ -107,8 +107,7 @@ void SysModFiles::setup() {
 
 }
 
-void SysModFiles::loop() {
-  // SysModule::loop();
+void SysModFiles::loop20ms() {
 
   if (filesChanged) {
     filesChanged = false;

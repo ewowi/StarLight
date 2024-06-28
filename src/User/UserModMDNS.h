@@ -29,10 +29,6 @@ public:
 
   }
 
-  void loop() {
-    // SysModule::loop();
-  }
-
   void onOffChanged() {
     if (mdls->isConnected && isEnabled) {
 

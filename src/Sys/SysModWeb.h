@@ -60,7 +60,7 @@ public:
   SysModWeb();
 
   void setup();
-  void loop();
+  void loop20ms();
   void loop1s();
 
   void reboot();

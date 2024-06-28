@@ -194,7 +194,7 @@ public:
 
   SysModModel();
   void setup();
-  void loop();
+  void loop20ms();
   
   //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
   void cleanUpModel(JsonObject parent = JsonObject(), bool oPos = true, bool ro = false);

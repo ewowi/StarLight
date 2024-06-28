@@ -71,8 +71,7 @@ void SysModModel::setup() {
   #endif //STARBASE_DEVMODE
 }
 
-  void SysModModel::loop() {
-  // SysModule::loop();
+void SysModModel::loop20ms() {
 
   if (!cleanUpModelDone) { //do after all setups
     cleanUpModelDone = true;

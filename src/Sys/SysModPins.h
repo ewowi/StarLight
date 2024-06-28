@@ -35,7 +35,7 @@ public:
 
   SysModPins();
   void setup();
-  void loop();
+  void loop20ms();
 
   void allocatePin(unsigned8 pinNr, const char * owner, const char * details);
   void deallocatePin(unsigned8 pinNr, const char * owner);

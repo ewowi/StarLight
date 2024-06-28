@@ -45,7 +45,7 @@ public:
   //serve index.htm
   void setup();
 
-  void loop();
+  void loop20ms();
   void loop1s();
 
   //order: order%4 determines the column (WIP)

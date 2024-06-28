@@ -211,8 +211,6 @@ void SysModSystem::setup() {
 }
 
 void SysModSystem::loop() {
-  // SysModule::loop();
-
   loopCounter++;
   now = millis() + timebase;
 }

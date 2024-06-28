@@ -334,8 +334,7 @@ public:
     }
   }
 
-  void loop() {
-    // SysModule::loop();
+  void loop20ms() { //20 ms instead of loop() tripples the loops/sec!
 
     handleNotifications();
 

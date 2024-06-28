@@ -119,7 +119,7 @@ void SysModPins::setup() {
 #endif
 }
 
-void SysModPins::loop() {
+void SysModPins::loop20ms() {
 
   if (pinsChanged) {
     pinsChanged = false;

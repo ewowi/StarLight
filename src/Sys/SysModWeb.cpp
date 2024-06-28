@@ -144,8 +144,7 @@ void SysModWeb::setup() {
 
 }
 
-void SysModWeb::loop() {
-  // SysModule::loop();
+void SysModWeb::loop20ms() {
 
   //currently not used as each variable is send individually
   if (this->modelUpdated) {

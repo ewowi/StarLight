@@ -76,8 +76,7 @@ void SysModPrint::setup() {
   ui->initTextArea(parentVar, "log");
 }
 
-void SysModPrint::loop() {
-  // Module::loop();
+void SysModPrint::loop20ms() {
   if (!setupsDone) setupsDone = true;
 }
 

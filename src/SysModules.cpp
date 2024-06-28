@@ -92,7 +92,7 @@ void SysModules::setup() {
 
 void SysModules::loop() {
   // bool oneSec = false;
-  bool tenSec = false;
+  // bool tenSec = false;
   // if (millis() - oneSecondMillis >= 1000) {
   //   oneSecondMillis = millis();
   //   oneSec = true;
@@ -104,6 +104,10 @@ void SysModules::loop() {
   for (SysModule *module:modules) {
     if (module->isEnabled && module->success) {
       module->loop();
+      if (millis() - module->twentyMsMillis >= 20) {
+        module->twentyMsMillis = millis();
+        module->loop20ms();
+      }
       if (millis() - module->oneSecondMillis >= 1000) {
         module->oneSecondMillis = millis();
         module->loop1s();

@@ -53,8 +53,7 @@ void SysModUI::setup() {
   }});
 }
 
-void SysModUI::loop() {
-  // SysModule::loop();
+void SysModUI::loop20ms() { //never more then 50 times a second!
 
   for (VarLoop &varLoop : loopFunctions) {
     if (millis() - varLoop.lastMillis >= varLoop.var["interval"].as<int>()) {
