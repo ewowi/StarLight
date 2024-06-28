@@ -43,7 +43,7 @@ public:
   void dirToJson(JsonArray array, bool nameOnly = false, const char * filter = nullptr);
 
   //get back the name of a file based on the sequence
-  bool seqNrToName(char * fileName, size_t seqNr);
+  bool seqNrToName(char * fileName, size_t seqNr, const char * filter = nullptr);
 
   //reads file and load it in json
   //name is copied from WLED but better to call it readJsonFrom file

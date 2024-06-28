@@ -270,17 +270,26 @@ function preview3D(canvasNode, buffer) {
         //light up the cube
         let headerBytes = 4;
         var i = 0;
+        let rgb1B = jsonValues.pview.nrOfLeds == buffer.length - headerBytes; //1-byte rgb
+        // console.log(jsonValues.pview.nrOfLeds, buffer.length);
         if (jsonValues.pview.outputs) {
           // console.log("preview3D jsonValues", jsonValues.pview);
           for (var output of jsonValues.pview.outputs) {
             if (output.leds) {
               for (var led of output.leds) {
                 if (i < scene.children.length) {
-                  // scene.children[i].visible = buffer[headerBytes + i*3] + buffer[headerBytes + i*3 + 1] + buffer[headerBytes + i*3 + 2] > 10; //do not show blacks
-                  // if (scene.children[i].visible) {
-                    scene.children[i].material.color = new THREE.Color(`${buffer[headerBytes + i*3]/255}`, `${buffer[headerBytes + i*3 + 1]/255}`, `${buffer[headerBytes + i*3 + 2]/255}`);
-                    // scene.children[i].geometry.setAtttribute("radius", buffer[4] / 30);
-                  // }
+                  if (rgb1B) {
+                    let bte = buffer[headerBytes + i];
+                    //decode rgb from 8 bits: 3 for red, 3 for green, 2 for blue
+                    scene.children[i].material.color = new THREE.Color(`${((bte & 0xE0) >> 5)*32/256}`, `${((bte & 0x1C) >> 2)*32/256}`, `${(bte & 0x03)*64/256}`);
+                  }
+                  else {
+                    // scene.children[i].visible = buffer[headerBytes + i*3] + buffer[headerBytes + i*3 + 1] + buffer[headerBytes + i*3 + 2] > 10; //do not show blacks
+                    // if (scene.children[i].visible) {
+                      scene.children[i].material.color = new THREE.Color(`${buffer[headerBytes + i*3]/255}`, `${buffer[headerBytes + i*3 + 1]/255}`, `${buffer[headerBytes + i*3 + 2]/255}`);
+                      // scene.children[i].geometry.setAtttribute("radius", buffer[4] / 30);
+                    // }
+                  }
                 }
                 i++;
               }

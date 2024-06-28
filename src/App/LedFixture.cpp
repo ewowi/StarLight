@@ -20,7 +20,7 @@
 void Fixture::projectAndMap() {
   char fileName[32] = "";
 
-  if (files->seqNrToName(fileName, fixtureNr)) { // get the fixture.json
+  if (files->seqNrToName(fileName, fixtureNr, "F_")) { // get the fixture.json
     StarJson starJson(fileName); //open fileName for deserialize
 
     // reset leds

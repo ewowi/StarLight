@@ -185,25 +185,27 @@ void SysModFiles::dirToJson(JsonArray array, bool nameOnly, const char * filter)
   root.close();
 }
 
-bool SysModFiles::seqNrToName(char * fileName, size_t seqNr) {
+bool SysModFiles::seqNrToName(char * fileName, size_t seqNr, const char * filter) {
 
   File root = LittleFS.open("/");
   File file = root.openNextFile();
 
   size_t counter = 0;
   while (file) {
-    if (counter == seqNr) {
-      // ppf("seqNrToName: %d %s %d\n", seqNr, file.name(), file.size());
-      root.close();
-      strncat(fileName, "/", 31); //add root prefix, fileName is 32 bytes but sizeof doesn't know so cheating
-      strncat(fileName, file.name(), 31);
-      file.close();
-      return true;
-    }
+    if (filter == nullptr || strstr(file.name(), filter) != nullptr) {
+      if (counter == seqNr) {
+        // ppf("seqNrToName: %d %s %d\n", seqNr, file.name(), file.size());
+        root.close();
+        strncat(fileName, "/", 31); //add root prefix, fileName is 32 bytes but sizeof doesn't know so cheating
+        strncat(fileName, file.name(), 31);
+        file.close();
+        return true;
+      }
 
+      counter++;
+    }
     file.close();
     file = root.openNextFile();
-    counter++;
   }
 
   root.close();

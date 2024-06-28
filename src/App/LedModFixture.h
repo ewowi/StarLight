@@ -15,6 +15,7 @@ public:
 
   uint8_t viewRotation = 0;
   uint8_t bri = 10;
+  bool rgb1B = true;
 
   LedModFixture() :SysModule("Fixture") {};
 
@@ -96,12 +97,17 @@ public:
           // send leds preview to clients
           for (size_t i = 0; i < eff->fixture.nrOfLeds; i++)
           {
-            buffer[headerBytes + i*3] = eff->fixture.ledsP[i].red;
-            buffer[headerBytes + i*3+1] = eff->fixture.ledsP[i].green;
-            buffer[headerBytes + i*3+2] = eff->fixture.ledsP[i].blue;
+            if (rgb1B) {
+              //encode rgb in 8 bits: 3 for red, 3 for green, 2 for blue
+              buffer[headerBytes + i] = (eff->fixture.ledsP[i].red & 0xE0) | ((eff->fixture.ledsP[i].green & 0xE0)>>3) | (eff->fixture.ledsP[i].blue >> 6);
+            }
+            else {
+              buffer[headerBytes + i*3] = eff->fixture.ledsP[i].red;
+              buffer[headerBytes + i*3+1] = eff->fixture.ledsP[i].green;
+              buffer[headerBytes + i*3+2] = eff->fixture.ledsP[i].blue;
+            }
           }
-
-        }, headerBytes + eff->fixture.nrOfLeds * 3, true);
+        }, headerBytes + eff->fixture.nrOfLeds * (rgb1B?1:3), true);
         return true;
       }
       default: return false;
@@ -121,6 +127,13 @@ public:
         #endif
         return true; }
       default: return false; 
+    }});
+
+    ui->initCheckBox(currentVar, "rgb1B", &rgb1B, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onUI:
+        ui->setLabel(var, "1-byte RGB");
+        return true;
+      default: return false;
     }});
 
     currentVar = ui->initSelect(parentVar, "fixture", &eff->fixture.fixtureNr, false ,[](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
