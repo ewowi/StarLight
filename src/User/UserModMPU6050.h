@@ -29,7 +29,7 @@ public:
   VectorFloat gravityVector;
 
   UserModMPU6050() :SysModule("Motion Tracking") {
-    // isEnabled = false;
+    isEnabled = false; //need to enable after fresh setup
   };
 
   void setup() {
@@ -57,7 +57,7 @@ public:
       default: return false;
     }}); 
 
-    if (pins->initI2S()) {
+    if (pinsM->initI2S()) {
       mpu.initialize();
 
       // verify connection

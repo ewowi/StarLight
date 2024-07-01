@@ -500,9 +500,9 @@ public:
       if (fixture.doAllocPins) {
         unsigned pinNr = 0;
 
-        for (PinObject &pinObject: pins->pinObjects) {
+        for (PinObject &pinObject: pinsM->pinObjects) {
 
-          if (pins->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in projectAndMap)
+          if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in projectAndMap)
             //dirty trick to decode nrOfLedsPerPin
             char details[32];
             strcpy(details, pinObject.details); //copy as strtok messes with the string

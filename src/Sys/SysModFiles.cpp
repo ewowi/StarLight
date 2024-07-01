@@ -201,7 +201,6 @@ bool SysModFiles::seqNrToName(char * fileName, size_t seqNr, const char * filter
         file.close();
         return true;
       }
-
       counter++;
     }
     file.close();

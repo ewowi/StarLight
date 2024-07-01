@@ -250,7 +250,7 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
     getResponseObject()["sysInfo"]["pinTypes"].to<JsonArray>();
     JsonArray pinTypes = getResponseObject()["sysInfo"]["pinTypes"];
     for (int i=0; i<NUM_DIGITAL_PINS; i++) {
-      pinTypes.add(pins->getPinType(i));
+      pinTypes.add(pinsM->getPinType(i));
     }
 
     sendResponseObject(client);

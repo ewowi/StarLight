@@ -126,4 +126,4 @@ public:
   }
 };
 
-extern SysModPins *pins;
+extern SysModPins *pinsM;

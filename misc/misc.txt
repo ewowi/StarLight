@@ -1,4 +1,9 @@
 
+
+WebHook to MM discord
+https://discord.com/api/webhooks/1229821142479536179/UeO3ryPqUyHABYTAuGtHZK6t7yghM0ZETN0LUYpg32KBleGhm-zvaYDzkyYjiqaVqt0T/github
+
+
 git log v0.14.1-beta.30..HEAD  --pretty=format:'%ad,%<(20)%an,%s' --date=short
 
 

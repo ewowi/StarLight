@@ -29,7 +29,7 @@ SysModSystem *sys;
 SysModFiles *files;
 SysModModel *mdl;
 SysModNetwork *net;
-SysModPins *pins;
+SysModPins *pinsM;
 SysModInstances *instances;
 UserModMDNS *mdns;
 #ifdef STARLIGHT
@@ -60,6 +60,10 @@ UserModMDNS *mdns;
   #include "User/UserModMPU6050.h"
   UserModMPU6050 *mpu6050;
 #endif
+#ifdef STARBASE_USERMOD_LIVE
+  #include "User/UserModLive.h"
+  UserModLive *liveM;
+#endif
 #ifdef STARLIGHT_USERMOD_WLEDAUDIO
   #include "User/UserModWLEDAudio.h"
   UserModWLEDAudio *wledAudioMod;
@@ -76,7 +80,7 @@ void setup() {
   web = new SysModWeb();
   ui = new SysModUI();
   sys = new SysModSystem();
-  pins = new SysModPins();
+  pinsM = new SysModPins();
   instances = new SysModInstances();
   mdns = new UserModMDNS();
   #ifdef STARLIGHT
@@ -99,6 +103,9 @@ void setup() {
   #ifdef STARBASE_USERMOD_MPU6050
     mpu6050 = new UserModMPU6050();
   #endif
+  #ifdef STARBASE_USERMOD_LIVE
+    liveM = new UserModLive();
+  #endif
   #ifdef STARLIGHT_USERMOD_WLEDAUDIO
     wledAudioMod = new UserModWLEDAudio();
   #endif
@@ -113,7 +120,7 @@ void setup() {
   #endif
   mdls->add(files);
   mdls->add(sys);
-  mdls->add(pins);
+  mdls->add(pinsM);
   mdls->add(print);
   mdls->add(web);
   mdls->add(net);
@@ -141,6 +148,9 @@ void setup() {
   #endif
   mdls->add(mdns); //no ui
   mdls->add(instances);
+  #ifdef STARBASE_USERMOD_LIVE
+    mdls->add(liveM);
+  #endif
 
   //do not add mdls itself as it does setup and loop for itself!!! (it is the orchestrator)
   mdls->setup();

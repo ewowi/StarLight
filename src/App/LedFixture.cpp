@@ -47,9 +47,9 @@ void Fixture::projectAndMap() {
     //deallocate all led pins
     if (doAllocPins) {
       stackUnsigned8 pinNr = 0;
-      for (PinObject &pinObject: pins->pinObjects) {
+      for (PinObject &pinObject: pinsM->pinObjects) {
         if (strcmp(pinObject.owner, "Leds") == 0)
-          pins->deallocatePin(pinNr, "Leds");
+          pinsM->deallocatePin(pinNr, "Leds");
         pinNr++;
       }
     }
@@ -323,9 +323,9 @@ void Fixture::projectAndMap() {
 
         if (doAllocPins) {
           //check if pin already allocated, if so, extend range in details
-          PinObject pinObject = pins->pinObjects[currPin];
+          PinObject pinObject = pinsM->pinObjects[currPin];
           char details[32] = "";
-          if (pins->isOwner(currPin, "Leds")) { //if owner
+          if (pinsM->isOwner(currPin, "Leds")) { //if owner
 
             char * after = strtok((char *)pinObject.details, "-");
             if (after != NULL ) {
@@ -338,15 +338,15 @@ void Fixture::projectAndMap() {
               ppf("pins extend leds %d: %s\n", currPin, details);
               //tbd: more check
 
-              strncpy(pins->pinObjects[currPin].details, details, sizeof(PinObject::details)-1);  
-              pins->pinsChanged = true;
+              strncpy(pinsM->pinObjects[currPin].details, details, sizeof(PinObject::details)-1);  
+              pinsM->pinsChanged = true;
             }
           }
           else {//allocate new pin
             //tbd: check if free
             print->fFormat(details, sizeof(details)-1, "%d-%d", prevIndexP, indexP - 1); //careful: LedModEffects:loop uses this to assign to FastLed
             // ppf("allocatePin %d: %s\n", currPin, details);
-            pins->allocatePin(currPin, "Leds", details);
+            pinsM->allocatePin(currPin, "Leds", details);
           }
 
           prevIndexP = indexP;
