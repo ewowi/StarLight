@@ -21,7 +21,7 @@ static float _totfps;
 static float fps = 0; //integer?
 static unsigned long frameCounter = 0;
 
-static void show1()
+static void show()
 {
     // SKIPPED: check nargs (must be 3 because arg[0] is self)
     long time2 = ESP.getCycleCount();
@@ -117,13 +117,13 @@ public:
 
     // ui->initButton
 
-    addExternal("show1", externalType::function, (void *)&show1);
-    addExternal("show2", externalType::function, (void *)&UserModLive::show2); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
+    addExternal("show", externalType::function, (void *)&show);
+    addExternal("showM", externalType::function, (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
 
   }
 
   //testing class functions instead of static
-  void show2() {
+  void showM() {
     long time2 = ESP.getCycleCount();
     // driver.showPixels(WAIT);
     frameCounter++;

@@ -1,4 +1,4 @@
-external void show2();
+external void showM();
 
 void main()
 {
@@ -8,7 +8,7 @@ void main()
     for(int i=0;i<10;i++)
     {
     }
-    show2();
+    showM();
     h++;
   }
 }

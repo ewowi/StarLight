@@ -420,7 +420,7 @@ void SysModWeb::sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fi
       for (auto loopClient:ws.getClients()) {
         if (!client || client == loopClient) {
           if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
-            if ((!isBinary || loopClient->queueLength() <= 3)) {
+            if (!isBinary || loopClient->queueLength() <= 3) {
               isBinary?loopClient->binary(wsBuf): loopClient->text(wsBuf);
               sendWsCounter++;
               if (isBinary)
