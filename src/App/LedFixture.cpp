@@ -128,6 +128,7 @@ void Fixture::projectAndMap() {
                                         sq(max(sizeAdjusted.z - midPosAdjusted.z, midPosAdjusted.z))) + 1;
                     leds->size.y = 1;
                     leds->size.z = 1;
+                    if (leds->projectionNr == p_Pinwheel) leds->size = sizeAdjusted; // Pinwheel temp fix
                   }
 
                   mapped = pixelAdjusted;
@@ -135,9 +136,11 @@ void Fixture::projectAndMap() {
                   //using cached virtual class methods!
                   if (projection) (projection->*leds->adjustMappedCached)(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10, midPosAdjusted);
 
-                  mapped.x = mapped.distance(midPosAdjusted);
-                  mapped.y = 0;
-                  mapped.z = 0;
+                  if (leds->projectionNr != p_Pinwheel) { //Pinwheel temp fix
+                    mapped.x = mapped.distance(midPosAdjusted);
+                    mapped.y = 0;
+                    mapped.z = 0;
+                  }
 
                   indexV = leds->XYZUnprojected(mapped);
                   break;
