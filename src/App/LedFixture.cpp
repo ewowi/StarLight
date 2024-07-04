@@ -123,7 +123,9 @@ void Fixture::projectAndMap() {
               switch (leds->effectDimension) {
                 case _1D: //effectDimension 1DxD
                   if (leds->size == Coord3D{0,0,0}) { // first
-                    leds->size.x = sizeAdjusted.distance(midPosAdjusted);
+                    leds->size.x = sqrt(sq(max(sizeAdjusted.x - midPosAdjusted.x, midPosAdjusted.x)) + 
+                                        sq(max(sizeAdjusted.y - midPosAdjusted.y, midPosAdjusted.y)) + 
+                                        sq(max(sizeAdjusted.z - midPosAdjusted.z, midPosAdjusted.z))) + 1;
                     leds->size.y = 1;
                     leds->size.z = 1;
                   }
