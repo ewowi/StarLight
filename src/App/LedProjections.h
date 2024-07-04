@@ -210,28 +210,134 @@ class RandomProjection: public Projection {
 
 class ReverseProjection: public Projection {
   const char * name() {return "Reverse WIP";}
-  //uint8_t dim() {return _1D;} // every projection should work for all D
   const char * tags() {return "💡";}
 
+  public:
+
+  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    // UI Variables
+    bool reverseX = mdl->getValue("reverse X");
+    bool reverseY = mdl->getValue("reverse Y");
+    bool reverseZ = mdl->getValue("reverse Z");
+
+    if (reverseX) pixelAdjusted.x = sizeAdjusted.x - pixelAdjusted.x - 1;
+    if (reverseY) pixelAdjusted.y = sizeAdjusted.y - pixelAdjusted.y - 1;
+    if (reverseZ) pixelAdjusted.z = sizeAdjusted.z - pixelAdjusted.z - 1;
+  }
+
   void controls(Leds &leds, JsonObject parentVar) {
+    ui->initCheckBox(parentVar, "reverse X", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
+        return true;
+      default: return false;
+    }});
+    if (leds.effectDimension >= _2D) {
+      ui->initCheckBox(parentVar, "reverse Y", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        case onChange:
+          leds.fixture->listOfLeds[rowNr]->doMap = true;
+          leds.fixture->doMap = true;
+          return true;
+        default: return false;
+      }});
+    }
+    if (leds.effectDimension == _3D) {
+      ui->initCheckBox(parentVar, "reverse Z", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        case onChange:
+          leds.fixture->listOfLeds[rowNr]->doMap = true;
+          leds.fixture->doMap = true;
+          return true;
+        default: return false;
+      }});
+    }
   }
 }; //ReverseProjection
 
 class MirrorProjection: public Projection {
   const char * name() {return "Mirror WIP";}
-  //uint8_t dim() {return _1D;} // every projection should work for all D
   const char * tags() {return "💡";}
 
+  public:
+
+  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    // UI Variables
+    bool mirrorX = mdl->getValue("mirror X");
+    bool mirrorY = mdl->getValue("mirror Y");
+    bool mirrorZ = mdl->getValue("mirror Z");
+
+    if (mirrorX) {
+      if (pixelAdjusted.x >= sizeAdjusted.x / 2) pixelAdjusted.x = sizeAdjusted.x - 1 - pixelAdjusted.x;
+      sizeAdjusted.x = (sizeAdjusted.x + 1) / 2;
+    }
+    if (mirrorY) {
+      if (pixelAdjusted.y >= sizeAdjusted.y / 2) pixelAdjusted.y = sizeAdjusted.y - 1 - pixelAdjusted.y;
+      sizeAdjusted.y = (sizeAdjusted.y + 1) / 2;
+    }
+    if (mirrorZ) {
+      if (pixelAdjusted.z >= sizeAdjusted.z / 2) pixelAdjusted.z = sizeAdjusted.z - 1 - pixelAdjusted.z;
+      sizeAdjusted.z = (sizeAdjusted.z + 1) / 2;
+    }
+}
+
   void controls(Leds &leds, JsonObject parentVar) {
+    ui->initCheckBox(parentVar, "mirror X", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
+        return true;
+      default: return false;
+    }});
+    if (leds.projectionDimension >= _2D) {
+      ui->initCheckBox(parentVar, "mirror Y", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        case onChange:
+          leds.fixture->listOfLeds[rowNr]->doMap = true;
+          leds.fixture->doMap = true;
+          return true;
+        default: return false;
+      }});
+    }
+    if (leds.projectionDimension == _3D) {
+      ui->initCheckBox(parentVar, "mirror Z", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        case onChange:
+          leds.fixture->listOfLeds[rowNr]->doMap = true;
+          leds.fixture->doMap = true;
+          return true;
+        default: return false;
+      }});
+    }
   }
 }; //MirrorProjection
 
 class GroupingProjection: public Projection {
-  const char * name() {return "Grouping WIP";}
-  //uint8_t dim() {return _1D;} // every projection should work for all D
+  const char * name() {return "Grouping";}
   const char * tags() {return "💡";}
 
+  public:
+
+  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    // UI Variables
+    Coord3D grouping = mdl->getValue("Grouping");
+    grouping = grouping.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
+    if (grouping == Coord3D{1, 1, 1}) return;
+
+    pixelAdjusted.x = pixelAdjusted.x / grouping.x;
+    pixelAdjusted.y = pixelAdjusted.y / grouping.y;
+    pixelAdjusted.z = pixelAdjusted.z / grouping.z;
+
+    sizeAdjusted.x = (sizeAdjusted.x + grouping.x - 1) / grouping.x; // round up
+    sizeAdjusted.y = (sizeAdjusted.y + grouping.y - 1) / grouping.y;
+    sizeAdjusted.z = (sizeAdjusted.z + grouping.z - 1) / grouping.z;
+  }
+
   void controls(Leds &leds, JsonObject parentVar) {
+    ui->initCoord3D(parentVar, "Grouping", {1,1,1}, 0, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
+        return true;
+      default: return false;
+    }});
   }
 }; //GroupingProjection
 
@@ -243,6 +349,50 @@ class SpacingProjection: public Projection {
   void controls(Leds &leds, JsonObject parentVar) {
   }
 }; //SpacingProjection
+
+class TransposeProjection: public Projection {
+  const char * name() {return "Transpose";}
+  const char * tags() {return "💡";}
+
+  public:
+
+  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    // UI Variables
+    bool transposeXY = mdl->getValue("transpose XY");
+    bool transposeXZ = mdl->getValue("transpose XZ");
+    bool transposeYZ = mdl->getValue("transpose YZ");
+
+    if (transposeXY) { int temp = pixelAdjusted.x; pixelAdjusted.x = pixelAdjusted.y; pixelAdjusted.y = temp; }
+    if (transposeXZ) { int temp = pixelAdjusted.x; pixelAdjusted.x = pixelAdjusted.z; pixelAdjusted.z = temp; }
+    if (transposeYZ) { int temp = pixelAdjusted.y; pixelAdjusted.y = pixelAdjusted.z; pixelAdjusted.z = temp; }
+  }
+
+  void controls(Leds &leds, JsonObject parentVar) {
+    ui->initCheckBox(parentVar, "transpose XY", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->listOfLeds[rowNr]->doMap = true;
+        leds.fixture->doMap = true;
+        return true;
+      default: return false;
+    }});
+    if (leds.effectDimension == _3D) {
+      ui->initCheckBox(parentVar, "transpose XZ", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        case onChange:
+          leds.fixture->listOfLeds[rowNr]->doMap = true;
+          leds.fixture->doMap = true;
+          return true;
+        default: return false;
+      }});
+      ui->initCheckBox(parentVar, "transpose YZ", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        case onChange:
+          leds.fixture->listOfLeds[rowNr]->doMap = true;
+          leds.fixture->doMap = true;
+          return true;
+        default: return false;
+      }});
+    }
+  }
+}; //TransposeProjection
 
 class KaleidoscopeProjection: public Projection {
   const char * name() {return "Kaleidoscope WIP";}
