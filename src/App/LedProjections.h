@@ -30,33 +30,30 @@ class DefaultProjection: public Projection {
 
 class MultiplyProjection: public Projection {
   const char * name() {return "Multiply";}
-  //uint8_t dim() {return _1D;} // every projection should work for all D
   const char * tags() {return "💫";}
 
-  public: //to use in Preset1Projection
+  public:
 
   void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    // UI Variables
     leds.sharedProData.begin();
-    Coord3D proMulti       = leds.sharedProData.read<Coord3D>(); //mirror not needed here
-    //promulti can be 0,0,0 but /= protects from /div0
-    sizeAdjusted /= proMulti; sizeAdjusted = sizeAdjusted.maximum(Coord3D{1,1,1}); //size min 1,1,1
-    midPosAdjusted /= proMulti;
-    pixelAdjusted = pixelAdjusted%sizeAdjusted; // pixel % size
-    // ppf("Multiply %d,%d,%d\n", leds->size.x, leds->size.y, leds->size.z);
-  }
+    Coord3D proMulti = leds.sharedProData.read<Coord3D>();
+    bool    mirror   = leds.sharedProData.read<bool>();
 
-  void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
-    // if mirrored find the indexV of the mirrored pixel
-    leds.sharedProData.begin();
-    Coord3D proMulti       = leds.sharedProData.read<Coord3D>(); //proMulti not needed here, but need to read it to get mirror
-    bool mirror            = leds.sharedProData.read<bool>();
+    proMulti = proMulti.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
+    if (proMulti == Coord3D{1, 1, 1}) return;      // No need to adjust if proMulti is {1, 1, 1}
+    
+    sizeAdjusted = (sizeAdjusted + proMulti - Coord3D({1,1,1})) / proMulti; // Round up
+    midPosAdjusted /= proMulti;
 
     if (mirror) {
-      Coord3D mirrors = pixelAdjusted / sizeAdjusted; //place the pixel in the right quadrant
-      if (mirrors.x %2 != 0) mapped.x = sizeAdjusted.x - 1 - mapped.x;
-      if (mirrors.y %2 != 0) mapped.y = sizeAdjusted.y - 1 - mapped.y;
-      if (mirrors.z %2 != 0) mapped.z = sizeAdjusted.z - 1 - mapped.z;
+      Coord3D mirrors = pixelAdjusted / sizeAdjusted; // Place the pixel in the right quadrant
+      pixelAdjusted = pixelAdjusted % sizeAdjusted;
+      if (mirrors.x %2 != 0) pixelAdjusted.x = sizeAdjusted.x - 1 - pixelAdjusted.x;
+      if (mirrors.y %2 != 0) pixelAdjusted.y = sizeAdjusted.y - 1 - pixelAdjusted.y;
+      if (mirrors.z %2 != 0) pixelAdjusted.z = sizeAdjusted.z - 1 - pixelAdjusted.z;
     }
+    else pixelAdjusted = pixelAdjusted % sizeAdjusted;
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
@@ -64,9 +61,6 @@ class MultiplyProjection: public Projection {
     Coord3D *proMulti = leds.sharedProData.write<Coord3D>({2,2,1});
     bool *mirror = leds.sharedProData.write<bool>(false);
     ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case onUI:
-        ui->setLabel(var, "MultiplyX");
-        return true;
       case onChange:
         if (rowNr < leds.fixture->listOfLeds.size()) {
           leds.fixture->listOfLeds[rowNr]->triggerMapping();
@@ -180,11 +174,6 @@ class Preset1Projection: public Projection {
   void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     MultiplyProjection mp;
     mp.adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
-  }
-
-  void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
-    MultiplyProjection mp;
-    mp.adjustMapped(leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted);
   }
 
   void adjustXYZ(Leds &leds, Coord3D &pixel) {
