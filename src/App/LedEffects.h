@@ -987,13 +987,13 @@ class Lines: public Effect {
 
     Coord3D pos = {0,0,0};
     if (vertical) {
-      pos.x = map(beat16( bpm), 0, UINT16_MAX, 0, leds.size.x-1 ); //instead of call%width
+      pos.x = map(beat16( bpm), 0, UINT16_MAX, 0, leds.size.x ); //instead of call%width
 
       for (pos.y = 0; pos.y <  leds.size.y; pos.y++) {
         leds[pos] = CHSV( sys->now/50, 255, 255);
       }
     } else {
-      pos.y = map(beat16( bpm), 0, UINT16_MAX, 0, leds.size.y-1 ); //instead of call%height
+      pos.y = map(beat16( bpm), 0, UINT16_MAX, 0, leds.size.y ); //instead of call%height
       for (pos.x = 0; pos.x <  leds.size.x; pos.x++) {
         leds[pos] = CHSV( sys->now/50, 255, 255);
       }
@@ -2525,3 +2525,27 @@ class SphereMoveEffect: public Effect {
     ui->initSlider(parentVar, "speed", leds.sharedData.write<uint8_t>(50), 0, 99);
   }
 }; // SphereMove3DEffect
+
+class PixelMapEffect: public Effect {
+  const char * name() {return "PixelMap";}
+  uint8_t dim() {return _3D;}
+  const char * tags() {return "💫";}
+
+  void loop(Leds &leds) {
+    //Binding of controls. Keep before binding of vars and keep in same order as in controls()
+    uint8_t x = leds.sharedData.read<uint8_t>();
+    uint8_t y = leds.sharedData.read<uint8_t>();
+    uint8_t z = leds.sharedData.read<uint8_t>();
+
+    leds.fill_solid(CRGB::Black);
+
+    Coord3D pos = {x, y, z};
+    leds[pos] = CHSV( sys->now/50 + random8(64), 255, 255);// ColorFromPalette(leds.palette,call, bri, LINEARBLEND);
+  }
+  
+  void controls(Leds &leds, JsonObject parentVar) {
+    ui->initSlider(parentVar, "x", leds.sharedData.write<uint8_t>(0), 0, leds.size.x - 1);
+    ui->initSlider(parentVar, "y", leds.sharedData.write<uint8_t>(0), 0, leds.size.y - 1);
+    ui->initSlider(parentVar, "z", leds.sharedData.write<uint8_t>(0), 0, leds.size.z - 1);
+  }
+}; // PixelMap

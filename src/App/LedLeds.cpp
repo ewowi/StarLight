@@ -26,6 +26,11 @@ void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, unsigned8 in
   fill_rainbow(targetArray, numToFill, initialhue, deltahue);
 }
 
+void Leds::triggerMapping() {
+    doMap = true; //specify which leds to remapp
+    fixture->doMap = true; //fixtgure will also be remapped
+  }
+
 unsigned16 Leds::XYZ(Coord3D pixel) {
 
   //as this is a call to a virtual function it reduces the theoretical (no show) speed by half, even if XYZ is not implemented

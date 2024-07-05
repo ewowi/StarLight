@@ -97,6 +97,7 @@ public:
     //3D
     effects.push_back(new RipplesEffect);
     effects.push_back(new SphereMoveEffect);
+    effects.push_back(new PixelMapEffect);
 
     //load projections
     fixture.projections.push_back(new NoneProjection);
@@ -203,8 +204,7 @@ public:
 
             if (effect->dim() != leds->effectDimension) {
               leds->effectDimension = effect->dim();
-              leds->doMap = true;
-              leds->fixture->doMap = true;
+              leds->triggerMapping();
             }
           } // fx < size
 
@@ -240,7 +240,6 @@ public:
 
         if (rowNr < fixture.listOfLeds.size()) {
           Leds *leds = fixture.listOfLeds[rowNr];
-          leds->doMap = true;
 
           stackUnsigned8 proValue = mdl->getValue(var, rowNr);
           leds->projectionNr = proValue;
@@ -260,7 +259,7 @@ public:
           }
           // ppf("onChange pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.listOfLeds.size());
 
-          fixture.doMap = true;
+          leds->triggerMapping();
         }
         return true;
       default: return false;
@@ -285,8 +284,7 @@ public:
           ppf("ledsStart[%d] onChange %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->startPos.x, fixture.listOfLeds[rowNr]->startPos.y, fixture.listOfLeds[rowNr]->startPos.z);
 
           fixture.listOfLeds[rowNr]->fadeToBlackBy();
-          fixture.listOfLeds[rowNr]->doMap = true;
-          fixture.doMap = true;
+          fixture.listOfLeds[rowNr]->triggerMapping();
         }
         else {
           ppf("ledsStart[%d] onChange rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
@@ -313,8 +311,7 @@ public:
           ppf("ledsMid[%d] onChange %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->midPos.x, fixture.listOfLeds[rowNr]->midPos.y, fixture.listOfLeds[rowNr]->midPos.z);
 
           fixture.listOfLeds[rowNr]->fadeToBlackBy();
-          fixture.listOfLeds[rowNr]->doMap = true;
-          fixture.doMap = true;
+          fixture.listOfLeds[rowNr]->triggerMapping();
         }
         else {
           ppf("ledsMid[%d] onChange rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
@@ -341,8 +338,7 @@ public:
           ppf("ledsEnd[%d] onChange %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->endPos.x, fixture.listOfLeds[rowNr]->endPos.y, fixture.listOfLeds[rowNr]->endPos.z);
 
           fixture.listOfLeds[rowNr]->fadeToBlackBy();
-          fixture.listOfLeds[rowNr]->doMap = true;
-          fixture.doMap = true;
+          fixture.listOfLeds[rowNr]->triggerMapping();
         }
         else {
           ppf("ledsEnd[%d] onChange rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
@@ -481,8 +477,7 @@ public:
 
           mdl->setValue(isStart?"ledsStart":isEnd?"ledsEnd":"ledsMid", *newCoord, 0); //assuming row 0 for the moment
 
-          fixture.listOfLeds[rowNr]->doMap = true; //recalc projection
-          fixture.doMap = true;
+          fixture.listOfLeds[rowNr]->triggerMapping();
         }
 
         var.remove("canvasData"); //convasdata has been processed

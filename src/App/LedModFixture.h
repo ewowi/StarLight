@@ -149,13 +149,12 @@ public:
         }
         return true; }
       case onChange: {
-        eff->fixture.doMap = true;
         eff->fixture.doAllocPins = true;
 
         //remap all leds
         // for (std::vector<Leds *>::iterator leds=eff->fixture.listOfLeds.begin(); leds!=eff->fixture.listOfLeds.end(); ++leds) {
         for (Leds *leds: eff->fixture.listOfLeds) {
-          leds->doMap = true;
+          leds->triggerMapping();
         }
 
         char fileName[32] = "";

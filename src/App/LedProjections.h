@@ -65,15 +65,13 @@ class MultiplyProjection: public Projection {
         ui->initCheckBox(var, "mirror", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
           case onChange:
             if (rowNr < leds.fixture->listOfLeds.size()) {
-              leds.fixture->listOfLeds[rowNr]->doMap = true;
-              leds.fixture->doMap = true;
+              leds.fixture->listOfLeds[rowNr]->triggerMapping();
             }
             return true;
           default: return false;
         }});
         if (rowNr < leds.fixture->listOfLeds.size()) {
-          leds.fixture->listOfLeds[rowNr]->doMap = true;
-          leds.fixture->doMap = true;
+          leds.fixture->listOfLeds[rowNr]->triggerMapping();
         }
         return true;
       default: return false;
@@ -159,8 +157,7 @@ class DistanceFromPointProjection: public Projection {
     //     //initiate projectAndMap
     //     ppf("proCenter %d %d\n", rowNr, leds.fixture->listOfLeds.size());
     //     if (rowNr < leds.fixture->listOfLeds.size()) {
-    //       leds.fixture->listOfLeds[rowNr]->doMap = true; //Guru Meditation Error: Core  1 panic'ed (StoreProhibited). Exception was unhandled.
-    //       leds.fixture->doMap = true;
+    //       leds.fixture->listOfLeds[rowNr]->triggerMapping(); //Guru Meditation Error: Core  1 panic'ed (StoreProhibited). Exception was unhandled.
     //     }
     //     // ui->setLabel(var, "Size");
     //     return true;
@@ -228,16 +225,14 @@ class ReverseProjection: public Projection {
   void controls(Leds &leds, JsonObject parentVar) {
     ui->initCheckBox(parentVar, "reverse X", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->doMap = true;
-        leds.fixture->doMap = true;
+        leds.fixture->listOfLeds[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
     if (leds.effectDimension >= _2D) {
       ui->initCheckBox(parentVar, "reverse Y", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->doMap = true;
-          leds.fixture->doMap = true;
+          leds.fixture->listOfLeds[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
@@ -245,8 +240,7 @@ class ReverseProjection: public Projection {
     if (leds.effectDimension == _3D) {
       ui->initCheckBox(parentVar, "reverse Z", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->doMap = true;
-          leds.fixture->doMap = true;
+          leds.fixture->listOfLeds[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
@@ -283,16 +277,14 @@ class MirrorProjection: public Projection {
   void controls(Leds &leds, JsonObject parentVar) {
     ui->initCheckBox(parentVar, "mirror X", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->doMap = true;
-        leds.fixture->doMap = true;
+        leds.fixture->listOfLeds[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
     if (leds.projectionDimension >= _2D) {
       ui->initCheckBox(parentVar, "mirror Y", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->doMap = true;
-          leds.fixture->doMap = true;
+          leds.fixture->listOfLeds[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
@@ -300,8 +292,7 @@ class MirrorProjection: public Projection {
     if (leds.projectionDimension == _3D) {
       ui->initCheckBox(parentVar, "mirror Z", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->doMap = true;
-          leds.fixture->doMap = true;
+          leds.fixture->listOfLeds[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
@@ -333,8 +324,7 @@ class GroupingProjection: public Projection {
   void controls(Leds &leds, JsonObject parentVar) {
     ui->initCoord3D(parentVar, "Grouping", {1,1,1}, 0, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->doMap = true;
-        leds.fixture->doMap = true;
+        leds.fixture->listOfLeds[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
@@ -370,23 +360,20 @@ class TransposeProjection: public Projection {
   void controls(Leds &leds, JsonObject parentVar) {
     ui->initCheckBox(parentVar, "transpose XY", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->doMap = true;
-        leds.fixture->doMap = true;
+        leds.fixture->listOfLeds[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
     if (leds.effectDimension == _3D) {
       ui->initCheckBox(parentVar, "transpose XZ", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->doMap = true;
-          leds.fixture->doMap = true;
+          leds.fixture->listOfLeds[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
       ui->initCheckBox(parentVar, "transpose YZ", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->doMap = true;
-          leds.fixture->doMap = true;
+          leds.fixture->listOfLeds[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
@@ -448,15 +435,13 @@ class PinwheelProjection: public Projection {
   void controls(Leds &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "swirl", 0, -30, 30, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->doMap = true;
-        leds.fixture->doMap = true;
+        leds.fixture->listOfLeds[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
     ui->initCheckBox(parentVar, "reverse", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->doMap = true;
-        leds.fixture->doMap = true;
+        leds.fixture->listOfLeds[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
@@ -464,8 +449,7 @@ class PinwheelProjection: public Projection {
     if (leds.projectionDimension == _3D) {
       ui->initSlider(parentVar, "zTwist", 0, -42, 42, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->doMap = true;
-          leds.fixture->doMap = true;
+          leds.fixture->listOfLeds[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
@@ -473,16 +457,14 @@ class PinwheelProjection: public Projection {
     // Angle range 0 - angleRange. For testing purposes
     ui->initNumber(parentVar, "angleRange", 360, 1, 720, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->doMap = true;
-        leds.fixture->doMap = true;
+        leds.fixture->listOfLeds[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
     // Naming petals, arms, blades, rays? Controls virtual strip length.
     ui->initNumber(parentVar, "petals", 360, 1, 360, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->doMap = true;
-        leds.fixture->doMap = true;
+        leds.fixture->listOfLeds[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});

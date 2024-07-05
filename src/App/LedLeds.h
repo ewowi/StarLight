@@ -333,6 +333,8 @@ public:
     mappingTable.clear();
   }
 
+  void triggerMapping();
+
   // indexVLocal stored to be used by other operators
   Leds& operator[](unsigned16 indexV) {
     indexVLocal = indexV;
