@@ -37,7 +37,7 @@ class MultiplyProjection: public Projection {
 
   void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     leds.sharedProData.begin();
-    Coord3D proMulti       = leds.sharedProData.read<Coord3D>();
+    Coord3D proMulti       = leds.sharedProData.read<Coord3D>(); //mirror not needed here
     //promulti can be 0,0,0 but /= protects from /div0
     sizeAdjusted /= proMulti; sizeAdjusted = sizeAdjusted.maximum(Coord3D{1,1,1}); //size min 1,1,1
     midPosAdjusted /= proMulti;
@@ -48,7 +48,7 @@ class MultiplyProjection: public Projection {
   void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
     // if mirrored find the indexV of the mirrored pixel
     leds.sharedProData.begin();
-    Coord3D proMulti       = leds.sharedProData.read<Coord3D>();
+    Coord3D proMulti       = leds.sharedProData.read<Coord3D>(); //proMulti not needed here, but need to read it to get mirror
     bool mirror            = leds.sharedProData.read<bool>();
 
     if (mirror) {
@@ -63,19 +63,19 @@ class MultiplyProjection: public Projection {
     leds.sharedProData.reset();
     Coord3D *proMulti = leds.sharedProData.write<Coord3D>({2,2,1});
     bool *mirror = leds.sharedProData.write<bool>(false);
-    ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds, mirror](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "MultiplyX");
         return true;
       case onChange:
-        ui->initCheckBox(var, "mirror", mirror, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-          case onChange:
-            if (rowNr < leds.fixture->listOfLeds.size()) {
-              leds.fixture->listOfLeds[rowNr]->triggerMapping();
-            }
-            return true;
-          default: return false;
-        }});
+        if (rowNr < leds.fixture->listOfLeds.size()) {
+          leds.fixture->listOfLeds[rowNr]->triggerMapping();
+        }
+        return true;
+      default: return false;
+    }});
+    ui->initCheckBox(parentVar, "mirror", mirror, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
         if (rowNr < leds.fixture->listOfLeds.size()) {
           leds.fixture->listOfLeds[rowNr]->triggerMapping();
         }
