@@ -45,6 +45,7 @@ static void show()
     // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
 }
 
+
 class UserModLive:public SysModule {
 
 public:
@@ -119,6 +120,10 @@ public:
 
     addExternal("show", externalType::function, (void *)&show);
     addExternal("showM", externalType::function, (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
+
+    addExternal("pinMode", externalType::function, (void *)&pinMode);
+    addExternal("digitalWrite", externalType::function, (void *)&digitalWrite);
+    addExternal("delay", externalType::function, (void *)&delay);
 
   }
 
