@@ -145,7 +145,7 @@ class SharedData {
   }
 
   //sets the sharedData pointer back to 0 so loop effect can go through it
-  void loop() {
+  void begin() {
     index = 0;
   }
 
@@ -272,8 +272,8 @@ public:
   unsigned8 projectionNr = -1;
 
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
-  void (Projection::*adjustSizeAndPixelCached)(Coord3D &, Coord3D &, Coord3D &) = nullptr;
-  void (Projection::*adjustMappedCached)(Coord3D &, Coord3D, Coord3D, Coord3D) = nullptr;
+  void (Projection::*adjustSizeAndPixelCached)(Leds &, Coord3D &, Coord3D &, Coord3D &) = nullptr;
+  void (Projection::*adjustMappedCached)(Leds &, Coord3D &, Coord3D, Coord3D, Coord3D) = nullptr;
   void (Projection::*adjustXYZCached)(Leds &, Coord3D &) = nullptr;
 
   unsigned8 effectDimension = -1;
@@ -289,6 +289,7 @@ public:
   unsigned8 proRollSpeed = 128;
 
   SharedData sharedData;
+  SharedData sharedProData;
 
   std::vector<PhysMap> mappingTable;
 

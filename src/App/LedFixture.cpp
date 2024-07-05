@@ -110,7 +110,7 @@ void Fixture::projectAndMap() {
               mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
 
               //using cached virtual class methods!
-              if (projection) (projection->*leds->adjustSizeAndPixelCached)(sizeAdjusted, pixelAdjusted, midPosAdjusted);
+              if (projection) (projection->*leds->adjustSizeAndPixelCached)(*leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
 
               if (leds->size == Coord3D{0,0,0}) { // first
                 ppf("projectAndMap first leds[%d] size:%d,%d,%d s:%d,%d,%d e:%d,%d,%d\n", rowNr, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, startPosAdjusted.x, startPosAdjusted.y, startPosAdjusted.z, endPosAdjusted.x, endPosAdjusted.y, endPosAdjusted.z);
@@ -134,7 +134,7 @@ void Fixture::projectAndMap() {
                   mapped = pixelAdjusted;
 
                   //using cached virtual class methods!
-                  if (projection) (projection->*leds->adjustMappedCached)(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10, midPosAdjusted);
+                  if (projection) (projection->*leds->adjustMappedCached)(*leds, mapped, sizeAdjusted, (pixel - startPosAdjusted)/10, midPosAdjusted);
 
                   if (leds->projectionNr != p_Pinwheel) { //Pinwheel temp fix
                     mapped.x = mapped.distance(midPosAdjusted);
@@ -195,7 +195,7 @@ void Fixture::projectAndMap() {
                   }
 
                   //using cached virtual class methods!
-                  if (projection) (projection->*leds->adjustMappedCached)(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10, midPosAdjusted);
+                  if (projection) (projection->*leds->adjustMappedCached)(*leds, mapped, sizeAdjusted, (pixel - startPosAdjusted)/10, midPosAdjusted);
 
                   indexV = leds->XYZUnprojected(mapped);
                   break;
@@ -227,7 +227,7 @@ void Fixture::projectAndMap() {
                   }
 
                   //using cached virtual class methods!
-                  if (projection) (projection->*leds->adjustMappedCached)(mapped, sizeAdjusted, (pixel - startPosAdjusted)/10, midPosAdjusted);
+                  if (projection) (projection->*leds->adjustMappedCached)(*leds, mapped, sizeAdjusted, (pixel - startPosAdjusted)/10, midPosAdjusted);
 
                   indexV = leds->XYZUnprojected(mapped);
                   

@@ -30,9 +30,9 @@ public:
   virtual const char * tags() {return "";}
   // virtual uint8_t dim() {return _1D;};
 
-  virtual void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {}
+  virtual void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {}
 
-  virtual void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {}
+  virtual void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {}
 
   virtual void adjustXYZ(Leds &leds, Coord3D &pixel) {}
   

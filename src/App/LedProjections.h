@@ -35,8 +35,9 @@ class MultiplyProjection: public Projection {
 
   public: //to use in Preset1Projection
 
-  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
-    Coord3D proMulti = mdl->getValue("proMulti"); //, rowNr
+  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    leds.sharedProData.begin();
+    Coord3D proMulti       = leds.sharedProData.read<Coord3D>();
     //promulti can be 0,0,0 but /= protects from /div0
     sizeAdjusted /= proMulti; sizeAdjusted = sizeAdjusted.maximum(Coord3D{1,1,1}); //size min 1,1,1
     midPosAdjusted /= proMulti;
@@ -44,9 +45,11 @@ class MultiplyProjection: public Projection {
     // ppf("Multiply %d,%d,%d\n", leds->size.x, leds->size.y, leds->size.z);
   }
 
-  void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
+  void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
     // if mirrored find the indexV of the mirrored pixel
-    bool mirror = mdl->getValue("mirror");
+    leds.sharedProData.begin();
+    Coord3D proMulti       = leds.sharedProData.read<Coord3D>();
+    bool mirror            = leds.sharedProData.read<bool>();
 
     if (mirror) {
       Coord3D mirrors = pixelAdjusted / sizeAdjusted; //place the pixel in the right quadrant
@@ -57,12 +60,15 @@ class MultiplyProjection: public Projection {
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
-    ui->initCoord3D(parentVar, "proMulti", {2,2,1}, 0, 10, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    leds.sharedProData.reset();
+    Coord3D *proMulti = leds.sharedProData.write<Coord3D>({2,2,1});
+    bool *mirror = leds.sharedProData.write<bool>(false);
+    ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds, mirror](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "MultiplyX");
         return true;
       case onChange:
-        ui->initCheckBox(var, "mirror", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        ui->initCheckBox(var, "mirror", mirror, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
           case onChange:
             if (rowNr < leds.fixture->listOfLeds.size()) {
               leds.fixture->listOfLeds[rowNr]->triggerMapping();
@@ -171,14 +177,14 @@ class Preset1Projection: public Projection {
   //uint8_t dim() {return _1D;} // every projection should work for all D
   const char * tags() {return "💫";}
 
-  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     MultiplyProjection mp;
-    mp.adjustSizeAndPixel(sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    mp.adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
   }
 
-  void adjustMapped(Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
+  void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
     MultiplyProjection mp;
-    mp.adjustMapped(mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    mp.adjustMapped(leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted);
   }
 
   void adjustXYZ(Leds &leds, Coord3D &pixel) {
@@ -211,7 +217,7 @@ class ReverseProjection: public Projection {
 
   public:
 
-  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
     bool reverseX = mdl->getValue("reverse X");
     bool reverseY = mdl->getValue("reverse Y");
@@ -254,7 +260,7 @@ class MirrorProjection: public Projection {
 
   public:
 
-  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
     bool mirrorX = mdl->getValue("mirror X");
     bool mirrorY = mdl->getValue("mirror Y");
@@ -306,7 +312,7 @@ class GroupingProjection: public Projection {
 
   public:
 
-  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
     Coord3D grouping = mdl->getValue("Grouping");
     grouping = grouping.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
@@ -346,7 +352,7 @@ class TransposeProjection: public Projection {
 
   public:
 
-  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
     bool transposeXY = mdl->getValue("transpose XY");
     bool transposeXZ = mdl->getValue("transpose XZ");
@@ -397,7 +403,7 @@ class PinwheelProjection: public Projection {
 
   public:
 
-  void adjustSizeAndPixel(Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     sizeAdjusted.x = mdl->getValue("petals");
     sizeAdjusted.y = 1;
     sizeAdjusted.z = 1;

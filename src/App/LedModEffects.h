@@ -186,12 +186,12 @@ public:
 
           if (leds->fx < effects.size()) {
 
-            leds->sharedData.reset(); //make sure all values are 0 and reset for a fresh start of the effect
 
             Effect* effect = effects[leds->fx];
 
             // effect->loop(leds); //do a loop to set sharedData right
-            // leds->sharedData.loop();
+            leds->sharedData.reset(); //make sure all values are 0 and reset for a fresh start of the effect
+            // leds->sharedData.begin();
             mdl->varPreDetails(var, rowNr);
             effect->controls(*leds, var);
             mdl->varPostDetails(var, rowNr);
@@ -422,7 +422,7 @@ public:
           // ppf(" %d %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->fx, leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
           mdl->getValueRowNr = rowNr++;
 
-          leds->sharedData.loop(); //sets the sharedData pointer back to 0 so loop effect can go through it
+          leds->sharedData.begin(); //sets the sharedData pointer back to 0 so loop effect can go through it
           effects[leds->fx]->loop(*leds);
 
           mdl->getValueRowNr = UINT8_MAX;
