@@ -381,13 +381,11 @@ void Fixture::projectAndMap() {
 
           } else {
 
-            // if (leds->mappingTable.size() < leds->size.x * leds->size.y * leds->size.z)
-            //   ppf("mapping add extra physMap %d to %d size: %d,%d,%d\n", leds->mappingTable.size(), leds->size.x * leds->size.y * leds->size.z, leds->size.x, leds->size.y, leds->size.z);
-            // for (size_t i = leds->mappingTable.size(); i < leds->size.x * leds->size.y * leds->size.z; i++) {
-            //   std::vector<unsigned16> physMap;
-            //   // physMap.push_back(0);
-            //   leds->mappingTable.push_back(physMap);
-            // }
+            if (leds->mappingTable.size() < leds->size.x * leds->size.y * leds->size.z)
+              ppf("mapping add extra physMap %d to %d size: %d,%d,%d\n", leds->mappingTable.size(), leds->size.x * leds->size.y * leds->size.z, leds->size.x, leds->size.y, leds->size.z);
+            for (size_t i = leds->mappingTable.size(); i < leds->size.x * leds->size.y * leds->size.z; i++) {
+              leds->mappingTable.push_back(PhysMap());
+            }
 
             leds->nrOfLeds = leds->mappingTable.size();
 
