@@ -319,13 +319,10 @@ class GroupingProjection: public Projection {
     grouping = grouping.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
     if (grouping == Coord3D{1, 1, 1}) return;
 
-    pixelAdjusted.x = pixelAdjusted.x / grouping.x;
-    pixelAdjusted.y = pixelAdjusted.y / grouping.y;
-    pixelAdjusted.z = pixelAdjusted.z / grouping.z;
+    midPosAdjusted /= grouping;
+    pixelAdjusted /= grouping;
 
-    sizeAdjusted.x = (sizeAdjusted.x + grouping.x - 1) / grouping.x; // round up
-    sizeAdjusted.y = (sizeAdjusted.y + grouping.y - 1) / grouping.y;
-    sizeAdjusted.z = (sizeAdjusted.z + grouping.z - 1) / grouping.z;
+    sizeAdjusted = (sizeAdjusted + grouping - Coord3D{1,1,1}) / grouping; // round up
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
