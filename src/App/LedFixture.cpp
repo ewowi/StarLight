@@ -18,6 +18,7 @@
 
 //load fixture json file, parse it and depending on the projection, create a mapping for it
 void Fixture::projectAndMap() {
+  unsigned long start = millis();
   char fileName[32] = "";
 
   if (files->seqNrToName(fileName, fixtureNr, "F_")) { // get the fixture.json
@@ -446,4 +447,5 @@ void Fixture::projectAndMap() {
     ppf("projectAndMap: Filename for fixture %d not found\n", fixtureNr);
 
   doMap = false;
+  ppf("projectAndMap done %d ms\n", millis()-start);
 }

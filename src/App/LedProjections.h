@@ -413,7 +413,7 @@ class PinwheelProjection: public Projection {
   public:
 
   void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
-    if (leds.size != Coord3D{0,0,0}) return;; // Adjust only on first call
+    if (leds.size != Coord3D{0,0,0}) return; // Adjust only on first call
     leds.sharedProData.begin();
     int petals = leds.sharedProData.read<uint16_t>();
     petals = max(1, petals); // Petals cannot be < 1
@@ -434,20 +434,17 @@ class PinwheelProjection: public Projection {
     // UI Variables
     leds.sharedProData.begin();
     int petals     = leds.sharedProData.read<uint16_t>();
-    int swirlVal   = leds.sharedProData.read<uint8_t>();
-    bool reverse   = leds.sharedProData.read<bool>();
-    int angleRange = leds.sharedProData.read<uint16_t>();
-    int zTwist     = leds.sharedProData.read<uint8_t>();
+    const int swirlVal   = leds.sharedProData.read<uint8_t>() - 30; // SwirlVal range -30 to 30
+    const bool reverse   = leds.sharedProData.read<bool>();
+    const int angleRange = max(int(leds.sharedProData.read<uint16_t>()), 1);
+    const int zTwist     = leds.sharedProData.read<uint8_t>() - 42; // zTwist range -42 to 42
 
     if (leds.effectDimension > _1D && leds.projectionDimension > _1D) petals = min(72, petals); // Limit 2D/3D grid.x to 72
-    petals     = max(1, petals);     // Petals cannot be < 1
-    angleRange = max(1, angleRange); // AngleRange cannot be < 1
-    swirlVal  -= 30;                 // SwirlVal range -30 to 30
-    zTwist    -= 42;                 // zTwist range -42 to 42
-
-    int dx = pixelAdjusted.x - midPosAdjusted.x;
-    int dy = pixelAdjusted.y - midPosAdjusted.y;
-    int swirlFactor = swirlVal == 0 ? 0 : hypot(dy, dx) * abs(swirlVal); // Only calculate if swirlVal != 0
+    petals = max(1, petals); // Petals cannot be < 1
+         
+    const int dx = pixelAdjusted.x - midPosAdjusted.x;
+    const int dy = pixelAdjusted.y - midPosAdjusted.y;
+    const int swirlFactor = swirlVal == 0 ? 0 : hypot(dy, dx) * abs(swirlVal); // Only calculate if swirlVal != 0
     int angle       = degrees(atan2(dy, dx)) + 180;  // 0 - 360
     
     if (swirlVal < 0) angle = 360 - angle; // Reverse Swirl
@@ -472,7 +469,7 @@ class PinwheelProjection: public Projection {
   void controls(Leds &leds, JsonObject parentVar) {
     leds.sharedProData.reset();
 
-    uint16_t *petals     = leds.sharedProData.write<uint16_t>(360); // Initalize petal first for adjustSizeAndPixel
+    uint16_t *petals     = leds.sharedProData.write<uint16_t>(60); // Initalize petal first for adjustSizeAndPixel
     uint8_t  *swirlVal   = leds.sharedProData.write<uint8_t>(30);
     bool     *reverse    = leds.sharedProData.write<bool>(false);
     uint16_t *angleRange = leds.sharedProData.write<uint16_t>(360);
