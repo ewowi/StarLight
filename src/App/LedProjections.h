@@ -408,31 +408,42 @@ class KaleidoscopeProjection: public Projection {
 class PinwheelProjection: public Projection {
   // Currently 1D to 2D/3D May be possible to make 2D to 2D/3D
   const char * name() {return "Pinwheel";}
-  const char * tags() {return "💡";}
+  const char * tags() {return "💫";}
 
   public:
 
   void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     if (leds.size != Coord3D{0,0,0}) return;; // Adjust only on first call
     leds.sharedProData.begin();
-    sizeAdjusted.x = leds.sharedProData.read<uint16_t>();
-    sizeAdjusted.y = 1;
-    sizeAdjusted.z = 1;
+    int petals = leds.sharedProData.read<uint16_t>();
+    petals = max(1, petals); // Petals cannot be < 1
+    if (leds.projectionDimension > _1D && leds.effectDimension > _1D) {
+      sizeAdjusted.y = sqrt(sq(max(sizeAdjusted.x - midPosAdjusted.x, midPosAdjusted.x)) + 
+                            sq(max(sizeAdjusted.y - midPosAdjusted.y, midPosAdjusted.y))) + 1; // Adjust y before x
+      sizeAdjusted.x = min(72, petals);
+      sizeAdjusted.z = 1;
+    }
+    else {
+      sizeAdjusted.x = petals;
+      sizeAdjusted.y = 1;
+      sizeAdjusted.z = 1;
+    }
   }
 
   void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
     // UI Variables
     leds.sharedProData.begin();
-    uint16_t petals     = leds.sharedProData.read<uint16_t>();
-    int swirlVal        = leds.sharedProData.read<uint8_t>();
-    bool reverse        = leds.sharedProData.read<bool>();
-    uint16_t angleRange = leds.sharedProData.read<uint16_t>();
-    int zTwist          = leds.sharedProData.read<uint8_t>();
+    int petals     = leds.sharedProData.read<uint16_t>();
+    int swirlVal   = leds.sharedProData.read<uint8_t>();
+    bool reverse   = leds.sharedProData.read<bool>();
+    int angleRange = leds.sharedProData.read<uint16_t>();
+    int zTwist     = leds.sharedProData.read<uint8_t>();
 
-    petals = petals < 1 ? 1 : petals;             // Petals cannot be 0
-    angleRange = angleRange < 1 ? 1 : angleRange; // Angle Range cannot be 0
-    swirlVal -= 30;                               // SwirlVal range -30 to 30
-    zTwist -= 42;                                 // zTwist range -42 to 42
+    if (leds.effectDimension > _1D && leds.projectionDimension > _1D) petals = min(72, petals); // Limit 2D/3D grid.x to 72
+    petals     = max(1, petals);     // Petals cannot be < 1
+    angleRange = max(1, angleRange); // AngleRange cannot be < 1
+    swirlVal  -= 30;                 // SwirlVal range -30 to 30
+    zTwist    -= 42;                 // zTwist range -42 to 42
 
     int dx = pixelAdjusted.x - midPosAdjusted.x;
     int dy = pixelAdjusted.y - midPosAdjusted.y;
@@ -450,9 +461,12 @@ class PinwheelProjection: public Projection {
 
     mapped.x = value;
     mapped.y = 0;
+    if (leds.effectDimension > _1D && leds.projectionDimension > _1D) {
+      mapped.y = int(sqrt(sq(dx) + sq(dy))); // Round produced blank pixel
+    }
     mapped.z = 0;
 
-    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %d angleRange: %d Petals: %f zTwist: %d\n", midPosAdjusted.x, midPosAdjusted.y, swirlVal, angleRange, petals, zTwist);
+    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %d angleRange: %d Petals: %d zTwist: %d\n", midPosAdjusted.x, midPosAdjusted.y, swirlVal, angleRange, petals, zTwist);
     // ppf("pixelAdjusted %d,%d,%d -> %d,%d,%d angle %d\n", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, mapped.x, mapped.y, mapped.z, angle);
   }
   void controls(Leds &leds, JsonObject parentVar) {

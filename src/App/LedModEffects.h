@@ -102,6 +102,7 @@ public:
     //load projections
     fixture.projections.push_back(new NoneProjection);
     fixture.projections.push_back(new DefaultProjection);
+    fixture.projections.push_back(new PinwheelProjection);
     fixture.projections.push_back(new MultiplyProjection);
     fixture.projections.push_back(new TiltPanRollProjection);
     fixture.projections.push_back(new DistanceFromPointProjection);
@@ -113,7 +114,6 @@ public:
     fixture.projections.push_back(new SpacingProjection);
     fixture.projections.push_back(new TransposeProjection);
     fixture.projections.push_back(new KaleidoscopeProjection);
-    fixture.projections.push_back(new PinwheelProjection);
   };
 
   void setup() {
