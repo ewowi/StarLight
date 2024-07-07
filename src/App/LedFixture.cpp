@@ -78,207 +78,202 @@ void Fixture::projectAndMap() {
 
         // ppf("led %d,%d,%d start %d,%d,%d end %d,%d,%d\n",x,y,z, startPos.x, startPos.y, startPos.z, endPos.x, endPos.y, endPos.z);
 
-        stackUnsigned8 rowNr = 0;
-        for (Leds *leds: listOfLeds) {
+        if (indexP < NUM_LEDS_Max) {
 
-          if (leds->projectionNr != p_Random && leds->projectionNr != p_None) //only real projections
-          if (leds->doMap) { //add pixel in leds mappingtable
+          stackUnsigned8 rowNr = 0;
+          for (Leds *leds: listOfLeds) {
 
-            //set start and endPos between bounderies of fixture
-            Coord3D startPosAdjusted = (leds->startPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
-            Coord3D endPosAdjusted = (leds->endPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
-            Coord3D midPosAdjusted = (leds->midPos).minimum(fixSize - Coord3D{1,1,1}); //not * 10
+            if (leds->projectionNr != p_Random && leds->projectionNr != p_None) //only real projections
+            if (leds->doMap) { //add pixel in leds mappingtable
 
-            // mdl->setValue("ledsStart", startPosAdjusted/10, rowNr); //rowNr
-            // mdl->setValue("ledsEnd", endPosAdjusted/10, rowNr); //rowNr
+              //set start and endPos between bounderies of fixture
+              Coord3D startPosAdjusted = (leds->startPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
+              Coord3D endPosAdjusted = (leds->endPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
+              Coord3D midPosAdjusted = (leds->midPos).minimum(fixSize - Coord3D{1,1,1}); //not * 10
 
-            if (pixel >= startPosAdjusted && pixel <= endPosAdjusted ) { //if pixel between start and end pos
+              // mdl->setValue("ledsStart", startPosAdjusted/10, rowNr); //rowNr
+              // mdl->setValue("ledsEnd", endPosAdjusted/10, rowNr); //rowNr
 
-              Coord3D pixelAdjusted = (pixel - startPosAdjusted)/10; //pixelRelative to startPos in cm
+              if (pixel >= startPosAdjusted && pixel <= endPosAdjusted ) { //if pixel between start and end pos
 
-              Coord3D sizeAdjusted = (endPosAdjusted - startPosAdjusted)/10 + Coord3D{1,1,1}; // in cm
+                Coord3D pixelAdjusted = (pixel - startPosAdjusted)/10; //pixelRelative to startPos in cm
 
-              // 0 to 3D depending on start and endpos (e.g. to display ScrollingText on one side of a cube)
-              leds->projectionDimension = 0;
-              if (sizeAdjusted.x > 1) leds->projectionDimension++;
-              if (sizeAdjusted.y > 1) leds->projectionDimension++;
-              if (sizeAdjusted.z > 1) leds->projectionDimension++;
+                Coord3D sizeAdjusted = (endPosAdjusted - startPosAdjusted)/10 + Coord3D{1,1,1}; // in cm
 
-              Projection *projection = nullptr;
-              if (leds->projectionNr < projections.size())
-                projection = projections[leds->projectionNr];
+                // 0 to 3D depending on start and endpos (e.g. to display ScrollingText on one side of a cube)
+                leds->projectionDimension = 0;
+                if (sizeAdjusted.x > 1) leds->projectionDimension++;
+                if (sizeAdjusted.y > 1) leds->projectionDimension++;
+                if (sizeAdjusted.z > 1) leds->projectionDimension++;
 
-              mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
+                Projection *projection = nullptr;
+                if (leds->projectionNr < projections.size())
+                  projection = projections[leds->projectionNr];
 
-              //calculate the indexV to add to current physical led to
-              uint16_t indexV = UINT16_MAX;
+                mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
 
-              Coord3D mapped;
-              if (leds->projectionNr == p_Pinwheel) {
-                (projection->*leds->adjustSizeAndPixelCached)(*leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);  // Adjust Size and Pixel
-                if (leds->size == Coord3D{0,0,0}) {                                       
-                  leds->size = sizeAdjusted;                                                                        // Adjust leds->size if not done yet
-                  ppf("projectAndMap first leds[%d] size:%d,%d,%d s:%d,%d,%d e:%d,%d,%d\n", rowNr, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, startPosAdjusted.x, startPosAdjusted.y, startPosAdjusted.z, endPosAdjusted.x, endPosAdjusted.y, endPosAdjusted.z);
-                }
-                (projection->*leds->adjustMappedCached)(*leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted);// Adjust Mapped
-                indexV = leds->XYZUnprojected(mapped);
-              }
-              else {
-                //using cached virtual class methods!
-                if (projection) (projection->*leds->adjustSizeAndPixelCached)(*leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
-                if (leds->size == Coord3D{0,0,0}) { // first
-                  ppf("projectAndMap first leds[%d] size:%d,%d,%d s:%d,%d,%d e:%d,%d,%d\n", rowNr, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, startPosAdjusted.x, startPosAdjusted.y, startPosAdjusted.z, endPosAdjusted.x, endPosAdjusted.y, endPosAdjusted.z);
-                }                
-                switch (leds->effectDimension) {
-                  case _1D: //effectDimension 1DxD
-                    if (leds->size == Coord3D{0,0,0}) { // first
-                      leds->size.x = sqrt(sq(max(sizeAdjusted.x - midPosAdjusted.x, midPosAdjusted.x)) + 
-                                          sq(max(sizeAdjusted.y - midPosAdjusted.y, midPosAdjusted.y)) + 
-                                          sq(max(sizeAdjusted.z - midPosAdjusted.z, midPosAdjusted.z))) + 1;
-                      leds->size.y = 1;
-                      leds->size.z = 1;
-                    }
+                //calculate the indexV to add to current physical led to
+                uint16_t indexV = UINT16_MAX;
 
-                    mapped = pixelAdjusted;
-
-                    //using cached virtual class methods!
-                    if (projection) (projection->*leds->adjustMappedCached)(*leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted); // Currently does nothing.
-
-                    mapped.x = mapped.distance(midPosAdjusted);
-                    mapped.y = 0;
-                    mapped.z = 0;                
-
-                    indexV = leds->XYZUnprojected(mapped);
-                    break;
-                  case _2D: //effectDimension
-                    switch(leds->projectionDimension) {
-                      case _1D: //2D1D
-                        if (leds->size == Coord3D{0,0,0}) { // first
-                          leds->size.x = sqrt(sizeAdjusted.x * sizeAdjusted.y * sizeAdjusted.z); //only one is > 1, square root
-                          leds->size.y = sizeAdjusted.x * sizeAdjusted.y * sizeAdjusted.z / leds->size.x;
-                          leds->size.z = 1;
-                        }
-                        mapped.x = (pixelAdjusted.x + pixelAdjusted.y + pixelAdjusted.z) % leds->size.x; // only one > 0
-                        mapped.y = (pixelAdjusted.x + pixelAdjusted.y + pixelAdjusted.z) / leds->size.x; // all rows next to each other
-                        mapped.z = 0;
-                        break;
-                      case _2D: //2D2D
-                        //find the 2 axis 
-                        if (leds->size == Coord3D{0,0,0}) { // first
-                          if (sizeAdjusted.x > 1) {
-                            leds->size.x = sizeAdjusted.x;
-                            if (sizeAdjusted.y > 1) leds->size.y = sizeAdjusted.y; else leds->size.y = sizeAdjusted.z;
-                          } else {
-                            leds->size.x = sizeAdjusted.y;
-                            leds->size.y = sizeAdjusted.z;
-                          }
-                          leds->size.z = 1;
-                        }
-
-                        if (sizeAdjusted.x > 1) {
-                          mapped.x = pixelAdjusted.x;
-                          if (sizeAdjusted.y > 1) mapped.y = pixelAdjusted.y; else mapped.y = pixelAdjusted.z;
-                        } else {
-                          mapped.x = pixelAdjusted.y;
-                          mapped.y = pixelAdjusted.z;
-                        }
-                        mapped.z = 0;
-
-                        // ppf("2Dto2D %d-%d p:%d,%d,%d m:%d,%d,%d\n", indexV, indexP, pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, mapped.x, mapped.y, mapped.z
-                        break;
-                      case _3D: //2D3D
-                        if (leds->size == Coord3D{0,0,0}) { // first
-                          leds->size.x = sizeAdjusted.x + sizeAdjusted.y / 2;
-                          leds->size.y = sizeAdjusted.y / 2 + sizeAdjusted.z;
-                          leds->size.z = 1;
-                        }
-                        mapped.x = pixelAdjusted.x + pixelAdjusted.y / 2;
-                        mapped.y = pixelAdjusted.y / 2 + pixelAdjusted.z;
-                        mapped.z = 0;
-
-                        // ppf("2D to 3D indexV %d %d\n", indexV, size.x);
-                        break;
-                    }
-
-                    //using cached virtual class methods!
-                    if (projection) (projection->*leds->adjustMappedCached)(*leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted); // Currently does nothing.
-
-                    indexV = leds->XYZUnprojected(mapped);
-                    break;
-                  case _3D: //effectDimension
-                    mapped = pixelAdjusted;
-                    
-                    switch(leds->projectionDimension) {
-                      case _1D:
-                        if (leds->size == Coord3D{0,0,0}) { // first
-                          leds->size.x = std::pow(sizeAdjusted.x * sizeAdjusted.y * sizeAdjusted.z, 1/3.); //only one is > 1, cube root
-                          leds->size.y = leds->size.x;
-                          leds->size.z = leds->size.x;
-                        }
-                        break;
-                      case _2D:
-                        if (leds->size == Coord3D{0,0,0}) { // first
-                          leds->size.x = sizeAdjusted.x; //2 of the 3 sizes are > 1, so one dimension of the effect is 1
-                          leds->size.y = sizeAdjusted.y;
-                          leds->size.z = sizeAdjusted.z;
-                        }
-                        break;
-                      case _3D:
-                        if (leds->size == Coord3D{0,0,0}) { // first
-                          leds->size.x = sizeAdjusted.x;
-                          leds->size.y = sizeAdjusted.y;
-                          leds->size.z = sizeAdjusted.z;
-                        }
-                        break;
-                    }
-
-                    //using cached virtual class methods!
-                    if (projection) (projection->*leds->adjustMappedCached)(*leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted); // Currently does nothing.
-
-                    indexV = leds->XYZUnprojected(mapped);
-                    
-                    break; //effectDimension _3D
-                } //effectDimension
-              }
-              leds->nrOfLeds = leds->size.x * leds->size.y * leds->size.z;
-
-              if (indexV != UINT16_MAX) {
-                if (indexV >= leds->nrOfLeds || indexV >= NUM_VLEDS_Max) {
-                  ppf("dev pre [%d] indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, leds->nrOfLeds, NUM_VLEDS_Max, leds->mappingTable.size(), indexP, pixel.x, pixel.y, pixel.z, leds->size.x, leds->size.y, leds->size.z);
+                Coord3D mapped;
+                if (leds->projectionNr == p_Pinwheel) {
+                  (projection->*leds->adjustSizeAndPixelCached)(*leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);  // Adjust Size and Pixel
+                  if (leds->size == Coord3D{0,0,0}) {                                       
+                    leds->size = sizeAdjusted;                                                                        // Adjust leds->size if not done yet
+                    ppf("projectAndMap first leds[%d] size:%d,%d,%d s:%d,%d,%d e:%d,%d,%d\n", rowNr, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, startPosAdjusted.x, startPosAdjusted.y, startPosAdjusted.z, endPosAdjusted.x, endPosAdjusted.y, endPosAdjusted.z);
+                  }
+                  (projection->*leds->adjustMappedCached)(*leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted);// Adjust Mapped
+                  indexV = leds->XYZUnprojected(mapped);
                 }
                 else {
-                  //post processing: 
-                  if (projection) (projection->*leds->postProcessingCached)(*leds, indexV);
-
-                  if (indexV != UINT16_MAX) { //can be nulled by inverse mapping 
-                    //add physical tables if not present
-                    if (indexV >= leds->nrOfLeds || indexV >= NUM_VLEDS_Max) {
-                      ppf("dev post [%d] indexV too high %d>=%d or %d (p:%d m:%d) p:%d,%d,%d\n", rowNr, indexV, leds->nrOfLeds, NUM_VLEDS_Max, leds->mappingTable.size(), indexP, pixel.x, pixel.y, pixel.z);
-                    }
-                    else if (indexP < NUM_LEDS_Max) {
-                      //create new physMaps if needed
-                      if (indexV >= leds->mappingTable.size()) {
-                        for (size_t i = leds->mappingTable.size(); i <= indexV; i++) {
-                          // ppf("mapping %d,%d,%d add physMap before %d %d\n", pixel.y, pixel.y, pixel.z, indexV, leds->mappingTable.size());
-                          leds->mappingTable.push_back(PhysMap()); //abort() was called at PC 0x40191473 on core 1 std::allocator<unsigned short> >&&)
-                        }
+                  //using cached virtual class methods!
+                  if (projection) (projection->*leds->adjustSizeAndPixelCached)(*leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+                  if (leds->size == Coord3D{0,0,0}) { // first
+                    ppf("projectAndMap first leds[%d] size:%d,%d,%d s:%d,%d,%d e:%d,%d,%d\n", rowNr, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, startPosAdjusted.x, startPosAdjusted.y, startPosAdjusted.z, endPosAdjusted.x, endPosAdjusted.y, endPosAdjusted.z);
+                  }                
+                  switch (leds->effectDimension) {
+                    case _1D: //effectDimension 1DxD
+                      if (leds->size == Coord3D{0,0,0}) { // first
+                        leds->size.x = sqrt(sq(max(sizeAdjusted.x - midPosAdjusted.x, midPosAdjusted.x)) + 
+                                            sq(max(sizeAdjusted.y - midPosAdjusted.y, midPosAdjusted.y)) + 
+                                            sq(max(sizeAdjusted.z - midPosAdjusted.z, midPosAdjusted.z))) + 1;
+                        leds->size.y = 1;
+                        leds->size.z = 1;
                       }
 
-                      leds->mappingTable[indexV].addIndexP(indexP);
+                      mapped = pixelAdjusted;
+
+                      //using cached virtual class methods!
+                      if (projection) (projection->*leds->adjustMappedCached)(*leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted); // Currently does nothing.
+
+                      mapped.x = mapped.distance(midPosAdjusted);
+                      mapped.y = 0;
+                      mapped.z = 0;                
+
+                      indexV = leds->XYZUnprojected(mapped);
+                      break;
+                    case _2D: //effectDimension
+                      switch(leds->projectionDimension) {
+                        case _1D: //2D1D
+                          if (leds->size == Coord3D{0,0,0}) { // first
+                            leds->size.x = sqrt(sizeAdjusted.x * sizeAdjusted.y * sizeAdjusted.z); //only one is > 1, square root
+                            leds->size.y = sizeAdjusted.x * sizeAdjusted.y * sizeAdjusted.z / leds->size.x;
+                            leds->size.z = 1;
+                          }
+                          mapped.x = (pixelAdjusted.x + pixelAdjusted.y + pixelAdjusted.z) % leds->size.x; // only one > 0
+                          mapped.y = (pixelAdjusted.x + pixelAdjusted.y + pixelAdjusted.z) / leds->size.x; // all rows next to each other
+                          mapped.z = 0;
+                          break;
+                        case _2D: //2D2D
+                          //find the 2 axis 
+                          if (leds->size == Coord3D{0,0,0}) { // first
+                            if (sizeAdjusted.x > 1) {
+                              leds->size.x = sizeAdjusted.x;
+                              if (sizeAdjusted.y > 1) leds->size.y = sizeAdjusted.y; else leds->size.y = sizeAdjusted.z;
+                            } else {
+                              leds->size.x = sizeAdjusted.y;
+                              leds->size.y = sizeAdjusted.z;
+                            }
+                            leds->size.z = 1;
+                          }
+
+                          if (sizeAdjusted.x > 1) {
+                            mapped.x = pixelAdjusted.x;
+                            if (sizeAdjusted.y > 1) mapped.y = pixelAdjusted.y; else mapped.y = pixelAdjusted.z;
+                          } else {
+                            mapped.x = pixelAdjusted.y;
+                            mapped.y = pixelAdjusted.z;
+                          }
+                          mapped.z = 0;
+
+                          // ppf("2Dto2D %d-%d p:%d,%d,%d m:%d,%d,%d\n", indexV, indexP, pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, mapped.x, mapped.y, mapped.z
+                          break;
+                        case _3D: //2D3D
+                          if (leds->size == Coord3D{0,0,0}) { // first
+                            leds->size.x = sizeAdjusted.x + sizeAdjusted.y / 2;
+                            leds->size.y = sizeAdjusted.y / 2 + sizeAdjusted.z;
+                            leds->size.z = 1;
+                          }
+                          mapped.x = pixelAdjusted.x + pixelAdjusted.y / 2;
+                          mapped.y = pixelAdjusted.y / 2 + pixelAdjusted.z;
+                          mapped.z = 0;
+
+                          // ppf("2D to 3D indexV %d %d\n", indexV, size.x);
+                          break;
+                      }
+
+                      //using cached virtual class methods!
+                      if (projection) (projection->*leds->adjustMappedCached)(*leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted); // Currently does nothing.
+
+                      indexV = leds->XYZUnprojected(mapped);
+                      break;
+                    case _3D: //effectDimension
+                      mapped = pixelAdjusted;
+                      
+                      switch(leds->projectionDimension) {
+                        case _1D:
+                          if (leds->size == Coord3D{0,0,0}) { // first
+                            leds->size.x = std::pow(sizeAdjusted.x * sizeAdjusted.y * sizeAdjusted.z, 1/3.); //only one is > 1, cube root
+                            leds->size.y = leds->size.x;
+                            leds->size.z = leds->size.x;
+                          }
+                          break;
+                        case _2D:
+                          if (leds->size == Coord3D{0,0,0}) { // first
+                            leds->size.x = sizeAdjusted.x; //2 of the 3 sizes are > 1, so one dimension of the effect is 1
+                            leds->size.y = sizeAdjusted.y;
+                            leds->size.z = sizeAdjusted.z;
+                          }
+                          break;
+                        case _3D:
+                          if (leds->size == Coord3D{0,0,0}) { // first
+                            leds->size.x = sizeAdjusted.x;
+                            leds->size.y = sizeAdjusted.y;
+                            leds->size.z = sizeAdjusted.z;
+                          }
+                          break;
+                      }
+
+                      //using cached virtual class methods!
+                      if (projection) (projection->*leds->adjustMappedCached)(*leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted); // Currently does nothing.
+
+                      indexV = leds->XYZUnprojected(mapped);
+                      
+                      break; //effectDimension _3D
+                  } //effectDimension
+                }
+                leds->nrOfLeds = leds->size.x * leds->size.y * leds->size.z;
+
+                //post processing: 
+                if (projection) (projection->*leds->postProcessingCached)(*leds, indexV);
+
+                if (indexV != UINT16_MAX) {
+                  if (indexV >= leds->nrOfLeds || indexV >= NUM_VLEDS_Max)
+                    ppf("dev pre [%d] indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, leds->nrOfLeds, NUM_VLEDS_Max, leds->mappingTable.size(), indexP, pixel.x, pixel.y, pixel.z, leds->size.x, leds->size.y, leds->size.z);
+                  else {
+
+                    //create new physMaps if needed
+                    if (indexV >= leds->mappingTable.size()) {
+                      for (size_t i = leds->mappingTable.size(); i <= indexV; i++) {
+                        // ppf("mapping %d,%d,%d add physMap before %d %d\n", pixel.y, pixel.y, pixel.z, indexV, leds->mappingTable.size());
+                        leds->mappingTable.push_back(PhysMap()); //abort() was called at PC 0x40191473 on core 1 std::allocator<unsigned short> >&&)
+                      }
                     }
-                    else 
-                      ppf("dev post [%d] indexP too high %d>=%d or %d (p:%d m:%d) p:%d,%d,%d\n", rowNr, indexP, nrOfLeds, NUM_LEDS_Max, leds->mappingTable.size(), indexP, pixel.x, pixel.y, pixel.z);
-                  }
-                  // ppf("mapping b:%d t:%d V:%d\n", indexV, indexP, leds->mappingTable.size());
-                } //indexV not too high
-              } //indexV
 
-              mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
+                    leds->mappingTable[indexV].addIndexP(indexP);
+                    // ppf("mapping b:%d t:%d V:%d\n", indexV, indexP, leds->mappingTable.size());
+                  } //indexV not too high
+                } //indexV
 
-            } //if x,y,z between start and endpos
-          } //if leds->doMap
-          rowNr++;
-        } //for listOfLeds
+                mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
+
+              } //if x,y,z between start and endpos
+            } //if leds->doMap
+            rowNr++;
+          } //for listOfLeds
+        } //indexP < max
+        else 
+          ppf("dev post indexP too high %d>=%d or %d p:%d,%d,%d\n", indexP, nrOfLeds, NUM_LEDS_Max, pixel.x, pixel.y, pixel.z);
         indexP++; //also increase if no buffer created
       } //if 1D-3D pixel
 

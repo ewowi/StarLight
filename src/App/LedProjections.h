@@ -153,13 +153,13 @@ class DistanceFromPointProjection: public Projection {
       Trigo trigo(leds.size.x-1); // 8 bits trigo with period leds.size.x-1 (currentl Float trigo as same performance)
       float minDistance = 10;
       // ppf("checking indexV %d\n", indexV);
-      for (forUnsigned16 x=0; x<leds.size.x && minDistance > 0.5f; x++) {
+      for (uint16_t x=0; x<leds.size.x && minDistance > 0.5f; x++) {
         // float xFactor = x * TWO_PI / (float)(leds.size.x-1); //between 0 .. 2PI
 
         float xNew = trigo.sin(leds.size.x, x);
         float yNew = trigo.cos(leds.size.y, x);
 
-        for (forUnsigned16 y=0; y<leds.size.y && minDistance > 0.5f; y++) {
+        for (uint16_t y=0; y<leds.size.y && minDistance > 0.5f; y++) {
 
           // float yFactor = (leds.size.y-1.0f-y) / (leds.size.y-1.0f); // between 1 .. 0
           float yFactor = 1 - y / (leds.size.y-1.0f); // between 1 .. 0
@@ -187,7 +187,7 @@ class DistanceFromPointProjection: public Projection {
           }
         }
       }
-      if (minDistance > 0.5f) indexV = UINT16_MAX;
+      if (minDistance > 0.5f) indexV = UINT16_MAX; //do not show this pixel
     }
   }
 
