@@ -144,7 +144,7 @@ class SharedData {
     index = 0;
   }
 
-  //sets the sharedData pointer back to 0 so loop effect can go through it
+  //sets the effectData pointer back to 0 so loop effect can go through it
   void begin() {
     index = 0;
   }
@@ -288,8 +288,8 @@ public:
   unsigned8 proPanSpeed = 128;
   unsigned8 proRollSpeed = 128;
 
-  SharedData sharedData;
-  SharedData sharedProData;
+  SharedData effectData;
+  SharedData projectionData;
 
   std::vector<PhysMap> mappingTable;
 

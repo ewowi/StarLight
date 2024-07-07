@@ -36,9 +36,9 @@ class MultiplyProjection: public Projection {
 
   void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
-    leds.sharedProData.begin();
-    Coord3D proMulti = leds.sharedProData.read<Coord3D>();
-    bool    mirror   = leds.sharedProData.read<bool>();
+    leds.projectionData.begin();
+    Coord3D proMulti = leds.projectionData.read<Coord3D>();
+    bool    mirror   = leds.projectionData.read<bool>();
 
     proMulti = proMulti.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
     if (proMulti == Coord3D{1, 1, 1}) return;      // No need to adjust if proMulti is {1, 1, 1}
@@ -57,9 +57,9 @@ class MultiplyProjection: public Projection {
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
-    leds.sharedProData.reset();
-    Coord3D *proMulti = leds.sharedProData.write<Coord3D>({2,2,1});
-    bool *mirror = leds.sharedProData.write<bool>(false);
+    leds.projectionData.reset();
+    Coord3D *proMulti = leds.projectionData.write<Coord3D>({2,2,1});
+    bool *mirror = leds.projectionData.write<bool>(false);
     ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         if (rowNr < leds.fixture->listOfLeds.size()) {
@@ -208,10 +208,10 @@ class ReverseProjection: public Projection {
 
   void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
-    leds.sharedProData.begin();
-    bool reverseX = leds.sharedProData.read<bool>();
-    bool reverseY = leds.sharedProData.read<bool>();
-    bool reverseZ = leds.sharedProData.read<bool>();
+    leds.projectionData.begin();
+    bool reverseX = leds.projectionData.read<bool>();
+    bool reverseY = leds.projectionData.read<bool>();
+    bool reverseZ = leds.projectionData.read<bool>();
 
     if (reverseX) pixelAdjusted.x = sizeAdjusted.x - pixelAdjusted.x - 1;
     if (reverseY) pixelAdjusted.y = sizeAdjusted.y - pixelAdjusted.y - 1;
@@ -219,10 +219,10 @@ class ReverseProjection: public Projection {
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
-    leds.sharedProData.reset();
-    bool *reverseX = leds.sharedProData.write<bool>(false);
-    bool *reverseY = leds.sharedProData.write<bool>(false);
-    bool *reverseZ = leds.sharedProData.write<bool>(false);
+    leds.projectionData.reset();
+    bool *reverseX = leds.projectionData.write<bool>(false);
+    bool *reverseY = leds.projectionData.write<bool>(false);
+    bool *reverseZ = leds.projectionData.write<bool>(false);
 
     ui->initCheckBox(parentVar, "reverse X", reverseX, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
@@ -257,10 +257,10 @@ class MirrorProjection: public Projection {
 
   void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
-    leds.sharedProData.begin();
-    bool mirrorX = leds.sharedProData.read<bool>();
-    bool mirrorY = leds.sharedProData.read<bool>();
-    bool mirrorZ = leds.sharedProData.read<bool>();
+    leds.projectionData.begin();
+    bool mirrorX = leds.projectionData.read<bool>();
+    bool mirrorY = leds.projectionData.read<bool>();
+    bool mirrorZ = leds.projectionData.read<bool>();
 
     if (mirrorX) {
       if (pixelAdjusted.x >= sizeAdjusted.x / 2) pixelAdjusted.x = sizeAdjusted.x - 1 - pixelAdjusted.x;
@@ -277,10 +277,10 @@ class MirrorProjection: public Projection {
 }
 
   void controls(Leds &leds, JsonObject parentVar) {
-    leds.sharedProData.reset();
-    bool *mirrorX = leds.sharedProData.write<bool>(false);
-    bool *mirrorY = leds.sharedProData.write<bool>(false);
-    bool *mirrorZ = leds.sharedProData.write<bool>(false);
+    leds.projectionData.reset();
+    bool *mirrorX = leds.projectionData.write<bool>(false);
+    bool *mirrorY = leds.projectionData.write<bool>(false);
+    bool *mirrorZ = leds.projectionData.write<bool>(false);
     ui->initCheckBox(parentVar, "mirror X", mirrorX, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         leds.fixture->listOfLeds[rowNr]->triggerMapping();
@@ -314,8 +314,8 @@ class GroupingProjection: public Projection {
 
   void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
-    leds.sharedProData.begin();
-    Coord3D grouping = leds.sharedProData.read<Coord3D>();
+    leds.projectionData.begin();
+    Coord3D grouping = leds.projectionData.read<Coord3D>();
     grouping = grouping.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
     if (grouping == Coord3D{1, 1, 1}) return;
 
@@ -326,8 +326,8 @@ class GroupingProjection: public Projection {
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
-    leds.sharedProData.reset();
-    Coord3D *grouping = leds.sharedProData.write<Coord3D>({1,1,1});
+    leds.projectionData.reset();
+    Coord3D *grouping = leds.projectionData.write<Coord3D>({1,1,1});
     ui->initCoord3D(parentVar, "Grouping", grouping, 0, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         leds.fixture->listOfLeds[rowNr]->triggerMapping();
@@ -354,10 +354,10 @@ class TransposeProjection: public Projection {
 
   void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
-    leds.sharedProData.begin();
-    bool transposeXY = leds.sharedProData.read<bool>();
-    bool transposeXZ = leds.sharedProData.read<bool>();
-    bool transposeYZ = leds.sharedProData.read<bool>();
+    leds.projectionData.begin();
+    bool transposeXY = leds.projectionData.read<bool>();
+    bool transposeXZ = leds.projectionData.read<bool>();
+    bool transposeYZ = leds.projectionData.read<bool>();
 
     if (transposeXY) { int temp = pixelAdjusted.x; pixelAdjusted.x = pixelAdjusted.y; pixelAdjusted.y = temp; }
     if (transposeXZ) { int temp = pixelAdjusted.x; pixelAdjusted.x = pixelAdjusted.z; pixelAdjusted.z = temp; }
@@ -365,10 +365,10 @@ class TransposeProjection: public Projection {
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
-    leds.sharedProData.reset();
-    bool *transposeXY = leds.sharedProData.write<bool>(false);
-    bool *transposeXZ = leds.sharedProData.write<bool>(false);
-    bool *transposeYZ = leds.sharedProData.write<bool>(false);
+    leds.projectionData.reset();
+    bool *transposeXY = leds.projectionData.write<bool>(false);
+    bool *transposeXZ = leds.projectionData.write<bool>(false);
+    bool *transposeYZ = leds.projectionData.write<bool>(false);
 
     ui->initCheckBox(parentVar, "transpose XY", transposeXY, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
@@ -411,8 +411,8 @@ class PinwheelProjection: public Projection {
 
   void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     if (leds.size != Coord3D{0,0,0}) return; // Adjust only on first call
-    leds.sharedProData.begin();
-    int petals = leds.sharedProData.read<uint16_t>();
+    leds.projectionData.begin();
+    int petals = leds.projectionData.read<uint16_t>();
     petals = max(1, petals); // Petals cannot be < 1
     if (leds.projectionDimension > _1D && leds.effectDimension > _1D) {
       sizeAdjusted.y = sqrt(sq(max(sizeAdjusted.x - midPosAdjusted.x, midPosAdjusted.x)) + 
@@ -429,12 +429,12 @@ class PinwheelProjection: public Projection {
 
   void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
     // UI Variables
-    leds.sharedProData.begin();
-    int petals     = leds.sharedProData.read<uint16_t>();
-    const int swirlVal   = leds.sharedProData.read<uint8_t>() - 30; // SwirlVal range -30 to 30
-    const bool reverse   = leds.sharedProData.read<bool>();
-    const int angleRange = max(int(leds.sharedProData.read<uint16_t>()), 1);
-    const int zTwist     = leds.sharedProData.read<uint8_t>() - 42; // zTwist range -42 to 42
+    leds.projectionData.begin();
+    int petals     = leds.projectionData.read<uint16_t>();
+    const int swirlVal   = leds.projectionData.read<uint8_t>() - 30; // SwirlVal range -30 to 30
+    const bool reverse   = leds.projectionData.read<bool>();
+    const int angleRange = max(int(leds.projectionData.read<uint16_t>()), 1);
+    const int zTwist     = leds.projectionData.read<uint8_t>() - 42; // zTwist range -42 to 42
 
     if (leds.effectDimension > _1D && leds.projectionDimension > _1D) petals = min(72, petals); // Limit 2D/3D grid.x to 72
     petals = max(1, petals); // Petals cannot be < 1
@@ -464,13 +464,13 @@ class PinwheelProjection: public Projection {
     // ppf("pixelAdjusted %d,%d,%d -> %d,%d,%d angle %d\n", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, mapped.x, mapped.y, mapped.z, angle);
   }
   void controls(Leds &leds, JsonObject parentVar) {
-    leds.sharedProData.reset();
+    leds.projectionData.reset();
 
-    uint16_t *petals     = leds.sharedProData.write<uint16_t>(60); // Initalize petal first for adjustSizeAndPixel
-    uint8_t  *swirlVal   = leds.sharedProData.write<uint8_t>(30);
-    bool     *reverse    = leds.sharedProData.write<bool>(false);
-    uint16_t *angleRange = leds.sharedProData.write<uint16_t>(360);
-    uint8_t  *zTwist     = leds.sharedProData.write<uint8_t>(42);
+    uint16_t *petals     = leds.projectionData.write<uint16_t>(60); // Initalize petal first for adjustSizeAndPixel
+    uint8_t  *swirlVal   = leds.projectionData.write<uint8_t>(30);
+    bool     *reverse    = leds.projectionData.write<bool>(false);
+    uint16_t *angleRange = leds.projectionData.write<uint16_t>(360);
+    uint8_t  *zTwist     = leds.projectionData.write<uint8_t>(42);
 
     ui->initSlider(parentVar, "swirl", swirlVal, 0, 60, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
