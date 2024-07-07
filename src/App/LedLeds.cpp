@@ -72,7 +72,7 @@ CRGB Leds::getPixelColor(unsigned16 indexV) {
   if (indexV < mappingTable.size()) {
     if (mappingTable[indexV].isOneIndex())
       return fixture->ledsP[mappingTable[indexV].indexP[0]]; //any would do as they are all the same
-    if (mappingTable[indexV].isMultipleIndexes())
+    else if (mappingTable[indexV].isMultipleIndexes())
       return fixture->ledsP[*mappingTable[indexV].indexes->begin()]; //any would do as they are all the same
     else 
       return mappingTable[indexV].color;

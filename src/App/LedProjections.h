@@ -148,6 +148,49 @@ class DistanceFromPointProjection: public Projection {
 
   public: //to use in Preset1Projection
 
+  void postProcessing(Leds &leds, uint16_t &indexV) {
+    if (leds.projectionDimension == _2D) { //2D2D: inverse mapping
+      Trigo trigo(leds.size.x-1); // 8 bits trigo with period leds.size.x-1 (currentl Float trigo as same performance)
+      float minDistance = 10;
+      // ppf("checking indexV %d\n", indexV);
+      for (forUnsigned16 x=0; x<leds.size.x && minDistance > 0.5f; x++) {
+        // float xFactor = x * TWO_PI / (float)(leds.size.x-1); //between 0 .. 2PI
+
+        float xNew = trigo.sin(leds.size.x, x);
+        float yNew = trigo.cos(leds.size.y, x);
+
+        for (forUnsigned16 y=0; y<leds.size.y && minDistance > 0.5f; y++) {
+
+          // float yFactor = (leds.size.y-1.0f-y) / (leds.size.y-1.0f); // between 1 .. 0
+          float yFactor = 1 - y / (leds.size.y-1.0f); // between 1 .. 0
+
+          float x2New = round((yFactor * xNew + leds.size.x) / 2.0f); // 0 .. size.x
+          float y2New = round((yFactor * yNew + leds.size.y) / 2.0f); //  0 .. size.y
+
+          // ppf(" %d,%d->%f,%f->%f,%f", x, y, sinf(x * TWO_PI / (float)(size.x-1)), cosf(x * TWO_PI / (float)(size.x-1)), xNew, yNew);
+
+          //this should work (better) but needs more testing
+          // float distance = abs(indexV - xNew - yNew * size.x);
+          // if (distance < minDistance) {
+          //   minDistance = distance;
+          //   indexV = x+y*size.x;
+          // }
+
+          // if the new XY i
+          if (indexV == leds.XY(x2New, y2New)) { //(unsigned8)xNew + (unsigned8)yNew * size.x) {
+            // ppf("  found one %d => %d=%d+%d*%d (%f+%f*%d) [%f]\n", indexV, x+y*size.x, x,y, size.x, xNew, yNew, size.x, distance);
+            indexV = leds.XY(x, y);
+
+            if (indexV%10 == 0) ppf("."); //show some progress as this projection is slow (Need S007 to optimize ;-)
+                                        
+            minDistance = 0.0f; // stop looking further
+          }
+        }
+      }
+      if (minDistance > 0.5f) indexV = UINT16_MAX;
+    }
+  }
+
   void controls(Leds &leds, JsonObject parentVar) {
     // ui->initCoord3D(parentVar, "proCenter", {8,8,8}, 0, NUM_LEDS_Max, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     //   case onUI:

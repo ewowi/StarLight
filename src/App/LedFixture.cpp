@@ -55,14 +55,14 @@ void Fixture::projectAndMap() {
       }
     }
 
-    stackUnsigned16 indexP = 0;
-    stackUnsigned16 prevIndexP = 0;
-    unsigned16 currPin; //lookFor needs u16
+    uint16_t indexP = 0;
+    uint16_t prevIndexP = 0;
+    uint16_t currPin; //lookFor needs u16
 
     //what to deserialize
-    starJson.lookFor("width", (unsigned16 *)&fixSize.x);
-    starJson.lookFor("height", (unsigned16 *)&fixSize.y);
-    starJson.lookFor("depth", (unsigned16 *)&fixSize.z);
+    starJson.lookFor("width", (uint16_t *)&fixSize.x);
+    starJson.lookFor("height", (uint16_t *)&fixSize.y);
+    starJson.lookFor("depth", (uint16_t *)&fixSize.z);
     starJson.lookFor("nrOfLeds", &nrOfLeds);
     starJson.lookFor("pin", &currPin);
 
@@ -111,7 +111,7 @@ void Fixture::projectAndMap() {
               mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
 
               //calculate the indexV to add to current physical led to
-              stackUnsigned16 indexV = UINT16_MAX;
+              uint16_t indexV = UINT16_MAX;
 
               Coord3D mapped;
               if (leds->projectionNr == p_Pinwheel) {
@@ -247,57 +247,8 @@ void Fixture::projectAndMap() {
                   ppf("dev pre [%d] indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, leds->nrOfLeds, NUM_VLEDS_Max, leds->mappingTable.size(), indexP, pixel.x, pixel.y, pixel.z, leds->size.x, leds->size.y, leds->size.z);
                 }
                 else {
-                  Trigo trigo(leds->size.x-1); // 8 bits trigo with period leds->size.x-1 (currentl Float trigo as same performance)
                   //post processing: 
-                  switch(leds->projectionNr) {
-                  case p_DistanceFromPoint:
-                    switch (leds->effectDimension) {
-                    case _2D: 
-                      switch (leds->projectionDimension) {
-                      case _2D: //2D2D: inverse mapping
-                        float minDistance = 10;
-                        // ppf("checking indexV %d\n", indexV);
-                        for (forUnsigned16 x=0; x<leds->size.x && minDistance > 0.5f; x++) {
-                          // float xFactor = x * TWO_PI / (float)(leds->size.x-1); //between 0 .. 2PI
-
-                          float xNew = trigo.sin(leds->size.x, x);
-                          float yNew = trigo.cos(leds->size.y, x);
-
-                          for (forUnsigned16 y=0; y<leds->size.y && minDistance > 0.5f; y++) {
-
-                            // float yFactor = (leds->size.y-1.0f-y) / (leds->size.y-1.0f); // between 1 .. 0
-                            float yFactor = 1 - y / (leds->size.y-1.0f); // between 1 .. 0
-
-                            float x2New = round((yFactor * xNew + leds->size.x) / 2.0f); // 0 .. size.x
-                            float y2New = round((yFactor * yNew + leds->size.y) / 2.0f); //  0 .. size.y
-
-                            // ppf(" %d,%d->%f,%f->%f,%f", x, y, sinf(x * TWO_PI / (float)(size.x-1)), cosf(x * TWO_PI / (float)(size.x-1)), xNew, yNew);
-
-                            //this should work (better) but needs more testing
-                            // float distance = abs(indexV - xNew - yNew * size.x);
-                            // if (distance < minDistance) {
-                            //   minDistance = distance;
-                            //   indexV = x+y*size.x;
-                            // }
-
-                            // if the new XY i
-                            if (indexV == leds->XY(x2New, y2New)) { //(unsigned8)xNew + (unsigned8)yNew * size.x) {
-                              // ppf("  found one %d => %d=%d+%d*%d (%f+%f*%d) [%f]\n", indexV, x+y*size.x, x,y, size.x, xNew, yNew, size.x, distance);
-                              indexV = leds->XY(x, y);
-
-                              if (indexV%10 == 0) ppf("."); //show some progress as this projection is slow (Need S007 to optimize ;-)
-                                                          
-                              minDistance = 0.0f; // stop looking further
-                            }
-                          }
-                        }
-                        if (minDistance > 0.5f) indexV = UINT16_MAX;
-                        break;
-                      }
-                      break;
-                    }
-                    break;
-                  }
+                  if (projection) (projection->*leds->postProcessingCached)(*leds, indexV);
 
                   if (indexV != UINT16_MAX) { //can be nulled by inverse mapping 
                     //add physical tables if not present
@@ -344,9 +295,9 @@ void Fixture::projectAndMap() {
               char * before;
               before = after;
               after = strtok(NULL, " ");
-              stackUnsigned16 startLed = atoi(before);
-              stackUnsigned16 nrOfLeds = atoi(after) - atoi(before) + 1;
-              print->fFormat(details, sizeof(details)-1, "%d-%d", min(prevIndexP, startLed), max((stackUnsigned16)(indexP - 1), nrOfLeds)); //careful: LedModEffects:loop uses this to assign to FastLed
+              uint16_t startLed = atoi(before);
+              uint16_t nrOfLeds = atoi(after) - atoi(before) + 1;
+              print->fFormat(details, sizeof(details)-1, "%d-%d", min(prevIndexP, startLed), max((uint16_t)(indexP - 1), nrOfLeds)); //careful: LedModEffects:loop uses this to assign to FastLed
               ppf("pins extend leds %d: %s\n", currPin, details);
               //tbd: more check
 
@@ -375,8 +326,8 @@ void Fixture::projectAndMap() {
         if (leds->doMap) {
           ppf("projectAndMap post leds[%d] fx:%d pro:%d\n", rowNr, leds->fx, leds->projectionNr);
 
-          stackUnsigned16 nrOfMappings = 0;
-          stackUnsigned16 nrOfPixels = 0;
+          uint16_t nrOfMappings = 0;
+          uint16_t nrOfPixels = 0;
 
           if (leds->projectionNr == p_Random || leds->projectionNr == p_None) {
 
@@ -396,7 +347,7 @@ void Fixture::projectAndMap() {
             leds->nrOfLeds = leds->mappingTable.size();
 
             //debug info + summary values
-            stackUnsigned16 indexV = 0;
+            uint16_t indexV = 0;
             for (PhysMap &map:leds->mappingTable) {
             // for (auto map=leds->mappingTable.begin(); map!=leds->mappingTable.end(); ++map) {
               if (map.isOneIndex()) {
@@ -407,7 +358,7 @@ void Fixture::projectAndMap() {
                 // if (nrOfMappings%(leds->nrOfLeds/10+1) == 0)
                   // ppf("ledV %d mapping: #ledsP (%d):", indexV, nrOfMappings);
 
-                for (forUnsigned16 indexP:*map.indexes) {
+                for (uint16_t indexP:*map.indexes) {
                   // if (nrOfPixels < 10 || map.indexes->size() - indexV < 10)
                   // if (nrOfMappings%(leds->nrOfLeds/10+1) == 0)
                     // ppf(" %d", indexP);

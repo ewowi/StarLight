@@ -34,6 +34,8 @@ public:
 
   virtual void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {}
 
+  virtual void postProcessing(Leds &leds, uint16_t &indexV) {}
+
   virtual void adjustXYZ(Leds &leds, Coord3D &pixel) {}
   
   virtual void controls(Leds &leds, JsonObject parentVar) {}

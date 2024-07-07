@@ -274,6 +274,7 @@ public:
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
   void (Projection::*adjustSizeAndPixelCached)(Leds &, Coord3D &, Coord3D &, Coord3D &) = nullptr;
   void (Projection::*adjustMappedCached)(Leds &, Coord3D &, Coord3D, Coord3D, Coord3D) = nullptr;
+  void (Projection::*postProcessingCached)(Leds &, uint16_t &) = nullptr;
   void (Projection::*adjustXYZCached)(Leds &, Coord3D &) = nullptr;
 
   unsigned8 effectDimension = -1;
