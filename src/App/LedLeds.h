@@ -34,6 +34,7 @@ enum ProjectionsE
 {
   p_None,
   p_Default,
+  p_Pinwheel,
   p_Multiply,
   p_TiltPanRoll,
   p_DistanceFromPoint,
@@ -45,7 +46,6 @@ enum ProjectionsE
   p_Spacing,
   p_Transpose,
   p_Kaleidoscope,
-  p_Pinwheel,
   p_count // keep as last entry
 };
 
