@@ -92,6 +92,7 @@ public:
       //2D WLED
       effects.push_back(new Waverly);
       effects.push_back(new GEQEffect);
+      effects.push_back(new LaserGEQEffect);
       effects.push_back(new FunkyPlank);
     #endif
     //3D

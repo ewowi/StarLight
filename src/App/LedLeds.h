@@ -384,6 +384,20 @@ public:
   void addPixelColor(unsigned16 indexV, CRGB color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
   void addPixelColor(Coord3D pixel, CRGB color) {setPixelColor(pixel, getPixelColor(pixel) + color);}
 
+  void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, CRGB color) {
+    if (x0 >= size.x || x1 >= size.x || y0 >= size.y || y1 >= size.y) return;
+    const int16_t dx = abs(x1-x0), sx = x0<x1 ? 1 : -1;
+    const int16_t dy = abs(y1-y0), sy = y0<y1 ? 1 : -1;
+    int16_t err = (dx>dy ? dx : -dy)/2, e2;
+    for (;;) {
+      setPixelColor(XY(x0,y0), color);
+      if (x0==x1 && y0==y1) break;
+      e2 = err;
+      if (e2 >-dx) { err -= dy; x0 += sx; }
+      if (e2 < dy) { err += dx; y0 += sy; }
+    }
+  }
+
   void fadeToBlackBy(unsigned8 fadeBy = 255);
   void fill_solid(const struct CRGB& color, bool noBlend = false);
   void fill_rainbow(unsigned8 initialhue, unsigned8 deltahue);
