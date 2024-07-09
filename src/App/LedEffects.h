@@ -2399,6 +2399,145 @@ class GEQEffect: public Effect {
   }
 }; //GEQ
 
+//by @Troy
+class LaserGEQEffect: public Effect {
+  const char * name() {return "laserGEQ";}
+  uint8_t dim() {return _2D;}
+  const char * tags() {return "♫💫";}
+
+  void setup(Leds &leds) {
+    leds.fadeToBlackBy(16);
+  }
+
+  void loop(Leds &leds) {
+    //Binding of controls. Keep before binding of vars and keep in same order as in controls()
+    uint8_t fadeOut = leds.effectData.read<uint8_t>();
+
+    uint16_t *projector = leds.effectData.readWrite<uint16_t>();
+    int8_t *projector_dir = leds.effectData.readWrite<int8_t>();;
+
+    *projector += *projector_dir;
+    if (*projector > leds.size.x) *projector = leds.size.x; //init
+    if (*projector == leds.size.x) *projector_dir = -1;
+    if (*projector == 0) *projector_dir = 1;
+
+    if (fadeOut > 250) {
+      leds.fill_solid(CRGB::Black);
+    } else {
+      leds.fadeToBlackBy(fadeOut);
+    }
+
+    const int NUM_BANDS = 16; // map(SEGMENT.custom1, 0, 255, 1, 16);
+
+    uint8_t heights[16] = { 0 };
+
+    for (int i=0; i<16; i++) {
+      heights[i] = map(wledAudioMod->fftResults[i],0,255,0,leds.size.y-10);
+    }
+
+    for (int i=0; i<8; i++) {
+
+      uint16_t colorIndex = map(leds.size.x/16*i, 0, leds.size.x-1, 0, 255);
+      CRGB ledColor = ColorFromPalette(leds.palette, colorIndex);
+
+      int linex = i*(leds.size.x/16);
+
+      if (heights[i] > 1) {
+
+        if (linex < *projector) {
+          for (int y = 0; y <= heights[i]; y++) {
+            leds.drawLine(linex+(leds.size.x/16)-1,leds.size.y-y-1,*projector,0, blend(ledColor, CRGB::Black, 32));
+          } 
+        }
+
+        if (linex > *projector) {
+          for (int y = 0; y <= heights[i]; y++) {
+            leds.drawLine(linex           ,leds.size.y-y-1,*projector,0, blend(ledColor, CRGB::Black, 32));
+          } 
+        }
+
+      }
+
+    }
+
+    for (int i=15; i>7; i--) {
+
+      uint16_t colorIndex = map(leds.size.x/16*i, 0, leds.size.x-1, 0, 255);
+      CRGB ledColor = ColorFromPalette(leds.palette, colorIndex);
+
+      int linex = i*(leds.size.x/16);
+
+      if (heights[i] > 1) {
+
+        if (linex < *projector) {
+          for (int y = 0; y <= heights[i]; y++) {
+            leds.drawLine(linex+(leds.size.x/16)-1,leds.size.y-y-1,*projector,0, blend(ledColor, CRGB::Black, 32));
+          } 
+        }
+
+        if (linex > *projector) {
+          for (int y = 0; y <= heights[i]; y++) {
+            leds.drawLine(linex           ,leds.size.y-y-1,*projector,0, blend(ledColor, CRGB::Black, 32));
+          } 
+        }
+      }
+    }
+
+    for (int i=0; i<8; i++) {
+
+      uint16_t colorIndex = map(leds.size.x/16*i, 0, leds.size.x-1, 0, 255);
+      CRGB ledColor = ColorFromPalette(leds.palette, colorIndex);
+
+      int linex = i*(leds.size.x/16);
+
+      if (heights[i] > 1) {
+        for (int x=linex; x<=linex+(leds.size.x/16)-1;x++) {
+          leds.drawLine(x,            leds.size.y-heights[i]-2,*projector,0, blend(ledColor, CRGB::Black, 128)); // top perspective
+        }
+      }
+
+    }
+
+    for (int i=15; i>7; i--) {
+
+      uint16_t colorIndex = map(leds.size.x/16*i, 0, leds.size.x-1, 0, 255);
+      CRGB ledColor = ColorFromPalette(leds.palette, colorIndex);
+
+      int linex = i*(leds.size.x/16);
+
+      if (heights[i] > 1) {
+        for (int x=linex; x<=linex+(leds.size.x/16)-1;x++) {
+          leds.drawLine(x,            leds.size.y-heights[i]-2,*projector,0, blend(ledColor, CRGB::Black, 128)); // top perspective
+        }
+      }
+
+    }
+
+    for (int i=0; i<16; i++) {
+
+      uint8_t colorIndex = map(leds.size.x/16*i, 0, leds.size.x-1, 0, 255);
+      CRGB ledColor = ColorFromPalette(leds.palette, colorIndex);
+
+      int linex = i*(leds.size.x/16);
+
+      if (heights[i] > 1) {
+        for (int x=linex+1; x<linex+(leds.size.x/16)-1;x++) { 
+          leds.drawLine(x,leds.size.y-2,x,leds.size.y-heights[i]-2, blend(ledColor, CRGB::Black, 32)); // front fill
+        }
+        leds.drawLine(linex,            leds.size.y-1,linex,leds.size.y-heights[i]-1,ledColor); // left side
+        leds.drawLine(linex+(leds.size.x/16)-1,leds.size.y-1,linex+(leds.size.x/16)-1,leds.size.y-heights[i]-1,ledColor); // right side
+        leds.drawLine(linex,            leds.size.y-heights[i]-2,linex+(leds.size.x/16)-1,leds.size.y-heights[i]-2,ledColor); // top
+        leds.drawLine(linex,            leds.size.y-1,linex+(leds.size.x/16)-1,leds.size.y-1,ledColor); // bottom
+      }
+    }
+  }
+
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    ui->initSlider(parentVar, "fadeOut", leds.effectData.write<uint8_t>(255));
+  }
+}; //LaserGEQEffect
+
 class FunkyPlank: public Effect {
   const char * name() {return "Funky Plank";}
   uint8_t dim() {return _2D;}
