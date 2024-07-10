@@ -17,6 +17,7 @@
 struct FileDetails {
   char name[32];
   size_t size;
+  time_t time;
 };
 
 class SysModFiles: public SysModule {

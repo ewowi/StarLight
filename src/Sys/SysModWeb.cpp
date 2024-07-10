@@ -17,6 +17,9 @@
 #include "SysModPins.h"
 
 #include "User/UserModMDNS.h"
+// #ifdef STARBASE_USERMOD_LIVE
+//   #include "../User/UserModLive.h"
+// #endif
 
 #include "html_ui.h"
 
@@ -500,6 +503,12 @@ void SysModWeb::serveUpload(WebRequest *request, const String& filename, size_t 
     request->send(200, "text/plain", F("File Uploaded!"));
 
     files->filesChanged = true;
+
+    //if sc files send command to live
+    // #ifdef STARBASE_USERMOD_LIVE
+    //   if (filename.indexOf(".sc") > 0)
+    //     liveM->run(filename.c_str());
+    // #endif
   }
 }
 

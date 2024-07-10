@@ -10,9 +10,11 @@
 */
 
 // #define __RUN_CORE 0
-#include "parser.h"
+#pragma once
+#include <parser.h>
 
 long time1;
+long time4;
 static float _min = 9999;
 static float _max = 0;
 static uint32_t _nb_stat = 0;
@@ -21,36 +23,63 @@ static float _totfps;
 static float fps = 0; //integer?
 static unsigned long frameCounter = 0;
 
+//external function implementation (tbd: move into class)
+
 static void show()
 {
-    // SKIPPED: check nargs (must be 3 because arg[0] is self)
-    long time2 = ESP.getCycleCount();
-    // driver.showPixels(WAIT);
-    frameCounter++;
+  frameCounter++;
+    
+  // SKIPPED: check nargs (must be 3 because arg[0] is self)
+  long time2 = ESP.getCycleCount();
 
-    float k = (float)(time2 - time1) / 240000000; //always 240MHz?
-    fps = 1 / k;
-    _nb_stat++;
-    if (_min > fps && fps > 10 && _nb_stat > 10)
-        _min = fps;
-    if (_max < fps && fps < 200 && _nb_stat > 10)
-        _max = fps;
-    if (_nb_stat > 10)
-        _totfps += fps;
-    if (_nb_stat%10000 == 0)
-      ppf("current fps:%.2f  average:%.2f min:%.2f max:%.2f\r\n", fps, _totfps / (_nb_stat - 10), _min, _max);
-    time1 = ESP.getCycleCount();
+  // driver.showPixels(WAIT);
+  long time3 = ESP.getCycleCount();
+  float k = (float)(time2 - time1) / 240000000;
+  fps = 1 / k; //StarBase: class variable so it can be shown in UI!!!
+  float k2 = (float)(time3 - time2) / 240000000;
+  float fps2 = 1 / k2;
+  float k3 = (float)(time2 - time4) / 240000000;
+  float fps3 = 1 / k3;
+  _nb_stat++;
+  if (_min > fps && fps > 10 && _nb_stat > 10)
+    _min = fps;
+  if (_max < fps && fps < 5000 && _nb_stat > 10)
+    _max = fps;
+  if (_nb_stat > 10)
+    _totfps += fps;
+  if (_nb_stat%1000 == 0)
+    //Serial.printf("current show fps:%.2f\tglobal fps:%.2f\tfps animation:%.2f\taverage:%.2f\tmin:%.2f\tmax:%.2f\r\n", fps2, fps3, fps, _totfps / (_nb_stat - 10), _min, _max);
+    ppf("current show fps:%.2f\tglobal fps:%.2f\tfps animation:%.2f  average:%.2f min:%.2f max:%.2f\r\n",fps2, fps3,  fps, _totfps / (_nb_stat - 10), _min, _max);
+  time1 = ESP.getCycleCount();
+  time4 = time2;
 
-    // SKIPPED: check that both v1 and v2 are int numbers
-    // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
+  // SKIPPED: check that both v1 and v2 are int numbers
+  // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
 }
 
+static void resetShowStats()
+{
+    float min = 999;
+    float max = 0;
+    _nb_stat = 0;
+    _totfps = 0;
+}
+
+static void dispshit(int g) { ppf("coming from assembly int %x %d", g, g);}
+static void __print(char *s) {ppf("from assembly :%s\r\n", s);}
+static void showError(int line, uint32_t size, uint32_t got) { ppf("Overflow error line %d max size: %d got %d", line, size, got);}
+static void displayfloat(float j) {ppf("display float %f", j);}
+
+static float _hypot(float x,float y) {return hypot(x,y);}
+static float _atan2(float x,float y) { return atan2(x,y);}
+static float _sin(float j) {return sin(j);}
 
 class UserModLive:public SysModule {
 
 public:
 
   Parser p = Parser();
+  char fileName[32] = "";
 
   UserModLive() :SysModule("Live") {
     isEnabled = false; //need to enable after fresh setup
@@ -73,42 +102,23 @@ public:
         //set script
         uint8_t fileNr = var["value"];
 
-        SCExecutable._kill(); //kill any old tasks
-        fps = 0;
-
         ppf("%s script f:%d f:%d\n", name, funType, fileNr);
 
+        char fileName[32] = "";
+
         if (fileNr > 0) { //not None
-
           fileNr--;  //-1 as none is no file
-
-          char fileName[32] = "";
-
           files->seqNrToName(fileName, fileNr, ".sc");
-
           // ppf("%s script f:%d f:%d\n", name, funType, fileNr);
-
-          if (strcmp(fileName, "") != 0) {
-
-            File f = files->open(fileName, "r");
-            if (!f)
-              ppf("UserModLive setup script  open %s for %s failed", fileName, "r");
-            else {
-
-              string script = string(f.readString().c_str());
-
-              ppf("%s\n", script);
-
-              if (p.parse_c(&script))
-              {
-                  SCExecutable.executeAsTask("main");
-              }
-              f.close();
-            }
-          }
-          else
-            ppf("UserModLive setup file for %d not found", fileNr);
         }
+
+        if (strcmp(fileName, "") != 0)
+          run(fileName, true); //force a new file to run
+        else {
+          SCExecutable._kill(); //kill any old tasks
+          fps = 0;
+        }
+
         return true; }
       default: return false; 
     }}); //script
@@ -118,9 +128,21 @@ public:
 
     // ui->initButton
 
+    //Live scripts defaults
     addExternal("show", externalType::function, (void *)&show);
     addExternal("showM", externalType::function, (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
+    addExternal("resetStat", externalType::function, (void *)&resetShowStats);
 
+    addExternal("display", externalType::function, (void *)&dispshit);
+    addExternal("dp", externalType::function, (void *)displayfloat);
+    addExternal("error", externalType::function, (void *)&showError);
+    addExternal("print", externalType::function, (void *)__print);
+
+    addExternal("atan2",externalType::function,(void*)_atan2);
+    addExternal("hypot",externalType::function,(void*)_hypot);
+    addExternal("sin", externalType::function, (void *)_sin);
+
+    //added by StarBase
     addExternal("pinMode", externalType::function, (void *)&pinMode);
     addExternal("digitalWrite", externalType::function, (void *)&digitalWrite);
     addExternal("delay", externalType::function, (void *)&delay);
@@ -144,6 +166,37 @@ public:
     frameCounter = 0;
   }
 
+  void run(const char *fileName, bool force = false) {
+    ppf("live run n:%s o:%s (f:%d)\n", fileName, this->fileName, force);
+
+    if (!force && strcmp(fileName, this->fileName) != 0) // if another fileName then force should be true;
+      return;
+
+    SCExecutable._kill(); //kill any old tasks
+    fps = 0;
+
+    if (strcmp(fileName, "") != 0) {
+
+      File f = files->open(fileName, "r");
+      if (!f)
+        ppf("UserModLive setup script open %s for %s failed\n", fileName, "r");
+      else {
+
+        string scScript = string(f.readString().c_str());
+
+        ppf("%s\n", scScript);
+
+        if (p.parse_c(&scScript))
+        {
+          SCExecutable.executeAsTask("main");
+          strcpy(this->fileName, fileName);
+        }
+        f.close();
+      }
+    }
+    else
+      ppf("UserModLive setup file for %s not found\n", fileName);
+  }
 };
 
 extern UserModLive *liveM;

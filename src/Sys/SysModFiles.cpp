@@ -14,6 +14,7 @@
 #include "SysModWeb.h"
 #include "SysModPrint.h"
 #include "SysModModel.h"
+#include "SysModSystem.h"
 
 // #include <FS.h>
 
@@ -74,21 +75,43 @@ void SysModFiles::setup() {
     default: return false;
   }});
 
-  ui->initURL(tableVar, "flLink", nullptr, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  // ui->initURL(tableVar, "flLink", nullptr, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  //   case onSetValue:
+  //     for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++) {
+  //       char urlString[32] = "file/";
+  //       strncat(urlString, fileList[rowNr].name, sizeof(urlString)-1);
+  //       mdl->setValue(var, JsonString(urlString, JsonString::Copied), rowNr);
+  //     }
+  //     return true;
+  //   case onUI:
+  //     ui->setLabel(var, "Show");
+  //     return true;
+  //   default: return false;
+  // }});
+
+  ui->initNumber(tableVar, "flTime", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue:
-      for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++) {
-        char urlString[32] = "file/";
-        strncat(urlString, fileList[rowNr].name, sizeof(urlString)-1);
-        mdl->setValue(var, JsonString(urlString, JsonString::Copied), rowNr);
-      }
+      for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++)
+        mdl->setValue(var, fileList[rowNr].time, rowNr);
       return true;
     case onUI:
-      ui->setLabel(var, "Show");
+      ui->setLabel(var, "Time");
       return true;
     default: return false;
   }});
 
-  ui->initFile(parentVar, "upload", nullptr, UINT16_MAX, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initFileEdit(tableVar, "flEdit", nullptr, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    case onSetValue:
+      for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++)
+        mdl->setValue(var, JsonString(fileList[rowNr].name, JsonString::Copied), rowNr);
+      return true;
+    case onUI:
+      ui->setLabel(var, "Edit");
+      return true;
+    default: return false;
+  }});
+
+  ui->initFileUpload(parentVar, "upload", nullptr, UINT16_MAX, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Upload File");
     default: return false;
@@ -121,6 +144,7 @@ void SysModFiles::loop20ms() {
       FileDetails details;
       strcpy(details.name, file.name());
       details.size = file.size();
+      details.time = file.getLastWrite(); // - millis()/1000; if (details.time < 0) details.time = 0;
       fileList.push_back(details);
       file.close();
       file = root.openNextFile();
