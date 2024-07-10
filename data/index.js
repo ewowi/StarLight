@@ -54,6 +54,7 @@ function ppf() {
   let logNode = gId("log");
   let sep = "";
   if (logNode) {
+    // console.log("logNode", logNode);
     if (logNode.value.length > 64000) logNode.value = ""; //reset if too big
     // console.log("conslog", theArgs);
     for (var i = 0; i < arguments.length; i++) {
@@ -369,6 +370,61 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       varNode.rows = 10;
       varNode.readOnly = variable.ro;
       varNode.addEventListener('dblclick', (event) => {toggleModal(event.target);});
+    } else if (variable.type == "fileEdit") {
+
+      varNode = cE("input");
+      varNode.type = "button";
+      varNode.disabled = variable.ro;
+      varNode.value = "🔍"; //initial label, button.value is the label shown on the button
+      varNode.addEventListener('click', (event) => {
+        let url = `http://${window.location.hostname}/file/`;
+        console.log("fileEdit event.target", event.target, url, varNode.getAttribute("fName"));
+        fetchAndExecute(url, varNode.getAttribute("fName"), event.target, function(varNode, text) { //send node.id as parameter
+          // console.log("fetchAndExecute", text); //in case of invalid commandJson
+          console.log("fileEdit fetched", varNode.getAttribute("fName"), text);
+
+          //removeChild
+          let modalView = gId('modalView');
+
+          if (modalView) {
+            //delete old nodes
+            while (modalView.firstChild) {
+              modalView.removeChild(modalView.lastChild);
+            }
+
+            let h1Node = cE("h1");
+            h1Node.innerText = "Edit " + varNode.getAttribute("fName");
+            modalView.appendChild(h1Node);
+
+            //cancel
+            let cancelButtonNode = cE("input");
+            cancelButtonNode.type = "button";
+            cancelButtonNode.value = "cancel";
+            cancelButtonNode.addEventListener('click', (event) => {
+              modalView.style.transform = (false) ? "translateY(0px)":"translateY(100%)";
+            });
+            modalView.appendChild(cancelButtonNode);
+  
+            let textAreaNode = cE("textarea");
+
+            //save
+            let saveButtonNode = cE("input");
+            saveButtonNode.type = "button";
+            saveButtonNode.value = "save";
+            saveButtonNode.addEventListener('click', (event) => {
+              console.log("fileEdit save", varNode.getAttribute("fName"), textAreaNode);
+              uploadFileWithText("/" + varNode.getAttribute("fName"), textAreaNode.value);
+              modalView.style.transform = (false) ? "translateY(0px)":"translateY(100%)";
+            });
+            modalView.appendChild(saveButtonNode);
+  
+            textAreaNode.value = text;
+            // varNode.rows = 10;
+            modalView.appendChild(textAreaNode);
+            modalView.style.transform = (true) ? "translateY(0px)":"translateY(100%)";
+          }
+        }); 
+      });
     }
     else if (variable.type == "url") {
       varNode = cE("a");
@@ -441,18 +497,18 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       varNode = cE("progress");
       varNode.min = variable.min?variable.min:0; //if not specified then unsigned value (min=0)
       if (variable.max) varNode.max = variable.max;
-    } else if (variable.type == "file") {
+    } else if (variable.type == "fileUpload") {
       //https://github.com/smford/esp32-asyncwebserver-fileupload-example/blob/master/example-01/example-01.ino
 
       varNode = cE("span");
 
       inputNode = cE("input");
-      inputNode.type = variable.type;
+      inputNode.type = "file";
       inputNode.addEventListener('change', (event) => {
         let fileNode = event.target;
         let file = fileNode.files[0];
         let formData = new FormData();
-        console.log("file " + variable.id, file, formData, file.size);
+        console.log("fileUpload " + variable.id, file, formData, file.size);
         fileNode.parentNode.querySelector("progress").max = Math.round(file.size / 10000); //set progress max in blocks of 10K
              
         formData.append("file", file);
@@ -526,6 +582,13 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       }
       else
         createHTML(variable.n, varNode, rowNr); //details (e.g. module)
+    }
+
+    //add a th for the delete button
+    if (variable.type == "table" && !variable.ro) {
+      thNode = cE("th");
+      thNode.innerText = "-";
+      varNode.querySelector('thead').querySelector("tr").appendChild(thNode);
     }
 
     //don't call onUI on table rows (the table header calls onUI and propagate this to table row columns in changeHTML when needed - e.g. select)
@@ -893,7 +956,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
       if (Array.isArray(commandJson.value)) {
         console.log("changeHTML value table", variable, node, commandJson, rowNr);
         //remove table rows
-        let tbodyNode = cE('tbody'); //the tbody of node will be replaced
+        let tbodyNode = cE("tbody"); //the tbody of node will be replaced
         //replace the table body
         node.replaceChild(tbodyNode, node.querySelector("tbody")); //replace <table><tbody> by tbodyNode  //add to dom asap
 
@@ -1052,7 +1115,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
           node.value = commandJson.value;
       }
     }
-    else if (node.className == "file") {
+    else if (node.className == "fileUpload") {
       if (variable.ro) { //text and numbers read only
         // console.log("changeHTML value span not select", variable, node, commandJson, rowNr);
       } else {
@@ -1064,7 +1127,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
           progressNode.hidden = true;
           spanNode.innerText = "🟢";
           inputNode.value = null;
-          console.log("succes");
+          console.log("fileUpload succes");
         }
         else if (commandJson.value == UINT16_MAX - 20) {
           progressNode.hidden = true;
@@ -1082,6 +1145,13 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
     } else if (node.className == "textarea") {
       node.value += commandJson.value;
       node.scrollTop = node.scrollHeight;
+    } else if (node.className == "fileEdit") {
+      let value = commandJson.value;
+      // console.log("change button", variable, node, value);
+      if (Array.isArray(commandJson.value) && rowNr != UINT8_MAX) {
+        value = commandJson.value[rowNr];
+      }
+      if (value) node.setAttribute('fName', value); //don't change the value / prompt of the button
     } else {//inputs and progress type
       if (variable.ro && nodeType == "span") { //text and numbers read only
         // console.log("changeHTML value span not select", variable, node, commandJson, rowNr);
@@ -1158,7 +1228,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
     console.log("changeHTML file requested", variable.id, rowNr, commandJson);
   
     //we need to send a request which the server can handle using request variable
-    let url = `http://${window.location.hostname}/file`;
+    let url = `http://${window.location.hostname}/file/`;
     fetchAndExecute(url, commandJson.file, node.id, function(id, text) { //send node.id as parameter
       // console.log("fetchAndExecute", text); //in case of invalid commandJson
       var ledmapJson = JSON.parse(text);
@@ -1306,8 +1376,14 @@ function toggleModal(varNode) { //canvas or textarea
   // console.log("toggleModal", varNode);
   isModal = !isModal;
 
-	if (isModal) {
+  let modalView = gId('modalView');
 
+	if (isModal) {
+    //delete old nodes
+    while (modalView.firstChild) {
+      modalView.removeChild(modalView.lastChild);
+    }
+    
     modalPlaceHolder = cE(varNode.nodeName.toLocaleLowerCase()); //create canvas or textarea
     modalPlaceHolder.width = varNode.width;
     modalPlaceHolder.height = varNode.height;
@@ -1316,10 +1392,10 @@ function toggleModal(varNode) { //canvas or textarea
 
     // let btn = cE("button");
     // btn.innerText = "close";
-    // btn.addEventListener('click', (event) => {toggleModal(varNode);});
+    // btn.addEventListener('click', (event) => {toggleModal(event.target);});
     // gId('modalView').appendChild(btn);
 
-    gId('modalView').appendChild(varNode);
+    modalView.appendChild(varNode);
     varNode.width = window.innerWidth;
     varNode.height = window.innerHeight;
     // console.log("toggleModal +", varNode, modalPlaceHolder, varNode.getBoundingClientRect(), modalPlaceHolder.getBoundingClientRect().width, modalPlaceHolder.getBoundingClientRect().height, modalPlaceHolder.width, modalPlaceHolder.height);
@@ -1333,7 +1409,7 @@ function toggleModal(varNode) { //canvas or textarea
     modalPlaceHolder.parentNode.replaceChild(varNode, modalPlaceHolder); // //replace by varNode. modalPlaceHolder loses rect
   }
 
-	gId('modalView').style.transform = (isModal) ? "translateY(0px)":"translateY(100%)";
+	modalView.style.transform = (isModal) ? "translateY(0px)":"translateY(100%)";
 }
 // https://stackoverflow.com/questions/324303/cut-and-paste-moving-nodes-in-the-dom-with-javascript
 
@@ -1481,6 +1557,21 @@ function fetchAndExecute(url, name, parms, callback, callError = null)
   .finally(() => {
     // if (callback) setTimeout(callback,99);
   });
+}
+
+function uploadFileWithText(name, text)
+{
+  var req = new XMLHttpRequest();
+  req.addEventListener('load', function(){console.log("uploadFileWithText load", this.responseText, this.status);});
+  req.addEventListener('error', function(e){console.log("uploadFileWithText error", e);});
+  req.open("POST", "/upload");
+  var formData = new FormData();
+
+  var blob = new Blob([text], {type : 'application/text'});
+  var fileOfBlob = new File([blob], name);
+  formData.append("upload", fileOfBlob);
+
+  req.send(formData);
 }
 
 function setInstanceTableColumns() {

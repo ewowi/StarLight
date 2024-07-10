@@ -73,8 +73,8 @@ public:
     return initVarAndUpdate<const char *>(parent, id, "text", value, 0, max, readOnly, varFun);
   }
 
-  JsonObject initFile(JsonObject parent, const char * id, const char * value = nullptr, unsigned16 max = 32, bool readOnly = false, VarFun varFun = nullptr) {
-    return initVarAndUpdate<const char *>(parent, id, "file", value, 0, max, readOnly, varFun);
+  JsonObject initFileUpload(JsonObject parent, const char * id, const char * value = nullptr, unsigned16 max = 32, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndUpdate<const char *>(parent, id, "fileUpload", value, 0, max, readOnly, varFun);
   }
   JsonObject initPassword(JsonObject parent, const char * id, const char * value = nullptr, unsigned8 max = 32, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndUpdate<const char *>(parent, id, "password", value, 0, max, readOnly, varFun);
@@ -146,6 +146,10 @@ public:
 
   JsonObject initTextArea(JsonObject parent, const char * id, const char * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndUpdate<const char *>(parent, id, "textarea", value, 0, 0, readOnly, varFun);
+  }
+
+  JsonObject initFileEdit(JsonObject parent, const char * id, const char * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndUpdate<const char *>(parent, id, "fileEdit", value, 0, 0, readOnly, varFun);
   }
 
   JsonObject initURL(JsonObject parent, const char * id, const char * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
