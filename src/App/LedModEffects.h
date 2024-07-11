@@ -510,8 +510,6 @@ public:
       lastMappingMillis = sys->now;
       fixture.projectAndMap();
 
-      //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
-
       //connect allocated Pins to gpio
 
       if (fixture.doAllocPins) {
@@ -536,7 +534,7 @@ public:
 
               stackUnsigned16 startLed = atoi(before);
               stackUnsigned16 nrOfLeds = atoi(after) - atoi(before) + 1;
-              ppf("addLeds new %d: %d-%d\n", pinNr, startLed, nrOfLeds-1);
+              ppf("driver.initled new %d: %d-%d\n", pinNr, startLed, nrOfLeds-1);
 
               #ifdef STARLIGHT_CLOCKLESS_DRIVER
                 pinAssignment[nb_pins] = pinNr;
