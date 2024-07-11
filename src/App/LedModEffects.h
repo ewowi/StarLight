@@ -125,7 +125,9 @@ public:
     fixture.projections.push_back(new TransposeProjection);
     fixture.projections.push_back(new KaleidoscopeProjection);
 
-    driver.total_leds = 0;
+    #ifdef STARLIGHT_CLOCKLESS_DRIVER
+      driver.total_leds = 0;
+    #endif
   };
 
   void setup() {
@@ -510,6 +512,8 @@ public:
       lastMappingMillis = sys->now;
       fixture.projectAndMap();
 
+      //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
+
       //connect allocated Pins to gpio
 
       if (fixture.doAllocPins) {
@@ -534,7 +538,7 @@ public:
 
               stackUnsigned16 startLed = atoi(before);
               stackUnsigned16 nrOfLeds = atoi(after) - atoi(before) + 1;
-              ppf("driver.initled new %d: %d-%d\n", pinNr, startLed, nrOfLeds-1);
+              ppf("addLeds new %d: %d-%d\n", pinNr, startLed, nrOfLeds-1);
 
               #ifdef STARLIGHT_CLOCKLESS_DRIVER
                 pinAssignment[nb_pins] = pinNr;
@@ -748,7 +752,7 @@ public:
         #ifdef STARLIGHT_CLOCKLESS_DRIVER
           if (nb_pins>0) {
             driver.initled((uint8_t*) fixture.ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
-            driver.setBrightness(fixture.setMaxPowerBrightness / 256);
+            driver.setBrightness(fixture.setMaxPowerBrightness / 256); //not brighter then the set limit (WIP)
           }
         #endif
         fixture.doAllocPins = false;
