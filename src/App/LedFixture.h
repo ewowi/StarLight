@@ -70,4 +70,8 @@ public:
   //load fixture json file, parse it and depending on the projection, create a mapping for it
   void projectAndMap();
 
+  #ifdef STARLIGHT_CLOCKLESS_DRIVER
+    uint8_t setMaxPowerBrightness = 30; //tbd: implement driver.setMaxPowerInMilliWatts
+  #endif
+
 };
