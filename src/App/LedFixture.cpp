@@ -109,6 +109,13 @@ void Fixture::projectAndMap() {
                 Projection *projection = nullptr;
                 if (leds->projectionNr < projections.size())
                   projection = projections[leds->projectionNr];
+                else {
+                  ppf("projectAndMap: projection %d not found! Switching to default.\n", leds->projectionNr);
+                  leds->projectionNr = 1; // Default Projection
+                  projection = projections[leds->projectionNr];
+                  leds->setupCached = &Projection::setup;
+                  leds->adjustXYZCached = &Projection::adjustXYZ;
+                }
 
                 mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
 
