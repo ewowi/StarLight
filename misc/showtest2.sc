@@ -1,4 +1,4 @@
-external void showM();
+//externals generated
 
 void main()
 {

@@ -31,12 +31,6 @@ public:
 
   virtual void setup(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {}
   
-  virtual void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {}
-
-  virtual void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {}
-
-  virtual void postProcessing(Leds &leds, uint16_t &indexV) {}
-
   virtual void adjustXYZ(Leds &leds, Coord3D &pixel) {}
   
   virtual void controls(Leds &leds, JsonObject parentVar) {}
@@ -75,5 +69,9 @@ public:
   
   //load fixture json file, parse it and depending on the projection, create a mapping for it
   void projectAndMap();
+
+  #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+    uint8_t setMaxPowerBrightness = 30; //tbd: implement driver.setMaxPowerInMilliWatts
+  #endif
 
 };

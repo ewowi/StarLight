@@ -973,7 +973,7 @@ class DJLight: public Effect {
 //2D Effects
 //==========
 
-class Lines: public Effect {
+class LinesEffect: public Effect {
   const char * name() {return "Lines";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "💫";}
@@ -1004,7 +1004,7 @@ class Lines: public Effect {
     ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(60));
     ui->initCheckBox(parentVar, "Vertical", leds.effectData.write<bool>(true));
   }
-}; // Lines
+}; // LinesEffect
 
 // By: Stepko https://editor.soulmatelights.com/gallery/1012 , Modified by: Andrew Tuline
 class BlackHole: public Effect {

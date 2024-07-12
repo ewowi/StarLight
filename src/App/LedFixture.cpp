@@ -196,15 +196,15 @@ void Fixture::projectAndMap() {
         if (leds->doMap) {
           ppf("projectAndMap post leds[%d] fx:%d pro:%d\n", rowNr, leds->fx, leds->projectionNr);
 
-          uint16_t nrOfMappings = 0;
-          uint16_t nrOfPixels = 0;
+          uint16_t nrOfLogical = 0;
+          uint16_t nrOfPhysical = 0;
 
           if (leds->projectionNr == p_Random || leds->projectionNr == p_None) {
 
             //defaults
             leds->size = fixSize;
             leds->nrOfLeds = nrOfLeds;
-            nrOfPixels = nrOfLeds;
+            nrOfPhysical = nrOfLeds;
 
           } else {
 
@@ -217,44 +217,32 @@ void Fixture::projectAndMap() {
             leds->nrOfLeds = leds->mappingTable.size();
 
             //debug info + summary values
-            uint16_t indexV = 0;
             for (PhysMap &map:leds->mappingTable) {
-            // for (auto map=leds->mappingTable.begin(); map!=leds->mappingTable.end(); ++map) {
               if (map.isOneIndex()) {
-                  nrOfPixels++;
+                  nrOfPhysical++;
               }
               else if (map.isMultipleIndexes()) { // && map.indexes->size()
-                // if (nrOfMappings < 10 || map.indexes->size() - indexV < 10) //first 10 and last 10
-                // if (nrOfMappings%(leds->nrOfLeds/10+1) == 0)
-                  // ppf("ledV %d mapping: #ledsP (%d):", indexV, nrOfMappings);
-
+                // ppf("ledV %d mapping: #ledsP (%d):", indexV, nrOfLogical);
                 for (uint16_t indexP:*map.indexes) {
-                  // if (nrOfPixels < 10 || map.indexes->size() - indexV < 10)
-                  // if (nrOfMappings%(leds->nrOfLeds/10+1) == 0)
-                    // ppf(" %d", indexP);
-                  nrOfPixels++;
+                  // ppf(" %d", indexP);
+                  nrOfPhysical++;
                 }
-
-                // if (nrOfPixels < 10 || map.indexes->size() - indexV < 10)
-                // if (nrOfMappings%(leds->nrOfLeds/10+1) == 0)
-                  // ppf("\n");
+                // ppf("\n");
               }
-              nrOfMappings++;
+              nrOfLogical++;
               // else
               //   ppf("ledV %d no mapping\n", x);
-              indexV++;
             }
           }
 
-          ppf("projectAndMap leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d)\n", rowNr, leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds, nrOfMappings, nrOfPixels);
+          ppf("projectAndMap leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d)\n", rowNr, leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds, nrOfLogical, nrOfPhysical);
 
           // mdl->setValueV("ledsSize", rowNr, "%d x %d x %d = %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           char buf[32];
           print->fFormat(buf, sizeof(buf)-1,"%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           mdl->setValue("ledsSize", JsonString(buf, JsonString::Copied), rowNr);
-          // web->sendResponseObject();
 
-          ppf("projectAndMap leds[%d].size = %d + %d\n", rowNr, sizeof(Leds), leds->mappingTable.size()); //44
+          ppf("projectAndMap leds[%d].size = %d + m:(%d * %d) B\n", rowNr, sizeof(Leds), leds->mappingTable.size(), sizeof(PhysMap)); //44 -> 164
 
           leds->doMap = false;
         } //leds->doMap
@@ -262,6 +250,7 @@ void Fixture::projectAndMap() {
       } // leds
 
       ppf("projectAndMap fixture P:%dx%dx%d -> %d\n", fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
+      ppf("projectAndMap fixture.size = %d + l:(%d * %d) B\n", sizeof(Fixture) - NUM_LEDS_Max * sizeof(CRGB), NUM_LEDS_Max, sizeof(CRGB)); //56
 
       mdl->setValue("fixSize", fixSize);
       mdl->setValue("fixCount", nrOfLeds);

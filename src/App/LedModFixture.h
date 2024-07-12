@@ -29,7 +29,7 @@ public:
         ui->setLabel(var, "On");
         return true;
       case onChange:
-        mdl->callVarChangeFun(mdl->findVar("bri"), UINT8_MAX, true); //set FastLed brightness (init is true so bri value not send via udp)
+        mdl->callVarChangeFun(mdl->findVar("bri"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
         return true;
       default: return false;
     }});
@@ -44,7 +44,11 @@ public:
         //bri set by StarMod during onChange
         stackUnsigned8 result = mdl->getValue("on").as<bool>()?mdl->varLinearToLogarithm(var, bri):0;
 
-        FastLED.setBrightness(result);
+        #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+          eff->driver.setBrightness(result * eff->fixture.setMaxPowerBrightness / 256);
+        #else
+          FastLED.setBrightness(result);
+        #endif
 
         ppf("Set Brightness to %d -> b:%d r:%d\n", var["value"].as<int>(), bri, result);
         return true; }
@@ -197,7 +201,11 @@ public:
 
     ui->initCheckBox(parentVar, "fShow", &eff->fShow, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "FastLed show");
+        #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+          ui->setLabel(var, "CLD Show");
+        #else
+          ui->setLabel(var, "FastLED Show");
+        #endif
         ui->setComment(var, "dev performance tuning");
         return true;
       default: return false; 
