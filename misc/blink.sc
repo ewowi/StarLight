@@ -1,8 +1,4 @@
-external void show();
-external void pinMode(uint8_t pin, uint8_t mode);
-external void digitalWrite(uint8_t pin, uint8_t val);
-external void delay(uint32_t ms);
-//external void pinsM->allocatePin(unsigned8 pinNr, const char * owner, const char * details); //classes supported?
+//externals generated
 
 //how to deal with external defines?
 define OUTPUT            0x03 

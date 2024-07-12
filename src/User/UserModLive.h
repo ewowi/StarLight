@@ -79,7 +79,8 @@ class UserModLive:public SysModule {
 public:
 
   Parser p = Parser();
-  char fileName[32] = "";
+  char fileName[32] = ""; //running sc file
+  string scPreScript = ""; //externals etc generated (would prefer String for esp32...)
 
   UserModLive() :SysModule("Live") {
     isEnabled = false; //need to enable after fresh setup
@@ -90,7 +91,7 @@ public:
 
     parentVar = ui->initUserMod(parentVar, name, 6310);
 
-    ui->initSelect(parentVar, "script", UINT16_MAX, false ,[this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "script", UINT16_MAX, false , [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI: {
         // ui->setComment(var, "Fixture to display effect on");
         JsonArray options = ui->setOptions(var);
@@ -129,25 +130,41 @@ public:
     // ui->initButton
 
     //Live scripts defaults
-    addExternal("show", externalType::function, (void *)&show);
-    addExternal("showM", externalType::function, (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
-    addExternal("resetStat", externalType::function, (void *)&resetShowStats);
+    addExternalFun("show", "()", (void *)&show);
+    addExternalFun("showM", "()", (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
+    addExternalFun("resetStat", "()", (void *)&resetShowStats);
 
-    addExternal("display", externalType::function, (void *)&dispshit);
-    addExternal("dp", externalType::function, (void *)displayfloat);
-    addExternal("error", externalType::function, (void *)&showError);
-    addExternal("print", externalType::function, (void *)__print);
+    addExternalFun("display", "(int a1)", (void *)&dispshit);
+    addExternalFun("dp", "(float a1)", (void *)displayfloat);
+    addExternalFun("error", "(int a1, int a2, int a3)", (void *)&showError);
+    addExternalFun("print", "(char * a1)", (void *)__print);
 
-    addExternal("atan2",externalType::function,(void*)_atan2);
-    addExternal("hypot",externalType::function,(void*)_hypot);
-    addExternal("sin", externalType::function, (void *)_sin);
+    addExternalFun("atan2","(float a1, float a2)",(void*)_atan2);
+    addExternalFun("hypot","(float a1, float a2)",(void*)_hypot);
+    addExternalFun("sin", "(float a1)", (void *)_sin);
 
     //added by StarBase
-    addExternal("pinMode", externalType::function, (void *)&pinMode);
-    addExternal("digitalWrite", externalType::function, (void *)&digitalWrite);
-    addExternal("delay", externalType::function, (void *)&delay);
+    addExternalFun("pinMode", "(int a1, int a2)", (void *)&pinMode);
+    addExternalFun("digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
+    addExternalFun("delay", "(int a1)", (void *)&delay);
 
+    // addExternalFun("delay", [](int ms) {delay(ms);});
+    // addExternalFun("digitalWrite", [](int pin, int val) {digitalWrite(pin, val);});
   }
+
+  void addExternalFun(string name, string parameters,void * ptr) {
+    addExternal(name, externalType::function, ptr);
+    scPreScript += "external void " + name + parameters + ";\n";
+  }
+
+  // void addExternalFun(string name, std::function<void(int)> fun) {
+  //   addExternal(name, externalType::function, (void *)&fun)); //unfortionately InstructionFetchError, why does it work in initText etc?
+  //   ppf("external %s(int arg1);\n", name.c_str()); //add to string
+  // }
+  // void addExternalFun(string name, std::function<void(int, int)> fun) {
+  //   addExternal(name, externalType::function, (void *)&fun); //unfortionately InstructionFetchError
+  //   ppf("external %s(int arg1, int arg2);\n", name.c_str()); //add to string
+  // }
 
   //testing class functions instead of static
   void showM() {
@@ -158,6 +175,14 @@ public:
     float k = (float)(time2 - time1) / 240000000; //always 240MHz?
     fps = 1 / k;
     time1 = ESP.getCycleCount();
+  }
+
+  void loop20ms() {
+    //workaround
+    if (strstr(web->lastFileUpdated, ".sc") != nullptr) {
+      run(web->lastFileUpdated);
+      strcpy(web->lastFileUpdated, "");
+    }
   }
 
   void loop1s() {
@@ -172,8 +197,7 @@ public:
     if (!force && strcmp(fileName, this->fileName) != 0) // if another fileName then force should be true;
       return;
 
-    SCExecutable._kill(); //kill any old tasks
-    fps = 0;
+    kill();
 
     if (strcmp(fileName, "") != 0) {
 
@@ -182,9 +206,9 @@ public:
         ppf("UserModLive setup script open %s for %s failed\n", fileName, "r");
       else {
 
-        string scScript = string(f.readString().c_str());
+        string scScript = scPreScript + string(f.readString().c_str());
 
-        ppf("%s\n", scScript);
+        ppf("%s\n", scScript.c_str());
 
         if (p.parse_c(&scScript))
         {
@@ -197,6 +221,13 @@ public:
     else
       ppf("UserModLive setup file for %s not found\n", fileName);
   }
+
+  void kill() {
+    SCExecutable._kill(); //kill any old tasks
+    fps = 0;
+    strcpy(fileName, "");
+  }
+
 };
 
 extern UserModLive *liveM;

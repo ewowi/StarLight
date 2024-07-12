@@ -57,6 +57,10 @@ public:
   unsigned8 recvUDPCounter = 0;
   unsigned16 recvUDPBytes = 0;
 
+  #ifdef STARBASE_USERMOD_LIVE
+    char lastFileUpdated[30] = ""; //workaround!
+  #endif
+
   SysModWeb();
 
   void setup();

@@ -17,6 +17,7 @@
 #include "SysModPins.h"
 
 #include "User/UserModMDNS.h"
+// got multiple definition error here ??? see workaround below
 // #ifdef STARBASE_USERMOD_LIVE
 //   #include "../User/UserModLive.h"
 // #endif
@@ -505,10 +506,14 @@ void SysModWeb::serveUpload(WebRequest *request, const String& filename, size_t 
     files->filesChanged = true;
 
     //if sc files send command to live
-    // #ifdef STARBASE_USERMOD_LIVE
-    //   if (filename.indexOf(".sc") > 0)
-    //     liveM->run(filename.c_str());
-    // #endif
+    #ifdef STARBASE_USERMOD_LIVE
+
+      strcpy(lastFileUpdated, filename.c_str()); //workaround 
+
+      // got multiple definition error here ???
+      // if (filename.indexOf(".sc") > 0)
+      //   liveM->run(filename.c_str());
+    #endif
   }
 }
 
