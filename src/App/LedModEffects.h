@@ -15,8 +15,12 @@
 #include "LedEffects.h"
 #include "LedProjections.h"
 
-#ifdef STARLIGHT_CLOCKLESS_DRIVER
-  #include "I2SClocklessLedDriver.h"
+#ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+  #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
+    #include "I2SClocklessLedDriveresp32s3.h"
+  #else
+    #include "I2SClocklessLedDriver.h"
+  #endif
 #endif
 
 
@@ -46,8 +50,12 @@ public:
 
   bool fShow = true;
 
-  #ifdef STARLIGHT_CLOCKLESS_DRIVER
-    I2SClocklessLedDriver driver;
+  #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+    #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
+      I2SClocklessLedDriveresp32S3 driver;
+    #else
+      I2SClocklessLedDriver driver;
+    #endif
   #endif
 
   LedModEffects() :SysModule("Effects") {
@@ -125,8 +133,10 @@ public:
     fixture.projections.push_back(new TransposeProjection);
     fixture.projections.push_back(new KaleidoscopeProjection);
 
-    #ifdef STARLIGHT_CLOCKLESS_DRIVER
-      driver.total_leds = 0;
+    #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+      #if !(CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2)
+        driver.total_leds = 0;
+      #endif
     #endif
   };
 
@@ -413,7 +423,7 @@ public:
       //   ppf("Leds e131 not enabled\n");
     #endif
 
-    #ifdef STARLIGHT_CLOCKLESS_DRIVER
+    #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
       fixture.setMaxPowerBrightness = 30;
     #else
       FastLED.setMaxPowerInMilliWatts(10000); // 5v, 2000mA
@@ -459,9 +469,14 @@ public:
       #endif
 
       if (fShow) {
-        #ifdef STARLIGHT_CLOCKLESS_DRIVER
-          if (driver.total_leds > 0)
-            driver.showPixels(WAIT);
+        #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+          #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
+            if (driver.ledsbuff != NULL)
+              driver.show();
+          #else
+            if (driver.total_leds > 0)
+              driver.showPixels(WAIT);
+          #endif
         #else
           FastLED.show();
         #endif
@@ -519,7 +534,7 @@ public:
       if (fixture.doAllocPins) {
         unsigned pinNr = 0;
 
-        #ifdef STARLIGHT_CLOCKLESS_DRIVER
+        #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
           int pinAssignment[16]; //max 16 pins
           int lengths[16]; //max 16 pins
           int nb_pins=0;
@@ -540,7 +555,7 @@ public:
               stackUnsigned16 nrOfLeds = atoi(after) - atoi(before) + 1;
               ppf("addLeds new %d: %d-%d\n", pinNr, startLed, nrOfLeds-1);
 
-              #ifdef STARLIGHT_CLOCKLESS_DRIVER
+              #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
                 pinAssignment[nb_pins] = pinNr;
                 lengths[nb_pins] = nrOfLeds;
                 nb_pins++;
@@ -744,15 +759,22 @@ public:
 
                 default: ppf("FastLedPin assignment: pin not supported %d\n", pinNr);
               } //switch pinNr
-              #endif //STARLIGHT_CLOCKLESS_DRIVER
+              #endif //STARLIGHT_CLOCKLESS_LED_DRIVER
             } //if led range in details (- in details e.g. 0-1023)
           } //if pin owned by leds
           pinNr++;
         } // for pins
-        #ifdef STARLIGHT_CLOCKLESS_DRIVER
+        #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
           if (nb_pins>0) {
-            driver.initled((uint8_t*) fixture.ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
-            driver.setBrightness(fixture.setMaxPowerBrightness / 256); //not brighter then the set limit (WIP)
+            #if CONFIG_IDF_TARGET_ESP32S3 | CONFIG_IDF_TARGET_ESP32S2
+              driver.initled((uint8_t*) fixture.ledsP, pinAssignment, lengths[0], nb_pins); //s3 doesn't support lengths so we pick the first
+              //void initled( uint8_t * leds, int * pins, int numstrip, int NUM_LED_PER_STRIP)
+            #else
+              driver.initled((uint8_t*) fixture.ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
+              //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
+                #endif
+            mdl->callVarChangeFun(mdl->findVar("bri"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+            // driver.setBrightness(fixture.setMaxPowerBrightness / 256); //not brighter then the set limit (WIP)
           }
         #endif
         fixture.doAllocPins = false;
