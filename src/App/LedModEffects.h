@@ -767,12 +767,12 @@ public:
         #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
           if (nb_pins>0) {
             #if CONFIG_IDF_TARGET_ESP32S3 | CONFIG_IDF_TARGET_ESP32S2
-              driver.initled((uint8_t*) fixture.ledsP, pinAssignment, lengths[0], nb_pins); //s3 doesn't support lengths so we pick the first
+              driver.initled((uint8_t*) fixture.ledsP, pinAssignment, nb_pins, lengths[0]); //s3 doesn't support lengths so we pick the first
               //void initled( uint8_t * leds, int * pins, int numstrip, int NUM_LED_PER_STRIP)
             #else
               driver.initled((uint8_t*) fixture.ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
               //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
-                #endif
+            #endif
             mdl->callVarChangeFun(mdl->findVar("bri"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
             // driver.setBrightness(fixture.setMaxPowerBrightness / 256); //not brighter then the set limit (WIP)
           }

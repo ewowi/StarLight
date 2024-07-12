@@ -54,9 +54,7 @@ public:
         return true; }
       default: return false; 
     }});
-    #ifndef STARLIGHT_CLOCKLESS_LED_DRIVER
-      currentVar["log"] = true; //logarithmic
-    #endif
+    currentVar["log"] = true; //logarithmic
     currentVar["dash"] = true; //these values override model.json???
 
     currentVar = ui->initCanvas(parentVar, "pview", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
