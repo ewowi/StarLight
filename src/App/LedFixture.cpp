@@ -34,7 +34,7 @@ void Fixture::projectAndMap() {
         leds->size = Coord3D{0,0,0};
         //vectors really gone now?
         for (PhysMap &map:leds->mappingTable) {
-          if (map.isMultipleIndexes()) {
+          if (map.getMapType() == m_morePixels) {
             map.indexes->clear();
             delete map.indexes;
           }
@@ -225,16 +225,18 @@ void Fixture::projectAndMap() {
 
             //debug info + summary values
             for (PhysMap &map:leds->mappingTable) {
-              if (map.isOneIndex()) {
+              switch (map.getMapType()) {
+                case m_onePixel:
                   nrOfPhysical++;
-              }
-              else if (map.isMultipleIndexes()) { // && map.indexes->size()
-                // ppf("ledV %d mapping: #ledsP (%d):", indexV, nrOfLogical);
-                for (uint16_t indexP:*map.indexes) {
-                  // ppf(" %d", indexP);
-                  nrOfPhysical++;
-                }
-                // ppf("\n");
+                  break;
+                case m_morePixels:
+                  // ppf("ledV %d mapping: #ledsP (%d):", indexV, nrOfLogical);
+                  for (uint16_t indexP:*map.indexes) {
+                    // ppf(" %d", indexP);
+                    nrOfPhysical++;
+                  }
+                  // ppf("\n");
+                  break;
               }
               nrOfLogical++;
               // else

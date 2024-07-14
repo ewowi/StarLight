@@ -185,72 +185,71 @@ class SharedData {
 
 };
 
+enum mapType {
+  m_color,
+  m_onePixel,
+  m_morePixels,
+  m_count //keep as last entry
+};
+
 struct PhysMap {
   union {
-    std::vector<unsigned16> * indexes;
-    CRGB color;
-    uint16_t indexP[2];
-    byte type[4]; //type[3] == 63 for indexes pointers 
+    std::vector<unsigned16> * indexes; // 4 bytes
+    CRGB color; // 3 bytes
+    struct {
+      uint16_t indexP;  // 2 bytes
+      byte placeHolder1; // 1 byte
+      byte placeHolder2:6; //6 bits
+      byte type:2; // 2 bits used for color and indexP (more colors is using raw[3], see getMapType)
+    }; //4 bytes
+    byte raw[4]; //raw[3] == 63 for indexes pointers 
   }; // 4 bytes
 
   PhysMap() {
     indexes = nullptr; //all zero's
-    setInitType();
+    type = m_color; // the default until indexP is added
   }
 
-  void setInitType() {
-    type[3] = 255;
-  }
-  void setColorType() {
-    type[3] = 254;
-  }
-  void setOneIndexType() {
-    type[3] = 253;
-  }
-
-  bool isInit() {
-    return type[3] == 255;
-  }
-  bool isColor() {
-    return type[3] == 254;
-  }
-  bool isOneIndex() {
-    return type[3] == 253;
-  }
-  bool isMultipleIndexes() {
-    return type[3] < 253;
-  }
-  bool isOneOrMoreIndex() {
-    return type[3] <= 253;
-  }
 
   void setColor(CRGB color) {
     this->color = color;
-    setColorType();
+    placeHolder2 = 0; //cleanup memory
+    type = m_color;
     // ppf("dev new color %d,%d,%d t: %d,%d,%d,%d\n", this->color.r, this->color.g, this->color.b, type[0], type[1], type[2], type[3]);
     //dev new color 245,0,10 t: 245,0,10,255
   }
 
-  void addIndexP(uint16_t indexP) {
-    if (isInit()) { //no indexes stored yet
-      this->indexP[0] = indexP;
-      // ppf("dev new indexP:%d type:%d,%d,%d,%d %d-%d\n", indexP, type[0], type[1], type[2], type[3], this->indexP[0], this->indexP[1]);
-      //dev new indexP:672 type:160,2,0,255 672-65280
-      setOneIndexType();
-    } else if (isOneIndex()) { //move to indexes
-      uint16_t oldIndex = this->indexP[0];
-      indexes = new std::vector<unsigned16>; //overwrite the oneIndex
-      // ppf("dev new indexes %d type:%d,%d,%d,%d p:%p\n", indexP, type[0], type[1], type[2], type[3], indexes);
-      //dev new indexes 894 type:88,122,254,63 p:0x3ffe7a58
-      if (!isMultipleIndexes()) //check if pointer is not setting the type[3] value
-        ppf("dev new PhysMap type:%d t3:%d b:%d p:%p\n", type, type[3], type[3] & 0x80, indexes);
-      else {
-        indexes->push_back(oldIndex); //add the old to the indexes vector
-      }
-    }
+  uint8_t getMapType() {
+    if (raw[3] == 63) return m_morePixels; // this first as pointer could contain values for m)color and m_onepixel
+    if (type == m_color) return m_color;
+    if (type == m_onePixel) return m_onePixel;
+    return UINT8_MAX; // no valid type found
+  }
 
-    if (isMultipleIndexes()) {
-      indexes->push_back(indexP); //add the new index to the indexesvector
+  void addIndexP(uint16_t indexP) {
+    switch (getMapType()) {
+      case m_color:
+        this->indexP = indexP;
+        placeHolder1 = 0; // cleanup memory
+        placeHolder2 = 0; // cleanup memory
+        type = m_onePixel;
+        // ppf("dev new indexP t:%d i:%d p1:%d p2:%d\n", type, this->indexP, placeHolder1, placeHolder2);
+        break;
+      case m_onePixel: {
+        uint16_t oldIndexP = this->indexP; //save old indexP
+        indexes = new std::vector<unsigned16>; //overwrite old indexP with indexes
+        // ppf("dev new indexes t:%d i:%d t3:%d b:%d p:%p\n", type, indexP, raw[3], raw[3] & 0x80, indexes);
+        if (getMapType() != m_morePixels)
+          ppf("dev addIndexP not indexes t:%d i:%d t3:%d b:%d p:%p\n", type, indexP, raw[3], raw[3] & 0x80, indexes);
+        else {
+          indexes->push_back(oldIndexP);
+          indexes->push_back(indexP);
+        }
+        break; }
+      case m_morePixels:
+        // ppf("dev add indexes t:%d i:%d t3:%d b:%d p:%p s:%d\n", type, indexP, raw[3], raw[3] & 0x80, indexes, indexes->size());
+        indexes->push_back(indexP);
+        break;
     }
   }
 
@@ -325,7 +324,7 @@ public:
     fadeToBlackBy(100);
     doMap = true; // so loop is not running while deleting
     for (PhysMap &map:mappingTable) {
-      if (map.isMultipleIndexes()) {
+      if (map.getMapType() == m_morePixels) {
         map.indexes->clear();
         delete map.indexes;
       }
@@ -404,7 +403,7 @@ public:
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
   bool isMapped(unsigned16 indexV) {
-    return indexV < mappingTable.size() && mappingTable[indexV].isOneOrMoreIndex();
+    return indexV < mappingTable.size() && (mappingTable[indexV].getMapType() == m_onePixel || mappingTable[indexV].getMapType() == m_morePixels);
   }
 
   void blur1d(fract8 blur_amount)
