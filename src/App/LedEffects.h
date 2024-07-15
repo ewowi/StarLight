@@ -113,7 +113,8 @@ class RainbowEffect: public Effect {
 
     for (forUnsigned16 i = 0; i < leds.nrOfLeds; i++) {
       uint8_t index = (i * (16 << (scale / 29)) / leds.nrOfLeds) + counter;
-      leds.setPixelColor(i, ColorFromPalette(leds.palette, index, 255));
+      // leds.setPixelColor(i, ColorFromPalette(leds.palette, index));
+      leds.setPixelColorPal(i, index);
     }
   }
 
@@ -178,14 +179,14 @@ class FlowEffect: public Effect {
     uint16_t zoneLen = leds.nrOfLeds / zones;
     uint16_t offset  = (leds.nrOfLeds - zones * zoneLen) >> 1;
 
-    leds.fill_solid(ColorFromPalette(leds.palette, -counter, 255));
+    leds.fill_solid(ColorFromPalette(leds.palette, -counter));
 
     for (int z = 0; z < zones; z++) {
       uint16_t pos = offset + z * zoneLen;
       for (int i = 0; i < zoneLen; i++) {
         uint8_t  colorIndex = (i * 255 / zoneLen) - counter;
         uint16_t led = (z & 0x01) ? i : (zoneLen -1) -i;
-        leds[pos + led] = ColorFromPalette(leds.palette, colorIndex, 255);
+        leds[pos + led] = ColorFromPalette(leds.palette, colorIndex);
       }
     }
   }
@@ -395,7 +396,7 @@ class BouncingBalls: public Effect {
 
       int pos = roundf(balls[i].height * (leds.nrOfLeds - 1));
 
-      CRGB color = ColorFromPalette(leds.palette, i*(256/max(numBalls, (uint8_t)8)), 255); //error: no matching function for call to 'max(uint8_t&, int)'
+      CRGB color = ColorFromPalette(leds.palette, i*(256/max(numBalls, (uint8_t)8))); //error: no matching function for call to 'max(uint8_t&, int)'
 
       leds[pos] = color;
       // if (leds.nrOfLeds<32) leds.setPixelColor(indexToVStrip(pos, stripNr), color); // encode virtual strip into index
@@ -789,7 +790,7 @@ class PopCorn: public Effect {
         // uint32_t col = SEGMENT.color_wheel(popcorn[i].colIndex);
         // if (!SEGMENT.palette && popcorn[i].colIndex < NUM_COLORS) col = SEGCOLOR(popcorn[i].colIndex);
         uint16_t ledIndex = popcorn[i].pos;
-        CRGB col = ColorFromPalette(leds.palette, popcorn[i].colIndex*(256/maxNumPopcorn), 255);
+        CRGB col = ColorFromPalette(leds.palette, popcorn[i].colIndex*(256/maxNumPopcorn));
         if (ledIndex < leds.nrOfLeds) leds.setPixelColor(ledIndex, col);
       }
     }
@@ -877,7 +878,7 @@ class AudioRings: public RingEffect {
   void setRingFromFtt(Leds &leds, int index, int ring) {
     byte val = wledAudioMod->fftResults[index];
     // Visualize leds to the beat
-    CRGB color = ColorFromPalette(leds.palette, val, 255);
+    CRGB color = ColorFromPalette(leds.palette, val);
     color.nscale8_video(val);
     setRing(leds, ring, color);
   }
@@ -1074,8 +1075,8 @@ class DNA: public Effect {
       //32: 4 * i
       //16: 8 * i
       phase = i * 127 / (leds.size.x-1) * phases / 64;
-      leds.setPixelColor(leds.XY(i, beatsin8(speed, 0, leds.size.y-1, 0, phase    )), ColorFromPalette(leds.palette, i*5+ sys->now /17, beatsin8(5, 55, 255, 0, i*10), LINEARBLEND));
-      leds.setPixelColor(leds.XY(i, beatsin8(speed, 0, leds.size.y-1, 0, phase+128)), ColorFromPalette(leds.palette, i*5+128+ sys->now /17, beatsin8(5, 55, 255, 0, i*10+128), LINEARBLEND));
+      leds.setPixelColor(leds.XY(i, beatsin8(speed, 0, leds.size.y-1, 0, phase    )), ColorFromPalette(leds.palette, i*5+ sys->now /17, beatsin8(5, 55, 255, 0, i*10)));
+      leds.setPixelColor(leds.XY(i, beatsin8(speed, 0, leds.size.y-1, 0, phase+128)), ColorFromPalette(leds.palette, i*5+128+ sys->now /17, beatsin8(5, 55, 255, 0, i*10+128)));
     }
     leds.blur2d(blur);
   }
@@ -1264,7 +1265,8 @@ class Lissajous: public Effect {
           //leds.setPixelColorXY(xlocn, ylocn, SEGMENT.color_from_palette(sys->now/100+i, false, PALETTE_SOLID_WRAP, 0)); // draw pixel with anti-aliasing
           unsigned palIndex = (256*locn.y) + phase/2 + (i* freqX)/64;
           // leds.setPixelColorXY(xlocn, ylocn, SEGMENT.color_from_palette(palIndex, false, PALETTE_SOLID_WRAP, 0)); // draw pixel with anti-aliasing - color follows rotation
-          leds[locn] = ColorFromPalette(leds.palette, palIndex);
+          // leds[locn] = ColorFromPalette(leds.palette, palIndex);
+          leds.setPixelColorPal(locn, palIndex);
         }
     } else
     for (int i=0; i < 256; i ++) {
@@ -1274,7 +1276,8 @@ class Lissajous: public Effect {
       locn.x = (leds.size.x < 2) ? 1 : (map(2*locn.x, 0,511, 0,2*(leds.size.x-1)) +1) /2;    // softhack007: "*2 +1" for proper rounding
       locn.y = (leds.size.y < 2) ? 1 : (map(2*locn.y, 0,511, 0,2*(leds.size.y-1)) +1) /2;    // "leds.size.y > 2" is needed to avoid div/0 in map()
       // leds.setPixelColorXY((uint8_t)xlocn, (uint8_t)ylocn, SEGMENT.color_from_palette(sys->now/100+i, false, PALETTE_SOLID_WRAP, 0));
-      leds[locn] = ColorFromPalette(leds.palette, sys->now/100+i);
+      // leds[locn] = ColorFromPalette(leds.palette, sys->now/100+i);
+      leds.setPixelColorPal(locn, sys->now/100+i);
     }
   }
   
@@ -1311,7 +1314,7 @@ class Frizzles: public Effect {
       Coord3D pos = {0,0,0};
       pos.x = beatsin8(bpm/8 + i, 0, leds.size.x - 1);
       pos.y = beatsin8(intensity/8 - i, 0, leds.size.y - 1);
-      CRGB color = ColorFromPalette(leds.palette, beatsin8(12, 0, 255), 255);
+      CRGB color = ColorFromPalette(leds.palette, beatsin8(12, 0, 255));
       leds[pos] = color;
     }
     leds.blur2d(blur);
@@ -1376,7 +1379,8 @@ class Noise2D: public Effect {
     for (int y = 0; y < leds.size.y; y++) {
       for (int x = 0; x < leds.size.x; x++) {
         uint8_t pixelHue8 = inoise8(x * scale, y * scale, sys->now / (16 - speed));
-        leds.setPixelColor(leds.XY(x, y), ColorFromPalette(leds.palette, pixelHue8));
+        // leds.setPixelColor(leds.XY(x, y), ColorFromPalette(leds.palette, pixelHue8));
+        leds.setPixelColorPal(leds.XY(x, y), pixelHue8);
       }
     }
   }
@@ -2263,14 +2267,13 @@ class Waverly: public Effect {
       uint16_t thisMax = min(map(thisVal, 0, 512, 0, leds.size.y), (long)leds.size.x);
 
       for (pos.y = 0; pos.y < thisMax; pos.y++) {
-        CRGB color = ColorFromPalette(leds.palette, map(pos.y, 0, thisMax, 250, 0), 255, LINEARBLEND);
+        CRGB color = ColorFromPalette(leds.palette, map(pos.y, 0, thisMax, 250, 0));
         if (!noClouds)
           leds.addPixelColor(pos, color);
         leds.addPixelColor(leds.XY((leds.size.x - 1) - pos.x, (leds.size.y - 1) - pos.y), color);
       }
     }
     leds.blur2d(16);
-
   }
   
   void controls(Leds &leds, JsonObject parentVar) {
@@ -2615,7 +2618,7 @@ class RipplesEffect: public Effect {
         uint32_t time_interval = sys->now/(100 - speed)/((256.0f-128.0f)/20.0f);
         pos.y = floor(leds.size.y/2.0f + sinf(d/ripple_interval + time_interval) * leds.size.y/2.0f); //between 0 and leds.size.y
 
-        leds[pos] = CHSV( sys->now/50 + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri, LINEARBLEND);
+        leds[pos] = CHSV( sys->now/50 + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri);
       }
     }
   }
@@ -2653,7 +2656,7 @@ class SphereMoveEffect: public Effect {
                 uint16_t d = distance(pos.x, pos.y, pos.z, origin.x, origin.y, origin.z);
 
                 if (d>diameter && d<diameter+1) {
-                  leds[pos] = CHSV( sys->now/50 + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri, LINEARBLEND);
+                  leds[pos] = CHSV( sys->now/50 + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri);
                 }
             }
         }
@@ -2679,7 +2682,7 @@ class PixelMapEffect: public Effect {
     leds.fill_solid(CRGB::Black);
 
     Coord3D pos = {x, y, z};
-    leds[pos] = CHSV( sys->now/50 + random8(64), 255, 255);// ColorFromPalette(leds.palette,call, bri, LINEARBLEND);
+    leds[pos] = CHSV( sys->now/50 + random8(64), 255, 255);// ColorFromPalette(leds.palette,call, bri);
   }
   
   void controls(Leds &leds, JsonObject parentVar) {
