@@ -1436,7 +1436,7 @@ uint16_t lcm(uint16_t a, uint16_t b) {
 class GameOfLife: public Effect {
   const char * name() {return "GameOfLife";}
   uint8_t dim() {return _3D;} //supports 3D but also 2D (1D as well?)
-  const char * tags() {return "💡💫";}
+  const char * tags() {return "💫";}
 
   void placePentomino(Leds &leds, byte *futureCells, bool colorByAge) {
     byte pattern[5][2] = {{1, 0}, {0, 1}, {1, 1}, {2, 1}, {2, 2}}; // R-pentomino
@@ -1466,6 +1466,8 @@ class GameOfLife: public Effect {
 
   void loop(Leds &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
+    bool *setup       = leds.effectData.readWrite<bool>();
+    bool *ruleChanged = leds.effectData.readWrite<bool>();
     byte overlay      = leds.effectData.read<byte>();
     Coord3D bgC       = leds.effectData.read<Coord3D>();
     byte ruleset      = leds.effectData.read<byte>();
@@ -1490,16 +1492,14 @@ class GameOfLife: public Effect {
     unsigned long *step  = leds.effectData.readWrite<unsigned long>();
     bool *birthNumbers   = leds.effectData.readWrite<bool>(9);
     bool *surviveNumbers = leds.effectData.readWrite<bool>(9);
-    byte *prevRuleset    = leds.effectData.readWrite<byte>();
-    byte *setUp       = leds.effectData.readWrite<byte>(); // call == 0 not working temp fix
     CRGB *prevPalette = leds.effectData.readWrite<CRGB>();
 
     CRGB bgColor = CRGB(bgC.x, bgC.y, bgC.z);                 // Overlay color if toggled
     CRGB color   = ColorFromPalette(leds.palette, random8()); // Used if all parents died
 
     // Start New Game of Life
-    if (*setUp != 123|| (*generation == 0 && *step < sys->now)) {
-      *setUp = 123; // quick fix for effect starting up (instead of call == 0  || )
+    if (*setup || (*generation == 0 && *step < sys->now)) {
+      *setup = false;
       *prevPalette = colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, 0);
       *generation = 1;
       disablePause ? *step = sys->now : *step = sys->now + 1500;
@@ -1556,7 +1556,8 @@ class GameOfLife: public Effect {
     if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) return; // Check if enough time has passed for updating
 
     //Rule set for game of life
-    if (ruleset != *prevRuleset || ruleset == 0) { // Custom rulestring always parsed
+    if (*ruleChanged) {
+      *ruleChanged = false;
       String ruleString = "";
       if      (ruleset == 0) ruleString = mdl->getValue("Custom Rule String").as<String>(); //Custom
       else if (ruleset == 1) ruleString = "B3/S23";         //Conway's Game of Life
@@ -1566,7 +1567,6 @@ class GameOfLife: public Effect {
       else if (ruleset == 5) ruleString = "B3/S1234";       //Mazecentric
       else if (ruleset == 6) ruleString = "B367/S23";       //DrighLife
 
-      *prevRuleset = ruleset;
       memset(birthNumbers,   0, sizeof(bool) * 9);
       memset(surviveNumbers, 0, sizeof(bool) * 9);
 
@@ -1669,6 +1669,8 @@ class GameOfLife: public Effect {
 
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
+    bool *setup       = leds.effectData.write<bool>(true);
+    bool *ruleChanged = leds.effectData.write<bool>(true);
     ui->initSelect(parentVar, "Overlay", leds.effectData.write<byte>(0), false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
       case onUI: {
         JsonArray options = ui->setOptions(var);
@@ -1680,7 +1682,7 @@ class GameOfLife: public Effect {
       default: return false;
     }});
     ui->initCoord3D(parentVar, "Background or Overlay Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
-    ui->initSelect (parentVar, "ruleset", leds.effectData.write<uint8_t>(1), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+    ui->initSelect (parentVar, "ruleset", leds.effectData.write<uint8_t>(1), false, [ruleChanged](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case onUI: {
         JsonArray options = ui->setOptions(var);
         options.add("Custom B/S");
@@ -1692,9 +1694,13 @@ class GameOfLife: public Effect {
         options.add("DrighLife B367/S23");
         return true;
       }
+      case onChange: {*ruleChanged = true; return true;}
       default: return false;
     }});
-    ui->initText    (parentVar, "Custom Rule String", "B/S");
+    ui->initText    (parentVar, "Custom Rule String", "B/S", UINT16_MAX, false, [ruleChanged](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+      case onChange: {*ruleChanged = true; return true;}
+      default: return false;
+    }});
     ui->initSlider  (parentVar, "Game Speed (FPS)",      leds.effectData.write<uint8_t>(20), 0, 60);    
     ui->initSlider  (parentVar, "Starting Life Density", leds.effectData.write<uint8_t>(32), 10, 90);
     ui->initSlider  (parentVar, "Mutation Chance",       leds.effectData.write<uint8_t>(2), 0, 100);    
@@ -1710,7 +1716,7 @@ class GameOfLife: public Effect {
 class RubiksCube: public Effect {
   const char * name() {return "Rubik's Cube";}
   unsigned8     dim() {return _3D;}
-  const char * tags() {return "💡💫";}
+  const char * tags() {return "💫";}
 
   struct Cube {
       uint8_t SIZE = 4;
@@ -1923,28 +1929,25 @@ class RubiksCube: public Effect {
 
   void loop(Leds &leds) {
     // UI control variables
-    uint8_t speed    = leds.effectData.read<uint8_t>();
-    uint8_t cubeSize = leds.effectData.read<uint8_t>();
+    bool   *setup      = leds.effectData.readWrite<bool>();
+    uint8_t speed      = leds.effectData.read<uint8_t>();
+    uint8_t cubeSize   = leds.effectData.read<uint8_t>();
     bool randomTurning = leds.effectData.read<bool>();
 
     // Effect variables
     unsigned long *step    = leds.effectData.readWrite<unsigned long>();
-    uint8_t *setup         = leds.effectData.readWrite<uint8_t>();
     Cube    *cube          = leds.effectData.readWrite<Cube>();
-    uint8_t *prevCubeSize  = leds.effectData.readWrite<byte>();
     uint8_t *moveList      = leds.effectData.readWrite<byte>(100);
     uint8_t *moveIndex     = leds.effectData.readWrite<byte>();
     uint8_t *prevFaceMoved = leds.effectData.readWrite<byte>();
-    bool    *prevMode      = leds.effectData.readWrite<bool>();
 
     typedef void (Cube::*RotateFunc)(bool direction, uint8_t width);
     const RotateFunc rotateFuncs[] = {&Cube::rotateFront, &Cube::rotateBack, &Cube::rotateLeft, &Cube::rotateRight, &Cube::rotateTop, &Cube::rotateBottom};
       
-    if (cubeSize != *prevCubeSize || (*setup != 123 && sys->now > *step)) {
+    if (*setup && sys->now > *step) {
+      ppf ("Setting up %d x %d cube\n", cubeSize, cubeSize);
       *step = sys->now + 1000;
-      *prevCubeSize = cubeSize;
-      *prevMode = 0;
-      *setup = 123;
+      *setup = false;
       cube->init(cubeSize);
       uint8_t moveCount = cubeSize * 10 + random(20);
       // Randomly turn entire cube
@@ -1967,11 +1970,6 @@ class RubiksCube: public Effect {
       cube->drawCube(leds);
     }
 
-    if (*prevMode != randomTurning) {
-      *prevMode = randomTurning;
-      if (!randomTurning) {*setup = 0; return;}
-    }
-
     if (!speed || sys->now - *step < 1000 / speed || sys->now < *step) return;
 
     Move move = randomTurning ? createRandomMoveStruct(cubeSize, *prevFaceMoved) : unpackMove(moveList[*moveIndex]);
@@ -1982,7 +1980,7 @@ class RubiksCube: public Effect {
     
     if (!randomTurning && *moveIndex == 0) {
       *step = sys->now + 3000;
-      *setup = 0;
+      *setup = true;
       return;
     }
     if (!randomTurning) (*moveIndex)--;
@@ -1991,16 +1989,23 @@ class RubiksCube: public Effect {
 
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
+    bool *setup = leds.effectData.write<bool>(true);
     ui->initSlider  (parentVar, "Turns Per Second", leds.effectData.write<uint8_t>(1), 0, 20);   
-    ui->initSlider  (parentVar, "Cube Size",        leds.effectData.write<uint8_t>(2), 1, 8);
-    ui->initCheckBox(parentVar, "Random Turning", leds.effectData.write<bool>(false));
+    ui->initSlider  (parentVar, "Cube Size",        leds.effectData.write<uint8_t>(2), 1, 8, false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+      case onChange: {*setup = true; return true;}
+      default: return false;
+    }});
+    ui->initCheckBox(parentVar, "Random Turning", leds.effectData.write<bool>(false), false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+      case onChange: {if (!mdl->getValue("Random Turning")) *setup = true; return true;}
+      default: return false;
+    }});
   }
 };
 
 class ParticleTest: public Effect {
   const char * name() {return "Particle Test";}
   unsigned8     dim() {return _3D;}
-  const char * tags() {return "💡💫";}
+  const char * tags() {return "💫🧭";}
   
   struct Particle {
     float x, y, z;
@@ -2106,34 +2111,28 @@ class ParticleTest: public Effect {
 
   void loop(Leds &leds) {
     // UI Variables
+    bool   *setup        = leds.effectData.readWrite<bool>();
     uint8_t speed        = leds.effectData.read<uint8_t>();
     uint8_t numParticles = leds.effectData.read<uint8_t>();
     bool barriers        = leds.effectData.read<bool>();
     #ifdef STARBASE_USERMOD_MPU6050
-      bool gyro            = leds.effectData.read<bool>();
+      bool gyro = leds.effectData.read<bool>();
     #else
       bool gyro = false;
     #endif
-    bool randomGravity   = leds.effectData.read<bool>();
+    bool randomGravity = leds.effectData.read<bool>();
     uint8_t gravityChangeInterval = leds.effectData.read<uint8_t>();
-    bool debugPrint      = leds.effectData.read<bool>();
+    bool debugPrint    = leds.effectData.read<bool>();
 
     // Effect Variables
-    unsigned long *step  = leds.effectData.readWrite<unsigned long>();
-    Particle *particles  = leds.effectData.readWrite<Particle>(256);
-    byte *setup          = leds.effectData.readWrite<byte>();
-    uint8_t *activeParticles  = leds.effectData.readWrite<uint8_t>();
-    float *Gravity            = leds.effectData.readWrite<float>(3);
+    Particle *particles       = leds.effectData.readWrite<Particle>(255);
+    unsigned long *step       = leds.effectData.readWrite<unsigned long>();
     unsigned long *gravUpdate = leds.effectData.readWrite<unsigned long>();
+    float *gravity = leds.effectData.readWrite<float>(3);
 
-    EVERY_N_SECONDS(10) {
-      ppf("UI Variables: Speed: %d, numParticles: %d, Barriers: %d, Gyro: %d, Random Gravity: %d, Gravity Change Interval: %d, Debug Print: %d\n", speed, numParticles, barriers, gyro, randomGravity, gravityChangeInterval, debugPrint);
-    }
-
-    if (*setup != 123 || *activeParticles != numParticles) {
+    if (*setup) {
       ppf("Setting Up Particles\n");
-      *setup = 123;
-      *activeParticles = numParticles;
+      *setup = false;
       leds.fill_solid(CRGB::Black, true);
 
       if (barriers) {
@@ -2147,7 +2146,7 @@ class ParticleTest: public Effect {
 
       for (int index = 0 ; index < numParticles; index++) {
         Coord3D rPos; 
-        do { // Get random mapped position that isn't colored (infinite loop is small fixture size and high particle count)
+        do { // Get random mapped position that isn't colored (infinite loop if small fixture size and high particle count)
           rPos = {random8(leds.size.x), random8(leds.size.y), random8(leds.size.z)};
         } while (!leds.isMapped(leds.XYZUnprojected(rPos)) || leds.getPixelColor(rPos) != CRGB::Black);
         // rPos = {1,1,0};
@@ -2174,13 +2173,13 @@ class ParticleTest: public Effect {
 
     #ifdef STARBASE_USERMOD_MPU6050
     if (gyro) {
-      Gravity[0] = -mpu6050->gravityVector.x;
-      Gravity[1] =  mpu6050->gravityVector.z; // Swap Y and Z axis
-      Gravity[2] = -mpu6050->gravityVector.y;
+      gravity[0] = -mpu6050->gravityVector.x;
+      gravity[1] =  mpu6050->gravityVector.z; // Swap Y and Z axis
+      gravity[2] = -mpu6050->gravityVector.y;
 
       if (leds.projectionDimension == _2D) { // Swap back Y and Z axis set Z to 0
-        Gravity[1] = -Gravity[2];
-        Gravity[2] = 0;
+        gravity[1] = -gravity[2];
+        gravity[2] = 0;
       }
     }
     #endif
@@ -2190,25 +2189,25 @@ class ParticleTest: public Effect {
         *gravUpdate = sys->now;
         float scale = 5.0f;
         // Generate Perlin noise values and scale them
-        Gravity[0] = (inoise8(*step, 0, 0) / 128.0f - 1.0f) * scale;
-        Gravity[1] = (inoise8(0, *step, 0) / 128.0f - 1.0f) * scale;
-        Gravity[2] = (inoise8(0, 0, *step) / 128.0f - 1.0f) * scale;
+        gravity[0] = (inoise8(*step, 0, 0) / 128.0f - 1.0f) * scale;
+        gravity[1] = (inoise8(0, *step, 0) / 128.0f - 1.0f) * scale;
+        gravity[2] = (inoise8(0, 0, *step) / 128.0f - 1.0f) * scale;
 
-        Gravity[0] = constrain(Gravity[0], -1.0f, 1.0f);
-        Gravity[1] = constrain(Gravity[1], -1.0f, 1.0f);
-        Gravity[2] = constrain(Gravity[2], -1.0f, 1.0f);
+        gravity[0] = constrain(gravity[0], -1.0f, 1.0f);
+        gravity[1] = constrain(gravity[1], -1.0f, 1.0f);
+        gravity[2] = constrain(gravity[2], -1.0f, 1.0f);
 
-        if (leds.projectionDimension == _2D) Gravity[2] = 0;
-        ppf("Random Gravity: %f, %f, %f\n", Gravity[0], Gravity[1], Gravity[2]);
+        if (leds.projectionDimension == _2D) gravity[2] = 0;
+        // ppf("Random Gravity: %f, %f, %f\n", gravity[0], gravity[1], gravity[2]);
       }
     }
 
-    for (int index = 0; index < *activeParticles; index++) {
+    for (int index = 0; index < numParticles; index++) {
       if (gyro || randomGravity) { // Lerp gravity towards gyro or random gravity if enabled
         float lerpFactor = .75;
-        particles[index].vx += (Gravity[0] - particles[index].vx) * lerpFactor;
-        particles[index].vy += (Gravity[1] - particles[index].vy) * lerpFactor; // Swap Y and Z axis
-        particles[index].vz += (Gravity[2] - particles[index].vz) * lerpFactor;
+        particles[index].vx += (gravity[0] - particles[index].vx) * lerpFactor;
+        particles[index].vy += (gravity[1] - particles[index].vy) * lerpFactor; // Swap Y and Z axis
+        particles[index].vz += (gravity[2] - particles[index].vz) * lerpFactor;
       }
       particles[index].updatePositionandDraw(leds, index, debugPrint);  
     }
@@ -2218,11 +2217,18 @@ class ParticleTest: public Effect {
 
   void controls(Leds &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
-    ui->initSlider  (parentVar, "Speed",                   leds.effectData.write<uint8_t>(1), 0, 30);
-    ui->initSlider  (parentVar, "Number of Particles",     leds.effectData.write<uint8_t>(10), 1, 255);
-    ui->initCheckBox(parentVar, "Barriers",                leds.effectData.write<bool>(0));
+    bool *setup = leds.effectData.write<bool>(true);
+    ui->initSlider  (parentVar, "Speed", leds.effectData.write<uint8_t>(1), 0, 30);
+    ui->initSlider  (parentVar, "Number of Particles", leds.effectData.write<uint8_t>(10), 1, 255, false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+      case onChange: {*setup = true; return true;}
+      default: return false;
+    }});
+    ui->initCheckBox(parentVar, "Barriers", leds.effectData.write<bool>(0) , false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+      case onChange: {*setup = true; return true;}
+      default: return false;
+    }});
     #ifdef STARBASE_USERMOD_MPU6050
-      ui->initCheckBox(parentVar, "Gyro",                    leds.effectData.write<bool>(0));
+      ui->initCheckBox(parentVar, "Gyro", leds.effectData.write<bool>(0));
     #endif
     ui->initCheckBox(parentVar, "Random Gravity",          leds.effectData.write<bool>(1));
     ui->initSlider  (parentVar, "Gravity Change Interval", leds.effectData.write<uint8_t>(5), 1, 10);
