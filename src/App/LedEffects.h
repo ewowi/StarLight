@@ -1468,7 +1468,7 @@ class GameOfLife: public Effect {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     bool *setup       = leds.effectData.readWrite<bool>();
     bool *ruleChanged = leds.effectData.readWrite<bool>();
-    byte overlay      = leds.effectData.read<byte>();
+    // byte overlay      = leds.effectData.read<byte>();
     Coord3D bgC       = leds.effectData.read<Coord3D>();
     byte ruleset      = leds.effectData.read<byte>();
     uint8_t speed     = leds.effectData.read<uint8_t>();
@@ -1534,7 +1534,8 @@ class GameOfLife: public Effect {
       fadedBackground = bgColor.r + bgColor.g + bgColor.b + 20 + (blur-220);
       blur -= (blur-220);
     }
-    bool blurDead = *step > sys->now && !overlay && !fadedBackground;
+    bool blurDead = *step > sys->now && !fadedBackground;
+    // bool blurDead = *step > sys->now && !overlay && !fadedBackground;
     bool paletteChanged = *prevPalette != ColorFromPalette(leds.palette, 0) && !colorByAge;
 
     if (paletteChanged) *prevPalette = ColorFromPalette(leds.palette, 0);
@@ -1545,11 +1546,11 @@ class GameOfLife: public Effect {
       if (alive) aliveCount++; else deadCount++;
       // Redraw alive if palette changed or overlay1
       if      (alive && paletteChanged)    leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0); // Random color if palette changed
-      else if (alive && overlay == 1)      leds.setPixelColor({x,y,z}, bgColor, 0);                                   // Overlay color
+      // else if (alive && overlay == 1)      leds.setPixelColor({x,y,z}, bgColor, 0);                                   // Overlay color
       else if (alive && colorByAge && !*generation) leds.setPixelColor({x,y,z}, CRGB::Red, 248);                      // Age alive cells while paused
       // Redraw dead if palette changed or overlay2 or blur paused game
       if      (!alive && paletteChanged)   leds.setPixelColor({x,y,z}, bgColor, 0);       // Remove blended dead cells
-      else if (!alive && overlay == 2)     leds.setPixelColor({x,y,z}, bgColor, blur);    // Overlay color
+      // else if (!alive && overlay == 2)     leds.setPixelColor({x,y,z}, bgColor, blur);    // Overlay color
       else if (!alive && blurDead)         leds.setPixelColor({x,y,z}, bgColor, blur);    // Blend dead cells while paused
     }
   
@@ -1621,24 +1622,25 @@ class GameOfLife: public Effect {
         // Loneliness or Overpopulation
         cellChanged = true;
         setBitValue(futureCells, cIndex, false);
-        if (!overlay) leds.setPixelColor(cPos, bgColor, blur);
-        else if (overlay == 2) leds.setPixelColor(cPos, bgColor, blur);
+        leds.setPixelColor(cPos, bgColor, blur);
+        // if (!overlay) leds.setPixelColor(cPos, bgColor, blur);
+        // else if (overlay == 2) leds.setPixelColor(cPos, bgColor, blur);
       }
       else if (!cellValue && birthNumbers[neighbors]){
         // Reproduction
         setBitValue(futureCells, cIndex, true);
         cellChanged = true;
-        if (overlay == 2) continue;
+        // if (overlay == 2) continue;
         CRGB randomParentColor = color; // last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8(colorCount)];
         if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8());
-        if (overlay == 1) randomParentColor = bgColor;
+        // if (overlay == 1) randomParentColor = bgColor;
         leds.setPixelColor(cPos, colorByAge ? CRGB::Green : randomParentColor, 0);
 
       }
       else {
         // Blending, fade dead cells further causing blurring effect to moving cells
-        if (!cellValue && !overlay) {
+        if (!cellValue) { // && !overlay) {
           if (fadedBackground) {
               CRGB val = leds.getPixelColor(cPos);
               if (fadedBackground < val.r + val.g + val.b) leds.setPixelColor(cPos, bgColor, blur);
@@ -1678,17 +1680,18 @@ class GameOfLife: public Effect {
     Effect::controls(leds, parentVar);
     bool *setup       = leds.effectData.write<bool>(true);
     bool *ruleChanged = leds.effectData.write<bool>(true);
-    ui->initSelect(parentVar, "Overlay", leds.effectData.write<byte>(0), false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
-      case onUI: {
-        JsonArray options = ui->setOptions(var);
-        options.add("None");
-        options.add("Background");
-        options.add("Alive Cells");
-        return true;
-      }
-      default: return false;
-    }});
-    ui->initCoord3D(parentVar, "Background or Overlay Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
+    // ui->initSelect(parentVar, "Overlay", leds.effectData.write<byte>(0), false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+    //   case onUI: {
+    //     JsonArray options = ui->setOptions(var);
+    //     options.add("None");
+    //     options.add("Background");
+    //     options.add("Alive Cells");
+    //     return true;
+    //   }
+    //   default: return false;
+    // }});
+    ui->initCoord3D(parentVar, "Background Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
+    // ui->initCoord3D(parentVar, "Background or Overlay Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
     ui->initSelect (parentVar, "ruleset", leds.effectData.write<uint8_t>(1), false, [ruleChanged](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case onUI: {
         JsonArray options = ui->setOptions(var);
