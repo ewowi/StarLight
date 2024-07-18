@@ -1554,6 +1554,7 @@ class GameOfLife: public Effect {
     }
   
     if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) return; // Check if enough time has passed for updating
+    // if (!speed || *step > sys->now || (speed != 60 && sys->now - *step < 1000 / speed)) return; // Uncapped speed when slider maxed
 
     //Rule set for game of life
     if (*ruleChanged) {
@@ -1583,36 +1584,39 @@ class GameOfLife: public Effect {
     //Update Game of Life
     bool cellChanged = false; // Detect still live and dead grids
 
+    const int zAxis = (leds.projectionDimension == _3D) ? -1 : 0; // Avoids looping through z axis neighbors if 2D
     //Loop through all cells. Count neighbors, apply rules, setPixel
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
       Coord3D cPos = {x, y, z}; //current cells position
       uint16_t cIndex = leds.XYZUnprojected(cPos);
-      if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZ(x,y,z))) continue; //skip if not physical led
+      bool cellValue = getBitValue(cells, cIndex);
+      if (zAxis && !leds.isMapped(cIndex)) continue; //skip if not physical led on 3D fixtures
       byte neighbors = 0;
       byte colorCount = 0; //track number of valid colors
       CRGB nColors[9];     //track up to 9 colors (3D / alt ruleset), dying cells may overwrite but this wont be used
 
-      for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -1; k <= 1; k++) { // iterate through 3*3*3 matrix
+      for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = zAxis; k <= -zAxis; k++) { // iterate through 3*3*3 matrix
         if (i==0 && j==0 && k==0) continue; // ignore itself
         Coord3D nPos = {x+i, y+j, z+k};     // neighbor position
-        if (!wrap || leds.size.z > 1 || (*generation) % 1500 == 0 || aliveCount == 5) { //no wrap, never wrap 3D, disable wrap every 1500 generations to prevent undetected repeats
-          if (nPos.isOutofBounds(leds.size)) continue;
-        } else { // wrap around 2D
-          if (k != 0) continue; //no z axis (wrap around only for x and y
-          nPos = (nPos + leds.size) % leds.size;
+        if (nPos.isOutofBounds(leds.size)) {
+          // Wrap is disabled when unchecked, for 3D fixtures, every 1500 generations, and solo gliders
+          if (!wrap || zAxis || (*generation) % 1500 == 0 || aliveCount == 5) continue;
+          if (wrap) nPos = (nPos + leds.size) % leds.size; // wrap around 3D
         }
         uint16_t nIndex = leds.XYZUnprojected(nPos);
         // count neighbors and store up to 9 neighbor colors
         if (getBitValue(cells, nIndex)) { //if alive
           neighbors++;
-          if (!getBitValue(futureCells, nIndex) || leds.getPixelColor(nPos) == bgColor) continue; //skip if parent died in this loop (color lost or blended)
-          color = leds.getPixelColor(nPos);
+          if (cellValue || colorByAge) continue; //skip if cell is alive (color already set) or color by age (colors are not used)
+          if (!getBitValue(futureCells, nIndex)) continue; //skip if parent died in this loop (color lost or blended)
+          CRGB nColor = leds.getPixelColor(nIndex);
+          if (nColor == bgColor) continue; 
+          color = nColor; // Set color to last seen color
           nColors[colorCount % 9] = color;
           colorCount++;
         }
       }
       // Rules of Life
-      bool cellValue = getBitValue(cells, cIndex);
       if (cellValue && !surviveNumbers[neighbors]) {
         // Loneliness or Overpopulation
         cellChanged = true;
@@ -1635,8 +1639,11 @@ class GameOfLife: public Effect {
       else {
         // Blending, fade dead cells further causing blurring effect to moving cells
         if (!cellValue && !overlay) {
-          CRGB val = leds.getPixelColor(cPos);
-          if (fadedBackground < val.r + val.g + val.b) leds.setPixelColor(cPos, bgColor, blur);
+          if (fadedBackground) {
+              CRGB val = leds.getPixelColor(cPos);
+              if (fadedBackground < val.r + val.g + val.b) leds.setPixelColor(cPos, bgColor, blur);
+          } 
+          else leds.setPixelColor(cPos, bgColor, blur);
         }
         if (cellValue && colorByAge) leds.setPixelColor(cPos, CRGB::Red, 248);
       }
