@@ -1708,7 +1708,7 @@ class RubiksCube: public Effect {
   const char * tags() {return "💫";}
 
   struct Cube {
-      uint8_t SIZE = 4;
+      uint8_t SIZE = 0;
       static const uint8_t MAX_SIZE = 8;
       using Face = std::array<std::array<uint8_t, MAX_SIZE>, MAX_SIZE>;
       Face front;
@@ -1932,8 +1932,8 @@ class RubiksCube: public Effect {
 
     typedef void (Cube::*RotateFunc)(bool direction, uint8_t width);
     const RotateFunc rotateFuncs[] = {&Cube::rotateFront, &Cube::rotateBack, &Cube::rotateLeft, &Cube::rotateRight, &Cube::rotateTop, &Cube::rotateBottom};
-      
-    if (*setup && sys->now > *step) {
+    
+    if (*setup && sys->now > *step || cube->SIZE == 0) {
       ppf ("Setting up %d x %d cube\n", cubeSize, cubeSize);
       *step = sys->now + 1000;
       *setup = false;
