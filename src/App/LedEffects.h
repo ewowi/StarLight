@@ -1459,16 +1459,15 @@ class GameOfLife: public Effect {
           setBitValue(futureCells, leds.XYZUnprojected({nx, ny, z}), true);
           leds.setPixelColor({nx, ny, z}, colorByAge ? CRGB::Green : color, 0);
         }
-        return;   
+        return;
       }
     }
   }
 
   void loop(Leds &leds) {
-    //Binding of controls. Keep before binding of vars and keep in same order as in controls()
+    // UI Variables
     bool *setup       = leds.effectData.readWrite<bool>();
     bool *ruleChanged = leds.effectData.readWrite<bool>();
-    // byte overlay      = leds.effectData.read<byte>();
     Coord3D bgC       = leds.effectData.read<Coord3D>();
     byte ruleset      = leds.effectData.read<byte>();
     uint8_t speed     = leds.effectData.read<uint8_t>();
@@ -1479,28 +1478,29 @@ class GameOfLife: public Effect {
     bool colorByAge   = leds.effectData.read<bool>();
     bool infinite     = leds.effectData.read<bool>();
 
-    //Binding of loop persistent values (pointers)
+    // Effect Variables
     const uint16_t dataSize = ((leds.size.x * leds.size.y * leds.size.z + 7) / 8);
+    unsigned long *step        = leds.effectData.readWrite<unsigned long>();
     uint16_t *gliderLength     = leds.effectData.readWrite<uint16_t>();
     uint16_t *cubeGliderLength = leds.effectData.readWrite<uint16_t>();
     uint16_t *oscillatorCRC    = leds.effectData.readWrite<uint16_t>();
     uint16_t *spaceshipCRC     = leds.effectData.readWrite<uint16_t>();
     uint16_t *cubeGliderCRC    = leds.effectData.readWrite<uint16_t>();
-    byte *cells       = leds.effectData.readWrite<byte>(dataSize);
-    byte *futureCells = leds.effectData.readWrite<byte>(dataSize);
-    uint16_t *generation = leds.effectData.readWrite<uint16_t>();
-    unsigned long *step  = leds.effectData.readWrite<unsigned long>();
-    bool *birthNumbers   = leds.effectData.readWrite<bool>(9);
-    bool *surviveNumbers = leds.effectData.readWrite<bool>(9);
-    CRGB *prevPalette = leds.effectData.readWrite<CRGB>();
+    bool     *soloGlider       = leds.effectData.readWrite<bool>();
+    uint16_t *generation       = leds.effectData.readWrite<uint16_t>();
+    bool     *birthNumbers     = leds.effectData.readWrite<bool>(9);
+    bool     *surviveNumbers   = leds.effectData.readWrite<bool>(9);
+    CRGB     *prevPalette      = leds.effectData.readWrite<CRGB>();
+    byte     *cells            = leds.effectData.readWrite<byte>(dataSize);
+    byte     *futureCells      = leds.effectData.readWrite<byte>(dataSize);
 
-    CRGB bgColor = CRGB(bgC.x, bgC.y, bgC.z);                 // Overlay color if toggled
+    CRGB bgColor = CRGB(bgC.x, bgC.y, bgC.z);
     CRGB color   = ColorFromPalette(leds.palette, random8()); // Used if all parents died
 
     // Start New Game of Life
     if (*setup || (*generation == 0 && *step < sys->now)) {
       *setup = false;
-      *prevPalette = colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, 0);
+      *prevPalette = ColorFromPalette(leds.palette, 0);
       *generation = 1;
       disablePause ? *step = sys->now : *step = sys->now + 1500;
 
@@ -1510,50 +1510,49 @@ class GameOfLife: public Effect {
         if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZUnprojected({x,y,z}))) continue;
         if (random8(100) < lifeChance) {
           setBitValue(cells, leds.XYZUnprojected({x,y,z}), true);
-          leds.setPixelColor({x,y,z}, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, random8()), 0);
+          leds.setPixelColor({x,y,z}, bgColor, 0); // Color set in redraw loop
         }
-        else leds.setPixelColor({x,y,z}, bgColor, 0);
       }
-      memcpy(futureCells, cells, dataSize); 
+      memcpy(futureCells, cells, dataSize);
 
+      *soloGlider = false;
       // Change CRCs
       uint16_t crc = crc16((const unsigned char*)cells, dataSize);
-      *oscillatorCRC = crc;
-      *spaceshipCRC  = crc;
-      *cubeGliderCRC = crc;
+      *oscillatorCRC = crc, *spaceshipCRC = crc, *cubeGliderCRC = crc;
       *gliderLength  = lcm(leds.size.y, leds.size.x) * 4;
-      *cubeGliderLength = *gliderLength * 6; // change later for rectangular cuboid
+      *cubeGliderLength = *gliderLength * 6; // Change later for rectangular cuboid
       return;
     }
 
-    int aliveCount = 0;
-    int deadCount = 0;
     byte blur = leds.fixture->globalBlend;
     int fadedBackground = 0;
-    if (blur > 220 && !colorByAge) {
+    if (blur > 220 && !colorByAge) { // Keep faded background if blur > 220
       fadedBackground = bgColor.r + bgColor.g + bgColor.b + 20 + (blur-220);
       blur -= (blur-220);
     }
     bool blurDead = *step > sys->now && !fadedBackground;
-    // bool blurDead = *step > sys->now && !overlay && !fadedBackground;
-    bool paletteChanged = *prevPalette != ColorFromPalette(leds.palette, 0) && !colorByAge;
+    bool paletteChanged = !colorByAge && *prevPalette != ColorFromPalette(leds.palette, 0);
 
     if (paletteChanged) *prevPalette = ColorFromPalette(leds.palette, 0);
     // Redraw Loop
-    for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-      if (!leds.isMapped(leds.XYZUnprojected({x,y,z}))) continue;
-      bool alive = getBitValue(cells, leds.XYZUnprojected({x,y,z}));
-      if (alive) aliveCount++; else deadCount++;
-      // Redraw alive if palette changed or overlay1
-      if      (alive && paletteChanged)    leds.setPixelColor({x,y,z}, ColorFromPalette(leds.palette, random8()), 0); // Random color if palette changed
-      // else if (alive && overlay == 1)      leds.setPixelColor({x,y,z}, bgColor, 0);                                   // Overlay color
-      else if (alive && colorByAge && !*generation) leds.setPixelColor({x,y,z}, CRGB::Red, 248);                      // Age alive cells while paused
-      // Redraw dead if palette changed or overlay2 or blur paused game
-      if      (!alive && paletteChanged)   leds.setPixelColor({x,y,z}, bgColor, 0);       // Remove blended dead cells
-      // else if (!alive && overlay == 2)     leds.setPixelColor({x,y,z}, bgColor, blur);    // Overlay color
-      else if (!alive && blurDead)         leds.setPixelColor({x,y,z}, bgColor, blur);    // Blend dead cells while paused
+    if (*generation <= 1 || paletteChanged || blurDead) { // Readd overlay support when implemented
+      for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
+        uint16_t cIndex = leds.XYZUnprojected({x,y,z}); // Current cell index (bit grid lookup)
+        uint16_t cLoc   = leds.XYZ({x,y,z});            // Current cell location (led index)
+        if (!leds.isMapped(cIndex)) continue;
+        bool alive = getBitValue(cells, cIndex);
+        CRGB cellColor = leds.getPixelColor(cLoc);
+        bool recolor = (paletteChanged || (alive && *generation == 1 && cellColor == bgColor && !random(16))); // Palette change or Initial Color
+        // Redraw alive if palette changed, spawn initial colors randomly, age alive cells while paused
+        if      (alive && recolor) leds.setPixelColor(cLoc, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, random8()), 0);
+        else if (alive && colorByAge && !*generation) leds.setPixelColor(cLoc, CRGB::Red, 248);    // Age alive cells while paused
+        // Redraw dead if palette changed, blur paused game, fade on newgame
+        if      (!alive && (paletteChanged || disablePause)) leds.setPixelColor(cLoc, bgColor, 0); // Remove blended dead cells
+        else if (!alive && blurDead)         leds.setPixelColor(cLoc, bgColor, blur);              // Blend dead cells while paused
+        else if (!alive && *generation == 1) leds.setPixelColor(cLoc, bgColor, 248);               // Fade dead on new game
+      }
     }
-  
+
     if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) return; // Check if enough time has passed for updating
     // if (!speed || *step > sys->now || (speed != 60 && sys->now - *step < 1000 / speed)) return; // Uncapped speed when slider maxed
 
@@ -1583,35 +1582,35 @@ class GameOfLife: public Effect {
       }
     }
     //Update Game of Life
-    bool cellChanged = false; // Detect still live and dead grids
-
+    int aliveCount = 0, deadCount = 0; // Detect solo gliders and dead grids
+    bool disableWrap = *soloGlider || *generation % 1500 == 0;
     const int zAxis = (leds.projectionDimension == _3D) ? -1 : 0; // Avoids looping through z axis neighbors if 2D
     //Loop through all cells. Count neighbors, apply rules, setPixel
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-      Coord3D cPos = {x, y, z}; //current cells position
-      uint16_t cIndex = leds.XYZUnprojected(cPos);
-      bool cellValue = getBitValue(cells, cIndex);
-      if (zAxis && !leds.isMapped(cIndex)) continue; //skip if not physical led on 3D fixtures
-      byte neighbors = 0;
-      byte colorCount = 0; //track number of valid colors
-      CRGB nColors[9];     //track up to 9 colors (3D / alt ruleset), dying cells may overwrite but this wont be used
+      Coord3D  cPos      = {x, y, z};
+      uint16_t cIndex    = leds.XYZUnprojected(cPos);
+      bool     cellValue = getBitValue(cells, cIndex);
+      if (cellValue) aliveCount++; else deadCount++;
+      if (zAxis && !leds.isMapped(cIndex)) continue; // Skip if not physical led on 3D fixtures
+      byte neighbors = 0, colorCount = 0;
+      CRGB nColors[9];
 
-      for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = zAxis; k <= -zAxis; k++) { // iterate through 3*3*3 matrix
-        if (i==0 && j==0 && k==0) continue; // ignore itself
-        Coord3D nPos = {x+i, y+j, z+k};     // neighbor position
+      for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = zAxis; k <= -zAxis; k++) {
+        if (i==0 && j==0 && k==0) continue; // Ignore itself
+        Coord3D nPos = {x+i, y+j, z+k};
         if (nPos.isOutofBounds(leds.size)) {
           // Wrap is disabled when unchecked, for 3D fixtures, every 1500 generations, and solo gliders
-          if (!wrap || zAxis || (*generation) % 1500 == 0 || aliveCount == 5) continue;
-          if (wrap) nPos = (nPos + leds.size) % leds.size; // wrap around 3D
+          if (!wrap || zAxis || disableWrap) continue;
+          if (wrap) nPos = (nPos + leds.size) % leds.size; // Wrap around 3D
         }
         uint16_t nIndex = leds.XYZUnprojected(nPos);
-        // count neighbors and store up to 9 neighbor colors
-        if (getBitValue(cells, nIndex)) { //if alive
+        // Count neighbors and store up to 9 neighbor colors
+        if (getBitValue(cells, nIndex)) {
           neighbors++;
-          if (cellValue || colorByAge) continue; //skip if cell is alive (color already set) or color by age (colors are not used)
-          if (!getBitValue(futureCells, nIndex)) continue; //skip if parent died in this loop (color lost or blended)
-          CRGB nColor = leds.getPixelColor(nIndex);
-          if (nColor == bgColor) continue; 
+          if (cellValue || colorByAge) continue;           // Skip if cell is alive (color already set) or color by age (colors are not used)
+          if (!getBitValue(futureCells, nIndex)) continue; // Skip if parent died in this loop (color lost or blended)
+          CRGB nColor = leds.getPixelColor(nPos);
+          if (nColor == bgColor) continue;
           color = nColor; // Set color to last seen color
           nColors[colorCount % 9] = color;
           colorCount++;
@@ -1620,51 +1619,44 @@ class GameOfLife: public Effect {
       // Rules of Life
       if (cellValue && !surviveNumbers[neighbors]) {
         // Loneliness or Overpopulation
-        cellChanged = true;
         setBitValue(futureCells, cIndex, false);
         leds.setPixelColor(cPos, bgColor, blur);
-        // if (!overlay) leds.setPixelColor(cPos, bgColor, blur);
-        // else if (overlay == 2) leds.setPixelColor(cPos, bgColor, blur);
       }
       else if (!cellValue && birthNumbers[neighbors]){
         // Reproduction
         setBitValue(futureCells, cIndex, true);
-        cellChanged = true;
-        // if (overlay == 2) continue;
-        CRGB randomParentColor = color; // last seen color, overwrite if colors are found
+        CRGB randomParentColor = color; // Last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8(colorCount)];
         if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8());
-        // if (overlay == 1) randomParentColor = bgColor;
         leds.setPixelColor(cPos, colorByAge ? CRGB::Green : randomParentColor, 0);
 
       }
       else {
         // Blending, fade dead cells further causing blurring effect to moving cells
-        if (!cellValue) { // && !overlay) {
+        if (!cellValue) {
           if (fadedBackground) {
               CRGB val = leds.getPixelColor(cPos);
               if (fadedBackground < val.r + val.g + val.b) leds.setPixelColor(cPos, bgColor, blur);
-          } 
+          }
           else leds.setPixelColor(cPos, bgColor, blur);
         }
         if (cellValue && colorByAge) leds.setPixelColor(cPos, CRGB::Red, 248);
       }
     }
 
-    // Update cell values from futureCells
+    if (aliveCount == 5) *soloGlider = true; else *soloGlider = false;
     memcpy(cells, futureCells, dataSize);
-    // Get current crc value
     uint16_t crc = crc16((const unsigned char*)cells, dataSize);
 
     bool repetition = false;
-    if (!cellChanged || crc == *oscillatorCRC || crc == *spaceshipCRC || crc == *cubeGliderCRC) repetition = true; //check if cell changed this gen and compare previous stored crc values
+    if (!aliveCount || crc == *oscillatorCRC || crc == *spaceshipCRC || crc == *cubeGliderCRC) repetition = true;
     if ((repetition && infinite) || (infinite && !random8(50)) || (infinite && float(aliveCount)/(aliveCount + deadCount) < 0.05)) {
-      placePentomino(leds, futureCells, colorByAge); // place R-pentomino/Glider if infinite mode is enabled
+      placePentomino(leds, futureCells, colorByAge); // Place R-pentomino/Glider if infinite mode is enabled
       memcpy(cells, futureCells, dataSize);
       repetition = false;
     }
     if (repetition) {
-      *generation = 0; //reset on next call
+      *generation = 0;
       disablePause ? *step = sys->now : *step = sys->now + 1000;
       return;
     }
@@ -1680,18 +1672,7 @@ class GameOfLife: public Effect {
     Effect::controls(leds, parentVar);
     bool *setup       = leds.effectData.write<bool>(true);
     bool *ruleChanged = leds.effectData.write<bool>(true);
-    // ui->initSelect(parentVar, "Overlay", leds.effectData.write<byte>(0), false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
-    //   case onUI: {
-    //     JsonArray options = ui->setOptions(var);
-    //     options.add("None");
-    //     options.add("Background");
-    //     options.add("Alive Cells");
-    //     return true;
-    //   }
-    //   default: return false;
-    // }});
     ui->initCoord3D(parentVar, "Background Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
-    // ui->initCoord3D(parentVar, "Background or Overlay Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
     ui->initSelect (parentVar, "ruleset", leds.effectData.write<uint8_t>(1), false, [ruleChanged](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case onUI: {
         JsonArray options = ui->setOptions(var);
@@ -1711,17 +1692,15 @@ class GameOfLife: public Effect {
       case onChange: {*ruleChanged = true; return true;}
       default: return false;
     }});
-    ui->initSlider  (parentVar, "Game Speed (FPS)",      leds.effectData.write<uint8_t>(20), 0, 60);    
+    ui->initSlider  (parentVar, "Game Speed (FPS)",      leds.effectData.write<uint8_t>(20), 0, 100);
     ui->initSlider  (parentVar, "Starting Life Density", leds.effectData.write<uint8_t>(32), 10, 90);
-    ui->initSlider  (parentVar, "Mutation Chance",       leds.effectData.write<uint8_t>(2), 0, 100);    
+    ui->initSlider  (parentVar, "Mutation Chance",       leds.effectData.write<uint8_t>(2), 0, 100);
     ui->initCheckBox(parentVar, "Wrap",                  leds.effectData.write<bool>(true));
     ui->initCheckBox(parentVar, "Disable Pause",         leds.effectData.write<bool>(false));
     ui->initCheckBox(parentVar, "Color By Age",          leds.effectData.write<bool>(false));
     ui->initCheckBox(parentVar, "Infinite",              leds.effectData.write<bool>(false));
   }
 }; //GameOfLife
-
-
 
 class RubiksCube: public Effect {
   const char * name() {return "Rubik's Cube";}
