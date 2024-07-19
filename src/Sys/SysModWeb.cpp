@@ -23,6 +23,7 @@
 // #endif
 
 #include "html_ui.h"
+#include "html_newui.h"
 
 #include "AsyncJson.h"
 
@@ -214,6 +215,7 @@ void SysModWeb::connectedChanged() {
     #endif
 
     server.on("/", HTTP_GET, [this](WebRequest *request) {serveIndex(request);});
+    server.on("/newui", HTTP_GET, [this](WebRequest *request) {serveNewUI(request);});
 
     //serve json calls
     server.on("/json", HTTP_GET, [this](WebRequest *request) {serveJson(request);});
@@ -466,6 +468,22 @@ void SysModWeb::serveIndex(WebRequest *request) {
 
   WebResponse *response;
   response = request->beginResponse_P(200, "text/html", PAGE_index, PAGE_index_L);
+  response->addHeader("Content-Encoding","gzip");
+  // setStaticContentCacheHeaders(response);
+  request->send(response);
+
+  ppf("!\n");
+}
+void SysModWeb::serveNewUI(WebRequest *request) {
+
+  ppf("Webserver: server.on serveNewUI csdata %d-%d (%s)", PAGE_newui, PAGE_newui_L, request->url().c_str());
+
+  if (captivePortal(request)) return;
+
+  // if (handleIfNoneMatchCacheHeader(request)) return;
+
+  WebResponse *response;
+  response = request->beginResponse_P(200, "text/html", PAGE_newui, PAGE_newui_L);
   response->addHeader("Content-Encoding","gzip");
   // setStaticContentCacheHeaders(response);
   request->send(response);

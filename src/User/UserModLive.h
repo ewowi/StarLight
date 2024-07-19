@@ -9,9 +9,10 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
+
 // #define __RUN_CORE 0
 #pragma once
-#include <parser.h>
+#include "parser.h"
 
 long time1;
 long time4;
@@ -19,7 +20,6 @@ static float _min = 9999;
 static float _max = 0;
 static uint32_t _nb_stat = 0;
 static float _totfps;
-
 static float fps = 0; //integer?
 static unsigned long frameCounter = 0;
 
@@ -32,7 +32,8 @@ static void show()
   // SKIPPED: check nargs (must be 3 because arg[0] is self)
   long time2 = ESP.getCycleCount();
 
-  // driver.showPixels(WAIT);
+  // driver.showPixels(WAIT); // LEDS specific
+
   long time3 = ESP.getCycleCount();
   float k = (float)(time2 - time1) / 240000000;
   fps = 1 / k; //StarBase: class variable so it can be shown in UI!!!
@@ -116,8 +117,7 @@ public:
         if (strcmp(fileName, "") != 0)
           run(fileName, true); //force a new file to run
         else {
-          SCExecutable._kill(); //kill any old tasks
-          fps = 0;
+          kill();
         }
 
         return true; }
@@ -127,34 +127,38 @@ public:
     ui->initText(parentVar, "fps1", nullptr, 10, true);
     ui->initText(parentVar, "fps2", nullptr, 10, true);
 
-    // ui->initButton
-
     //Live scripts defaults
-    addExternalFun("show", "()", (void *)&show);
-    addExternalFun("showM", "()", (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
-    addExternalFun("resetStat", "()", (void *)&resetShowStats);
+    addExternalFun("void", "show", "()", (void *)&show);
+    // addExternalFun("void", "showM", "()", (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
+    addExternalFun("void", "resetStat", "()", (void *)&resetShowStats);
 
-    addExternalFun("display", "(int a1)", (void *)&dispshit);
-    addExternalFun("dp", "(float a1)", (void *)displayfloat);
-    addExternalFun("error", "(int a1, int a2, int a3)", (void *)&showError);
-    addExternalFun("print", "(char * a1)", (void *)__print);
+    addExternalFun("void", "display", "(int a1)", (void *)&dispshit);
+    addExternalFun("void", "dp", "(float a1)", (void *)displayfloat);
+    addExternalFun("void", "error", "(int a1, int a2, int a3)", (void *)&showError);
+    addExternalFun("void", "print", "(char * a1)", (void *)__print);
 
-    addExternalFun("atan2","(float a1, float a2)",(void*)_atan2);
-    addExternalFun("hypot","(float a1, float a2)",(void*)_hypot);
-    addExternalFun("sin", "(float a1)", (void *)_sin);
+    addExternalFun("float", "atan2","(float a1, float a2)",(void*)_atan2);
+    addExternalFun("float", "hypot","(float a1, float a2)",(void*)_hypot);
+    addExternalFun("float", "sin", "(float a1)", (void *)_sin);
 
-    //added by StarBase
-    addExternalFun("pinMode", "(int a1, int a2)", (void *)&pinMode);
-    addExternalFun("digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
-    addExternalFun("delay", "(int a1)", (void *)&delay);
+    // added by StarBase
+    addExternalFun("void", "pinMode", "(int a1, int a2)", (void *)&pinMode);
+    addExternalFun("void", "digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
+    addExternalFun("void", "delay", "(int a1)", (void *)&delay);
 
     // addExternalFun("delay", [](int ms) {delay(ms);});
     // addExternalFun("digitalWrite", [](int pin, int val) {digitalWrite(pin, val);});
+
+  } //setup
+
+  void addExternalVal(string result, string name, void * ptr) {
+    addExternal(name, externalType::value, ptr);
+    scPreScript += "external " + result + " " + name + ";\n";
   }
 
-  void addExternalFun(string name, string parameters,void * ptr) {
+  void addExternalFun(string result, string name, string parameters, void * ptr) {
     addExternal(name, externalType::function, ptr);
-    scPreScript += "external void " + name + parameters + ";\n";
+    scPreScript += "external " + result + " " + name + parameters + ";\n";
   }
 
   // void addExternalFun(string name, std::function<void(int)> fun) {
@@ -208,10 +212,24 @@ public:
 
         string scScript = scPreScript + string(f.readString().c_str());
 
-        ppf("%s\n", scScript.c_str());
+        Serial.println(scPreScript.c_str());
+
+        unsigned preScriptNrOfLines = 0;
+        for(int i = 0; i < scPreScript.length(); i++)
+        {
+          if (scPreScript[i] == '\n') 
+            preScriptNrOfLines++;
+        }
+
+        ppf("preScript has %d lines\n", preScriptNrOfLines);
+        ppf("Before parsing\n");
+        ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
         if (p.parse_c(&scScript))
         {
+          ppf("parsing done\n");
+          ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+
           SCExecutable.executeAsTask("main");
           strcpy(this->fileName, fileName);
         }
@@ -232,15 +250,5 @@ public:
 
 extern UserModLive *liveM;
 
-//warnings
-//.pio/libdeps/esp32dev/asmParser/src/asm_struct_enum.h:93:1: warning: 'typedef' was ignored in this declaration
-//.pio/libdeps/esp32dev/asmParser/src/asm_parser.h:1612:45: warning: 'void heap_caps_aligned_free(void*)' is deprecated [-Wdeprecated-declarations]
-//asm_parser.h:325:1: warning: control reaches end of non-void function 
 
-//crash reports
-// E (31053) task_wdt: Task watchdog got triggered. The following tasks did not reset the watchdog in time:
-// E (31053) task_wdt:  - IDLE (CPU 0)
-// E (31053) task_wdt: Tasks currently running:
-// E (31053) task_wdt: CPU 0: _run_task
-// E (31053) task_wdt: CPU 1: loopTask
-// E (31053) task_wdt: Aborting.
+//asm_parser.h:325:1: warning: control reaches end of non-void function 
