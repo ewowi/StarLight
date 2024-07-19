@@ -148,12 +148,11 @@ class PinwheelProjection: public Projection {
   void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     if (leds.size != Coord3D{0,0,0}) return; // Adjust only on first call
     leds.projectionData.begin();
-    int petals = leds.projectionData.read<uint16_t>();
-    petals = max(1, petals); // Petals cannot be < 1
+    const int petals = leds.projectionData.read<uint8_t>();
     if (leds.projectionDimension > _1D && leds.effectDimension > _1D) {
       sizeAdjusted.y = sqrt(sq(max(sizeAdjusted.x - midPosAdjusted.x, midPosAdjusted.x)) + 
                             sq(max(sizeAdjusted.y - midPosAdjusted.y, midPosAdjusted.y))) + 1; // Adjust y before x
-      sizeAdjusted.x = min(72, petals);
+      sizeAdjusted.x = petals;
       sizeAdjusted.z = 1;
     }
     else {
@@ -164,26 +163,25 @@ class PinwheelProjection: public Projection {
   }
 
   void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
+    // factors of 360
+    const int FACTORS[24] = {360, 180, 120, 90, 72, 60, 45, 40, 36, 30, 24, 20, 18, 15, 12, 10, 9, 8, 6, 5, 4, 3, 2};
     // UI Variables
     leds.projectionData.begin();
-    int petals     = leds.projectionData.read<uint16_t>();
-    const int swirlVal   = leds.projectionData.read<uint8_t>() - 30; // SwirlVal range -30 to 30
-    const bool reverse   = leds.projectionData.read<bool>();
-    const int angleRange = max(int(leds.projectionData.read<uint16_t>()), 1);
-    const int zTwist     = leds.projectionData.read<uint8_t>() - 42; // zTwist range -42 to 42
-
-    if (leds.effectDimension > _1D && leds.projectionDimension > _1D) petals = min(72, petals); // Limit 2D/3D grid.x to 72
-    petals = max(1, petals); // Petals cannot be < 1
+    const int petals   = leds.projectionData.read<uint8_t>();
+    const int swirlVal = leds.projectionData.read<uint8_t>() - 30; // SwirlVal range -30 to 30
+    const bool reverse = leds.projectionData.read<bool>();
+    const int symmetry = FACTORS[leds.projectionData.read<uint8_t>()-1];
+    const int zTwist   = leds.projectionData.read<uint8_t>();
          
     const int dx = pixelAdjusted.x - midPosAdjusted.x;
     const int dy = pixelAdjusted.y - midPosAdjusted.y;
     const int swirlFactor = swirlVal == 0 ? 0 : hypot(dy, dx) * abs(swirlVal); // Only calculate if swirlVal != 0
-    int angle       = degrees(atan2(dy, dx)) + 180;  // 0 - 360
+    int angle = degrees(atan2(dy, dx)) + 180;  // 0 - 360
     
     if (swirlVal < 0) angle = 360 - angle; // Reverse Swirl
 
     int value = angle + swirlFactor + (zTwist * pixelAdjusted.z);
-    float petalWidth = angleRange / float(petals);
+    float petalWidth = symmetry / float(petals);
     value /= petalWidth;
     value %= petals;
 
@@ -196,49 +194,49 @@ class PinwheelProjection: public Projection {
     }
     mapped.z = 0;
 
-    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %d angleRange: %d Petals: %d zTwist: %d\n", midPosAdjusted.x, midPosAdjusted.y, swirlVal, angleRange, petals, zTwist);
-    // ppf("pixelAdjusted %d,%d,%d -> %d,%d,%d angle %d\n", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, mapped.x, mapped.y, mapped.z, angle);
+    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %d Symmetry: %d Petals: %d zTwist: %d\n", midPosAdjusted.x, midPosAdjusted.y, swirlVal, symmetry, petals, zTwist);
+    // ppf("pixelAdjusted %2d,%2d,%2d -> %2d,%2d,%2d Angle: %3d Petal: %2d\n", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, mapped.x, mapped.y, mapped.z, angle, value);
   }
 
   void controls(Leds &leds, JsonObject parentVar) {
     leds.projectionData.reset();
 
-    uint16_t *petals     = leds.projectionData.write<uint16_t>(60); // Initalize petal first for adjustSizeAndPixel
-    uint8_t  *swirlVal   = leds.projectionData.write<uint8_t>(30);
-    bool     *reverse    = leds.projectionData.write<bool>(false);
-    uint16_t *angleRange = leds.projectionData.write<uint16_t>(360);
-    uint8_t  *zTwist     = leds.projectionData.write<uint8_t>(42);
+    uint8_t *petals   = leds.projectionData.write<uint8_t>(60); // Initalize petal first for adjustSizeAndPixel
+    uint8_t *swirlVal = leds.projectionData.write<uint8_t>(30);
+    bool    *reverse  = leds.projectionData.write<bool>(false);
+    uint8_t *symmetry = leds.projectionData.write<uint8_t>(1);
+    uint8_t *zTwist   = leds.projectionData.write<uint8_t>(0);
 
-    ui->initSlider(parentVar, "swirl", swirlVal, 0, 60, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "Swirl", swirlVal, 0, 60, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         leds.fixture->listOfLeds[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
-    ui->initCheckBox(parentVar, "reverse", reverse, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "Reverse", reverse, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         leds.fixture->listOfLeds[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
-    // Testing zTwist range -42 to 42 arbitrary values for testing. Hide if not 3D fixture. Select pinwheel while using 3D fixture.
+    // Testing zTwist range 0 to 42 arbitrary values for testing. Hide if not 3D fixture. Select pinwheel while using 3D fixture.
     if (leds.projectionDimension == _3D) {
-      ui->initSlider(parentVar, "zTwist", zTwist, 0, 82, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      ui->initSlider(parentVar, "Z Twist", zTwist, 0, 42, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
           leds.fixture->listOfLeds[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
     }
-    // Angle range 0 - angleRange. For testing purposes
-    ui->initNumber(parentVar, "angleRange", angleRange, 1, 720, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    // Rotation symmetry. Uses factors of 360.
+    ui->initSlider(parentVar, "Rotational Symmetry", symmetry, 1, 23, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         leds.fixture->listOfLeds[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
     // Naming petals, arms, blades, rays? Controls virtual strip length.
-    ui->initNumber(parentVar, "petals", petals, 1, 360, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "Petals", petals, 1, 60, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         leds.fixture->listOfLeds[rowNr]->triggerMapping();
         return true;
