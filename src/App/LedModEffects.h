@@ -204,12 +204,15 @@ public:
         if (rowNr < fixture.listOfLeds.size()) {
           Leds *leds = fixture.listOfLeds[rowNr];
 
+          leds->doMap = true; //stop the effects loop already here
+
+          bool oldPal = leds->checkPalColorEffect(); // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
+
           leds->fx = mdl->getValue(var, rowNr);
 
           ppf("setEffect fx[%d]: %d\n", rowNr, leds->fx);
 
           if (leds->fx < effects.size()) {
-
 
             Effect* effect = effects[leds->fx];
 
@@ -226,10 +229,12 @@ public:
             print->printVar(var);
             ppf("\n");
 
-            if (effect->dim() != leds->effectDimension) {
+            if (effect->dim() != leds->effectDimension || oldPal != leds->checkPalColorEffect()) { // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
               leds->effectDimension = effect->dim();
               leds->triggerMapping();
             }
+            else
+              leds->doMap = false; //run the effects again
           } // fx < size
 
         }
@@ -264,6 +269,8 @@ public:
 
         if (rowNr < fixture.listOfLeds.size()) {
           Leds *leds = fixture.listOfLeds[rowNr];
+
+          leds->doMap = true; //stop the effects loop already here
 
           stackUnsigned8 proValue = mdl->getValue(var, rowNr);
           leds->projectionNr = proValue;

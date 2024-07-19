@@ -27,8 +27,8 @@ void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, unsigned8 in
 }
 
 void Leds::triggerMapping() {
-    doMap = true; //specify which leds to remapp
-    fixture->doMap = true; //fixtgure will also be remapped
+    doMap = true; //specify which leds to remap
+    fixture->doMap = true; //fixture will also be remapped
   }
 
 unsigned16 Leds::XYZ(Coord3D pixel) {
@@ -71,6 +71,32 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
     ppf(" dev sPC V:%d >= %d", indexV, NUM_LEDS_Max);
 }
 
+void Leds::setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri, unsigned8 blendAmount) {
+  if (indexV < mappingTable.size()) {
+    switch (mappingTable[indexV].mapType) {
+      case m_color:
+        mappingTable[indexV].palIndex = palIndex;
+        mappingTable[indexV].palBri = palBri;
+      case m_onePixel: {
+        uint16_t indexP = mappingTable[indexV].indexP1;
+        fixture->ledsP[indexP] = blend(ColorFromPalette(palette, palIndex, palBri), fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount);
+        break; }
+      case m_morePixels:
+        if (mappingTable[indexV].indexes1 < mappingTableIndexes.size())
+        for (forUnsigned16 indexP: mappingTableIndexes[mappingTable[indexV].indexes1]) {
+          fixture->ledsP[indexP] = blend(ColorFromPalette(palette, palIndex, palBri), fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount);
+        }
+        // else
+        //   ppf("dev setPixelColorPal i:%d m:%d s:%d\n", indexV, mappingTable[indexV].indexes1, mappingTableIndexes.size());
+        break;
+    }
+  }
+  else if (indexV < NUM_LEDS_Max) //no projection
+    fixture->ledsP[(projectionNr == p_Random)?random(fixture->nrOfLeds):indexV] = ColorFromPalette(palette, palIndex, palBri);
+  else if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
+    ppf(" dev sPC V:%d >= %d", indexV, NUM_LEDS_Max);
+}
+
 CRGB Leds::getPixelColor(unsigned16 indexV) {
   if (indexV < mappingTable.size()) {
     switch (mappingTable[indexV].getMapType()) {
@@ -94,7 +120,7 @@ CRGB Leds::getPixelColor(unsigned16 indexV) {
 }
 
 void Leds::fadeToBlackBy(unsigned8 fadeBy) {
-  if (projectionNr == p_None || projectionNr == p_Random || (fixture->nrOfLeds == nrOfLeds)) {
+  if (projectionNr == p_None || projectionNr == p_Random || (fixture->listOfLeds.size() == 1)) {
     fastled_fadeToBlackBy(fixture->ledsP, fixture->nrOfLeds, fadeBy);
   } else {
     for (PhysMap &map:mappingTable) {
@@ -118,7 +144,7 @@ void Leds::fadeToBlackBy(unsigned8 fadeBy) {
 }
 
 void Leds::fill_solid(const struct CRGB& color, bool noBlend) {
-  if (projectionNr == p_None || projectionNr == p_Random || (fixture->nrOfLeds == nrOfLeds)) {
+  if (projectionNr == p_None || projectionNr == p_Random || (fixture->listOfLeds.size() == 1)) {
     fastled_fill_solid(fixture->ledsP, fixture->nrOfLeds, color);
   } else {
     for (PhysMap &map:mappingTable) {
@@ -138,7 +164,7 @@ void Leds::fill_solid(const struct CRGB& color, bool noBlend) {
 }
 
 void Leds::fill_rainbow(unsigned8 initialhue, unsigned8 deltahue) {
-  if (projectionNr == p_None || projectionNr == p_Random || (fixture->nrOfLeds == nrOfLeds)) {
+  if (projectionNr == p_None || projectionNr == p_Random || (fixture->listOfLeds.size() == 1)) {
     fastled_fill_rainbow(fixture->ledsP, fixture->nrOfLeds, initialhue, deltahue);
   } else {
     CHSV hsv;
@@ -161,4 +187,29 @@ void Leds::fill_rainbow(unsigned8 initialhue, unsigned8 deltahue) {
       hsv.hue += deltahue;
     }
   }
+}
+
+void PhysMap::addIndexP2(Leds &leds, uint16_t indexP) {
+  // ppf("addIndexP2 i:%d t:%d", indexP, mapType);
+  switch (mapType) {
+    case m_color:
+    // case m_rgbColor:
+      indexP1 = indexP;
+      mapType = m_onePixel;
+      break;
+    case m_onePixel: {
+      uint16_t oldIndexP = indexP1;
+      std::vector<uint16_t> newVector;
+      newVector.push_back(oldIndexP);
+      newVector.push_back(indexP);
+      leds.mappingTableIndexes.push_back(newVector);
+      indexes1 = leds.mappingTableIndexes.size() - 1;
+      mapType = m_morePixels;
+      break; }
+    case m_morePixels:
+      leds.mappingTableIndexes[indexes1].push_back(indexP);
+      // ppf(" more %d", mappingTableIndexes.size());
+      break;
+  }
+  // ppf("\n");
 }
