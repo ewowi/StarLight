@@ -2114,7 +2114,8 @@ class ParticleTest: public Effect {
     #endif
     bool randomGravity = leds.effectData.read<bool>();
     uint8_t gravityChangeInterval = leds.effectData.read<uint8_t>();
-    bool debugPrint    = leds.effectData.read<bool>();
+    // bool debugPrint    = leds.effectData.read<bool>();
+    bool debugPrint = false;
 
     // Effect Variables
     Particle *particles       = leds.effectData.readWrite<Particle>(255);
@@ -2224,7 +2225,7 @@ class ParticleTest: public Effect {
     #endif
     ui->initCheckBox(parentVar, "Random Gravity",          leds.effectData.write<bool>(1));
     ui->initSlider  (parentVar, "Gravity Change Interval", leds.effectData.write<uint8_t>(5), 1, 10);
-    ui->initCheckBox(parentVar, "Debug Print",             leds.effectData.write<bool>(0));
+    // ui->initCheckBox(parentVar, "Debug Print",             leds.effectData.write<bool>(0));
   }
 };
 
