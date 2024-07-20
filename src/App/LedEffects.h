@@ -1712,7 +1712,7 @@ class RubiksCube: public Effect {
   const char * tags() {return "💫";}
 
   struct Cube {
-      uint8_t SIZE = 0;
+      uint8_t SIZE;
       static const uint8_t MAX_SIZE = 8;
       using Face = std::array<std::array<uint8_t, MAX_SIZE>, MAX_SIZE>;
       Face front;
@@ -1937,8 +1937,7 @@ class RubiksCube: public Effect {
     typedef void (Cube::*RotateFunc)(bool direction, uint8_t width);
     const RotateFunc rotateFuncs[] = {&Cube::rotateFront, &Cube::rotateBack, &Cube::rotateLeft, &Cube::rotateRight, &Cube::rotateTop, &Cube::rotateBottom};
     
-    if (*setup && sys->now > *step || cube->SIZE == 0) {
-      ppf ("Setting up %d x %d cube\n", cubeSize, cubeSize);
+    if (*setup && sys->now > *step || *step - 1000 > sys->now) { // *step - 1000 > sys->now temp fix for default on boot
       *step = sys->now + 1000;
       *setup = false;
       cube->init(cubeSize);
@@ -2115,7 +2114,8 @@ class ParticleTest: public Effect {
     #endif
     bool randomGravity = leds.effectData.read<bool>();
     uint8_t gravityChangeInterval = leds.effectData.read<uint8_t>();
-    bool debugPrint    = leds.effectData.read<bool>();
+    // bool debugPrint    = leds.effectData.read<bool>();
+    bool debugPrint = false;
 
     // Effect Variables
     Particle *particles       = leds.effectData.readWrite<Particle>(255);
@@ -2139,9 +2139,11 @@ class ParticleTest: public Effect {
 
       for (int index = 0 ; index < numParticles; index++) {
         Coord3D rPos; 
+        int attempts = 0; 
         do { // Get random mapped position that isn't colored (infinite loop if small fixture size and high particle count)
           rPos = {random8(leds.size.x), random8(leds.size.y), random8(leds.size.z)};
-        } while (!leds.isMapped(leds.XYZUnprojected(rPos)) || leds.getPixelColor(rPos) != CRGB::Black);
+          attempts++;
+        } while ((!leds.isMapped(leds.XYZUnprojected(rPos)) || leds.getPixelColor(rPos) != CRGB::Black) && attempts < 1000);
         // rPos = {1,1,0};
         particles[index].x = rPos.x;
         particles[index].y = rPos.y;
@@ -2225,7 +2227,7 @@ class ParticleTest: public Effect {
     #endif
     ui->initCheckBox(parentVar, "Random Gravity",          leds.effectData.write<bool>(1));
     ui->initSlider  (parentVar, "Gravity Change Interval", leds.effectData.write<uint8_t>(5), 1, 10);
-    ui->initCheckBox(parentVar, "Debug Print",             leds.effectData.write<bool>(0));
+    // ui->initCheckBox(parentVar, "Debug Print",             leds.effectData.write<bool>(0));
   }
 };
 
