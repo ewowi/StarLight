@@ -1,5 +1,6 @@
 Release steps 
 - update dates in files
+- check all lib_deps on right version
 
 WebHook to MM discord
 https://discord.com/api/webhooks/1229821142479536179/UeO3ryPqUyHABYTAuGtHZK6t7yghM0ZETN0LUYpg32KBleGhm-zvaYDzkyYjiqaVqt0T/github
