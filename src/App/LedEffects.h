@@ -2139,9 +2139,11 @@ class ParticleTest: public Effect {
 
       for (int index = 0 ; index < numParticles; index++) {
         Coord3D rPos; 
+        int attempts = 0; 
         do { // Get random mapped position that isn't colored (infinite loop if small fixture size and high particle count)
           rPos = {random8(leds.size.x), random8(leds.size.y), random8(leds.size.z)};
-        } while (!leds.isMapped(leds.XYZUnprojected(rPos)) || leds.getPixelColor(rPos) != CRGB::Black);
+          attempts++;
+        } while ((!leds.isMapped(leds.XYZUnprojected(rPos)) || leds.getPixelColor(rPos) != CRGB::Black) && attempts < 1000);
         // rPos = {1,1,0};
         particles[index].x = rPos.x;
         particles[index].y = rPos.y;
