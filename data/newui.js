@@ -27,6 +27,36 @@ function cE(e, id = null, classs = null, inner = null) {
   return node;
 }
 
+//by @aaroneous
+class NewApp {
+
+  init() {
+    // Update the copyright notice in the footer
+    // Fetch data from the server
+    this.#fetchData() //async
+  }
+
+  async #fetchData() {
+    // Mock fetch for testing while using Live Server. No error checking for brevity.
+    // Replace with call to server websocket
+    this.#modules = await (await fetch('../misc/model.json')).json()
+    // this.#modules = await (await fetch('model.json')).json()
+
+    // Print out the response for debugging
+    console.log(this.#modules)
+    // console.log(JSON.stringify(this.#modules, null, 2))
+
+    for (let module of this.#modules) {
+      addModule(module)
+    }
+
+  }
+
+  #modules = []
+
+}
+
+//by ewowi
 class NavBar {
 
   //create navbar, menu, nav-list
@@ -126,12 +156,41 @@ function onLoad() {
     gId("screenSize").innerText = window.innerWidth + "x" + window.innerHeight;
   };
 
-  makeWS();
+  //aaroneous: run this code if Live Server is invoked
+  if (window.location.href.includes("127.0.0.1")) {
+    //is window.app predefined?
+    window.app = new NewApp()
+    window.app.init();
+  }
+  else 
+    makeWS();
 
   d.addEventListener('visibilitychange', function () {
     console.log("handleVisibilityChange");
     gId("screenSize").innerText = window.innerWidth + "x" + window.innerHeight;
   });
+
+}
+
+//used by NewApp and by makeWS
+function addModule(module) {
+  // let module = json;
+  model.push((module)); //this is the model
+  console.log("WS receive module", module);
+
+  //create dropdownItem for module.id (level 2) under module.type (level 1 - module.type will be created if not exists)
+  navBar.addDropdownItem(module.type, module.id, function(event) {
+    console.log("DropdownItem click", event.target.innerText);
+    for (let module of model) {
+      if (module.id == event.target.innerText) {
+        gId("modName").innerText = module.id;
+        gId("modelJson").innerHTML = JSON.stringify(module, null, 2); //pretty
+      }
+    }
+  });
+ 
+  gId("vApp").innerText = appName(); //tbd: should be set by server
+  gId("screenSize").innerText = window.innerWidth + "x" + window.innerHeight;
 
 }
 
@@ -173,23 +232,7 @@ function makeWS() {
               found = true;
           }
           if (!found) {
-            let module = json;
-            model.push((module)); //this is the model
-            console.log("WS receive module", module);
-
-            //create dropdownItem for module.id (level 2) under module.type (level 1 - module.type will be created if not exists)
-            navBar.addDropdownItem(module.type, module.id, function(event) {
-              console.log("DropdownItem click", event.target.innerText);
-              for (let module of model) {
-                if (module.id == event.target.innerText) {
-                  gId("modName").innerText = module.id;
-                  gId("modelJson").innerHTML = JSON.stringify(module, null, 2); //pretty
-                }
-              }
-            });
-           
-            gId("vApp").innerText = appName(); //tbd: should be set by server
-            gId("screenSize").innerText = window.innerWidth + "x" + window.innerHeight;
+            addModule(json);
           }
           else
             console.log("html of module already generated", json);

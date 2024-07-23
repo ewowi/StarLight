@@ -1,385 +1,70 @@
 [
   {
-    "id": "WorkFlow",
-    "type": "appmod",
-    "ro": true,
-    "o": 6100,
-    "max": 255,
-    "n": [
-      {
-        "id": "aiTbl",
-        "type": "table",
-        "ro": true,
-        "o": 1,
-        "n": [
-          {
-            "id": "wfAction",
-            "type": "text",
-            "ro": true,
-            "o": 2,
-            "max": 32
-          },
-          {
-            "id": "wfButton",
-            "type": "button",
-            "ro": false,
-            "o": 3
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "id": "Fixture",
-    "type": "appmod",
-    "ro": true,
-    "o": 2100,
-    "max": 255,
-    "n": [
-      {
-        "id": "on",
-        "type": "checkbox",
-        "ro": false,
-        "o": 4,
-        "value": 1
-      },
-      {
-        "id": "bri",
-        "type": "range",
-        "ro": false,
-        "o": 5,
-        "max": 255,
-        "value": 10,
-        "log": true
-      },
-      {
-        "id": "pview",
-        "type": "canvas",
-        "ro": false,
-        "o": 6,
-        "interval": 160,
-        "loopFun": 0
-      },
-      {
-        "id": "fixture",
-        "type": "select",
-        "ro": false,
-        "o": 7,
-        "value": 5
-      },
-      {
-        "id": "fixSize",
-        "type": "coord3D",
-        "ro": true,
-        "o": 8,
-        "max": 4096
-      },
-      {
-        "id": "fixCount",
-        "type": "number",
-        "ro": true,
-        "o": 9
-      },
-      {
-        "id": "fps",
-        "type": "number",
-        "ro": false,
-        "o": 10,
-        "min": 1,
-        "max": 999,
-        "value": 60
-      },
-      {
-        "id": "fShow",
-        "type": "checkbox",
-        "ro": false,
-        "o": 11,
-        "value": 1
-      },
-      {
-        "id": "realFps",
-        "type": "text",
-        "ro": true,
-        "o": 12,
-        "max": 10
-      },
-      {
-        "id": "mHead",
-        "type": "checkbox",
-        "ro": false,
-        "o": 13,
-        "value": 0
-      }
-    ]
-  },
-  {
-    "id": "Effects",
-    "type": "appmod",
-    "ro": true,
-    "o": 2200,
-    "max": 255,
-    "n": [
-      {
-        "id": "ledsTbl",
-        "type": "table",
-        "ro": false,
-        "o": 14,
-        "n": [
-          {
-            "id": "fx",
-            "type": "select",
-            "ro": false,
-            "o": 15,
-            "value": [
-              18
-            ],
-            "n": [
-              {
-                "id": "fade",
-                "type": "range",
-                "ro": false,
-                "o": 16,
-                "max": 32,
-                "value": [
-                  16
-                ]
-              },
-              {
-                "id": "outX",
-                "type": "range",
-                "ro": false,
-                "o": 17,
-                "max": 32,
-                "value": [
-                  16
-                ]
-              },
-              {
-                "id": "outY",
-                "type": "range",
-                "ro": false,
-                "o": 18,
-                "max": 32,
-                "value": [
-                  16
-                ]
-              },
-              {
-                "id": "inX",
-                "type": "range",
-                "ro": false,
-                "o": 19,
-                "max": 32,
-                "value": [
-                  16
-                ]
-              },
-              {
-                "id": "inY",
-                "type": "range",
-                "ro": false,
-                "o": 20,
-                "max": 32,
-                "value": [
-                  16
-                ]
-              }
-            ]
-          },
-          {
-            "id": "pro",
-            "type": "select",
-            "ro": false,
-            "o": 21,
-            "value": [
-              1
-            ],
-            "n": [
-              {
-                "id": "proMulti",
-                "type": "coord3D",
-                "ro": false,
-                "o": 112,
-                "max": 10,
-                "value": [
-                  {
-                    "x": 2,
-                    "y": 2,
-                    "z": 1
-                  }
-                ],
-                "n": [
-                  {
-                    "id": "mirror",
-                    "type": "checkbox",
-                    "ro": false,
-                    "o": 113,
-                    "value": [
-                      0
-                    ]
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            "id": "ledsStart",
-            "type": "coord3D",
-            "ro": false,
-            "o": 22,
-            "max": 4096,
-            "value": [
-              {
-                "x": 0,
-                "y": 0,
-                "z": 0
-              }
-            ]
-          },
-          {
-            "id": "ledsEnd",
-            "type": "coord3D",
-            "ro": false,
-            "o": 23,
-            "max": 4096,
-            "value": [
-              {
-                "x": 65535,
-                "y": 65535,
-                "z": 65535
-              }
-            ]
-          },
-          {
-            "id": "ledsSize",
-            "type": "text",
-            "ro": true,
-            "o": 24,
-            "max": 32
-          }
-        ]
-      },
-      {
-        "id": "Blending",
-        "type": "range",
-        "ro": false,
-        "o": 25,
-        "max": 255,
-        "value": 128
-      }
-    ]
-  },
-  {
-    "id": "Fixture Generator",
-    "type": "usermod",
-    "ro": true,
-    "o": 2300,
-    "max": 255,
-    "n": [
-      {
-        "id": "fixtureGen",
-        "type": "select",
-        "ro": false,
-        "o": 26,
-        "value": 0,
-        "n": [
-          {
-            "id": "mrxRowEnd",
-            "type": "coord3D",
-            "ro": false,
-            "o": 32,
-            "max": 4096,
-            "value": {
-              "x": 7,
-              "y": 0,
-              "z": 0
-            }
-          },
-          {
-            "id": "mrxColEnd",
-            "type": "coord3D",
-            "ro": false,
-            "o": 33,
-            "max": 4096,
-            "value": {
-              "x": 7,
-              "y": 7,
-              "z": 0
-            }
-          },
-          {
-            "id": "fixIP",
-            "type": "number",
-            "ro": false,
-            "o": 34,
-            "min": 1,
-            "max": 256,
-            "value": 0
-          },
-          {
-            "id": "fixPin",
-            "type": "pin",
-            "ro": false,
-            "o": 35,
-            "max": 40,
-            "value": 2
-          }
-        ]
-      },
-      {
-        "id": "panels",
-        "type": "checkbox",
-        "ro": false,
-        "o": 31,
-        "value": 0
-      },
-      {
-        "id": "generate",
-        "type": "button",
-        "ro": false,
-        "o": 36
-      }
-    ]
-  },
-  {
     "id": "Files",
     "type": "sysmod",
     "ro": true,
-    "o": 3000,
     "max": 255,
     "n": [
       {
         "id": "fileTbl",
         "type": "table",
         "ro": false,
-        "o": 37,
         "n": [
           {
             "id": "flName",
             "type": "text",
             "ro": true,
-            "o": 38,
             "max": 32
           },
           {
             "id": "flSize",
             "type": "number",
-            "ro": true,
-            "o": 39
+            "ro": true
           },
           {
-            "id": "flLink",
-            "type": "url",
-            "ro": true,
-            "o": 40
+            "id": "flTime",
+            "type": "number",
+            "ro": true
+          },
+          {
+            "id": "flEdit",
+            "type": "fileEdit",
+            "ro": false,
+            "value": [
+              "F_Fiber.json",
+              "F_Panel-128x64.json",
+              "F_Panel-32x32.json",
+              "F_Panel-64x64.json",
+              "F_Panel-80x80.json",
+              "F_Panel-8x8.json",
+              "F_Panel-90x90.json",
+              "F_Rings241-9.json",
+              "balls.sc",
+              "blink.sc",
+              "helloworld1.sc",
+              "helloworld2.sc",
+              "helloworld3.sc",
+              "model.json",
+              "octo.sc",
+              "blink.sc",
+              "helloworld1.sc",
+              "helloworld2.sc",
+              "helloworld3.sc",
+              "model.json",
+              "octo.sc"
+            ]
           }
         ]
+      },
+      {
+        "id": "upload",
+        "type": "fileUpload",
+        "ro": false
       },
       {
         "id": "drsize",
         "type": "progress",
         "ro": true,
-        "o": 41,
         "max": 262144
       }
     ]
@@ -388,89 +73,95 @@
     "id": "System",
     "type": "sysmod",
     "ro": true,
-    "o": 3100,
     "max": 255,
+    "s": true,
     "n": [
-      {
-        "id": "name",
-        "type": "text",
-        "ro": false,
-        "o": 42,
-        "max": 32,
-        "value": "StarBase16MB"
-      },
       {
         "id": "upTime",
         "type": "text",
         "ro": true,
-        "o": 43,
         "max": 16
       },
       {
         "id": "reboot",
         "type": "button",
-        "ro": false,
-        "o": 44
+        "ro": false
       },
       {
         "id": "loops",
         "type": "text",
         "ro": true,
-        "o": 45,
         "max": 16
       },
       {
         "id": "chip",
         "type": "text",
         "ro": true,
-        "o": 46,
         "max": 16
       },
       {
         "id": "heap",
         "type": "progress",
         "ro": true,
-        "o": 47,
         "max": 292
       },
       {
         "id": "mainStack",
         "type": "progress",
         "ro": true,
-        "o": 48,
         "max": 8192
       },
       {
         "id": "tcpStack",
         "type": "progress",
         "ro": true,
-        "o": 49,
-        "max": 8192
+        "max": 16384
       },
       {
         "id": "reset0",
         "type": "select",
-        "ro": true,
-        "o": 50
+        "ro": true
       },
       {
         "id": "reset1",
         "type": "select",
-        "ro": true,
-        "o": 51
+        "ro": true
       },
       {
         "id": "restartReason",
         "type": "select",
-        "ro": true,
-        "o": 52
+        "ro": true
       },
       {
-        "id": "version",
+        "id": "build",
         "type": "text",
         "ro": true,
-        "o": 53,
-        "max": 16
+        "max": 32
+      },
+      {
+        "id": "update",
+        "type": "fileUpload",
+        "ro": false
+      },
+      {
+        "id": "name",
+        "type": "text",
+        "ro": false,
+        "max": 24,
+        "value": "Lab-16",
+        "oldValue": "Star3232-16"
+      },
+      {
+        "id": "now",
+        "type": "number",
+        "ro": true,
+        "max": -1
+      },
+      {
+        "id": "timeBase",
+        "type": "number",
+        "ro": true,
+        "max": -1
       }
     ],
     "view": "vAll"
@@ -479,34 +170,29 @@
     "id": "Pins",
     "type": "sysmod",
     "ro": true,
-    "o": 3200,
     "max": 255,
     "n": [
       {
         "id": "pinTbl",
         "type": "table",
         "ro": true,
-        "o": 54,
         "n": [
           {
             "id": "pinNr",
             "type": "pin",
             "ro": true,
-            "o": 55,
             "max": 40
           },
           {
             "id": "pinOwner",
             "type": "text",
             "ro": true,
-            "o": 56,
             "max": 32
           },
           {
             "id": "pinDetails",
             "type": "text",
             "ro": true,
-            "o": 57,
             "max": 256
           }
         ]
@@ -515,15 +201,13 @@
         "id": "board",
         "type": "canvas",
         "ro": true,
-        "o": 58,
-        "interval": 1000,
-        "loopFun": 1
+        "interval": 100,
+        "loopFun": 0
       },
       {
         "id": "pin19",
         "type": "checkbox",
         "ro": false,
-        "o": 59,
         "value": 1
       }
     ]
@@ -532,21 +216,19 @@
     "id": "Print",
     "type": "sysmod",
     "ro": true,
-    "o": 3300,
     "max": 255,
     "n": [
       {
         "id": "pOut",
         "type": "select",
         "ro": false,
-        "o": 60,
-        "value": 1
+        "value": 1,
+        "oldValue": 2
       },
       {
         "id": "log",
         "type": "textarea",
-        "ro": true,
-        "o": 61
+        "ro": false
       }
     ]
   },
@@ -554,46 +236,39 @@
     "id": "Web",
     "type": "sysmod",
     "ro": true,
-    "o": 3400,
     "max": 255,
     "n": [
       {
         "id": "clTbl",
         "type": "table",
         "ro": true,
-        "o": 62,
         "n": [
           {
             "id": "clNr",
             "type": "number",
             "ro": true,
-            "o": 63,
             "max": 999
           },
           {
             "id": "clIp",
             "type": "text",
             "ro": true,
-            "o": 64,
             "max": 16
           },
           {
             "id": "clIsFull",
             "type": "checkbox",
-            "ro": true,
-            "o": 65
+            "ro": true
           },
           {
             "id": "clStatus",
             "type": "select",
-            "ro": true,
-            "o": 66
+            "ro": true
           },
           {
             "id": "clLength",
             "type": "number",
             "ro": true,
-            "o": 67,
             "max": 64
           }
         ]
@@ -602,35 +277,30 @@
         "id": "maxQueue",
         "type": "number",
         "ro": true,
-        "o": 68,
         "max": 64
       },
       {
         "id": "wsSend",
         "type": "text",
         "ro": true,
-        "o": 69,
         "max": 16
       },
       {
         "id": "wsRecv",
         "type": "text",
         "ro": true,
-        "o": 70,
         "max": 16
       },
       {
         "id": "udpSend",
         "type": "text",
         "ro": true,
-        "o": 71,
         "max": 16
       },
       {
         "id": "udpRecv",
         "type": "text",
         "ro": true,
-        "o": 72,
         "max": 16
       }
     ]
@@ -639,75 +309,41 @@
     "id": "Network",
     "type": "sysmod",
     "ro": true,
-    "o": 3500,
     "max": 255,
+    "s": true,
     "n": [
       {
         "id": "ssid",
         "type": "text",
         "ro": false,
-        "o": 73,
-        "max": 32,
-        "value": "ewtr"
+        "max": 31,
+        "value": "ewtr",
+        "oldValue": ""
       },
       {
         "id": "pw",
         "type": "password",
         "ro": false,
-        "o": 74,
-        "value": "zonledmod"
+        "value": "zonledmod",
+        "oldValue": "",
+        "max": 63
       },
       {
         "id": "connect",
         "type": "button",
-        "ro": false,
-        "o": 75
+        "ro": false
       },
       {
         "id": "nwstatus",
         "type": "text",
         "ro": true,
-        "o": 76,
         "max": 32
       },
       {
         "id": "rssi",
         "type": "text",
         "ro": true,
-        "o": 77,
         "max": 32
-      }
-    ]
-  },
-  {
-    "id": "DDP",
-    "type": "usermod",
-    "ro": true,
-    "o": 4000,
-    "max": 255,
-    "n": [
-      {
-        "id": "ddpInst",
-        "type": "ip",
-        "ro": false,
-        "o": 78,
-        "max": 255
-      }
-    ]
-  },
-  {
-    "id": "ArtNet",
-    "type": "usermod",
-    "ro": true,
-    "o": 4100,
-    "max": 255,
-    "n": [
-      {
-        "id": "artInst",
-        "type": "ip",
-        "ro": false,
-        "o": 79,
-        "max": 255
       }
     ]
   },
@@ -715,14 +351,12 @@
     "id": "E131",
     "type": "usermod",
     "ro": true,
-    "o": 4200,
     "max": 255,
     "n": [
       {
         "id": "dun",
         "type": "number",
         "ro": false,
-        "o": 80,
         "max": 7,
         "value": 1
       },
@@ -730,7 +364,6 @@
         "id": "dch",
         "type": "number",
         "ro": false,
-        "o": 81,
         "min": 1,
         "max": 512,
         "value": 1
@@ -739,13 +372,11 @@
         "id": "e131Tbl",
         "type": "table",
         "ro": true,
-        "o": 82,
         "n": [
           {
             "id": "e131Channel",
             "type": "number",
             "ro": true,
-            "o": 83,
             "min": 1,
             "max": 512
           },
@@ -753,20 +384,17 @@
             "id": "e131Name",
             "type": "text",
             "ro": true,
-            "o": 84,
             "max": 32
           },
           {
             "id": "e131Max",
             "type": "number",
-            "ro": true,
-            "o": 85
+            "ro": true
           },
           {
             "id": "e131Value",
             "type": "number",
             "ro": true,
-            "o": 86,
             "max": 255
           }
         ]
@@ -777,27 +405,24 @@
     "id": "Model",
     "type": "sysmod",
     "ro": true,
-    "o": 5000,
     "max": 255,
+    "s": true,
     "n": [
       {
         "id": "saveModel",
         "type": "button",
-        "ro": false,
-        "o": 87
+        "ro": false
       },
       {
         "id": "showObsolete",
         "type": "checkbox",
         "ro": false,
-        "o": 88,
         "value": 0
       },
       {
         "id": "deleteObsolete",
         "type": "button",
-        "ro": false,
-        "o": 89
+        "ro": false
       }
     ]
   },
@@ -805,27 +430,23 @@
     "id": "UI",
     "type": "sysmod",
     "ro": true,
-    "o": 5100,
     "max": 255,
     "n": [
       {
         "id": "vlTbl",
         "type": "table",
         "ro": true,
-        "o": 90,
         "n": [
           {
             "id": "vlVar",
             "type": "text",
             "ro": true,
-            "o": 91,
             "max": 32
           },
           {
             "id": "vlLoopps",
             "type": "number",
             "ro": true,
-            "o": 92,
             "max": 999
           }
         ]
@@ -833,115 +454,98 @@
     ]
   },
   {
-    "id": "WLED Audio Sync Receiver",
-    "type": "usermod",
-    "ro": true,
-    "o": 6300,
-    "max": 255,
-    "n": [
-      {
-        "id": "wledAudioStatus",
-        "type": "text",
-        "ro": true,
-        "o": 93,
-        "max": 16
-      }
-    ]
-  },
-  {
     "id": "Instances",
     "type": "sysmod",
     "ro": true,
-    "o": 5200,
     "max": 255,
     "n": [
       {
         "id": "insTbl",
         "type": "table",
         "ro": true,
-        "o": 94,
         "n": [
           {
             "id": "insName",
             "type": "text",
-            "ro": true,
-            "o": 95,
+            "ro": false,
             "max": 32
           },
           {
             "id": "insLink",
-            "type": "url",
-            "ro": true,
-            "o": 96
+            "type": "number",
+            "ro": true
           },
           {
             "id": "insIp",
             "type": "text",
             "ro": true,
-            "o": 97,
             "max": 16
           },
           {
             "id": "insType",
             "type": "text",
             "ro": true,
-            "o": 98,
             "max": 16
           },
           {
             "id": "insVersion",
             "type": "number",
             "ro": true,
-            "o": 99,
             "max": -1
           },
           {
             "id": "insUp",
             "type": "number",
             "ro": true,
-            "o": 100,
             "max": -1
           },
           {
             "id": "inson",
             "type": "checkbox",
-            "ro": false,
-            "o": 102
-          },
-          {
-            "id": "insbri",
-            "type": "range",
-            "ro": false,
-            "o": 103,
-            "max": 255,
-            "log": true
-          },
-          {
-            "id": "insfx",
-            "type": "select",
-            "ro": false,
-            "o": 104
-          },
-          {
-            "id": "inspro",
-            "type": "select",
-            "ro": false,
-            "o": 105
+            "ro": false
           },
           {
             "id": "insdch",
             "type": "number",
             "ro": false,
-            "o": 106,
             "min": 1,
             "max": 512
           },
           {
-            "id": "inssma",
-            "type": "ip",
+            "id": "insbri",
+            "type": "range",
             "ro": false,
-            "o": 107,
-            "max": 255
+            "max": 255,
+            "log": true
+          },
+          {
+            "id": "insShow",
+            "type": "url",
+            "ro": true
+          },
+          {
+            "id": "insTS",
+            "type": "number",
+            "ro": true,
+            "max": -1
+          },
+          {
+            "id": "insTT",
+            "type": "number",
+            "ro": true,
+            "max": -1
+          },
+          {
+            "id": "insTM",
+            "type": "number",
+            "ro": true,
+            "max": -1
+          },
+          {
+            "id": "insNow",
+            "type": "number",
+            "ro": true,
+            "max": -1
           }
         ]
       }
@@ -951,33 +555,28 @@
     "id": "Modules",
     "type": "sysmod",
     "ro": true,
-    "o": 6000,
     "max": 255,
     "n": [
       {
         "id": "mdlTbl",
         "type": "table",
         "ro": true,
-        "o": 108,
         "n": [
           {
             "id": "mdlName",
             "type": "text",
             "ro": true,
-            "o": 109,
             "max": 32
           },
           {
             "id": "mdlSuccess",
             "type": "checkbox",
-            "ro": true,
-            "o": 110
+            "ro": true
           },
           {
             "id": "mdlEnabled",
             "type": "checkbox",
             "ro": false,
-            "o": 111,
             "value": [
               true,
               true,
@@ -986,12 +585,8 @@
               true,
               true,
               true,
-              true,
-              true,
-              true,
               false,
               false,
-              true,
               true,
               true,
               true,
@@ -1000,6 +595,96 @@
             ]
           }
         ]
+      }
+    ]
+  },
+  {
+    "id": "Motion Tracking",
+    "type": "usermod",
+    "ro": true,
+    "max": 255,
+    "n": [
+      {
+        "id": "mtReady",
+        "type": "checkbox",
+        "ro": true
+      },
+      {
+        "id": "gyro",
+        "type": "coord3D",
+        "ro": true
+      },
+      {
+        "id": "accell",
+        "type": "coord3D",
+        "ro": true
+      }
+    ]
+  },
+  {
+    "id": "AppMod Demo",
+    "type": "appmod",
+    "ro": true,
+    "max": 255,
+    "n": [
+      {
+        "id": "on",
+        "type": "checkbox",
+        "ro": false,
+        "value": 1
+      },
+      {
+        "id": "bri",
+        "type": "range",
+        "ro": false,
+        "max": 255,
+        "value": 10,
+        "log": true
+      },
+      {
+        "id": "textField",
+        "type": "text",
+        "ro": false,
+        "max": 32,
+        "value": "text"
+      },
+      {
+        "id": "blinkPin",
+        "type": "pin",
+        "ro": false,
+        "max": 40
+      },
+      {
+        "id": "frequency",
+        "type": "range",
+        "ro": false,
+        "max": 255,
+        "value": 44
+      }
+    ]
+  },
+  {
+    "id": "Live",
+    "type": "usermod",
+    "ro": true,
+    "max": 255,
+    "n": [
+      {
+        "id": "script",
+        "type": "select",
+        "ro": false
+      },
+      {
+        "id": "fps1",
+        "type": "text",
+        "ro": true,
+        "max": 10
+      },
+      {
+        "id": "fps2",
+        "type": "text",
+        "ro": true,
+        "max": 10
       }
     ]
   }
