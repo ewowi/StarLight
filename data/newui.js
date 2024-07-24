@@ -33,10 +33,10 @@ class NewApp {
   init() {
     // Update the copyright notice in the footer
     // Fetch data from the server
-    this.#fetchData() //async
+    this.#fetchModel() //async
   }
 
-  async #fetchData() {
+  async #fetchModel() {
     // Mock fetch for testing while using Live Server. No error checking for brevity.
     // Replace with call to server websocket
     this.#modules = await (await fetch('../misc/model.json')).json()
@@ -172,7 +172,7 @@ function onLoad() {
 
 }
 
-//used by NewApp and by makeWS
+//used by fetchModel and by makeWS
 function addModule(module) {
   // let module = json;
   model.push((module)); //this is the model

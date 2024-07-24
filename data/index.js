@@ -27,6 +27,7 @@ const pinTypeSpi = 3;
 const pinTypeInvalid = UINT8_MAX;
 let sysInfo = {};
 function getPinType(pinNr) {
+  if (!sysInfo.pinTypes) return "🔴"; //Live Server Mode
   if (sysInfo.pinTypes[pinNr] == pinTypeIO) return "🟢";
   else if (sysInfo.pinTypes[pinNr] == pinTypeReadOnly) return "🟠";
   else if (sysInfo.pinTypes[pinNr] == pinTypeReserved) return "🟣";
@@ -40,10 +41,26 @@ function handleVisibilityChange() {
   console.log("handleVisibilityChange");
 }
 
+//Live Server Mode
+async function fetchModel() {
+  // Mock fetch for testing while using Live Server. No error checking for brevity.
+  // Replace with call to server websocket
+  model = await (await fetch('../misc/model.json')).json()
+
+  for (let module of model) {
+    addModule(module)
+  }
+}
+
 function onLoad() {
   getTheme();
 
-  makeWS();
+  //aaroneous: run this code if Live Server is invoked
+  if (window.location.href.includes("127.0.0.1")) { //Live Server Mode
+    fetchModel();
+  }
+  else 
+    makeWS();
 
   initMdlColumns();
 
@@ -72,8 +89,37 @@ function ppf() {
     // }
     logNode.scrollTop = logNode.scrollHeight;
   }
-  else 
-    console.log(arguments);
+  // else 
+  //   console.log(arguments);
+}
+
+//used by fetchModel and by makeWS
+function addModule(module) {
+  // let module = json;
+  console.log("WS receive createHTML", module);
+  ppf("WS receive createHTML", module.id);
+  createHTML(module); //no parentNode
+
+  if (module.id == "System") {
+    console.log("system changes", module);
+    if (module.view)
+      savedView = module.view;
+    if (module.theme)
+      changeHTMLTheme(module.theme);
+  }
+
+  //rerun after each module added
+  if (window.location.href.includes("4.3.2.1")) //captive portal
+    changeHTMLView("vSetup"); //captive portal shows setup screen
+  else if (savedView)
+    changeHTMLView(savedView);
+  else
+    changeHTMLView("vApp"); //default
+
+  gId("vApp").value = appName(); //tbd: should be set by server
+
+  //send request for onUI
+  flushOnUICommands();
 }
 
 function makeWS() {
@@ -116,32 +162,8 @@ function makeWS() {
               found = true;
           }
           if (!found) {
-            let module = json;
-            model.push((module)); //this is the model
-            console.log("WS receive createHTML", module);
-            ppf("WS receive createHTML", module.id);
-            createHTML(module); //no parentNode
-
-            if (module.id == "System") {
-              console.log("system changes", module);
-              if (module.view)
-                savedView = module.view;
-              if (module.theme)
-                changeHTMLTheme(module.theme);
-            }
-
-            //rerun after each module added
-            if (window.location.href.includes("4.3.2.1")) //captive portal
-              changeHTMLView("vSetup"); //captive portal shows setup screen
-            else if (savedView)
-              changeHTMLView(savedView);
-            else
-              changeHTMLView("vApp"); //default
-
-            gId("vApp").value = appName(); //tbd: should be set by server
-
-            //send request for onUI
-            flushOnUICommands();
+            model.push((json)); //this is the model
+            addModule(json);
           }
           else
             console.log("html of module already generated", json);
@@ -999,11 +1021,11 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
           //hide/show disabled/enabled modules
           if (variable.id == "mdlEnabled") {
             let nameVar = findVar("mdlName");
-            let mdlNode = gId(nameVar.value[newRowNr]);
+            let mdlNode = nameVar.value?gId(nameVar.value[newRowNr]):null; //Live Server Mode: no value
             // console.log("mdlEnabled", variable, node, newValue, newRowNr, nameVar, mdlNode);
             if (mdlNode) {
-              if  (mdlNode.hidden && newValue) mdlNode.hidden = false;
-              if  (!mdlNode.hidden && !newValue) mdlNode.hidden = true;
+              if (mdlNode.hidden && newValue) mdlNode.hidden = false;
+              if (!mdlNode.hidden && !newValue) mdlNode.hidden = true;
             }
           }
         }
