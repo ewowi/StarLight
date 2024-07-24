@@ -1937,7 +1937,7 @@ class RubiksCube: public Effect {
     typedef void (Cube::*RotateFunc)(bool direction, uint8_t width);
     const RotateFunc rotateFuncs[] = {&Cube::rotateFront, &Cube::rotateBack, &Cube::rotateLeft, &Cube::rotateRight, &Cube::rotateTop, &Cube::rotateBottom};
     
-    if (*setup && sys->now > *step || *step - 1000 > sys->now) { // *step - 1000 > sys->now temp fix for default on boot
+    if (*setup && sys->now > *step || *step - 3100 > sys->now) { // *step - 3100 > sys->now temp fix for default on boot
       *step = sys->now + 1000;
       *setup = false;
       cube->init(cubeSize);
