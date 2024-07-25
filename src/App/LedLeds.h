@@ -188,6 +188,7 @@ enum mapType {
   m_color,
   m_onePixel,
   m_morePixels,
+  m_colorPal,
   m_count //keep as last entry
 };
 
@@ -196,88 +197,25 @@ class Leds; //forward
 
 struct PhysMap {
   union {
-    CRGB color; // 3 bytes
-    struct {
-      uint16_t indexP;  // 2 bytes
-      byte placeHolder1; // 1 byte
-      byte placeHolder2:6; //6 bits
-      byte type:2; // 2 bits used for color and indexP (more colors is using raw[3], see getMapType)
-    }; //4 bytes
-    std::vector<unsigned16> * indexes; // 4 bytes
-    //the following struct / union will replace above if fully converted to Pal / 2 byte mapping mode
-    struct {
-      union {
-        struct {                  //no physical pixel (type==0) palette (all linearblend)
-          uint8_t palIndex:8;     //8 bits (256)
-          uint8_t palBri:6;       //6 bits (64)
-          byte mapType:2;         //2 bits (4)
-        }; // 16 bits
-        uint16_t indexP1: 14;   //16384 one physical pixel (type==1) index to ledsP array
-        uint16_t indexes1:14;  //16384 multiple physical pixels (type==2) index in std::vector<std::vector<unsigned16>> mappingTableIndexes;
-        struct {                 //condensed rgb, keep in GBR order!!! exceptional cases when no palette. e.g. solid?
-          uint8_t g:5;           //32
-          uint8_t b:3;           //8
-          uint8_t r:6;           //64
-        }; //14 bits
-      }; //14 bits
-      byte rawx[2]; //temporary filler to check if total will not extend 4 bytes
-    }; //2 bytes
-    byte raw[4]; //raw[3] == 63 for indexes pointers 
-  }; // 4 bytes
+    struct {                 //condensed rgb, keep in GBR order!!! exceptional cases when no palette. e.g. solid?
+      uint8_t g:5;           //32
+      uint8_t b:3;           //8
+      uint8_t r:6;           //64
+      byte mapType:2;         //2 bits (4)
+    }; //16 bits
+    uint16_t indexP: 14;   //16384 one physical pixel (type==1) index to ledsP array
+    uint16_t indexes:14;  //16384 multiple physical pixels (type==2) index in std::vector<std::vector<unsigned16>> mappingTableIndexes;
+    struct {                  //no physical pixel (type==0) palette (all linearblend)
+      uint8_t palIndex:8;     //8 bits (256)
+      uint8_t palBri:6;       //6 bits (64)
+    }; // 14 bits
+  }; // 2 bytes
 
-  PhysMap(bool palColorEffect) { // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
-    indexes = nullptr; //all zero's
-    if (palColorEffect)
-      mapType = m_color; // the default until indexP is added
-    else
-      type = m_color; // the default until indexP is added
+  PhysMap() {
+    mapType = m_color; // the default until indexP is added
   }
 
-  void setColor(CRGB color) {
-    this->color = color;
-    placeHolder2 = 0; //cleanup memory
-    type = m_color;
-    // ppf("dev new color %d,%d,%d t: %d,%d,%d,%d\n", this->color.r, this->color.g, this->color.b, type[0], type[1], type[2], type[3]);
-    //dev new color 245,0,10 t: 245,0,10,255
-  }
-
-  uint8_t getMapType() {
-    if (raw[3] == 63) return m_morePixels; // this first as pointer could contain values for m_color and m_onepixel
-        // raw[3] == 63 is the imperical found value if the 4th bit of a pointer, hopefully this is the same on all boards, but we will check in addIndexP
-    if (type == m_color) return m_color;
-    if (type == m_onePixel) return m_onePixel;
-    return UINT8_MAX; // no valid type found
-  }
-
-  void addIndexP(uint16_t indexP) {
-    switch (getMapType()) {
-      case m_color:
-        this->indexP = indexP;
-        placeHolder1 = 0; // cleanup memory
-        placeHolder2 = 0; // cleanup memory
-        type = m_onePixel;
-        // ppf("dev new indexP t:%d i:%d p1:%d p2:%d\n", type, this->indexP, placeHolder1, placeHolder2);
-        break;
-      case m_onePixel: {
-        uint16_t oldIndexP = this->indexP; //save old indexP
-        indexes = new std::vector<unsigned16>; //overwrite old indexP with indexes, type will be m_morePixels implicetly because this is a pointer!!!
-        // ppf("dev new indexes t:%d i:%d t3:%d b:%d p:%p\n", type, indexP, raw[3], raw[3] & 0x80, indexes);
-        if (getMapType() != m_morePixels)
-          // raw[3] == 63 is the imperical found value if the 4th bit of a pointer, hopefully this is the same on all boards, but we will check here if it is not the case
-          ppf("dev addIndexP not indexes t:%d i:%d t3:%d b:%d p:%p\n", type, indexP, raw[3], raw[3] & 0x80, indexes);
-        else {
-          indexes->push_back(oldIndexP);
-          indexes->push_back(indexP);
-        }
-        break; }
-      case m_morePixels:
-        // ppf("dev add indexes t:%d i:%d t3:%d b:%d p:%p s:%d\n", type, indexP, raw[3], raw[3] & 0x80, indexes, indexes->size());
-        indexes->push_back(indexP);
-        break;
-    }
-  }
-
-  void addIndexP2(Leds &leds, uint16_t indexP); // addIndexP2: temp method until all effects have been converted to Palette / 2 byte mapping mode
+  void addIndexP(Leds &leds, uint16_t indexP); // addIndexP: temp method until all effects have been converted to Palette / 2 byte mapping mode
 
 }; // 4 bytes
 
@@ -349,17 +287,10 @@ public:
 
   ~Leds() {
     ppf("Leds destructor\n");
-    fadeToBlackBy(100);
+    fadeToBlackBy();
     doMap = true; // so loop is not running while deleting
     for (PhysMap &map:mappingTable) {
-      if (checkPalColorEffect()) { // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
-        mappingTableIndexes.clear();
-      }
-      else
-        if (map.getMapType() == m_morePixels) {
-          map.indexes->clear();
-          delete map.indexes;
-        }
+      mappingTableIndexes.clear();
     }
     mappingTable.clear();
   }
@@ -439,10 +370,7 @@ public:
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
   bool isMapped(unsigned16 indexV) {
-    if (checkPalColorEffect()) // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
-      return indexV < mappingTable.size() && (mappingTable[indexV].mapType == m_onePixel || mappingTable[indexV].mapType == m_morePixels);
-    else
-      return indexV < mappingTable.size() && (mappingTable[indexV].getMapType() == m_onePixel || mappingTable[indexV].getMapType() == m_morePixels);
+    return indexV < mappingTable.size() && (mappingTable[indexV].mapType == m_onePixel || mappingTable[indexV].mapType == m_morePixels);
   }
 
   void blur1d(fract8 blur_amount)
@@ -559,15 +487,6 @@ public:
     for (int shiftChr = 0; shiftChr < numberOfChr; shiftChr++) {
       drawCharacter(text[shiftChr], x, y, font, col, shiftPixel, shiftChr);
     }
-  }
-
-  // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
-  //     add id's of all converted methods here
-  bool checkPalColorEffect() {
-    return (fx == 1) //rainBow
-           || (fx == 24) //lissajous
-           || (fx == 27) //noise2D
-           ;
   }
 
 };
