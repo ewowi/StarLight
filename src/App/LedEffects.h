@@ -2688,3 +2688,82 @@ class PixelMapEffect: public Effect {
     ui->initSlider(parentVar, "z", leds.effectData.write<uint8_t>(0), 0, leds.size.z - 1);
   }
 }; // PixelMap
+
+class Test: public Effect {
+  const char * name() {return "2ByteTest";}
+  uint8_t dim() {return _2D;}
+  const char * tags() {return "💫";}
+
+  void loop(Leds &leds) {
+    //Binding of controls. Keep before binding of vars and keep in same order as in controls()
+    bool *setup        = leds.effectData.readWrite<bool>();
+    uint8_t speed      = leds.effectData.read<uint8_t>();
+    uint8_t drawMethod = leds.effectData.read<uint8_t>();
+    Coord3D color      = leds.effectData.read<Coord3D>();
+    bool debugPrint    = leds.effectData.read<bool>();
+
+    unsigned long *step = leds.effectData.readWrite<unsigned long>();
+
+    if (*setup) {
+      // leds.fill_solid(CRGB::Black, 0);
+      for (int x = 0; x < leds.size.x; x++) {
+        for (int y = 0; y < leds.size.y; y++) {
+          leds.setPixelColor(leds.XY(x, y), CRGB::Black, 0);
+        }
+      }
+      *setup = false;
+    }
+
+    if (!speed || sys->now - *step < 1000 / speed) return;
+
+    //shift down
+    for (int y = leds.size.y - 1; y > 0; y--) {
+      for (int x = 0; x < leds.size.x; x++) {
+        leds.setPixelColor(leds.XY(x, y), leds.getPixelColor(leds.XY(x, y - 1)));
+      }
+    }
+
+    //draw new line
+    byte r = random8();
+    byte g = random8();
+    byte b = random8();
+    for (int x = 0; x < leds.size.x; x++) {
+      if      (drawMethod == 0) leds.setPixelColor(leds.XY(x, 0), ColorFromPalette(leds.palette, r), 0);
+      else if (drawMethod == 1) leds.setPixelColorPal(leds.XY(x, 0), r, 0);
+      else if (drawMethod == 2) leds.setPixelColor(leds.XY(x, 0), CRGB(r, g, b), 0);
+      else if (drawMethod == 3) leds.setPixelColor(leds.XY(x, 0), CRGB(color.x, color.y, color.z), 0);
+    }
+
+    if (debugPrint) {
+      for (int y = 0; y < leds.size.y; y++) {
+        CRGB colorL = leds.getPixelColor(leds.XY(0, y));
+        CRGB colorR = leds.getPixelColor(leds.XY(leds.size.x - 1, y));
+        ppf("Row %2d:  Left: %3d %3d %3d Right: %3d %3d %3d\n", y, colorL.r, colorL.g, colorL.b, colorR.r, colorR.g, colorR.b);
+      }
+      ppf("--------------------\n");
+    }
+
+    *step = sys->now;
+    
+  }
+  
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    bool *setup = leds.effectData.write<bool>(true);
+    ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(0), 0, 20);
+    ui->initSelect(parentVar, "Method", leds.effectData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+      case onUI: {
+        JsonArray options = ui->setOptions(var);
+        options.add("setPixelColor");
+        options.add("setPixelColorPal");
+        options.add("RandomColor");
+        options.add("SolidColor");
+        return true;
+      }
+      default: return false;
+    }}); 
+    ui->initCoord3D(parentVar, "Solid Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
+    ui->initCheckBox(parentVar, "Debug Print", leds.effectData.write<bool>(1));
+
+  }
+}; // 2ByteTest
