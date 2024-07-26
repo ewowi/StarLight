@@ -117,6 +117,7 @@ public:
     effects.push_back(new SphereMoveEffect);
     effects.push_back(new PixelMapEffect);
     effects.push_back(new Byte2TestEffect); // not 3D but next to pixelMap for testing
+    effects.push_back(new Byte2TestEffect2); // not 3D but next to pixelMap for testing
 
     //load projections
     fixture.projections.push_back(new NoneProjection);

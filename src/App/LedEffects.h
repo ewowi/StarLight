@@ -2719,7 +2719,10 @@ class Byte2TestEffect: public Effect {
     //shift down
     for (int y = leds.size.y - 1; y > 0; y--) {
       for (int x = 0; x < leds.size.x; x++) {
-        leds.setPixelColor(leds.XY(x, y), leds.getPixelColor(leds.XY(x, y - 1)));
+        // Blend test
+        CRGB color = blend(leds.getPixelColor(leds.XY(x, y - 1)), leds.getPixelColor(leds.XY(x, y)), leds.fixture->globalBlend);
+        leds.setPixelColor(leds.XY(x, y), color, 0);
+        // leds.setPixelColor(leds.XY(x, y), leds.getPixelColor(leds.XY(x, y - 1)));
       }
     }
 
@@ -2735,13 +2738,24 @@ class Byte2TestEffect: public Effect {
     }
 
     if (debugPrint) {
+      int diffR = 0;
+      int diffG = 0;
+      int diffB = 0;
+
       for (int y = 0; y < leds.size.y; y++) {
         CRGB colorL = leds.getPixelColor(leds.XY(0, y));
         CRGB colorR = leds.getPixelColor(leds.XY(leds.size.x - 1, y));
+        diffR += abs(colorL.r - colorR.r);
+        diffG += abs(colorL.g - colorR.g);
+        diffB += abs(colorL.b - colorR.b);
         ppf("Row %2d:  Left: %3d %3d %3d Right: %3d %3d %3d\n", y, colorL.r, colorL.g, colorL.b, colorR.r, colorR.g, colorR.b);
       }
       ppf("--------------------\n");
+
+      ppf("Average Error: %3f %3f %3f\n", (float)diffR / leds.size.y, (float)diffG / leds.size.y, (float)diffB / leds.size.y);
     }
+
+
 
     *step = sys->now;
     
@@ -2767,3 +2781,110 @@ class Byte2TestEffect: public Effect {
 
   }
 }; // 2ByteTest
+
+class Byte2TestEffect2: public Effect {
+  const char * name() {return "2ByteTest2";}
+  uint8_t dim() {return _2D;}
+  const char * tags() {return "💫";}
+
+  void loop(Leds &leds) {
+    //Binding of controls. Keep before binding of vars and keep in same order as in controls()
+    bool *setup        = leds.effectData.readWrite<bool>();
+    uint8_t speed      = leds.effectData.read<uint8_t>();
+    uint8_t colorMode  = leds.effectData.read<uint8_t>();
+    Coord3D customColor= leds.effectData.read<Coord3D>();
+    uint8_t drawMethod = leds.effectData.read<uint8_t>();
+    bool debugPrint    = leds.effectData.read<bool>();
+
+    unsigned long *step = leds.effectData.readWrite<unsigned long>();
+
+    if (*setup) {
+      // leds.fill_solid(CRGB::Black, 0);
+      for (int x = 0; x < leds.size.x; x++) {
+        for (int y = 0; y < leds.size.y; y++) {
+          leds.setPixelColor(leds.XY(x, y), CRGB::Black, 0);
+        }
+      }
+      *setup = false;
+    }
+
+    if (!speed || sys->now - *step < 1000 / speed) return;
+
+    CRGB color;
+
+    if (colorMode == 0) {
+      color = ColorFromPalette(leds.palette, random8(), 255);
+    } else if (colorMode == 1) {
+      color = CRGB(random8(), random8(), random8());
+    } else if (colorMode == 2) {
+      color = CRGB(customColor.x, customColor.y, customColor.z);
+    }
+
+    CRGB rColor;
+
+    if (drawMethod == 0) { // 653
+      rColor.r = (color.r >> 2) << 2; // 6 bit
+      rColor.g = (color.g >> 3) << 3; // 5 bit
+      rColor.b = (color.b >> 5) << 5; // 3 bit
+    }
+    else if (drawMethod == 1) { // 653 rounding b
+      rColor.r = (color.r >> 2) << 2; // 6 bit
+      rColor.g = (color.g >> 3) << 3; // 5 bit
+      rColor.b = (min(color.b + 15, 255) >> 5) << 5; // 3 bit
+    }
+    else if (drawMethod == 2) { // 554
+      rColor.r = (color.r >> 3) << 3; // 5 bit
+      rColor.g = (color.g >> 3) << 3; // 5 bit
+      rColor.b = (color.b >> 4) << 4; // 4 bit
+    }
+    else if (drawMethod == 3) { // 554 offset
+      rColor.r = (min(color.r + 4, 255) >> 3) << 3; // 5 bit
+      rColor.g = (min(color.g + 4, 255) >> 3) << 3; // 5 bit
+      rColor.b = (min(color.b + 8, 255) >> 4) << 4; // 4 bit
+    }
+
+    int half = leds.size.x/2;
+    for (int x = 0; x < half; x++) {
+      for (int y = 0; y < leds.size.y; y++) {
+        leds.setPixelColor(leds.XY(x, y), color, 0);
+        leds.setPixelColor(leds.XY(x+half, y), rColor, 0);
+      }
+    }
+
+    if (debugPrint) {
+        ppf("Left: %3d,%3d,%3d Right: %3d,%3d,%3d Difference: %d, %d, %d\n", color.r, color.g, color.b, rColor.r, rColor.g, rColor.b, abs(color.r - rColor.r), abs(color.g - rColor.g), abs(color.b - rColor.b));
+    }
+
+    *step = sys->now;
+  }
+  
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    bool *setup = leds.effectData.write<bool>(true);
+    ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(0), 0, 20);
+    ui->initSelect(parentVar, "Color", leds.effectData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+      case onUI: {
+        JsonArray options = ui->setOptions(var);
+        options.add("Palette");
+        options.add("Random");
+        options.add("Custom");
+        return true;
+      }
+      default: return false;
+    }}); 
+    ui->initCoord3D(parentVar, "Custom Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
+    ui->initSelect(parentVar, "Method", leds.effectData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+      case onUI: {
+        JsonArray options = ui->setOptions(var);
+        options.add("653");
+        options.add("653 round b");
+        options.add("554");
+        options.add("554 offset");
+        return true;
+      }
+      default: return false;
+    }}); 
+    ui->initCheckBox(parentVar, "Debug Print", leds.effectData.write<bool>(1));
+
+  }
+}; // 2ByteTest2
