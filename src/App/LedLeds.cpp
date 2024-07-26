@@ -54,8 +54,8 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
     switch (mappingTable[indexV].mapType) {
       case m_color:{
         mappingTable[indexV].r = color.r >> 2; // 8 to 6 bits
-        mappingTable[indexV].g = color.r >> 3; // 8 to 5 bits
-        mappingTable[indexV].b = color.r >> 5; // 8 to 3 bits
+        mappingTable[indexV].g = color.g >> 3; // 8 to 5 bits
+        mappingTable[indexV].b = color.b >> 5; // 8 to 3 bits
         break;
       }
       case m_onePixel: {
