@@ -446,6 +446,7 @@ public:
     if (sys->now - frameMillis >= 1000.0/fps) {
 
       //reset pixelsToBlend
+      // ppf(" %d-%d", fixture.pixelsToBlend.size(), fixture.nrOfLeds);
       for (uint16_t i=0; i < fixture.pixelsToBlend.size(); i++)
         fixture.pixelsToBlend[i] = false;
 
