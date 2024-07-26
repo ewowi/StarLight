@@ -202,6 +202,9 @@ void Fixture::projectAndMap() {
 
           uint16_t nrOfLogical = 0;
           uint16_t nrOfPhysical = 0;
+          uint16_t nrOfPhysicalM = 0;
+          uint16_t nrOfColor = 0;
+          uint16_t nrOfColorPal = 0;
 
           if (leds->projectionNr == p_Random || leds->projectionNr == p_None) {
 
@@ -222,20 +225,25 @@ void Fixture::projectAndMap() {
 
             //debug info + summary values
             for (PhysMap &map:leds->mappingTable) {
-              // ppf("i: %d t:%d\n", nrOfLogical, map.mapType);
               switch (map.mapType) {
+                case m_color:
+                  nrOfColor++;
+                  break;
                 case m_onePixel:
-                  // ppf("ledV %d mapping: #ledsP : %d\n", nrOfLogical, map.indexP);
+                  // ppf("ledV %d mapping =1: #ledsP : %d\n", nrOfLogical, map.indexP);
                   nrOfPhysical++;
                   break;
                 case m_morePixels:
-                  // ppf("ledV %d mapping: #ledsP :", nrOfLogical);
+                  // ppf("ledV %d mapping >1: #ledsP :", nrOfLogical);
                   
                   for (uint16_t indexP: leds->mappingTableIndexes[map.indexes]) {
-                    // ppf(" %d", indexP);
-                    nrOfPhysical++;
+                    ppf(" %d", indexP);
+                    nrOfPhysicalM++;
                   }
                   // ppf("\n");
+                  break;
+                case m_colorPal:
+                  nrOfColorPal++;
                   break;
               }
               nrOfLogical++;
@@ -244,7 +252,7 @@ void Fixture::projectAndMap() {
             }
           }
 
-          ppf("projectAndMap leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d)\n", rowNr, leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds, nrOfLogical, nrOfPhysical);
+          ppf("projectAndMap leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d c:%d cp:%d)\n", rowNr, leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, nrOfColor, nrOfColorPal);
 
           // mdl->setValueV("ledsSize", rowNr, "%d x %d x %d = %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           char buf[32];

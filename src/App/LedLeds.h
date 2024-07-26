@@ -215,9 +215,9 @@ struct PhysMap {
     mapType = m_color; // the default until indexP is added
   }
 
-  void addIndexP(Leds &leds, uint16_t indexP); // addIndexP: temp method until all effects have been converted to Palette / 2 byte mapping mode
+  void addIndexP(Leds &leds, uint16_t indexP);
 
-}; // 4 bytes
+}; // 2 bytes
 
 class Projection; //forward for cached virtual class methods!
 

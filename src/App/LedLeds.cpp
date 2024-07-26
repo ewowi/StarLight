@@ -164,11 +164,11 @@ void PhysMap::addIndexP(Leds &leds, uint16_t indexP) {
   switch (mapType) {
     case m_color:
     // case m_rgbColor:
-      indexP = indexP;
+      this->indexP = indexP;
       mapType = m_onePixel;
       break;
     case m_onePixel: {
-      uint16_t oldIndexP = indexP;
+      uint16_t oldIndexP = this->indexP;
       std::vector<uint16_t> newVector;
       newVector.push_back(oldIndexP);
       newVector.push_back(indexP);
