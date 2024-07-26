@@ -2812,35 +2812,47 @@ class Byte2TestEffect2: public Effect {
 
     CRGB color;
 
-    if (colorMode == 0) {
+    if (colorMode == 0) {         // Palette
       color = ColorFromPalette(leds.palette, random8(), 255);
-    } else if (colorMode == 1) {
+    } else if (colorMode == 1) {  // Random
       color = CRGB(random8(), random8(), random8());
-    } else if (colorMode == 2) {
+    } else if (colorMode == 2) {  // Custom
       color = CRGB(customColor.x, customColor.y, customColor.z);
     }
 
     CRGB rColor;
 
+    // Define masks for different bit depths
+    const uint8_t MASK_6BIT = 0xFC; // 6 bits: 1111 1100
+    const uint8_t MASK_5BIT = 0xF8; // 5 bits: 1111 1000
+    const uint8_t MASK_4BIT = 0xF0; // 4 bits: 1111 0000
+    const uint8_t MASK_3BIT = 0xE0; // 3 bits: 1110 0000
+
+    // Apply different draw methods using the masks
     if (drawMethod == 0) { // 653
-      rColor.r = (color.r >> 2) << 2; // 6 bit
-      rColor.g = (color.g >> 3) << 3; // 5 bit
-      rColor.b = (color.b >> 5) << 5; // 3 bit
+      rColor.r = color.r & MASK_6BIT; // 6 bit
+      rColor.g = color.g & MASK_5BIT; // 5 bit
+      rColor.b = color.b & MASK_3BIT; // 3 bit
     }
     else if (drawMethod == 1) { // 653 rounding b
-      rColor.r = (color.r >> 2) << 2; // 6 bit
-      rColor.g = (color.g >> 3) << 3; // 5 bit
-      rColor.b = (min(color.b + 15, 255) >> 5) << 5; // 3 bit
+      rColor.r = color.r & MASK_6BIT; // 6 bit
+      rColor.g = color.g & MASK_5BIT; // 5 bit
+      rColor.b = (min(color.b + 15, 255)) & MASK_3BIT; // 3 bit
     }
     else if (drawMethod == 2) { // 554
-      rColor.r = (color.r >> 3) << 3; // 5 bit
-      rColor.g = (color.g >> 3) << 3; // 5 bit
-      rColor.b = (color.b >> 4) << 4; // 4 bit
+      rColor.r = color.r & MASK_5BIT; // 5 bit
+      rColor.g = color.g & MASK_5BIT; // 5 bit
+      rColor.b = color.b & MASK_4BIT; // 4 bit
     }
-    else if (drawMethod == 3) { // 554 offset
-      rColor.r = (min(color.r + 4, 255) >> 3) << 3; // 5 bit
-      rColor.g = (min(color.g + 4, 255) >> 3) << 3; // 5 bit
-      rColor.b = (min(color.b + 8, 255) >> 4) << 4; // 4 bit
+    else if (drawMethod == 3) { // 554 with offset (offset would be added in getPixelColor)
+      rColor.r = (color.r & MASK_5BIT) + 4; // 5 bit + offset
+      rColor.g = (color.g & MASK_5BIT) + 4; // 5 bit + offset
+      rColor.b = (color.b & MASK_4BIT) + 8; // 4 bit + offset
+    }
+    else if (drawMethod == 4) { // 554 with rounding
+      rColor.r = (min(color.r + 3, 255)) & MASK_5BIT; // 5 bit
+      rColor.g = (min(color.g + 3, 255)) & MASK_5BIT; // 5 bit
+      rColor.b = (min(color.b + 7, 255)) & MASK_4BIT; // 4 bit
     }
 
     int half = leds.size.x/2;
@@ -2880,6 +2892,7 @@ class Byte2TestEffect2: public Effect {
         options.add("653 round b");
         options.add("554");
         options.add("554 offset");
+        options.add("554 rounding");
         return true;
       }
       default: return false;
