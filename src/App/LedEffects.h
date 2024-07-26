@@ -2777,7 +2777,7 @@ class Byte2TestEffect: public Effect {
       default: return false;
     }}); 
     ui->initCoord3D(parentVar, "Solid Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
-    ui->initCheckBox(parentVar, "Debug Print", leds.effectData.write<bool>(1));
+    ui->initCheckBox(parentVar, "Debug Print", leds.effectData.write<bool>(false));
 
   }
 }; // 2ByteTest

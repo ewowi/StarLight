@@ -42,6 +42,7 @@ class Fixture {
 public:
 
   CRGB ledsP[NUM_LEDS_Max];
+  std::vector<bool> pixelsToBlend; //this is a 1-bit vector !!! overlapping effects will blend
 
   // CRGB *leds = nullptr;
     // if (!leds)
