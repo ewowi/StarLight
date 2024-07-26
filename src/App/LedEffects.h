@@ -2689,7 +2689,7 @@ class PixelMapEffect: public Effect {
   }
 }; // PixelMap
 
-class Test: public Effect {
+class Byte2TestEffect: public Effect {
   const char * name() {return "2ByteTest";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "💫";}
@@ -2729,7 +2729,7 @@ class Test: public Effect {
     byte b = random8();
     for (int x = 0; x < leds.size.x; x++) {
       if      (drawMethod == 0) leds.setPixelColor(leds.XY(x, 0), ColorFromPalette(leds.palette, r), 0);
-      else if (drawMethod == 1) leds.setPixelColorPal(leds.XY(x, 0), r, 0);
+      else if (drawMethod == 1) leds.setPixelColorPal(leds.XY(x, 0), r, 255, 0);
       else if (drawMethod == 2) leds.setPixelColor(leds.XY(x, 0), CRGB(r, g, b), 0);
       else if (drawMethod == 3) leds.setPixelColor(leds.XY(x, 0), CRGB(color.x, color.y, color.z), 0);
     }

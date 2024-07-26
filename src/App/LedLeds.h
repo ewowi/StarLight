@@ -213,6 +213,9 @@ struct PhysMap {
 
   PhysMap() {
     mapType = m_color; // the default until indexP is added
+    r = 0;
+    g = 0;
+    b = 0;
   }
 
   void addIndexP(Leds &leds, uint16_t indexP);
