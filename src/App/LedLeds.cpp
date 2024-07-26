@@ -60,20 +60,25 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
       }
       case m_onePixel: {
         uint16_t indexP = mappingTable[indexV].indexP;
-        fixture->ledsP[indexP] = blend(color, fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount);
+        fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount):color;
+        fixture->pixelsToBlend[indexP] = true; //overlapping effects will blend
         break; }
       case m_morePixels:
         if (mappingTable[indexV].indexes < mappingTableIndexes.size())
           for (forUnsigned16 indexP: mappingTableIndexes[mappingTable[indexV].indexes]) {
-            fixture->ledsP[indexP] = blend(color, fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount);
+            fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount): color;
+            fixture->pixelsToBlend[indexP] = true; //overlapping effects will blend
           }
         // else
         //   ppf("dev setPixelColor2 i:%d m:%d s:%d\n", indexV, mappingTable[indexV].indexes, mappingTableIndexes.size());
         break;
     }
   }
-  else if (indexV < NUM_LEDS_Max) //no projection
-    fixture->ledsP[(projectionNr == p_Random)?random(fixture->nrOfLeds):indexV] = color;
+  else if (indexV < NUM_LEDS_Max) { //no projection
+    uint16_t indexP = (projectionNr == p_Random)?random(fixture->nrOfLeds):indexV;
+    fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount): color;
+    fixture->pixelsToBlend[indexP] = true; //overlapping effects will blend
+  }
   else if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
     ppf(" dev sPC V:%d >= %d", indexV, NUM_LEDS_Max);
 }
@@ -91,8 +96,11 @@ void Leds::setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri,
         break;
     }
   }
-  else if (indexV < NUM_LEDS_Max) //no projection
-    fixture->ledsP[(projectionNr == p_Random)?random(fixture->nrOfLeds):indexV] = ColorFromPalette(palette, palIndex, palBri);
+  else if (indexV < NUM_LEDS_Max) {//no projection
+    uint16_t indexP = (projectionNr == p_Random)?random(fixture->nrOfLeds):indexV;
+    fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(ColorFromPalette(palette, palIndex, palBri), fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount): ColorFromPalette(palette, palIndex, palBri);
+    fixture->pixelsToBlend[indexP] = true; //overlapping effects will blend
+  }
   else if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
     ppf(" dev sPC V:%d >= %d", indexV, NUM_LEDS_Max);
 }

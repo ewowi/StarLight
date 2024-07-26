@@ -272,6 +272,12 @@ void Fixture::projectAndMap() {
       mdl->setValue("fixSize", fixSize);
       mdl->setValue("fixCount", nrOfLeds);
 
+      //init overlapping (for blending)
+      for (uint16_t i=0; i<nrOfLeds; i++) {
+        if (pixelsToBlend.size() < nrOfLeds)
+          pixelsToBlend.push_back(false);
+      }
+
     } // if deserialize
   } //if fileName
   else

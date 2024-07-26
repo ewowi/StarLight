@@ -443,6 +443,11 @@ public:
 
     //set new frame
     if (sys->now - frameMillis >= 1000.0/fps) {
+
+      //reset pixelsToBlend
+      for (uint16_t i=0; i < fixture.pixelsToBlend.size(); i++)
+        fixture.pixelsToBlend[i] = false;
+
       frameMillis = sys->now;
 
       newFrame = true;
