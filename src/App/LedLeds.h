@@ -199,8 +199,8 @@ struct PhysMap {
   union {
     struct {                 //condensed rgb, keep in GBR order!!! exceptional cases when no palette. e.g. solid?
       uint8_t g:5;           //32
-      uint8_t b:3;           //8
-      uint8_t r:6;           //64
+      uint8_t b:4;           //16
+      uint8_t r:5;           //32
       byte mapType:2;         //2 bits (4)
     }; //16 bits
     uint16_t indexP: 14;   //16384 one physical pixel (type==1) index to ledsP array

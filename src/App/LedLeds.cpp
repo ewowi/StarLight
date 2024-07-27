@@ -53,9 +53,9 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color) {
     if (mappingTable[indexV].mapType == m_colorPal) mappingTable[indexV].mapType = m_color;
     switch (mappingTable[indexV].mapType) {
       case m_color:{
-        mappingTable[indexV].r = color.r >> 2; // 8 to 6 bits, 64 values
-        mappingTable[indexV].g = color.g >> 3; // 8 to 5 bits, 32 values
-        mappingTable[indexV].b = min(color.b + 15, 255) >> 5; // 8 to 3 bits, 8 values
+        mappingTable[indexV].r = min(color.r + 3, 255) >> 3; // 8 to 5 bits, 32 values
+        mappingTable[indexV].g = min(color.g + 3, 255) >> 3; // 8 to 5 bits, 32 values
+        mappingTable[indexV].b = min(color.b + 7, 255) >> 4; // 8 to 4 bits, 16 values
         break;
       }
       case m_onePixel: {
@@ -111,7 +111,7 @@ CRGB Leds::getPixelColor(unsigned16 indexV) {
         return fixture->ledsP[mappingTableIndexes[mappingTable[indexV].indexes][0]];
         break;
       case m_color:
-        return CRGB(mappingTable[indexV].r << 2, mappingTable[indexV].g << 3, mappingTable[indexV].b << 5);
+        return CRGB(mappingTable[indexV].r << 3, mappingTable[indexV].g << 3, mappingTable[indexV].b << 4);
         break;
       default: // case m_colorPal:
         return ColorFromPalette(palette, mappingTable[indexV].palIndex, mappingTable[indexV].palBri << 2);
