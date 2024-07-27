@@ -188,7 +188,6 @@ enum mapType {
   m_color,
   m_onePixel,
   m_morePixels,
-  m_colorPal,
   m_count //keep as last entry
 };
 
@@ -203,10 +202,6 @@ struct PhysMap {
     }; //16 bits
     uint16_t indexP: 14;   //16384 one physical pixel (type==1) index to ledsP array
     uint16_t indexes:14;  //16384 multiple physical pixels (type==2) index in std::vector<std::vector<unsigned16>> mappingTableIndexes;
-    struct {                  //no physical pixel (type==0) palette (all linearblend)
-      uint8_t palIndex:8;     //8 bits (256)
-      uint8_t palBri:6;       //6 bits (64)
-    }; // 14 bits
   }; // 2 bytes
 
   PhysMap() {

@@ -205,7 +205,6 @@ void Fixture::projectAndMap() {
           uint16_t nrOfPhysical = 0;
           uint16_t nrOfPhysicalM = 0;
           uint16_t nrOfColor = 0;
-          uint16_t nrOfColorPal = 0;
 
           if (leds->projectionNr == p_Random || leds->projectionNr == p_None) {
 
@@ -238,13 +237,10 @@ void Fixture::projectAndMap() {
                   // ppf("ledV %d mapping >1: #ledsP :", nrOfLogical);
                   
                   for (uint16_t indexP: leds->mappingTableIndexes[map.indexes]) {
-                    ppf(" %d", indexP);
+                    // ppf(" %d", indexP);
                     nrOfPhysicalM++;
                   }
                   // ppf("\n");
-                  break;
-                case m_colorPal:
-                  nrOfColorPal++;
                   break;
               }
               nrOfLogical++;
@@ -253,7 +249,7 @@ void Fixture::projectAndMap() {
             }
           }
 
-          ppf("projectAndMap leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d c:%d cp:%d)\n", rowNr, leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, nrOfColor, nrOfColorPal);
+          ppf("projectAndMap leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d c:%d)\n", rowNr, leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, nrOfColor);
 
           // mdl->setValueV("ledsSize", rowNr, "%d x %d x %d = %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           char buf[32];

@@ -50,7 +50,6 @@ unsigned16 Leds::XYZ(Coord3D pixel) {
 // maps the virtual led to the physical led(s) and assign a color to it
 void Leds::setPixelColor(unsigned16 indexV, CRGB color) {
   if (indexV < mappingTable.size()) {
-    if (mappingTable[indexV].mapType == m_colorPal) mappingTable[indexV].mapType = m_color;
     switch (mappingTable[indexV].mapType) {
       case m_color:{
         mappingTable[indexV].rgb14 = ((min(color.r + 3, 255) >> 3) << 9) + 
@@ -81,24 +80,7 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color) {
 }
 
 void Leds::setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri) {
-  if (indexV < mappingTable.size()) {
-    if (mappingTable[indexV].mapType == m_color) mappingTable[indexV].mapType = m_colorPal;
-    switch (mappingTable[indexV].mapType) {
-      case m_colorPal:
-        mappingTable[indexV].palIndex = palIndex;
-        mappingTable[indexV].palBri = palBri >> 2; // 8 bits to 6 bits
-        break;
-      default:
-        setPixelColor(indexV, ColorFromPalette(palette, palIndex, palBri));
-        break;
-    }
-  }
-  else if (indexV < NUM_LEDS_Max) {//no projection
-    uint16_t indexP = (projectionNr == p_Random)?random(fixture->nrOfLeds):indexV;
-    fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(ColorFromPalette(palette, palIndex, palBri), fixture->ledsP[indexP], fixture->globalBlend): ColorFromPalette(palette, palIndex, palBri);
-  }
-  else if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
-    ppf(" dev sPC V:%d >= %d", indexV, NUM_LEDS_Max);
+  setPixelColor(indexV, ColorFromPalette(palette, palIndex, palBri));
 }
 
 void Leds::blendPixelColor(unsigned16 indexV, CRGB color, uint8_t blendAmount) {
@@ -109,18 +91,15 @@ CRGB Leds::getPixelColor(unsigned16 indexV) {
   if (indexV < mappingTable.size()) {
     switch (mappingTable[indexV].mapType) {
       case m_onePixel:
-        return fixture->ledsP[mappingTable[indexV].indexP]; //any would do as they are all the same
+        return fixture->ledsP[mappingTable[indexV].indexP]; 
         break;
       case m_morePixels:
-        return fixture->ledsP[mappingTableIndexes[mappingTable[indexV].indexes][0]];
+        return fixture->ledsP[mappingTableIndexes[mappingTable[indexV].indexes][0]]; //any would do as they are all the same
         break;
-      case m_color:
+      default: // m_color:
         return CRGB((mappingTable[indexV].rgb14 >> 9) << 3, 
                     (mappingTable[indexV].rgb14 >> 4) << 3, 
                      mappingTable[indexV].rgb14       << 4);
-        break;
-      default: // case m_colorPal:
-        return ColorFromPalette(palette, mappingTable[indexV].palIndex, mappingTable[indexV].palBri << 2);
         break;
     }
   }
