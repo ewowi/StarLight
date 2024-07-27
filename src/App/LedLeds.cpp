@@ -48,7 +48,7 @@ unsigned16 Leds::XYZ(Coord3D pixel) {
 }
 
 // maps the virtual led to the physical led(s) and assign a color to it
-void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
+void Leds::setPixelColor(unsigned16 indexV, CRGB color) {
   if (indexV < mappingTable.size()) {
     if (mappingTable[indexV].mapType == m_colorPal) mappingTable[indexV].mapType = m_color;
     switch (mappingTable[indexV].mapType) {
@@ -60,14 +60,12 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
       }
       case m_onePixel: {
         uint16_t indexP = mappingTable[indexV].indexP;
-        fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount):color;
-        fixture->pixelsToBlend[indexP] = true; //overlapping effects will blend
+        fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], fixture->globalBlend):color;
         break; }
       case m_morePixels:
         if (mappingTable[indexV].indexes < mappingTableIndexes.size())
           for (forUnsigned16 indexP: mappingTableIndexes[mappingTable[indexV].indexes]) {
-            fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount): color;
-            fixture->pixelsToBlend[indexP] = true; //overlapping effects will blend
+            fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], fixture->globalBlend): color;
           }
         // else
         //   ppf("dev setPixelColor2 i:%d m:%d s:%d\n", indexV, mappingTable[indexV].indexes, mappingTableIndexes.size());
@@ -76,14 +74,13 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount) {
   }
   else if (indexV < NUM_LEDS_Max) { //no projection
     uint16_t indexP = (projectionNr == p_Random)?random(fixture->nrOfLeds):indexV;
-    fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount): color;
-    fixture->pixelsToBlend[indexP] = true; //overlapping effects will blend
+    fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], fixture->globalBlend): color;
   }
   else if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
     ppf(" dev sPC V:%d >= %d", indexV, NUM_LEDS_Max);
 }
 
-void Leds::setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri, unsigned8 blendAmount) {
+void Leds::setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri) {
   if (indexV < mappingTable.size()) {
     if (mappingTable[indexV].mapType == m_color) mappingTable[indexV].mapType = m_colorPal;
     switch (mappingTable[indexV].mapType) {
@@ -92,14 +89,13 @@ void Leds::setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri,
         mappingTable[indexV].palBri = palBri >> 2; // 8 bits to 6 bits
         break;
       default:
-        setPixelColor(indexV, ColorFromPalette(palette, palIndex, palBri), blendAmount);
+        setPixelColor(indexV, ColorFromPalette(palette, palIndex, palBri));
         break;
     }
   }
   else if (indexV < NUM_LEDS_Max) {//no projection
     uint16_t indexP = (projectionNr == p_Random)?random(fixture->nrOfLeds):indexV;
-    fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(ColorFromPalette(palette, palIndex, palBri), fixture->ledsP[indexP], blendAmount==UINT8_MAX?fixture->globalBlend:blendAmount): ColorFromPalette(palette, palIndex, palBri);
-    fixture->pixelsToBlend[indexP] = true; //overlapping effects will blend
+    fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(ColorFromPalette(palette, palIndex, palBri), fixture->ledsP[indexP], fixture->globalBlend): ColorFromPalette(palette, palIndex, palBri);
   }
   else if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
     ppf(" dev sPC V:%d >= %d", indexV, NUM_LEDS_Max);
@@ -137,17 +133,17 @@ void Leds::fadeToBlackBy(unsigned8 fadeBy) {
     for (uint16_t index = 0; index < mappingTable.size(); index++) {
       CRGB color = getPixelColor(index);
       color.nscale8(255-fadeBy);
-      setPixelColor(index, color, fixture->globalBlend);
+      setPixelColor(index, color);
     }
   }
 }
 
-void Leds::fill_solid(const struct CRGB& color, bool noBlend) {
+void Leds::fill_solid(const struct CRGB& color) {
   if (projectionNr == p_None || projectionNr == p_Random || (fixture->listOfLeds.size() == 1)) {
     fastled_fill_solid(fixture->ledsP, fixture->nrOfLeds, color);
   } else {
     for (uint16_t index = 0; index < mappingTable.size(); index++)
-      setPixelColor(index, color, noBlend?0:fixture->globalBlend); //noBlend: no blending of old color
+      setPixelColor(index, color);
   }
 }
 
@@ -161,7 +157,7 @@ void Leds::fill_rainbow(unsigned8 initialhue, unsigned8 deltahue) {
     hsv.sat = 240;
 
     for (uint16_t index = 0; index < mappingTable.size(); index++) {
-      setPixelColor(index, hsv, fixture->globalBlend); //noBlend: no blending of old color
+      setPixelColor(index, hsv);
       hsv.hue += deltahue;
     }
   }

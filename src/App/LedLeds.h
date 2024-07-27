@@ -292,9 +292,10 @@ public:
     ppf("Leds destructor\n");
     fadeToBlackBy();
     doMap = true; // so loop is not running while deleting
-    for (PhysMap &map:mappingTable) {
-      mappingTableIndexes.clear();
+    for (std::vector<uint16_t> mappingTableIndex: mappingTableIndexes) {
+      mappingTableIndex.clear();
     }
+    mappingTableIndexes.clear();
     mappingTable.clear();
   }
 
@@ -340,12 +341,12 @@ public:
 
 
   // maps the virtual led to the physical led(s) and assign a color to it
-  void setPixelColor(unsigned16 indexV, CRGB color, unsigned8 blendAmount = UINT8_MAX);
-  void setPixelColor(Coord3D pixel, CRGB color, unsigned8 blendAmount = UINT8_MAX) {setPixelColor(XYZ(pixel), color, blendAmount);}
+  void setPixelColor(unsigned16 indexV, CRGB color);
+  void setPixelColor(Coord3D pixel, CRGB color) {setPixelColor(XYZ(pixel), color);}
 
   // temp methods until all effects have been converted to Palette / 2 byte mapping mode
-  void setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri = 255, unsigned8 blendAmount = UINT8_MAX);
-  void setPixelColorPal(Coord3D pixel, uint8_t palIndex, uint8_t palBri = 255, unsigned8 blendAmount = UINT8_MAX) {setPixelColorPal(XYZ(pixel), palIndex, palBri, blendAmount);}
+  void setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri = 255);
+  void setPixelColorPal(Coord3D pixel, uint8_t palIndex, uint8_t palBri = 255) {setPixelColorPal(XYZ(pixel), palIndex, palBri);}
 
   CRGB getPixelColor(unsigned16 indexV);
   CRGB getPixelColor(Coord3D pixel) {return getPixelColor(XYZ(pixel));}
@@ -368,7 +369,7 @@ public:
   }
 
   void fadeToBlackBy(unsigned8 fadeBy = 255);
-  void fill_solid(const struct CRGB& color, bool noBlend = false);
+  void fill_solid(const struct CRGB& color);
   void fill_rainbow(unsigned8 initialhue, unsigned8 deltahue);
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)

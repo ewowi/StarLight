@@ -445,10 +445,11 @@ public:
     //set new frame
     if (sys->now - frameMillis >= 1000.0/fps) {
 
-      //reset pixelsToBlend
+      //reset pixelsToBlend if multiple leds effects
       // ppf(" %d-%d", fixture.pixelsToBlend.size(), fixture.nrOfLeds);
-      for (uint16_t i=0; i < fixture.pixelsToBlend.size(); i++)
-        fixture.pixelsToBlend[i] = false;
+      if (fixture.listOfLeds.size())
+        for (uint16_t indexP=0; indexP < fixture.pixelsToBlend.size(); indexP++)
+          fixture.pixelsToBlend[indexP] = false;
 
       frameMillis = sys->now;
 
@@ -468,6 +469,14 @@ public:
           mdl->getValueRowNr = UINT8_MAX;
           // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
           //   leds->fadeToBlackBy(50);
+
+          //loop over mapped pixels and set pixelsToBlend to true
+          if (fixture.listOfLeds.size())
+            for (std::vector<uint16_t> mappingTableIndex: leds->mappingTableIndexes) {
+              for (uint16_t indexP: mappingTableIndex)
+                fixture.pixelsToBlend[indexP] = true;
+            }
+
         }
       }
 

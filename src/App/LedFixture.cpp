@@ -28,14 +28,15 @@ void Fixture::projectAndMap() {
     stackUnsigned8 rowNr = 0;
     for (Leds *leds: listOfLeds) {
       if (leds->doMap) {
-        leds->fill_solid(CRGB::Black, true); //no blend
+        leds->fill_solid(CRGB::Black);
 
         ppf("projectAndMap clear leds[%d] fx:%d pro:%d\n", rowNr, leds->fx, leds->projectionNr);
         leds->size = Coord3D{0,0,0};
         //vectors really gone now?
-        for (PhysMap &map:leds->mappingTable) {
-          leds->mappingTableIndexes.clear();
+        for (std::vector<uint16_t> mappingTableIndex: leds->mappingTableIndexes) {
+          mappingTableIndex.clear();
         }
+        leds->mappingTableIndexes.clear();
         leds->mappingTable.clear();
         // leds->effectData.reset(); //do not reset as want to save settings.
       }
