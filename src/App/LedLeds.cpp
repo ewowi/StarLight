@@ -53,9 +53,9 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color) {
     if (mappingTable[indexV].mapType == m_colorPal) mappingTable[indexV].mapType = m_color;
     switch (mappingTable[indexV].mapType) {
       case m_color:{
-        mappingTable[indexV].r = color.r >> 2; // 8 to 6 bits, 64 values
-        mappingTable[indexV].g = color.g >> 3; // 8 to 5 bits, 32 values
-        mappingTable[indexV].b = min(color.b + 15, 255) >> 5; // 8 to 3 bits, 8 values
+        mappingTable[indexV].rgb14 = ((min(color.r + 3, 255) >> 3) << 9) + 
+                                     ((min(color.g + 3, 255) >> 3) << 4) + 
+                                      (min(color.b + 7, 255) >> 4);
         break;
       }
       case m_onePixel: {
@@ -101,6 +101,10 @@ void Leds::setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri)
     ppf(" dev sPC V:%d >= %d", indexV, NUM_LEDS_Max);
 }
 
+void Leds::blendPixelColor(unsigned16 indexV, CRGB color, uint8_t blendAmount) {
+  setPixelColor(indexV, blend(color, getPixelColor(indexV), blendAmount));
+}
+
 CRGB Leds::getPixelColor(unsigned16 indexV) {
   if (indexV < mappingTable.size()) {
     switch (mappingTable[indexV].mapType) {
@@ -111,7 +115,9 @@ CRGB Leds::getPixelColor(unsigned16 indexV) {
         return fixture->ledsP[mappingTableIndexes[mappingTable[indexV].indexes][0]];
         break;
       case m_color:
-        return CRGB(mappingTable[indexV].r << 2, mappingTable[indexV].g << 3, mappingTable[indexV].b << 5);
+        return CRGB((mappingTable[indexV].rgb14 >> 9) << 3, 
+                    (mappingTable[indexV].rgb14 >> 4) << 3, 
+                     mappingTable[indexV].rgb14       << 4);
         break;
       default: // case m_colorPal:
         return ColorFromPalette(palette, mappingTable[indexV].palIndex, mappingTable[indexV].palBri << 2);
