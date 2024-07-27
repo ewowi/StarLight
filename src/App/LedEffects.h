@@ -1481,6 +1481,7 @@ class GameOfLife: public Effect {
     bool disablePause = leds.effectData.read<bool>();
     bool colorByAge   = leds.effectData.read<bool>();
     bool infinite     = leds.effectData.read<bool>();
+    uint8_t blur      = leds.effectData.read<uint8_t>();
 
     // Effect Variables
     const uint16_t dataSize = ((leds.size.x * leds.size.y * leds.size.z + 7) / 8);
@@ -1528,7 +1529,6 @@ class GameOfLife: public Effect {
       return;
     }
 
-    byte blur = leds.fixture->globalBlend; //ewowi: should be managed in sPC
     int fadedBackground = 0;
     if (blur > 220 && !colorByAge) { // Keep faded background if blur > 220
       fadedBackground = bgColor.r + bgColor.g + bgColor.b + 20 + (blur-220);
@@ -1548,12 +1548,12 @@ class GameOfLife: public Effect {
         CRGB cellColor = leds.getPixelColor(cLoc);
         bool recolor = (paletteChanged || (alive && *generation == 1 && cellColor == bgColor && !random(16))); // Palette change or Initial Color
         // Redraw alive if palette changed, spawn initial colors randomly, age alive cells while paused
-        if      (alive && recolor) leds.setPixelColor(cLoc, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, random8())); //ewowi: check blend
-        else if (alive && colorByAge && !*generation) leds.setPixelColor(cLoc, CRGB::Red);    // Age alive cells while paused ewowi: check blend (was 248)
+        if      (alive && recolor) leds.setPixelColor(cLoc, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, random8()));
+        else if (alive && colorByAge && !*generation) leds.blendPixelColor(cLoc, CRGB::Red, 248); // Age alive cells while paused
         // Redraw dead if palette changed, blur paused game, fade on newgame
-        if      (!alive && (paletteChanged || disablePause)) leds.setPixelColor(cLoc, bgColor); // Remove blended dead cells ewowi: check blend
-        else if (!alive && blurDead)         leds.setPixelColor(cLoc, bgColor);              // Blend dead cells while paused ewowi: check blend (was blur)
-        else if (!alive && *generation == 1) leds.setPixelColor(cLoc, bgColor);               // Fade dead on new game ewowi: check blend (was 248)
+        if      (!alive && (paletteChanged || disablePause)) leds.setPixelColor(cLoc, bgColor);   // Remove blended dead cells
+        else if (!alive && blurDead)         leds.blendPixelColor(cLoc, bgColor, blur);           // Blend dead cells while paused
+        else if (!alive && *generation == 1) leds.blendPixelColor(cLoc, bgColor, 248);            // Fade dead on new game
       }
     }
 
@@ -1624,7 +1624,7 @@ class GameOfLife: public Effect {
       if (cellValue && !surviveNumbers[neighbors]) {
         // Loneliness or Overpopulation
         setBitValue(futureCells, cIndex, false);
-        leds.setPixelColor(cPos, bgColor); //ewowi: check blend (was blur)
+        leds.blendPixelColor(cPos, bgColor, blur);
       }
       else if (!cellValue && birthNumbers[neighbors]){
         // Reproduction
@@ -1632,7 +1632,7 @@ class GameOfLife: public Effect {
         CRGB randomParentColor = color; // Last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8(colorCount)];
         if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8());
-        leds.setPixelColor(cPos, colorByAge ? CRGB::Green : randomParentColor);  //ewowi: check blend
+        leds.setPixelColor(cPos, colorByAge ? CRGB::Green : randomParentColor);
 
       }
       else {
@@ -1640,11 +1640,11 @@ class GameOfLife: public Effect {
         if (!cellValue) {
           if (fadedBackground) {
               CRGB val = leds.getPixelColor(cPos);
-              if (fadedBackground < val.r + val.g + val.b) leds.setPixelColor(cPos, bgColor); //ewowi: check blend (was blur)
+              if (fadedBackground < val.r + val.g + val.b) leds.blendPixelColor(cPos, bgColor, blur);
           }
-          else leds.setPixelColor(cPos, bgColor); //ewowi: check blend (was blur)
+          else leds.blendPixelColor(cPos, bgColor, blur);
         }
-        if (cellValue && colorByAge) leds.setPixelColor(cPos, CRGB::Red); //ewowi: check blend (was 248)
+        if (cellValue && colorByAge) leds.blendPixelColor(cPos, CRGB::Red, 248);
       }
     }
 
@@ -1703,6 +1703,7 @@ class GameOfLife: public Effect {
     ui->initCheckBox(parentVar, "Disable Pause",         leds.effectData.write<bool>(false));
     ui->initCheckBox(parentVar, "Color By Age",          leds.effectData.write<bool>(false));
     ui->initCheckBox(parentVar, "Infinite",              leds.effectData.write<bool>(false));
+    ui->initSlider  (parentVar, "Blur",                  leds.effectData.write<uint8_t>(128), 0, 255);
   }
 }; //GameOfLife
 
