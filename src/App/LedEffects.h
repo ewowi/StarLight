@@ -1461,7 +1461,7 @@ class GameOfLife: public Effect {
           int nx = x + pattern[i][0];
           int ny = y + pattern[i][1];
           setBitValue(futureCells, leds.XYZUnprojected({nx, ny, z}), true);
-          leds.setPixelColor({nx, ny, z}, colorByAge ? CRGB::Green : color); //ewowi check blend
+          leds.setPixelColor({nx, ny, z}, colorByAge ? CRGB::Green : color);
         }
         return;
       }
@@ -1841,7 +1841,6 @@ class RubiksCube: public Effect {
       }
 
       void drawCube(Leds &leds) {
-        int blendVal = 0; // remove later
         int sizeX = max(leds.size.x-1, 1);
         int sizeY = max(leds.size.y-1, 1);
         int sizeZ = max(leds.size.z-1, 1);
@@ -1880,12 +1879,12 @@ class RubiksCube: public Effect {
           int distZ = min(z, sizeZ - z);
           int dist  = min(distX, min(distY, distZ));
 
-          if      (dist == distZ && z < halfZ)  leds.setPixelColor(led, COLOR_MAP[front[normalizedY][normalizedX]]); //ewowi: check no blend (was blendVal)
-          else if (dist == distX && x < halfX)  leds.setPixelColor(led, COLOR_MAP[left[normalizedY][SIZE - 1 - normalizedZ]]); //ewowi: check blend (was blendVal
-          else if (dist == distY && y < halfY)  leds.setPixelColor(led, COLOR_MAP[top[SIZE - 1 - normalizedZ][normalizedX]]); //ewowi: check blend (was blendVal
-          else if (dist == distZ && z >= halfZ) leds.setPixelColor(led, COLOR_MAP[back[normalizedY][SIZE - 1 - normalizedX]]); //ewowi: check blend (was blendVal
-          else if (dist == distX && x >= halfX) leds.setPixelColor(led, COLOR_MAP[right[normalizedY][normalizedZ]]); //ewowi: check blend (was blendVal
-          else if (dist == distY && y >= halfY) leds.setPixelColor(led, COLOR_MAP[bottom[normalizedZ][normalizedX]]); //ewowi: check blend (was blendVal
+          if      (dist == distZ && z < halfZ)  leds.setPixelColor(led, COLOR_MAP[front[normalizedY][normalizedX]]);
+          else if (dist == distX && x < halfX)  leds.setPixelColor(led, COLOR_MAP[left[normalizedY][SIZE - 1 - normalizedZ]]);
+          else if (dist == distY && y < halfY)  leds.setPixelColor(led, COLOR_MAP[top[SIZE - 1 - normalizedZ][normalizedX]]);
+          else if (dist == distZ && z >= halfZ) leds.setPixelColor(led, COLOR_MAP[back[normalizedY][SIZE - 1 - normalizedX]]);
+          else if (dist == distX && x >= halfX) leds.setPixelColor(led, COLOR_MAP[right[normalizedY][normalizedZ]]);
+          else if (dist == distY && y >= halfY) leds.setPixelColor(led, COLOR_MAP[bottom[normalizedZ][normalizedX]]);
         }
       }
   };
@@ -2032,11 +2031,11 @@ class ParticleTest: public Effect {
 
       if (newPos == prevPos) return; // Skip if no change in position
 
-      leds.setPixelColor(prevPos, CRGB::Black); // Clear previous position ewowi: check blend
+      leds.setPixelColor(prevPos, CRGB::Black); // Clear previous position
 
       if (leds.isMapped(leds.XYZUnprojected(newPos)) && !newPos.isOutofBounds(leds.size) && leds.getPixelColor(newPos) == CRGB::Black) {
         if (debugPrint) ppf("     New Pos was mapped and particle placed\n");
-        leds.setPixelColor(newPos, color); // Set new position ewowi: check blend
+        leds.setPixelColor(newPos, color); // Set new position
         return;
       }
       
@@ -2098,7 +2097,7 @@ class ParticleTest: public Effect {
         if (debugPrint) ppf("     New Pos: %f, %f, %f Velo: %f, %f, %f\n", x, y, z, vx, vy, vz);
       }
 
-      leds.setPixelColor(toCoord3DRounded(), color); // Set new position ewowi: check blend
+      leds.setPixelColor(toCoord3DRounded(), color);
     }
   };
 
@@ -2133,8 +2132,8 @@ class ParticleTest: public Effect {
         // create a 2 pixel thick barrier around middle y value with gaps
         for (int x = 0; x < leds.size.x; x++) for (int z = 0; z < leds.size.z; z++) {
           if (!random8(5)) continue;
-          leds.setPixelColor({x, leds.size.y/2, z}, CRGB::White); //ewowi: check blend
-          leds.setPixelColor({x, leds.size.y/2 - 1, z}, CRGB::White);//ewowi: check blend
+          leds.setPixelColor({x, leds.size.y/2, z}, CRGB::White);
+          leds.setPixelColor({x, leds.size.y/2 - 1, z}, CRGB::White);
         }
       }
 
@@ -2157,7 +2156,7 @@ class ParticleTest: public Effect {
 
         particles[index].color = ColorFromPalette(leds.palette, random8());
         Coord3D initPos = particles[index].toCoord3DRounded();
-        leds.setPixelColor(initPos, particles[index].color); //ewowi: check blend
+        leds.setPixelColor(initPos, particles[index].color);
       }
       ppf("Particles Set Up\n");
       *step = sys->now;
@@ -2709,7 +2708,7 @@ class Byte2TestEffect: public Effect {
       // leds.fill_solid(CRGB::Black); //ewowi: this should work now...
       for (int x = 0; x < leds.size.x; x++) {
         for (int y = 0; y < leds.size.y; y++) {
-          leds.setPixelColor(leds.XY(x, y), CRGB::Black); //ewowi check blend
+          leds.setPixelColor(leds.XY(x, y), CRGB::Black);
         }
       }
       *setup = false;
@@ -2733,10 +2732,10 @@ class Byte2TestEffect: public Effect {
     byte g = random8();
     byte b = random8();
     for (int x = 0; x < leds.size.x; x++) {
-      if      (drawMethod == 0) leds.setPixelColor(leds.XY(x, 0), ColorFromPalette(leds.palette, r)); //ewowi check blend
-      else if (drawMethod == 1) leds.setPixelColorPal(leds.XY(x, 0), r, 255); //ewowi check blend
-      else if (drawMethod == 2) leds.setPixelColor(leds.XY(x, 0), CRGB(r, g, b)); //ewowi check blend
-      else if (drawMethod == 3) leds.setPixelColor(leds.XY(x, 0), CRGB(color.x, color.y, color.z)); //ewowi check blend
+      if      (drawMethod == 0) leds.setPixelColor(leds.XY(x, 0), ColorFromPalette(leds.palette, r));
+      else if (drawMethod == 1) leds.setPixelColorPal(leds.XY(x, 0), r, 255);
+      else if (drawMethod == 2) leds.setPixelColor(leds.XY(x, 0), CRGB(r, g, b));
+      else if (drawMethod == 3) leds.setPixelColor(leds.XY(x, 0), CRGB(color.x, color.y, color.z));
     }
 
     if (debugPrint) {
@@ -2801,7 +2800,7 @@ class Byte2TestEffect2: public Effect {
       // leds.fill_solid(CRGB::Black); //ewowi: this should work now...
       for (int x = 0; x < leds.size.x; x++) {
         for (int y = 0; y < leds.size.y; y++) {
-          leds.setPixelColor(leds.XY(x, y), CRGB::Black); //ewowi check blend
+          leds.setPixelColor(leds.XY(x, y), CRGB::Black);
         }
       }
       *setup = false;
@@ -2871,8 +2870,8 @@ class Byte2TestEffect2: public Effect {
     int half = leds.size.x/2;
     for (int x = 0; x < half; x++) {
       for (int y = 0; y < leds.size.y; y++) {
-        leds.setPixelColor(leds.XY(x, y), color); //ewowi check blend
-        leds.setPixelColor(leds.XY(x+half, y), rColor); //ewowi check blend
+        leds.setPixelColor(leds.XY(x, y), color);
+        leds.setPixelColor(leds.XY(x+half, y), rColor);
       }
     }
 
