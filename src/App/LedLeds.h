@@ -197,11 +197,9 @@ class Leds; //forward
 
 struct PhysMap {
   union {
-    struct {                 //condensed rgb, keep in GBR order!!! exceptional cases when no palette. e.g. solid?
-      uint8_t g:5;           //32
-      uint8_t b:4;           //16
-      uint8_t r:5;           //32
-      byte mapType:2;         //2 bits (4)
+    struct {                 //condensed rgb
+      uint16_t rgb14: 14;    //14 bits (554 RGB)
+      byte mapType:2;        //2 bits (4)
     }; //16 bits
     uint16_t indexP: 14;   //16384 one physical pixel (type==1) index to ledsP array
     uint16_t indexes:14;  //16384 multiple physical pixels (type==2) index in std::vector<std::vector<unsigned16>> mappingTableIndexes;
@@ -213,9 +211,7 @@ struct PhysMap {
 
   PhysMap() {
     mapType = m_color; // the default until indexP is added
-    r = 0;
-    g = 0;
-    b = 0;
+    rgb14 = 0;
   }
 
   void addIndexP(Leds &leds, uint16_t indexP);
