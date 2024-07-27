@@ -348,6 +348,9 @@ public:
   void setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri = 255);
   void setPixelColorPal(Coord3D pixel, uint8_t palIndex, uint8_t palBri = 255) {setPixelColorPal(XYZ(pixel), palIndex, palBri);}
 
+  void blendPixelColor(unsigned16 indexV, CRGB color, uint8_t blendAmount);
+  void blendPixelColor(Coord3D pixel, CRGB color, uint8_t blendAmount) {blendPixelColor(XYZ(pixel), color, blendAmount);}
+
   CRGB getPixelColor(unsigned16 indexV);
   CRGB getPixelColor(Coord3D pixel) {return getPixelColor(XYZ(pixel));}
 

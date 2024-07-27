@@ -101,6 +101,10 @@ void Leds::setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri)
     ppf(" dev sPC V:%d >= %d", indexV, NUM_LEDS_Max);
 }
 
+void Leds::blendPixelColor(unsigned16 indexV, CRGB color, uint8_t blendAmount) {
+  setPixelColor(indexV, blend(color, getPixelColor(indexV), blendAmount));
+}
+
 CRGB Leds::getPixelColor(unsigned16 indexV) {
   if (indexV < mappingTable.size()) {
     switch (mappingTable[indexV].mapType) {
