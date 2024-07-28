@@ -896,7 +896,7 @@ class DJLight: public Effect {
   const char * tags() {return "♫💡";}
 
   void setup(Leds &leds) {
-    leds.fill_solid(CRGB::Black, true); //no blend
+    leds.fill_solid(CRGB::Black);
   }
 
   void loop(Leds &leds) {
@@ -1461,7 +1461,7 @@ class GameOfLife: public Effect {
           int nx = x + pattern[i][0];
           int ny = y + pattern[i][1];
           setBitValue(futureCells, leds.XYZUnprojected({nx, ny, z}), true);
-          leds.setPixelColor({nx, ny, z}, colorByAge ? CRGB::Green : color, 0);
+          leds.setPixelColor({nx, ny, z}, colorByAge ? CRGB::Green : color);
         }
         return;
       }
@@ -1481,6 +1481,7 @@ class GameOfLife: public Effect {
     bool disablePause = leds.effectData.read<bool>();
     bool colorByAge   = leds.effectData.read<bool>();
     bool infinite     = leds.effectData.read<bool>();
+    uint8_t blur      = leds.effectData.read<uint8_t>();
 
     // Effect Variables
     const uint16_t dataSize = ((leds.size.x * leds.size.y * leds.size.z + 7) / 8);
@@ -1514,7 +1515,7 @@ class GameOfLife: public Effect {
         if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZUnprojected({x,y,z}))) continue;
         if (random8(100) < lifeChance) {
           setBitValue(cells, leds.XYZUnprojected({x,y,z}), true);
-          leds.setPixelColor({x,y,z}, bgColor, 0); // Color set in redraw loop
+          leds.setPixelColor({x,y,z}, bgColor); // Color set in redraw loop
         }
       }
       memcpy(futureCells, cells, dataSize);
@@ -1528,7 +1529,6 @@ class GameOfLife: public Effect {
       return;
     }
 
-    byte blur = leds.fixture->globalBlend;
     int fadedBackground = 0;
     if (blur > 220 && !colorByAge) { // Keep faded background if blur > 220
       fadedBackground = bgColor.r + bgColor.g + bgColor.b + 20 + (blur-220);
@@ -1548,12 +1548,12 @@ class GameOfLife: public Effect {
         CRGB cellColor = leds.getPixelColor(cLoc);
         bool recolor = (paletteChanged || (alive && *generation == 1 && cellColor == bgColor && !random(16))); // Palette change or Initial Color
         // Redraw alive if palette changed, spawn initial colors randomly, age alive cells while paused
-        if      (alive && recolor) leds.setPixelColor(cLoc, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, random8()), 0);
-        else if (alive && colorByAge && !*generation) leds.setPixelColor(cLoc, CRGB::Red, 248);    // Age alive cells while paused
+        if      (alive && recolor) leds.setPixelColor(cLoc, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, random8()));
+        else if (alive && colorByAge && !*generation) leds.blendPixelColor(cLoc, CRGB::Red, 248); // Age alive cells while paused
         // Redraw dead if palette changed, blur paused game, fade on newgame
-        if      (!alive && (paletteChanged || disablePause)) leds.setPixelColor(cLoc, bgColor, 0); // Remove blended dead cells
-        else if (!alive && blurDead)         leds.setPixelColor(cLoc, bgColor, blur);              // Blend dead cells while paused
-        else if (!alive && *generation == 1) leds.setPixelColor(cLoc, bgColor, 248);               // Fade dead on new game
+        if      (!alive && (paletteChanged || disablePause)) leds.setPixelColor(cLoc, bgColor);   // Remove blended dead cells
+        else if (!alive && blurDead)         leds.blendPixelColor(cLoc, bgColor, blur);           // Blend dead cells while paused
+        else if (!alive && *generation == 1) leds.blendPixelColor(cLoc, bgColor, 248);            // Fade dead on new game
       }
     }
 
@@ -1624,7 +1624,7 @@ class GameOfLife: public Effect {
       if (cellValue && !surviveNumbers[neighbors]) {
         // Loneliness or Overpopulation
         setBitValue(futureCells, cIndex, false);
-        leds.setPixelColor(cPos, bgColor, blur);
+        leds.blendPixelColor(cPos, bgColor, blur);
       }
       else if (!cellValue && birthNumbers[neighbors]){
         // Reproduction
@@ -1632,7 +1632,7 @@ class GameOfLife: public Effect {
         CRGB randomParentColor = color; // Last seen color, overwrite if colors are found
         if (colorCount) randomParentColor = nColors[random8(colorCount)];
         if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8());
-        leds.setPixelColor(cPos, colorByAge ? CRGB::Green : randomParentColor, 0);
+        leds.setPixelColor(cPos, colorByAge ? CRGB::Green : randomParentColor);
 
       }
       else {
@@ -1640,11 +1640,11 @@ class GameOfLife: public Effect {
         if (!cellValue) {
           if (fadedBackground) {
               CRGB val = leds.getPixelColor(cPos);
-              if (fadedBackground < val.r + val.g + val.b) leds.setPixelColor(cPos, bgColor, blur);
+              if (fadedBackground < val.r + val.g + val.b) leds.blendPixelColor(cPos, bgColor, blur);
           }
-          else leds.setPixelColor(cPos, bgColor, blur);
+          else leds.blendPixelColor(cPos, bgColor, blur);
         }
-        if (cellValue && colorByAge) leds.setPixelColor(cPos, CRGB::Red, 248);
+        if (cellValue && colorByAge) leds.blendPixelColor(cPos, CRGB::Red, 248);
       }
     }
 
@@ -1703,6 +1703,7 @@ class GameOfLife: public Effect {
     ui->initCheckBox(parentVar, "Disable Pause",         leds.effectData.write<bool>(false));
     ui->initCheckBox(parentVar, "Color By Age",          leds.effectData.write<bool>(false));
     ui->initCheckBox(parentVar, "Infinite",              leds.effectData.write<bool>(false));
+    ui->initSlider  (parentVar, "Blur",                  leds.effectData.write<uint8_t>(128), 0, 255);
   }
 }; //GameOfLife
 
@@ -1840,7 +1841,6 @@ class RubiksCube: public Effect {
       }
 
       void drawCube(Leds &leds) {
-        int blendVal = 0; // remove later
         int sizeX = max(leds.size.x-1, 1);
         int sizeY = max(leds.size.y-1, 1);
         int sizeZ = max(leds.size.z-1, 1);
@@ -1879,12 +1879,12 @@ class RubiksCube: public Effect {
           int distZ = min(z, sizeZ - z);
           int dist  = min(distX, min(distY, distZ));
 
-          if      (dist == distZ && z < halfZ)  leds.setPixelColor(led, COLOR_MAP[front[normalizedY][normalizedX]], blendVal);
-          else if (dist == distX && x < halfX)  leds.setPixelColor(led, COLOR_MAP[left[normalizedY][SIZE - 1 - normalizedZ]], blendVal);
-          else if (dist == distY && y < halfY)  leds.setPixelColor(led, COLOR_MAP[top[SIZE - 1 - normalizedZ][normalizedX]], blendVal);
-          else if (dist == distZ && z >= halfZ) leds.setPixelColor(led, COLOR_MAP[back[normalizedY][SIZE - 1 - normalizedX]], blendVal);
-          else if (dist == distX && x >= halfX) leds.setPixelColor(led, COLOR_MAP[right[normalizedY][normalizedZ]], blendVal);
-          else if (dist == distY && y >= halfY) leds.setPixelColor(led, COLOR_MAP[bottom[normalizedZ][normalizedX]], blendVal);
+          if      (dist == distZ && z < halfZ)  leds.setPixelColor(led, COLOR_MAP[front[normalizedY][normalizedX]]);
+          else if (dist == distX && x < halfX)  leds.setPixelColor(led, COLOR_MAP[left[normalizedY][SIZE - 1 - normalizedZ]]);
+          else if (dist == distY && y < halfY)  leds.setPixelColor(led, COLOR_MAP[top[SIZE - 1 - normalizedZ][normalizedX]]);
+          else if (dist == distZ && z >= halfZ) leds.setPixelColor(led, COLOR_MAP[back[normalizedY][SIZE - 1 - normalizedX]]);
+          else if (dist == distX && x >= halfX) leds.setPixelColor(led, COLOR_MAP[right[normalizedY][normalizedZ]]);
+          else if (dist == distY && y >= halfY) leds.setPixelColor(led, COLOR_MAP[bottom[normalizedZ][normalizedX]]);
         }
       }
   };
@@ -2031,11 +2031,11 @@ class ParticleTest: public Effect {
 
       if (newPos == prevPos) return; // Skip if no change in position
 
-      leds.setPixelColor(prevPos, CRGB::Black, 0); // Clear previous position
+      leds.setPixelColor(prevPos, CRGB::Black); // Clear previous position
 
       if (leds.isMapped(leds.XYZUnprojected(newPos)) && !newPos.isOutofBounds(leds.size) && leds.getPixelColor(newPos) == CRGB::Black) {
         if (debugPrint) ppf("     New Pos was mapped and particle placed\n");
-        leds.setPixelColor(newPos, color, 0); // Set new position
+        leds.setPixelColor(newPos, color); // Set new position
         return;
       }
       
@@ -2097,7 +2097,7 @@ class ParticleTest: public Effect {
         if (debugPrint) ppf("     New Pos: %f, %f, %f Velo: %f, %f, %f\n", x, y, z, vx, vy, vz);
       }
 
-      leds.setPixelColor(toCoord3DRounded(), color, 0); // Set new position
+      leds.setPixelColor(toCoord3DRounded(), color);
     }
   };
 
@@ -2126,14 +2126,14 @@ class ParticleTest: public Effect {
     if (*setup) {
       ppf("Setting Up Particles\n");
       *setup = false;
-      leds.fill_solid(CRGB::Black, true);
+      leds.fill_solid(CRGB::Black);
 
       if (barriers) {
         // create a 2 pixel thick barrier around middle y value with gaps
         for (int x = 0; x < leds.size.x; x++) for (int z = 0; z < leds.size.z; z++) {
           if (!random8(5)) continue;
-          leds.setPixelColor({x, leds.size.y/2, z}, CRGB::White, 0);
-          leds.setPixelColor({x, leds.size.y/2 - 1, z}, CRGB::White, 0);
+          leds.setPixelColor({x, leds.size.y/2, z}, CRGB::White);
+          leds.setPixelColor({x, leds.size.y/2 - 1, z}, CRGB::White);
         }
       }
 
@@ -2156,7 +2156,7 @@ class ParticleTest: public Effect {
 
         particles[index].color = ColorFromPalette(leds.palette, random8());
         Coord3D initPos = particles[index].toCoord3DRounded();
-        leds.setPixelColor(initPos, particles[index].color, 0);
+        leds.setPixelColor(initPos, particles[index].color);
       }
       ppf("Particles Set Up\n");
       *step = sys->now;
@@ -2544,7 +2544,7 @@ class FunkyPlank: public Effect {
   const char * tags() {return "♫💡💫";}
 
   void setup(Leds &leds) {
-    leds.fill_solid(CRGB::Black, true); //no blend
+    leds.fill_solid(CRGB::Black);
   }
 
   void loop(Leds &leds) {
@@ -2688,3 +2688,229 @@ class PixelMapEffect: public Effect {
     ui->initSlider(parentVar, "z", leds.effectData.write<uint8_t>(0), 0, leds.size.z - 1);
   }
 }; // PixelMap
+
+class Byte2TestEffect: public Effect {
+  const char * name() {return "2ByteTest";}
+  uint8_t dim() {return _2D;}
+  const char * tags() {return "💫";}
+
+  void loop(Leds &leds) {
+    //Binding of controls. Keep before binding of vars and keep in same order as in controls()
+    bool *setup        = leds.effectData.readWrite<bool>();
+    uint8_t speed      = leds.effectData.read<uint8_t>();
+    uint8_t drawMethod = leds.effectData.read<uint8_t>();
+    Coord3D color      = leds.effectData.read<Coord3D>();
+    bool debugPrint    = leds.effectData.read<bool>();
+
+    unsigned long *step = leds.effectData.readWrite<unsigned long>();
+
+    if (*setup) {
+      // leds.fill_solid(CRGB::Black); //ewowi: this should work now...
+      for (int x = 0; x < leds.size.x; x++) {
+        for (int y = 0; y < leds.size.y; y++) {
+          leds.setPixelColor(leds.XY(x, y), CRGB::Black);
+        }
+      }
+      *setup = false;
+    }
+
+    if (!speed || sys->now - *step < 1000 / speed) return;
+
+    //shift down
+    for (int y = leds.size.y - 1; y > 0; y--) {
+      for (int x = 0; x < leds.size.x; x++) {
+        // Blend test
+        // ewowi: haha didn't realize globalBlend was hardcoded here!
+        // CRGB color = blend(leds.getPixelColor(leds.XY(x, y - 1)), leds.getPixelColor(leds.XY(x, y)), leds.fixture->globalBlend);
+        // leds.setPixelColor(leds.XY(x, y), color, 0);
+        leds.setPixelColor(leds.XY(x, y), leds.getPixelColor(leds.XY(x, y - 1)));
+      }
+    }
+
+    //draw new line
+    byte r = random8();
+    byte g = random8();
+    byte b = random8();
+    for (int x = 0; x < leds.size.x; x++) {
+      if      (drawMethod == 0) leds.setPixelColor(leds.XY(x, 0), ColorFromPalette(leds.palette, r));
+      else if (drawMethod == 1) leds.setPixelColorPal(leds.XY(x, 0), r, 255);
+      else if (drawMethod == 2) leds.setPixelColor(leds.XY(x, 0), CRGB(r, g, b));
+      else if (drawMethod == 3) leds.setPixelColor(leds.XY(x, 0), CRGB(color.x, color.y, color.z));
+    }
+
+    if (debugPrint) {
+      int diffR = 0;
+      int diffG = 0;
+      int diffB = 0;
+
+      for (int y = 0; y < leds.size.y; y++) {
+        CRGB colorL = leds.getPixelColor(leds.XY(0, y));
+        CRGB colorR = leds.getPixelColor(leds.XY(leds.size.x - 1, y));
+        diffR += abs(colorL.r - colorR.r);
+        diffG += abs(colorL.g - colorR.g);
+        diffB += abs(colorL.b - colorR.b);
+        ppf("Row %2d:  Left: %3d %3d %3d Right: %3d %3d %3d\n", y, colorL.r, colorL.g, colorL.b, colorR.r, colorR.g, colorR.b);
+      }
+      ppf("--------------------\n");
+
+      ppf("Average Error: %3f %3f %3f\n", (float)diffR / leds.size.y, (float)diffG / leds.size.y, (float)diffB / leds.size.y);
+    }
+
+    *step = sys->now;    
+  }
+  
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    bool *setup = leds.effectData.write<bool>(true);
+    ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(0), 0, 20);
+    ui->initSelect(parentVar, "Method", leds.effectData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+      case onUI: {
+        JsonArray options = ui->setOptions(var);
+        options.add("setPixelColor");
+        options.add("setPixelColorPal");
+        options.add("RandomColor");
+        options.add("SolidColor");
+        return true;
+      }
+      default: return false;
+    }}); 
+    ui->initCoord3D(parentVar, "Solid Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
+    ui->initCheckBox(parentVar, "Debug Print", leds.effectData.write<bool>(false));
+
+  }
+}; // 2ByteTest
+
+class Byte2TestEffect2: public Effect {
+  const char * name() {return "2ByteTest2";}
+  uint8_t dim() {return _2D;}
+  const char * tags() {return "💫";}
+
+  void loop(Leds &leds) {
+    //Binding of controls. Keep before binding of vars and keep in same order as in controls()
+    bool *setup        = leds.effectData.readWrite<bool>();
+    uint8_t speed      = leds.effectData.read<uint8_t>();
+    uint8_t colorMode  = leds.effectData.read<uint8_t>();
+    Coord3D customColor= leds.effectData.read<Coord3D>();
+    uint8_t drawMethod = leds.effectData.read<uint8_t>();
+    bool debugPrint    = leds.effectData.read<bool>();
+
+    unsigned long *step = leds.effectData.readWrite<unsigned long>();
+
+    if (*setup) {
+      // leds.fill_solid(CRGB::Black); //ewowi: this should work now...
+      for (int x = 0; x < leds.size.x; x++) {
+        for (int y = 0; y < leds.size.y; y++) {
+          leds.setPixelColor(leds.XY(x, y), CRGB::Black);
+        }
+      }
+      *setup = false;
+    }
+
+    if (!speed || sys->now - *step < 1000 / speed) return;
+
+    CRGB color;
+
+    if (colorMode == 0) {         // Palette
+      color = ColorFromPalette(leds.palette, random8(), 255);
+    } else if (colorMode == 1) {  // Random
+      color = CRGB(random8(), random8(), random8());
+    } else if (colorMode == 2) {  // Custom
+      color = CRGB(customColor.x, customColor.y, customColor.z);
+    }
+
+    CRGB rColor;
+
+    // Define masks for different bit depths
+    const uint8_t MASK_6BIT = 0xFC; // 6 bits: 1111 1100
+    const uint8_t MASK_5BIT = 0xF8; // 5 bits: 1111 1000
+    const uint8_t MASK_4BIT = 0xF0; // 4 bits: 1111 0000
+    const uint8_t MASK_3BIT = 0xE0; // 3 bits: 1110 0000
+
+    // Apply different draw methods using the masks
+    if (drawMethod == 0) { // 653
+      rColor.r = color.r & MASK_6BIT; // 6 bit
+      rColor.g = color.g & MASK_5BIT; // 5 bit
+      rColor.b = color.b & MASK_3BIT; // 3 bit
+    }
+    else if (drawMethod == 1) { // 653 rounding b
+      rColor.r = color.r & MASK_6BIT; // 6 bit
+      rColor.g = color.g & MASK_5BIT; // 5 bit
+      rColor.b = (min(color.b + 15, 255)) & MASK_3BIT; // 3 bit
+    }
+    else if (drawMethod == 2) { // 554
+      rColor.r = color.r & MASK_5BIT; // 5 bit
+      rColor.g = color.g & MASK_5BIT; // 5 bit
+      rColor.b = color.b & MASK_4BIT; // 4 bit
+    }
+      else if (drawMethod == 3) { // 554 with offset (offset would be added in getPixelColor)
+        rColor.r = (color.r & MASK_5BIT); // 5 bit
+        rColor.g = (color.g & MASK_5BIT); // 5 bit
+        rColor.b = (color.b & MASK_4BIT); // 4 bit
+        if (rColor.r == 248) rColor.r += 6;  else rColor.r += 4; // + offset
+        if (rColor.g == 248) rColor.g += 6;  else rColor.g += 4; // + offset
+        if (rColor.b == 240) rColor.b += 12; else rColor.b += 8; // + offset
+    }
+    else if (drawMethod == 4) { // 554 with rounding
+      rColor.r = (min(color.r + 3, 255)) & MASK_5BIT; // 5 bit
+      rColor.g = (min(color.g + 3, 255)) & MASK_5BIT; // 5 bit
+      rColor.b = (min(color.b + 7, 255)) & MASK_4BIT; // 4 bit
+    }
+    else if (drawMethod == 5) { // 554 custom (random methods)
+      rColor.r = color.r & MASK_5BIT; // 5 bit
+      rColor.g = color.g & MASK_5BIT; // 5 bit
+      rColor.b = color.b & MASK_4BIT; // 4 bit
+      if (rColor.r == 248) rColor.r += 2;
+      if (rColor.g == 248) rColor.g += 2;
+      if (rColor.b == 240) rColor.b += 4;
+      if (rColor.r > 0) rColor.r += 4;
+      if (rColor.g > 0) rColor.g += 4;
+      if (rColor.b > 0) rColor.b += 8;
+    }
+
+    int half = leds.size.x/2;
+    for (int x = 0; x < half; x++) {
+      for (int y = 0; y < leds.size.y; y++) {
+        leds.setPixelColor(leds.XY(x, y), color);
+        leds.setPixelColor(leds.XY(x+half, y), rColor);
+      }
+    }
+
+    if (debugPrint) {
+        ppf("Left: %3d,%3d,%3d Right: %3d,%3d,%3d Difference: %d, %d, %d\n", color.r, color.g, color.b, rColor.r, rColor.g, rColor.b, rColor.r - color.r, rColor.g - color.g, rColor.b - color.b);
+    }
+
+    *step = sys->now;
+  }
+  
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    bool *setup = leds.effectData.write<bool>(true);
+    ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(0), 0, 20);
+    ui->initSelect(parentVar, "Color", leds.effectData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+      case onUI: {
+        JsonArray options = ui->setOptions(var);
+        options.add("Palette");
+        options.add("Random");
+        options.add("Custom");
+        return true;
+      }
+      default: return false;
+    }}); 
+    ui->initCoord3D(parentVar, "Custom Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
+    ui->initSelect(parentVar, "Method", leds.effectData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+      case onUI: {
+        JsonArray options = ui->setOptions(var);
+        options.add("653");
+        options.add("653 round b");
+        options.add("554");
+        options.add("554 offset");
+        options.add("554 rounding");
+        options.add("554 custom");
+        return true;
+      }
+      default: return false;
+    }}); 
+    ui->initCheckBox(parentVar, "Debug Print", leds.effectData.write<bool>(1));
+
+  }
+}; // 2ByteTest2

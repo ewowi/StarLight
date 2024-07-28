@@ -28,21 +28,15 @@ void Fixture::projectAndMap() {
     stackUnsigned8 rowNr = 0;
     for (Leds *leds: listOfLeds) {
       if (leds->doMap) {
-        leds->fill_solid(CRGB::Black, true); //no blend
+        leds->fill_solid(CRGB::Black);
 
         ppf("projectAndMap clear leds[%d] fx:%d pro:%d\n", rowNr, leds->fx, leds->projectionNr);
         leds->size = Coord3D{0,0,0};
         //vectors really gone now?
-        for (PhysMap &map:leds->mappingTable) {
-          if (leds->checkPalColorEffect()) { // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
-            leds->mappingTableIndexes.clear();
-          }
-          else
-            if (map.getMapType() == m_morePixels) {
-              map.indexes->clear();
-              delete map.indexes;
-            }
+        for (std::vector<uint16_t> mappingTableIndex: leds->mappingTableIndexes) {
+          mappingTableIndex.clear();
         }
+        leds->mappingTableIndexes.clear();
         leds->mappingTable.clear();
         // leds->effectData.reset(); //do not reset as want to save settings.
       }
@@ -142,14 +136,11 @@ void Fixture::projectAndMap() {
                     if (indexV >= leds->mappingTable.size()) {
                       for (size_t i = leds->mappingTable.size(); i <= indexV; i++) {
                         // ppf("mapping %d,%d,%d add physMap before %d %d\n", pixel.y, pixel.y, pixel.z, indexV, leds->mappingTable.size());
-                        leds->mappingTable.push_back(PhysMap(leds->checkPalColorEffect())); // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
+                        leds->mappingTable.push_back(PhysMap());
                       }
                     }
 
-                    if (leds->checkPalColorEffect()) // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
-                      leds->mappingTable[indexV].addIndexP2(*leds, indexP);
-                    else
-                      leds->mappingTable[indexV].addIndexP(indexP);
+                    leds->mappingTable[indexV].addIndexP(*leds, indexP);
                     // ppf("mapping b:%d t:%d V:%d\n", indexV, indexP, leds->mappingTable.size());
                   } //indexV not too high
                 } //indexV
@@ -212,6 +203,8 @@ void Fixture::projectAndMap() {
 
           uint16_t nrOfLogical = 0;
           uint16_t nrOfPhysical = 0;
+          uint16_t nrOfPhysicalM = 0;
+          uint16_t nrOfColor = 0;
 
           if (leds->projectionNr == p_Random || leds->projectionNr == p_None) {
 
@@ -225,54 +218,38 @@ void Fixture::projectAndMap() {
             if (leds->mappingTable.size() < leds->size.x * leds->size.y * leds->size.z)
               ppf("mapping add extra physMap %d to %d size: %d,%d,%d\n", leds->mappingTable.size(), leds->size.x * leds->size.y * leds->size.z, leds->size.x, leds->size.y, leds->size.z);
             for (size_t i = leds->mappingTable.size(); i < leds->size.x * leds->size.y * leds->size.z; i++) {
-              leds->mappingTable.push_back(PhysMap(leds->checkPalColorEffect())); // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
+              leds->mappingTable.push_back(PhysMap());
             }
 
             leds->nrOfLeds = leds->mappingTable.size();
 
-            // ppf("post leds %d p:%d\n", leds->mappingTable.size(), leds->checkPalColorEffect());
-
             //debug info + summary values
             for (PhysMap &map:leds->mappingTable) {
-              if (leds->checkPalColorEffect()) { // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
-                // ppf("i: %d t:%d\n", nrOfLogical, map.mapType);
-                switch (map.mapType) {
-                  case m_onePixel:
-                    // ppf("ledV %d mapping: #ledsP : %d\n", nrOfLogical, map.indexP1);
-                    nrOfPhysical++;
-                    break;
-                  case m_morePixels:
-                    // ppf("ledV %d mapping: #ledsP :", nrOfLogical);
-                    
-                    for (uint16_t indexP: leds->mappingTableIndexes[map.indexes1]) {
-                      // ppf(" %d", indexP);
-                      nrOfPhysical++;
-                    }
-                    // ppf("\n");
-                    break;
-                }
+              switch (map.mapType) {
+                case m_color:
+                  nrOfColor++;
+                  break;
+                case m_onePixel:
+                  // ppf("ledV %d mapping =1: #ledsP : %d\n", nrOfLogical, map.indexP);
+                  nrOfPhysical++;
+                  break;
+                case m_morePixels:
+                  // ppf("ledV %d mapping >1: #ledsP :", nrOfLogical);
+                  
+                  for (uint16_t indexP: leds->mappingTableIndexes[map.indexes]) {
+                    // ppf(" %d", indexP);
+                    nrOfPhysicalM++;
+                  }
+                  // ppf("\n");
+                  break;
               }
-              else
-                switch (map.getMapType()) {
-                  case m_onePixel:
-                    nrOfPhysical++;
-                    break;
-                  case m_morePixels:
-                    // ppf("ledV %d mapping: #ledsP :", nrOfLogical);
-                    for (uint16_t indexP:*map.indexes) {
-                      ppf(" %d", indexP);
-                      nrOfPhysical++;
-                    }
-                    // ppf("\n");
-                    break;
-                }
               nrOfLogical++;
               // else
               //   ppf("ledV %d no mapping\n", x);
             }
           }
 
-          ppf("projectAndMap leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d)\n", rowNr, leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds, nrOfLogical, nrOfPhysical);
+          ppf("projectAndMap leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d c:%d)\n", rowNr, leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, nrOfColor);
 
           // mdl->setValueV("ledsSize", rowNr, "%d x %d x %d = %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           char buf[32];
@@ -291,6 +268,12 @@ void Fixture::projectAndMap() {
 
       mdl->setValue("fixSize", fixSize);
       mdl->setValue("fixCount", nrOfLeds);
+
+      //init pixelsToBlend
+      for (uint16_t i=0; i<nrOfLeds; i++) {
+        if (pixelsToBlend.size() < nrOfLeds)
+          pixelsToBlend.push_back(false);
+      }
 
     } // if deserialize
   } //if fileName

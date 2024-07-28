@@ -116,6 +116,8 @@ public:
     effects.push_back(new RipplesEffect);
     effects.push_back(new SphereMoveEffect);
     effects.push_back(new PixelMapEffect);
+    effects.push_back(new Byte2TestEffect); // not 3D but next to pixelMap for testing
+    effects.push_back(new Byte2TestEffect2); // not 3D but next to pixelMap for testing
 
     //load projections
     fixture.projections.push_back(new NoneProjection);
@@ -206,8 +208,6 @@ public:
 
           leds->doMap = true; //stop the effects loop already here
 
-          bool oldPal = leds->checkPalColorEffect(); // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
-
           leds->fx = mdl->getValue(var, rowNr);
 
           ppf("setEffect fx[%d]: %d\n", rowNr, leds->fx);
@@ -229,7 +229,7 @@ public:
             print->printVar(var);
             ppf("\n");
 
-            if (effect->dim() != leds->effectDimension || oldPal != leds->checkPalColorEffect()) { // checkPalColorEffect: temp method until all effects have been converted to Palette / 2 byte mapping mode
+            if (effect->dim() != leds->effectDimension) {
               leds->effectDimension = effect->dim();
               leds->triggerMapping();
             }
@@ -444,6 +444,13 @@ public:
 
     //set new frame
     if (sys->now - frameMillis >= 1000.0/fps) {
+
+      //reset pixelsToBlend if multiple leds effects
+      // ppf(" %d-%d", fixture.pixelsToBlend.size(), fixture.nrOfLeds);
+      if (fixture.listOfLeds.size())
+        for (uint16_t indexP=0; indexP < fixture.pixelsToBlend.size(); indexP++)
+          fixture.pixelsToBlend[indexP] = false;
+
       frameMillis = sys->now;
 
       newFrame = true;
@@ -462,6 +469,14 @@ public:
           mdl->getValueRowNr = UINT8_MAX;
           // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
           //   leds->fadeToBlackBy(50);
+
+          //loop over mapped pixels and set pixelsToBlend to true
+          if (fixture.listOfLeds.size())
+            for (std::vector<uint16_t> mappingTableIndex: leds->mappingTableIndexes) {
+              for (uint16_t indexP: mappingTableIndex)
+                fixture.pixelsToBlend[indexP] = true;
+            }
+
         }
       }
 
