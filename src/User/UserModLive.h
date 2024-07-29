@@ -56,6 +56,7 @@ static void show()
 
   // SKIPPED: check that both v1 and v2 are int numbers
   // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
+  delay(1); //to feed the watchdog
 }
 
 static void resetShowStats()
@@ -81,7 +82,9 @@ public:
 
   Parser p = Parser();
   char fileName[32] = ""; //running sc file
-  string scPreScript = ""; //externals etc generated (would prefer String for esp32...)
+  string scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
+  string scPreCustomScript = ""; //externals etc generated (would prefer String for esp32...)
+  // bool setupDone = false;
 
   UserModLive() :SysModule("Live") {
     isEnabled = false; //need to enable after fresh setup
@@ -108,7 +111,7 @@ public:
 
         char fileName[32] = "";
 
-        if (fileNr > 0) { //not None
+        if (fileNr > 0 && scPreBaseScript.length()) { //not None and setup done
           fileNr--;  //-1 as none is no file
           files->seqNrToName(fileName, fileNr, ".sc");
           // ppf("%s script f:%d f:%d\n", name, funType, fileNr);
@@ -128,7 +131,7 @@ public:
     ui->initText(parentVar, "fps2", nullptr, 10, true);
 
     //Live scripts defaults
-    addExternalFun("void", "show", "()", (void *)&show);
+    addExternalFun("void", "show", "()", (void *)&show); //comment if setup/loop model works
     // addExternalFun("void", "showM", "()", (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
     addExternalFun("void", "resetStat", "()", (void *)&resetShowStats);
 
@@ -153,12 +156,12 @@ public:
 
   void addExternalVal(string result, string name, void * ptr) {
     addExternal(name, externalType::value, ptr);
-    scPreScript += "external " + result + " " + name + ";\n";
+    scPreBaseScript += "external " + result + " " + name + ";\n";
   }
 
   void addExternalFun(string result, string name, string parameters, void * ptr) {
     addExternal(name, externalType::function, ptr);
-    scPreScript += "external " + result + " " + name + parameters + ";\n";
+    scPreBaseScript += "external " + result + " " + name + parameters + ";\n";
   }
 
   // void addExternalFun(string name, std::function<void(int)> fun) {
@@ -179,6 +182,15 @@ public:
     float k = (float)(time2 - time1) / 240000000; //always 240MHz?
     fps = 1 / k;
     time1 = ESP.getCycleCount();
+  }
+
+  void loop() {
+    // this will result in: Stopping the program...
+    // if (setupDone) {
+    //   SCExecutable.executeAsTask("loop");
+    //   ppf(".");
+    //   show();
+    // }
   }
 
   void loop20ms() {
@@ -210,18 +222,21 @@ public:
         ppf("UserModLive setup script open %s for %s failed\n", fileName, "r");
       else {
 
-        string scScript = scPreScript + string(f.readString().c_str());
+        string scScript = scPreBaseScript + scPreCustomScript;
 
-        Serial.println(scPreScript.c_str());
+        Serial.println(scScript.c_str());
 
         unsigned preScriptNrOfLines = 0;
-        for(int i = 0; i < scPreScript.length(); i++)
+        for(int i = 0; i < scScript.length(); i++)
         {
-          if (scPreScript[i] == '\n') 
+          if (scScript[i] == '\n') 
             preScriptNrOfLines++;
         }
 
         ppf("preScript has %d lines\n", preScriptNrOfLines);
+
+        scScript += string(f.readString().c_str()); // add sc file
+
         ppf("Before parsing\n");
         ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
@@ -230,8 +245,10 @@ public:
           ppf("parsing done\n");
           ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
-          SCExecutable.executeAsTask("main");
+          SCExecutable.executeAsTask("main"); //"setup" not working
+          // ppf("setup done\n");
           strcpy(this->fileName, fileName);
+          // setupDone = true;
         }
         f.close();
       }
@@ -241,6 +258,8 @@ public:
   }
 
   void kill() {
+    ppf("kill %s\n", fileName);
+    // setupDone = false;
     SCExecutable._kill(); //kill any old tasks
     fps = 0;
     strcpy(fileName, "");
