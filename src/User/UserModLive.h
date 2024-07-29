@@ -34,6 +34,8 @@ static void show()
 
   // driver.showPixels(WAIT); // LEDS specific
 
+  //show is done in LedModEffects!
+
   long time3 = ESP.getCycleCount();
   float k = (float)(time2 - time1) / 240000000;
   fps = 1 / k; //StarBase: class variable so it can be shown in UI!!!
@@ -75,6 +77,19 @@ static void displayfloat(float j) {ppf("display float %f", j);}
 static float _hypot(float x,float y) {return hypot(x,y);}
 static float _atan2(float x,float y) { return atan2(x,y);}
 static float _sin(float j) {return sin(j);}
+
+//LEDS specific
+static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);}
+static uint8_t _sin8(uint8_t a) {return sin8(a);}
+static Leds *gLeds = nullptr;
+static void sPCLive(uint16_t pixel, CRGB color) {
+  // if (pixel == 0) ppf(".");
+  // if (pixel < 10)
+  //   ppf(" %d <- %d-%d-%d", pixel, color.r, color.g, color.b);
+  // gLeds->setPixelColor(pixel, CRGB(random8(), random8(), random8()));
+  if (gLeds) gLeds->setPixelColor(pixel, color);
+}
+//End LEDS specific
 
 class UserModLive:public SysModule {
 
@@ -151,6 +166,16 @@ public:
 
     // addExternalFun("delay", [](int ms) {delay(ms);});
     // addExternalFun("digitalWrite", [](int pin, int val) {digitalWrite(pin, val);});
+
+    //LEDS specific
+    addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV);
+    addExternalFun("uint8_t", "sin8","(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
+    addExternalFun("void", "sPC", "(int a1, CRGB a2)", (void *)sPCLive); 
+    //address of overloaded function with no contextual type information: setPixelColorLive
+    //ISO C++ forbids taking the address of a bound member function to form a pointer to member function.  Say '&Leds::setPixelColorLive' [-fpermissive]
+    //converting from 'void (Leds::*)(uint16_t, uint32_t)' {aka 'void (Leds::*)(short unsigned int, unsigned int)'} to 'void*' [-Wpmf-conversions]
+
+    //End LEDS specific
 
   } //setup
 

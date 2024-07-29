@@ -119,6 +119,10 @@ public:
     effects.push_back(new Byte2TestEffect); // not 3D but next to pixelMap for testing
     effects.push_back(new Byte2TestEffect2); // not 3D but next to pixelMap for testing
 
+    #ifdef STARBASE_USERMOD_LIVE
+      effects.push_back(new LiveScriptEffect);
+    #endif
+
     //load projections
     fixture.projections.push_back(new NoneProjection);
     fixture.projections.push_back(new DefaultProjection);

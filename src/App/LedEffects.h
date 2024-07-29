@@ -20,6 +20,10 @@
   #include "../User/UserModMPU6050.h"
 #endif
 
+#ifdef STARBASE_USERMOD_LIVE
+  #include "../User/UserModLive.h"
+#endif
+
 //utility function
 float distance(float x1, float y1, float z1, float x2, float y2, float z2) {
   return sqrtf((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
@@ -211,7 +215,7 @@ class SinelonEffect: public Effect {
     leds.fadeToBlackBy(20);
 
     int pos = beatsin16( bpm, 0, leds.nrOfLeds-1 );
-    leds[pos] = leds.getPixelColor(pos) + CHSV( sys->now/50, 255, 255);
+    leds[pos] += CHSV( sys->now/50, 255, 255);
   }
   
   void controls(Leds &leds, JsonObject parentVar) {
@@ -2914,3 +2918,65 @@ class Byte2TestEffect2: public Effect {
 
   }
 }; // 2ByteTest2
+
+#ifdef STARBASE_USERMOD_LIVE
+
+class LiveScriptEffect: public Effect {
+  const char * name() {return "Live Script";}
+  uint8_t dim() {return _2D;}
+  const char * tags() {return "💫";}
+
+  void loop(Leds &leds) {
+  }
+  
+  void controls(Leds &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    ui->initSelect(parentVar, "script2", UINT16_MAX, false , [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onUI: {
+        // ui->setComment(var, "Fixture to display effect on");
+        JsonArray options = ui->setOptions(var);
+        options.add("None");
+        files->dirToJson(options, true, ".sc"); //only files containing F(ixture), alphabetically
+
+        return true; }
+      case onChange: {
+        //set script
+        uint8_t fileNr = var["value"][rowNr];
+
+        ppf("script f:%d f:%d\n", funType, fileNr);
+
+        char fileName[32] = "";
+
+        if (fileNr > 0 && liveM->scPreBaseScript.length()) { //not None and live setup done
+          fileNr--;  //-1 as none is no file
+          files->seqNrToName(fileName, fileNr, ".sc");
+          ppf("script f:%d f:%d s:%s\n", funType, fileNr, fileName);
+
+          // in ledleds.h: void setPixelColorLive(unsigned16 indexV, uint32_t color) {setPixelColor(indexV, CRGB::Black);}
+          // void (Leds::*sPCCached)(unsigned16, uint32_t) = &Leds::setPixelColorLive;
+          // Leds *leds2 = &leds;
+          // (leds2->*sPCCached)(0, 0);
+
+          gLeds = &leds; //set the leds class for live script
+
+          //set the custom defines
+          liveM->scPreCustomScript = "";
+          liveM->scPreCustomScript += "define width " + to_string(leds.size.x) + "\n";
+          liveM->scPreCustomScript += "define height " + to_string(leds.size.y) + "\n";
+          liveM->scPreCustomScript += "define NUM_LEDS " + to_string(leds.nrOfLeds) + "\n";
+          liveM->scPreCustomScript += "define panel_width " + to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
+        }
+
+        if (strcmp(fileName, "") != 0)
+          liveM->run(fileName, true); //force a new file to run
+        else {
+          liveM->kill();
+        }
+
+        return true; }
+      default: return false; 
+    }}); //script
+  }
+};
+
+#endif
