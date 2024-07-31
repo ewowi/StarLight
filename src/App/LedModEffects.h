@@ -80,11 +80,11 @@ public:
     effects.push_back(new RainEffect);
     effects.push_back(new DripEffect);
     effects.push_back(new HeartBeatEffect);
+    effects.push_back(new PopCornEffect); //contains wledaudio: useaudio, conditional compile
 
     #ifdef STARLIGHT_USERMOD_WLEDAUDIO
       //1D Volume
       effects.push_back(new FreqMatrixEffect);
-      effects.push_back(new PopCornEffect);
       effects.push_back(new NoiseMeterEffect);
       //1D frequency
       effects.push_back(new AudioRingsEffect);
@@ -164,8 +164,12 @@ public:
 
         web->getResponseObject()["addRow"]["rowNr"] = rowNr;
 
-        if (rowNr >= fixture.listOfLeds.size())
-          fixture.listOfLeds.push_back(new Leds(fixture));
+        if (rowNr >= fixture.listOfLeds.size()) {
+          ppf("ledsTbl creating new Leds instance %d\n", rowNr);
+          Leds *leds = new Leds(fixture);
+          leds->doMap = true;
+          fixture.listOfLeds.push_back(leds);
+        }
         return true; }
       case onDeleteRow: {
         // ppf("ledsTbl delrow %s[%d]\n", mdl->varID(var), rowNr);
@@ -174,6 +178,7 @@ public:
           Leds *leds = fixture.listOfLeds[rowNr];
           fixture.listOfLeds.erase(fixture.listOfLeds.begin() + rowNr); //remove from vector
           delete leds; //remove leds itself
+
         }
         return true; }
       default: return false;
@@ -204,7 +209,10 @@ public:
         //create a new leds instance if a new row is created
         if (rowNr >= fixture.listOfLeds.size()) {
           ppf("listOfLeds fx[%d] onChange %d %s\n", rowNr, fixture.listOfLeds.size(), mdl->findVar("fx")["value"].as<String>().c_str());
-          fixture.listOfLeds.push_back(new Leds(fixture));
+          ppf("fx creating new Leds instance %d\n", rowNr);
+          Leds *leds = new Leds(fixture);
+          leds->doMap = true;
+          fixture.listOfLeds.push_back(leds);
         }
 
         if (rowNr < fixture.listOfLeds.size()) {
@@ -451,7 +459,7 @@ public:
 
       //reset pixelsToBlend if multiple leds effects
       // ppf(" %d-%d", fixture.pixelsToBlend.size(), fixture.nrOfLeds);
-      if (fixture.listOfLeds.size())
+      if (fixture.listOfLeds.size()) //if more then one effect
         for (uint16_t indexP=0; indexP < fixture.pixelsToBlend.size(); indexP++)
           fixture.pixelsToBlend[indexP] = false;
 
@@ -463,7 +471,7 @@ public:
       //  run the next frame of the effect
       stackUnsigned8 rowNr = 0;
       for (Leds *leds: fixture.listOfLeds) {
-        if (!leds->doMap) { // don't run effect while remapping
+        if (!leds->doMap && leds->fx < effects.size()) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
           // ppf(" %d %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->fx, leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
           mdl->getValueRowNr = rowNr++;
 
@@ -475,12 +483,16 @@ public:
           //   leds->fadeToBlackBy(50);
 
           //loop over mapped pixels and set pixelsToBlend to true
-          if (fixture.listOfLeds.size())
+          if (fixture.listOfLeds.size()) { //if more then one effect
             for (std::vector<uint16_t> mappingTableIndex: leds->mappingTableIndexes) {
               for (uint16_t indexP: mappingTableIndex)
                 fixture.pixelsToBlend[indexP] = true;
             }
-
+            for (PhysMap physMap: leds->mappingTable) {
+              if (physMap.mapType == m_onePixel)
+                fixture.pixelsToBlend[physMap.indexP] = true;
+            }
+          }
         }
       }
 
@@ -520,7 +532,7 @@ public:
       ppf("LedModEffects loop canvasData %s\n", canvasData);
 
       uint8_t rowNr = 0; //currently only leds[0] supported
-      if (fixture.listOfLeds.size()) {
+      if (fixture.listOfLeds.size()) { //if more then one effect
         fixture.listOfLeds[rowNr]->fadeToBlackBy();
 
         char * token = strtok((char *)canvasData, ":");

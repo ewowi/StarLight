@@ -225,8 +225,8 @@ public:
 
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
 
-  uint16_t fx = -1;
-  unsigned8 projectionNr = -1;
+  uint16_t fx = UINT16_MAX;
+  unsigned8 projectionNr = p_Default;
 
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
   void (Projection::*setupCached)(Leds &, Coord3D &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = nullptr;

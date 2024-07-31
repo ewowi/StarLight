@@ -744,7 +744,9 @@ class PopCornEffect: public Effect {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t numPopcorn = leds.effectData.read<uint8_t>();
-    uint8_t useaudio = leds.effectData.read<uint8_t>();
+    #ifdef STARLIGHT_USERMOD_WLEDAUDIO
+      uint8_t useaudio = leds.effectData.read<uint8_t>();
+    #endif
 
     //binding of loop persistent values (pointers)
     Spark *popcorn = leds.effectData.readWrite<Spark>(maxNumPopcorn); //array
@@ -763,15 +765,16 @@ class PopCornEffect: public Effect {
       } else { // if kernel is inactive, randomly pop it
         bool doPopCorn = false;  // WLEDMM allows to inhibit new pops
         // WLEDMM begin
-        if (useaudio) {
-          if (  (wledAudioMod->sync.volumeSmth > 1.0f)                      // no pops in silence
-              // &&((wledAudioMod->sync.samplePeak > 0) || (wledAudioMod->sync.volumeRaw > 128))  // try to pop at onsets (our peek detector still sucks)
-              &&(random8() < 4) )                        // stay somewhat random
-            doPopCorn = true;
-        } else {         
-          if (random8() < 2) doPopCorn = true; // default POP!!!
-        }
-        // WLEDMM end
+        #ifdef STARLIGHT_USERMOD_WLEDAUDIO
+          if (useaudio) {
+            if (  (wledAudioMod->sync.volumeSmth > 1.0f)                      // no pops in silence
+                // &&((wledAudioMod->sync.samplePeak > 0) || (wledAudioMod->sync.volumeRaw > 128))  // try to pop at onsets (our peek detector still sucks)
+                &&(random8() < 4) )                        // stay somewhat random
+              doPopCorn = true;
+          } else {         
+            if (random8() < 2) doPopCorn = true; // default POP!!!
+          }
+        #endif
 
         if (doPopCorn) { // POP!!!
           popcorn[i].pos = 0.01f;
@@ -804,7 +807,9 @@ class PopCornEffect: public Effect {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128));
     ui->initSlider(parentVar, "corns", leds.effectData.write<uint8_t>(maxNumPopcorn/2), 1, maxNumPopcorn);
-    ui->initCheckBox(parentVar, "useaudio", leds.effectData.write<bool>(false));
+    #ifdef STARLIGHT_USERMOD_WLEDAUDIO
+      ui->initCheckBox(parentVar, "useaudio", leds.effectData.write<bool>(false));
+    #endif
   }
 }; //PopCorn
 
