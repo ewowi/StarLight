@@ -314,7 +314,7 @@ class RingEffect: public Effect {
 
 };
 
-class RingRandomFlow: public RingEffect {
+class RingRandomFlowEffect: public RingEffect {
   const char * name() {return "RingRandomFlow";}
   uint8_t dim() {return _1D;}
   const char * tags() {return "💫";}
@@ -345,7 +345,7 @@ struct Ball {
   float height;
 };
 
-class BouncingBalls: public Effect {
+class BouncingBallsEffect: public Effect {
   const char * name() {return "Bouncing Balls";}
   uint8_t dim() {return _1D;}
   const char * tags() {return "💡";}
@@ -670,7 +670,7 @@ class HeartBeatEffect: public Effect {
   }
 }; // HeartBeatEffect
 
-class FreqMatrix: public Effect {
+class FreqMatrixEffect: public Effect {
   const char * name() {return "FreqMatrix";}
   uint8_t dim() {return _1D;}
   const char * tags() {return "♪💡";}
@@ -735,7 +735,7 @@ class FreqMatrix: public Effect {
 #define maxNumPopcorn 21 // max 21 on 16 segment ESP8266
 #define NUM_COLORS       3 /* number of colors per segment */
 
-class PopCorn: public Effect {
+class PopCornEffect: public Effect {
   const char * name() {return "PopCorn";}
   uint8_t dim() {return _1D;}
   const char * tags() {return "♪💡";}
@@ -808,7 +808,7 @@ class PopCorn: public Effect {
   }
 }; //PopCorn
 
-class NoiseMeter: public Effect {
+class NoiseMeterEffect: public Effect {
   const char * name() {return "NoiseMeter";}
   uint8_t dim() {return _1D;}
   const char * tags() {return "♪💡";}
@@ -845,7 +845,7 @@ class NoiseMeter: public Effect {
   }
 }; //NoiseMeter
 
-class AudioRings: public RingEffect {
+class AudioRingsEffect: public RingEffect {
   const char * name() {return "AudioRings";}
   uint8_t dim() {return _1D;}
   const char * tags() {return "♫💫";}
@@ -894,7 +894,7 @@ class AudioRings: public RingEffect {
   }
 };
 
-class DJLight: public Effect {
+class DJLightEffect: public Effect {
   const char * name() {return "DJLight";}
   uint8_t dim() {return _1D;}
   const char * tags() {return "♫💡";}
@@ -1012,7 +1012,7 @@ class LinesEffect: public Effect {
 }; // LinesEffect
 
 // By: Stepko https://editor.soulmatelights.com/gallery/1012 , Modified by: Andrew Tuline
-class BlackHole: public Effect {
+class BlackHoleEffect: public Effect {
   const char * name() {return "BlackHole";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡";}
@@ -1059,7 +1059,7 @@ class BlackHole: public Effect {
 }; // BlackHole
 
 // dna originally by by ldirko at https://pastebin.com/pCkkkzcs. Updated by Preyy. WLED conversion by Andrew Tuline.
-class DNA: public Effect {
+class DNAEffect: public Effect {
   const char * name() {return "DNA";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡💫";}
@@ -1098,7 +1098,7 @@ class DNA: public Effect {
 uint8_t gamma8(uint8_t b) { //we do nothing with gamma for now
   return b;
 }
-class DistortionWaves: public Effect {
+class DistortionWavesEffect: public Effect {
   const char * name() {return "DistortionWaves";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡";}
@@ -1155,7 +1155,7 @@ class DistortionWaves: public Effect {
 
 //Octopus inspired by WLED, Stepko and Sutaburosu and blazoncek 
 //Idea from https://www.youtube.com/watch?v=HsA-6KIbgto&ab_channel=GreatScott%21 (https://editor.soulmatelights.com/gallery/671-octopus)
-class Octopus: public Effect {
+class OctopusEffect: public Effect {
   const char * name() {return "Octopus";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡";}
@@ -1243,7 +1243,7 @@ class Octopus: public Effect {
 }; // Octopus
 
 //Lissajous inspired by WLED, Andrew Tuline 
-class Lissajous: public Effect {
+class LissajousEffect: public Effect {
   const char * name() {return "Lissajous";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡";}
@@ -1301,7 +1301,7 @@ class Lissajous: public Effect {
 }; // Lissajous
 
 //Frizzles inspired by WLED, Stepko, Andrew Tuline, https://editor.soulmatelights.com/gallery/640-color-frizzles
-class Frizzles: public Effect {
+class FrizzlesEffect: public Effect {
   const char * name() {return "Frizzles";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡";}
@@ -1332,7 +1332,7 @@ class Frizzles: public Effect {
   }
 }; // Frizzles
 
-class ScrollingText: public Effect {
+class ScrollingTextEffect: public Effect {
   const char * name() {return "Scrolling Text";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "💫";}
@@ -1370,7 +1370,7 @@ class ScrollingText: public Effect {
   }
 }; //ScrollingText
 
-class Noise2D: public Effect {
+class Noise2DEffect: public Effect {
   const char * name() {return "Noise2D";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡";}
@@ -1441,7 +1441,7 @@ uint16_t lcm(uint16_t a, uint16_t b) {
 
 // Written by Ewoud Wijma in 2022, inspired by https://natureofcode.com/book/chapter-7-cellular-automata/ and https://github.com/DougHaber/nlife-color ,
 // Modified By: Brandon Butler in 2024
-class GameOfLife: public Effect {
+class GameOfLifeEffect: public Effect {
   const char * name() {return "GameOfLife";}
   uint8_t dim() {return _3D;} //supports 3D but also 2D (1D as well?)
   const char * tags() {return "💫";}
@@ -1711,7 +1711,7 @@ class GameOfLife: public Effect {
   }
 }; //GameOfLife
 
-class RubiksCube: public Effect {
+class RubiksCubeEffect: public Effect {
   const char * name() {return "Rubik's Cube";}
   unsigned8     dim() {return _3D;}
   const char * tags() {return "💫";}
@@ -1998,7 +1998,7 @@ class RubiksCube: public Effect {
   }
 };
 
-class ParticleTest: public Effect {
+class ParticleTestEffect: public Effect {
   const char * name() {return "Particle Test";}
   unsigned8     dim() {return _3D;}
   const char * tags() {return "💫🧭";}
@@ -2243,7 +2243,7 @@ class ParticleTest: public Effect {
 
 #ifdef STARLIGHT_USERMOD_WLEDAUDIO
 
-class Waverly: public Effect {
+class WaverlyEffect: public Effect {
   const char * name() {return "Waverly";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "♪💡";}
@@ -2542,7 +2542,7 @@ class LaserGEQEffect: public Effect {
   }
 }; //LaserGEQEffect
 
-class FunkyPlank: public Effect {
+class FunkyPlankEffect: public Effect {
   const char * name() {return "Funky Plank";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "♫💡💫";}

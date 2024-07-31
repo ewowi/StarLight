@@ -74,43 +74,43 @@ public:
     effects.push_back(new JuggleEffect);
     //1D StarLight
     effects.push_back(new RunningEffect);
-    effects.push_back(new RingRandomFlow);
+    effects.push_back(new RingRandomFlowEffect);
     // 1D WLED
-    effects.push_back(new BouncingBalls);
+    effects.push_back(new BouncingBallsEffect);
     effects.push_back(new RainEffect);
     effects.push_back(new DripEffect);
     effects.push_back(new HeartBeatEffect);
 
     #ifdef STARLIGHT_USERMOD_WLEDAUDIO
       //1D Volume
-      effects.push_back(new FreqMatrix);
-      effects.push_back(new PopCorn);
-      effects.push_back(new NoiseMeter);
+      effects.push_back(new FreqMatrixEffect);
+      effects.push_back(new PopCornEffect);
+      effects.push_back(new NoiseMeterEffect);
       //1D frequency
-      effects.push_back(new AudioRings);
-      effects.push_back(new DJLight);
+      effects.push_back(new AudioRingsEffect);
+      effects.push_back(new DJLightEffect);
     #endif
 
     //2D StarLight
     effects.push_back(new LinesEffect);
     //2D WLED
-    effects.push_back(new BlackHole);
-    effects.push_back(new DNA);
-    effects.push_back(new DistortionWaves);
-    effects.push_back(new Octopus);
-    effects.push_back(new Lissajous);
-    effects.push_back(new Frizzles);
-    effects.push_back(new ScrollingText);
-    effects.push_back(new Noise2D);
-    effects.push_back(new GameOfLife);
-    effects.push_back(new RubiksCube);
-    effects.push_back(new ParticleTest);
+    effects.push_back(new BlackHoleEffect);
+    effects.push_back(new DNAEffect);
+    effects.push_back(new DistortionWavesEffect);
+    effects.push_back(new OctopusEffect);
+    effects.push_back(new LissajousEffect);
+    effects.push_back(new FrizzlesEffect);
+    effects.push_back(new ScrollingTextEffect);
+    effects.push_back(new Noise2DEffect);
+    effects.push_back(new GameOfLifeEffect);
+    effects.push_back(new RubiksCubeEffect);
+    effects.push_back(new ParticleTestEffect);
     #ifdef STARLIGHT_USERMOD_WLEDAUDIO
       //2D WLED
-      effects.push_back(new Waverly);
+      effects.push_back(new WaverlyEffect);
       effects.push_back(new GEQEffect);
       effects.push_back(new LaserGEQEffect);
-      effects.push_back(new FunkyPlank);
+      effects.push_back(new FunkyPlankEffect);
     #endif
     //3D
     effects.push_back(new RipplesEffect);
