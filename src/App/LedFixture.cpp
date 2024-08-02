@@ -111,9 +111,9 @@ void Fixture::projectAndMap() {
                   ppf("projectAndMap: projection %d not found! Switching to default.\n", leds->projectionNr);
                   leds->projectionNr = p_Default;
                   projection = projections[leds->projectionNr];
-                  leds->setupCached = &Projection::setup;
-                  leds->adjustXYZCached = &Projection::adjustXYZ;
                 }
+                leds->setupCached = &Projection::setup;
+                leds->adjustXYZCached = &Projection::adjustXYZ;
 
                 mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
 
