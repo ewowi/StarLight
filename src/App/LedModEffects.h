@@ -153,30 +153,30 @@ public:
 
     JsonObject currentVar;
 
-    JsonObject tableVar = ui->initTable(parentVar, "ledsTbl", nullptr, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    JsonObject tableVar = ui->initTable(parentVar, "layerTbl", nullptr, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "Effects");
+        ui->setLabel(var, "Layers");
         ui->setComment(var, "List of effects");
         return true;
       case onAddRow: {
-        rowNr = fixture.listOfLeds.size();
-        // ppf("ledsTbl addRow %s[%d]\n", mdl->varID(var), rowNr);
+        rowNr = fixture.layers.size();
+        // ppf("layerTbl addRow %s[%d]\n", mdl->varID(var), rowNr);
 
         web->getResponseObject()["addRow"]["rowNr"] = rowNr;
 
-        if (rowNr >= fixture.listOfLeds.size()) {
-          ppf("ledsTbl creating new Leds instance %d\n", rowNr);
-          Leds *leds = new Leds(fixture);
+        if (rowNr >= fixture.layers.size()) {
+          ppf("layerTbl creating new LedsLayer instance %d\n", rowNr);
+          LedsLayer *leds = new LedsLayer(fixture);
           leds->doMap = true;
-          fixture.listOfLeds.push_back(leds);
+          fixture.layers.push_back(leds);
         }
         return true; }
       case onDeleteRow: {
-        // ppf("ledsTbl delrow %s[%d]\n", mdl->varID(var), rowNr);
+        // ppf("layerTbl delrow %s[%d]\n", mdl->varID(var), rowNr);
         //tbd: fade to black
-        if (rowNr <fixture.listOfLeds.size()) {
-          Leds *leds = fixture.listOfLeds[rowNr];
-          fixture.listOfLeds.erase(fixture.listOfLeds.begin() + rowNr); //remove from vector
+        if (rowNr <fixture.layers.size()) {
+          LedsLayer *leds = fixture.layers[rowNr];
+          fixture.layers.erase(fixture.layers.begin() + rowNr); //remove from vector
           delete leds; //remove leds itself
 
         }
@@ -186,8 +186,8 @@ public:
 
     currentVar = ui->initSelect(tableVar, "fx", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++)
-          mdl->setValue(var, fixture.listOfLeds[rowNr]->fx, rowNr);
+        for (forUnsigned8 rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
+          mdl->setValue(var, fixture.layers[rowNr]->fx, rowNr);
         return true;
       case onUI: {
         ui->setLabel(var, "Effect");
@@ -207,16 +207,16 @@ public:
         if (rowNr == UINT8_MAX) rowNr = 0; // in case fx without a rowNr
 
         //create a new leds instance if a new row is created
-        if (rowNr >= fixture.listOfLeds.size()) {
-          ppf("listOfLeds fx[%d] onChange %d %s\n", rowNr, fixture.listOfLeds.size(), mdl->findVar("fx")["value"].as<String>().c_str());
-          ppf("fx creating new Leds instance %d\n", rowNr);
-          Leds *leds = new Leds(fixture);
+        if (rowNr >= fixture.layers.size()) {
+          ppf("layers fx[%d] onChange %d %s\n", rowNr, fixture.layers.size(), mdl->findVar("fx")["value"].as<String>().c_str());
+          ppf("fx creating new LedsLayer instance %d\n", rowNr);
+          LedsLayer *leds = new LedsLayer(fixture);
           leds->doMap = true;
-          fixture.listOfLeds.push_back(leds);
+          fixture.layers.push_back(leds);
         }
 
-        if (rowNr < fixture.listOfLeds.size()) {
-          Leds *leds = fixture.listOfLeds[rowNr];
+        if (rowNr < fixture.layers.size()) {
+          LedsLayer *leds = fixture.layers[rowNr];
 
           leds->doMap = true; //stop the effects loop already here
 
@@ -258,8 +258,8 @@ public:
     //projection, default projection is 'default'
     currentVar = ui->initSelect(tableVar, "pro", 1, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++)
-          mdl->setValue(var, fixture.listOfLeds[rowNr]->projectionNr, rowNr);
+        for (forUnsigned8 rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
+          mdl->setValue(var, fixture.layers[rowNr]->projectionNr, rowNr);
         return true;
       case onUI: {
         ui->setLabel(var, "Projection");
@@ -279,8 +279,8 @@ public:
 
         if (rowNr == UINT8_MAX) rowNr = 0; // in case fx without a rowNr
 
-        if (rowNr < fixture.listOfLeds.size()) {
-          Leds *leds = fixture.listOfLeds[rowNr];
+        if (rowNr < fixture.layers.size()) {
+          LedsLayer *leds = fixture.layers[rowNr];
 
           leds->doMap = true; //stop the effects loop already here
 
@@ -299,7 +299,7 @@ public:
             projection->controls(*leds, var);
             mdl->varPostDetails(var, rowNr);
           }
-          // ppf("onChange pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.listOfLeds.size());
+          // ppf("onChange pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.layers.size());
 
           leds->triggerMapping();
         }
@@ -310,9 +310,9 @@ public:
 
     ui->initCoord3D(tableVar, "ledsStart", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++) {
-          ppf("ledsStart[%d] onSetValue %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->startPos.x, fixture.listOfLeds[rowNr]->startPos.y, fixture.listOfLeds[rowNr]->startPos.z);
-          mdl->setValue(var, fixture.listOfLeds[rowNr]->startPos, rowNr);
+        for (forUnsigned8 rowNr = 0; rowNr < fixture.layers.size(); rowNr++) {
+          ppf("ledsStart[%d] onSetValue %d,%d,%d\n", rowNr, fixture.layers[rowNr]->startPos.x, fixture.layers[rowNr]->startPos.y, fixture.layers[rowNr]->startPos.z);
+          mdl->setValue(var, fixture.layers[rowNr]->startPos, rowNr);
         }
         return true;
       case onUI:
@@ -320,16 +320,16 @@ public:
         ui->setComment(var, "In pixels");
         return true;
       case onChange:
-        if (rowNr < fixture.listOfLeds.size()) {
-          fixture.listOfLeds[rowNr]->startPos = mdl->getValue(var, rowNr).as<Coord3D>();
+        if (rowNr < fixture.layers.size()) {
+          fixture.layers[rowNr]->startPos = mdl->getValue(var, rowNr).as<Coord3D>();
 
-          ppf("ledsStart[%d] onChange %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->startPos.x, fixture.listOfLeds[rowNr]->startPos.y, fixture.listOfLeds[rowNr]->startPos.z);
+          ppf("ledsStart[%d] onChange %d,%d,%d\n", rowNr, fixture.layers[rowNr]->startPos.x, fixture.layers[rowNr]->startPos.y, fixture.layers[rowNr]->startPos.z);
 
-          fixture.listOfLeds[rowNr]->fadeToBlackBy();
-          fixture.listOfLeds[rowNr]->triggerMapping();
+          fixture.layers[rowNr]->fadeToBlackBy();
+          fixture.layers[rowNr]->triggerMapping();
         }
         else {
-          ppf("ledsStart[%d] onChange rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
+          ppf("ledsStart[%d] onChange rownr not in range > %d\n", rowNr, fixture.layers.size());
         }
         return true;
       default: return false;
@@ -337,9 +337,9 @@ public:
 
     ui->initCoord3D(tableVar, "ledsMid", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++) {
-          ppf("ledsMid[%d] onSetValue %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->midPos.x, fixture.listOfLeds[rowNr]->midPos.y, fixture.listOfLeds[rowNr]->midPos.z);
-          mdl->setValue(var, fixture.listOfLeds[rowNr]->midPos, rowNr);
+        for (forUnsigned8 rowNr = 0; rowNr < fixture.layers.size(); rowNr++) {
+          ppf("ledsMid[%d] onSetValue %d,%d,%d\n", rowNr, fixture.layers[rowNr]->midPos.x, fixture.layers[rowNr]->midPos.y, fixture.layers[rowNr]->midPos.z);
+          mdl->setValue(var, fixture.layers[rowNr]->midPos, rowNr);
         }
         return true;
       case onUI:
@@ -347,16 +347,16 @@ public:
         ui->setComment(var, "In pixels");
         return true;
       case onChange:
-        if (rowNr < fixture.listOfLeds.size()) {
-          fixture.listOfLeds[rowNr]->midPos = mdl->getValue(var, rowNr).as<Coord3D>();
+        if (rowNr < fixture.layers.size()) {
+          fixture.layers[rowNr]->midPos = mdl->getValue(var, rowNr).as<Coord3D>();
 
-          ppf("ledsMid[%d] onChange %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->midPos.x, fixture.listOfLeds[rowNr]->midPos.y, fixture.listOfLeds[rowNr]->midPos.z);
+          ppf("ledsMid[%d] onChange %d,%d,%d\n", rowNr, fixture.layers[rowNr]->midPos.x, fixture.layers[rowNr]->midPos.y, fixture.layers[rowNr]->midPos.z);
 
-          fixture.listOfLeds[rowNr]->fadeToBlackBy();
-          fixture.listOfLeds[rowNr]->triggerMapping();
+          fixture.layers[rowNr]->fadeToBlackBy();
+          fixture.layers[rowNr]->triggerMapping();
         }
         else {
-          ppf("ledsMid[%d] onChange rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
+          ppf("ledsMid[%d] onChange rownr not in range > %d\n", rowNr, fixture.layers.size());
         }
         return true;
       default: return false;
@@ -364,9 +364,9 @@ public:
 
     ui->initCoord3D(tableVar, "ledsEnd", {8,8,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.listOfLeds.size(); rowNr++) {
-          ppf("ledsEnd[%d] onSetValue %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->endPos.x, fixture.listOfLeds[rowNr]->endPos.y, fixture.listOfLeds[rowNr]->endPos.z);
-          mdl->setValue(var, fixture.listOfLeds[rowNr]->endPos, rowNr);
+        for (forUnsigned8 rowNr = 0; rowNr < fixture.layers.size(); rowNr++) {
+          ppf("ledsEnd[%d] onSetValue %d,%d,%d\n", rowNr, fixture.layers[rowNr]->endPos.x, fixture.layers[rowNr]->endPos.y, fixture.layers[rowNr]->endPos.z);
+          mdl->setValue(var, fixture.layers[rowNr]->endPos, rowNr);
         }
         return true;
       case onUI:
@@ -374,16 +374,16 @@ public:
         ui->setComment(var, "In pixels");
         return true;
       case onChange:
-        if (rowNr < fixture.listOfLeds.size()) {
-          fixture.listOfLeds[rowNr]->endPos = mdl->getValue(var, rowNr).as<Coord3D>();
+        if (rowNr < fixture.layers.size()) {
+          fixture.layers[rowNr]->endPos = mdl->getValue(var, rowNr).as<Coord3D>();
 
-          ppf("ledsEnd[%d] onChange %d,%d,%d\n", rowNr, fixture.listOfLeds[rowNr]->endPos.x, fixture.listOfLeds[rowNr]->endPos.y, fixture.listOfLeds[rowNr]->endPos.z);
+          ppf("ledsEnd[%d] onChange %d,%d,%d\n", rowNr, fixture.layers[rowNr]->endPos.x, fixture.layers[rowNr]->endPos.y, fixture.layers[rowNr]->endPos.z);
 
-          fixture.listOfLeds[rowNr]->fadeToBlackBy();
-          fixture.listOfLeds[rowNr]->triggerMapping();
+          fixture.layers[rowNr]->fadeToBlackBy();
+          fixture.layers[rowNr]->triggerMapping();
         }
         else {
-          ppf("ledsEnd[%d] onChange rownr not in range > %d\n", rowNr, fixture.listOfLeds.size());
+          ppf("ledsEnd[%d] onChange rownr not in range > %d\n", rowNr, fixture.layers.size());
         }
         return true;
       default: return false;
@@ -391,9 +391,9 @@ public:
 
     ui->initText(tableVar, "ledsSize", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onSetValue: {
-        // for (std::vector<Leds *>::iterator leds=fixture.listOfLeds.begin(); leds!=fixture.listOfLeds.end(); ++leds) {
+        // for (std::vector<LedsLayer *>::iterator leds=fixture.layers.begin(); leds!=fixture.layers.end(); ++leds) {
         stackUnsigned8 rowNr = 0;
-        for (Leds *leds:fixture.listOfLeds) {
+        for (LedsLayer *leds:fixture.layers) {
           char message[32];
           print->fFormat(message, sizeof(message)-1, "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           ppf("onSetValue ledsSize[%d] = %s\n", rowNr, message);
@@ -439,7 +439,7 @@ public:
 
       // }
       // else
-      //   ppf("Leds e131 not enabled\n");
+      //   ppf("e131 not enabled\n");
     #endif
 
     #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
@@ -459,7 +459,7 @@ public:
 
       //reset pixelsToBlend if multiple leds effects
       // ppf(" %d-%d", fixture.pixelsToBlend.size(), fixture.nrOfLeds);
-      if (fixture.listOfLeds.size()) //if more then one effect
+      if (fixture.layers.size()) //if more then one effect
         for (uint16_t indexP=0; indexP < fixture.pixelsToBlend.size(); indexP++)
           fixture.pixelsToBlend[indexP] = false;
 
@@ -470,7 +470,7 @@ public:
       //for each programmed effect
       //  run the next frame of the effect
       stackUnsigned8 rowNr = 0;
-      for (Leds *leds: fixture.listOfLeds) {
+      for (LedsLayer *leds: fixture.layers) {
         if (!leds->doMap && leds->fx < effects.size()) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
           // ppf(" %d %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->fx, leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
           mdl->getValueRowNr = rowNr++;
@@ -483,7 +483,7 @@ public:
           //   leds->fadeToBlackBy(50);
 
           //loop over mapped pixels and set pixelsToBlend to true
-          if (fixture.listOfLeds.size()) { //if more then one effect
+          if (fixture.layers.size()) { //if more then one effect
             for (std::vector<uint16_t> mappingTableIndex: leds->mappingTableIndexes) {
               for (uint16_t indexP: mappingTableIndex)
                 fixture.pixelsToBlend[indexP] = true;
@@ -532,8 +532,8 @@ public:
       ppf("LedModEffects loop canvasData %s\n", canvasData);
 
       uint8_t rowNr = 0; //currently only leds[0] supported
-      if (fixture.listOfLeds.size()) { //if more then one effect
-        fixture.listOfLeds[rowNr]->fadeToBlackBy();
+      if (fixture.layers.size()) { //if more then one effect
+        fixture.layers[rowNr]->fadeToBlackBy();
 
         char * token = strtok((char *)canvasData, ":");
         bool isStart = strcmp(token, "start") == 0;
@@ -541,7 +541,7 @@ public:
 
         Coord3D midCoord; //placeHolder for mid
 
-        Coord3D *newCoord = isStart? &fixture.listOfLeds[rowNr]->startPos: isEnd? &fixture.listOfLeds[rowNr]->endPos : &midCoord;
+        Coord3D *newCoord = isStart? &fixture.layers[rowNr]->startPos: isEnd? &fixture.layers[rowNr]->endPos : &midCoord;
 
         if (newCoord) {
           token = strtok(NULL, ",");
@@ -553,7 +553,7 @@ public:
 
           mdl->setValue(isStart?"ledsStart":isEnd?"ledsEnd":"ledsMid", *newCoord, 0); //assuming row 0 for the moment
 
-          fixture.listOfLeds[rowNr]->triggerMapping();
+          fixture.layers[rowNr]->triggerMapping();
         }
 
         var.remove("canvasData"); //convasdata has been processed

@@ -1,6 +1,6 @@
 /*
    @title     StarLight
-   @file      LedLeds.cpp
+   @file      LedLayer.cpp
    @date      20240720
    @repo      https://github.com/MoonModules/StarLight
    @Authors   https://github.com/MoonModules/StarLight/commits/main
@@ -9,7 +9,7 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
-#include "LedLeds.h"
+#include "LedLayer.h"
 #include "../Sys/SysModSystem.h"  //for sys->now
 #ifdef STARBASE_USERMOD_MPU6050
   #include "../User/UserModMPU6050.h"
@@ -26,12 +26,12 @@ void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, unsigned8 in
   fill_rainbow(targetArray, numToFill, initialhue, deltahue);
 }
 
-void Leds::triggerMapping() {
+void LedsLayer::triggerMapping() {
     doMap = true; //specify which leds to remap
     fixture->doMap = true; //fixture will also be remapped
   }
 
-unsigned16 Leds::XYZ(Coord3D pixel) {
+unsigned16 LedsLayer::XYZ(Coord3D pixel) {
 
   //as this is a call to a virtual function it reduces the theoretical (no show) speed by half, even if XYZ is not implemented
   //  the real speed is hardly affected, but room for improvement!
@@ -48,7 +48,7 @@ unsigned16 Leds::XYZ(Coord3D pixel) {
 }
 
 // maps the virtual led to the physical led(s) and assign a color to it
-void Leds::setPixelColor(unsigned16 indexV, CRGB color) {
+void LedsLayer::setPixelColor(unsigned16 indexV, CRGB color) {
   if (indexV < mappingTable.size()) {
     switch (mappingTable[indexV].mapType) {
       case m_color:{
@@ -79,15 +79,15 @@ void Leds::setPixelColor(unsigned16 indexV, CRGB color) {
     ppf(" dev sPC V:%d >= %d", indexV, NUM_LEDS_Max);
 }
 
-void Leds::setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri) {
+void LedsLayer::setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri) {
   setPixelColor(indexV, ColorFromPalette(palette, palIndex, palBri));
 }
 
-void Leds::blendPixelColor(unsigned16 indexV, CRGB color, uint8_t blendAmount) {
+void LedsLayer::blendPixelColor(unsigned16 indexV, CRGB color, uint8_t blendAmount) {
   setPixelColor(indexV, blend(color, getPixelColor(indexV), blendAmount));
 }
 
-CRGB Leds::getPixelColor(unsigned16 indexV) {
+CRGB LedsLayer::getPixelColor(unsigned16 indexV) {
   if (indexV < mappingTable.size()) {
     switch (mappingTable[indexV].mapType) {
       case m_onePixel:
@@ -111,8 +111,8 @@ CRGB Leds::getPixelColor(unsigned16 indexV) {
   }
 }
 
-void Leds::fadeToBlackBy(unsigned8 fadeBy) {
-  if (projectionNr == p_None || projectionNr == p_Random || (fixture->listOfLeds.size() == 1)) {
+void LedsLayer::fadeToBlackBy(unsigned8 fadeBy) {
+  if (projectionNr == p_None || projectionNr == p_Random || (fixture->layers.size() == 1)) {
     fastled_fadeToBlackBy(fixture->ledsP, fixture->nrOfLeds, fadeBy);
   } else {
     for (uint16_t index = 0; index < mappingTable.size(); index++) {
@@ -123,8 +123,8 @@ void Leds::fadeToBlackBy(unsigned8 fadeBy) {
   }
 }
 
-void Leds::fill_solid(const struct CRGB& color) {
-  if (projectionNr == p_None || projectionNr == p_Random || (fixture->listOfLeds.size() == 1)) {
+void LedsLayer::fill_solid(const struct CRGB& color) {
+  if (projectionNr == p_None || projectionNr == p_Random || (fixture->layers.size() == 1)) {
     fastled_fill_solid(fixture->ledsP, fixture->nrOfLeds, color);
   } else {
     for (uint16_t index = 0; index < mappingTable.size(); index++)
@@ -132,8 +132,8 @@ void Leds::fill_solid(const struct CRGB& color) {
   }
 }
 
-void Leds::fill_rainbow(unsigned8 initialhue, unsigned8 deltahue) {
-  if (projectionNr == p_None || projectionNr == p_Random || (fixture->listOfLeds.size() == 1)) {
+void LedsLayer::fill_rainbow(unsigned8 initialhue, unsigned8 deltahue) {
+  if (projectionNr == p_None || projectionNr == p_Random || (fixture->layers.size() == 1)) {
     fastled_fill_rainbow(fixture->ledsP, fixture->nrOfLeds, initialhue, deltahue);
   } else {
     CHSV hsv;
@@ -148,7 +148,7 @@ void Leds::fill_rainbow(unsigned8 initialhue, unsigned8 deltahue) {
   }
 }
 
-void PhysMap::addIndexP(Leds &leds, uint16_t indexP) {
+void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
   // ppf("addIndexP i:%d t:%d", indexP, mapType);
   switch (mapType) {
     case m_color:

@@ -156,8 +156,8 @@ public:
         eff->fixture.doAllocPins = true;
 
         //remap all leds
-        // for (std::vector<Leds *>::iterator leds=eff->fixture.listOfLeds.begin(); leds!=eff->fixture.listOfLeds.end(); ++leds) {
-        for (Leds *leds: eff->fixture.listOfLeds) {
+        // for (std::vector<LedsLayer *>::iterator leds=eff->fixture.layers.begin(); leds!=eff->fixture.layers.end(); ++leds) {
+        for (LedsLayer *leds: eff->fixture.layers) {
           leds->triggerMapping();
         }
 

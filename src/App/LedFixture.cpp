@@ -26,7 +26,7 @@ void Fixture::projectAndMap() {
 
     // reset leds
     stackUnsigned8 rowNr = 0;
-    for (Leds *leds: listOfLeds) {
+    for (LedsLayer *leds: layers) {
       if (leds->doMap) {
         leds->fill_solid(CRGB::Black);
 
@@ -64,7 +64,7 @@ void Fixture::projectAndMap() {
     starJson.lookFor("nrOfLeds", &nrOfLeds);
     starJson.lookFor("pin", &currPin);
 
-    //lookFor leds array and for each item in array call lambdo to make a projection
+    //lookFor leds array and for each item in array call lambda to make a projection
     starJson.lookFor("leds", [this, &prevIndexP, &indexP, &currPin](std::vector<unsigned16> uint16CollectList) { //this will be called for each tuple of coordinates!
 
       if (uint16CollectList.size()>=1) { // process one pixel
@@ -79,7 +79,7 @@ void Fixture::projectAndMap() {
         if (indexP < NUM_LEDS_Max) {
 
           stackUnsigned8 rowNr = 0;
-          for (Leds *leds: listOfLeds) {
+          for (LedsLayer *leds: layers) {
 
             if (leds->projectionNr != p_Random && leds->projectionNr != p_None) //only real projections
             if (leds->doMap) { //add pixel in leds mappingtable
@@ -150,7 +150,7 @@ void Fixture::projectAndMap() {
               } //if x,y,z between start and endpos
             } //if leds->doMap
             rowNr++;
-          } //for listOfLeds
+          } //for layers
         } //indexP < max
         else 
           ppf("dev post indexP too high %d>=%d or %d p:%d,%d,%d\n", indexP, nrOfLeds, NUM_LEDS_Max, pixel.x, pixel.y, pixel.z);
@@ -197,7 +197,7 @@ void Fixture::projectAndMap() {
       //after processing each led
       stackUnsigned8 rowNr = 0;
 
-      for (Leds *leds: listOfLeds) {
+      for (LedsLayer *leds: layers) {
         if (leds->doMap) {
           ppf("projectAndMap post leds[%d] fx:%d pro:%d\n", rowNr, leds->fx, leds->projectionNr);
 
@@ -256,7 +256,7 @@ void Fixture::projectAndMap() {
           print->fFormat(buf, sizeof(buf)-1,"%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           mdl->setValue("ledsSize", JsonString(buf, JsonString::Copied), rowNr);
 
-          ppf("projectAndMap leds[%d].size = %d + m:(%d * %d) B\n", rowNr, sizeof(Leds), leds->mappingTable.size(), sizeof(PhysMap)); //44 -> 164
+          ppf("projectAndMap leds[%d].size = %d + m:(%d * %d) B\n", rowNr, sizeof(LedsLayer), leds->mappingTable.size(), sizeof(PhysMap)); //44 -> 164
 
           leds->doMap = false;
         } //leds->doMap

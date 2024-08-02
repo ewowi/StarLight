@@ -81,7 +81,7 @@ static float _sin(float j) {return sin(j);}
 //LEDS specific
 static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);}
 static uint8_t _sin8(uint8_t a) {return sin8(a);}
-static Leds *gLeds = nullptr;
+static LedsLayer *gLeds = nullptr;
 static void sPCLive(uint16_t pixel, CRGB color) {
   // if (pixel == 0) ppf(".");
   // if (pixel < 10)
@@ -172,8 +172,8 @@ public:
     addExternalFun("uint8_t", "sin8","(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
     addExternalFun("void", "sPC", "(int a1, CRGB a2)", (void *)sPCLive); 
     //address of overloaded function with no contextual type information: setPixelColorLive
-    //ISO C++ forbids taking the address of a bound member function to form a pointer to member function.  Say '&Leds::setPixelColorLive' [-fpermissive]
-    //converting from 'void (Leds::*)(uint16_t, uint32_t)' {aka 'void (Leds::*)(short unsigned int, unsigned int)'} to 'void*' [-Wpmf-conversions]
+    //ISO C++ forbids taking the address of a bound member function to form a pointer to member function.  Say '&LedsLayer::setPixelColorLive' [-fpermissive]
+    //converting from 'void (LedsLayer::*)(uint16_t, uint32_t)' {aka 'void (LedsLayer::*)(short unsigned int, unsigned int)'} to 'void*' [-Wpmf-conversions]
 
     //End LEDS specific
 

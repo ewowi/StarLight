@@ -16,7 +16,7 @@ class NoneProjection: public Projection {
   //uint8_t dim() {return _1D;} // every projection should work for all D
   const char * tags() {return "💫";}
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
   }
 }; //NoneProjection
 
@@ -26,7 +26,7 @@ class DefaultProjection: public Projection {
 
   public:
 
-  void setup(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
     if (leds.size == Coord3D{0,0,0}) {
       adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
       leds.size = sizeAdjusted;
@@ -35,7 +35,7 @@ class DefaultProjection: public Projection {
     indexV = leds.XYZUnprojected(mapped);
   }
 
-  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // ppf ("Default Projection %dD -> %dD Effect  Size: %d,%d,%d Pixel: %d,%d,%d ->", leds.projectionDimension, leds.effectDimension, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
     switch (leds.effectDimension) {
       case _1D: // effectDimension 1DxD
@@ -86,7 +86,7 @@ class DefaultProjection: public Projection {
     // ppf (" Size: %d,%d,%d Pixel: %d,%d,%d\n", sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
   }
 
-  void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
+  void adjustMapped(LedsLayer &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
     switch (leds.effectDimension) {
       case _1D: // effectDimension 1DxD
           mapped.x = pixelAdjusted.distance(midPosAdjusted);
@@ -136,7 +136,7 @@ class PinwheelProjection: public Projection {
 
   public:
 
-  void setup(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
     if (leds.size == Coord3D{0,0,0}) {
       adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
       leds.size = sizeAdjusted;
@@ -145,7 +145,7 @@ class PinwheelProjection: public Projection {
     indexV = leds.XYZUnprojected(mapped);
   }
 
-  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     if (leds.size != Coord3D{0,0,0}) return; // Adjust only on first call
     leds.projectionData.begin();
     const int petals = leds.projectionData.read<uint8_t>();
@@ -162,7 +162,7 @@ class PinwheelProjection: public Projection {
     }
   }
 
-  void adjustMapped(Leds &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
+  void adjustMapped(LedsLayer &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
     // factors of 360
     const int FACTORS[24] = {360, 180, 120, 90, 72, 60, 45, 40, 36, 30, 24, 20, 18, 15, 12, 10, 9, 8, 6, 5, 4, 3, 2};
     // UI Variables
@@ -198,7 +198,7 @@ class PinwheelProjection: public Projection {
     // ppf("pixelAdjusted %2d,%2d,%2d -> %2d,%2d,%2d Angle: %3d Petal: %2d\n", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, mapped.x, mapped.y, mapped.z, angle, value);
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     leds.projectionData.reset();
 
     uint8_t *petals   = leds.projectionData.write<uint8_t>(60); // Initalize petal first for adjustSizeAndPixel
@@ -209,13 +209,13 @@ class PinwheelProjection: public Projection {
 
     ui->initSlider(parentVar, "Swirl", swirlVal, 0, 60, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->triggerMapping();
+        leds.fixture->layers[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
     ui->initCheckBox(parentVar, "Reverse", reverse, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->triggerMapping();
+        leds.fixture->layers[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
@@ -223,7 +223,7 @@ class PinwheelProjection: public Projection {
     if (leds.projectionDimension == _3D) {
       ui->initSlider(parentVar, "Z Twist", zTwist, 0, 42, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->triggerMapping();
+          leds.fixture->layers[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
@@ -231,14 +231,14 @@ class PinwheelProjection: public Projection {
     // Rotation symmetry. Uses factors of 360.
     ui->initSlider(parentVar, "Rotational Symmetry", symmetry, 1, 23, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->triggerMapping();
+        leds.fixture->layers[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
     // Naming petals, arms, blades, rays? Controls virtual strip length.
     ui->initSlider(parentVar, "Petals", petals, 1, 60, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->triggerMapping();
+        leds.fixture->layers[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
@@ -251,13 +251,13 @@ class MultiplyProjection: public Projection {
 
   public:
 
-  void setup(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
     dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
   }
 
-  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
     leds.projectionData.begin();
     Coord3D proMulti = leds.projectionData.read<Coord3D>();
@@ -279,22 +279,22 @@ class MultiplyProjection: public Projection {
     else pixelAdjusted = pixelAdjusted % sizeAdjusted;
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     leds.projectionData.reset();
     Coord3D *proMulti = leds.projectionData.write<Coord3D>({2,2,1});
     bool *mirror = leds.projectionData.write<bool>(false);
     ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        if (rowNr < leds.fixture->listOfLeds.size()) {
-          leds.fixture->listOfLeds[rowNr]->triggerMapping();
+        if (rowNr < leds.fixture->layers.size()) {
+          leds.fixture->layers[rowNr]->triggerMapping();
         }
         return true;
       default: return false;
     }});
     ui->initCheckBox(parentVar, "mirror", mirror, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        if (rowNr < leds.fixture->listOfLeds.size()) {
-          leds.fixture->listOfLeds[rowNr]->triggerMapping();
+        if (rowNr < leds.fixture->layers.size()) {
+          leds.fixture->layers[rowNr]->triggerMapping();
         }
         return true;
       default: return false;
@@ -308,12 +308,12 @@ class TiltPanRollProjection: public Projection {
 
   public:
 
-  void setup(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
     DefaultProjection dp;
     dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
   }
 
-  void adjustXYZ(Leds &leds, Coord3D &pixel) {
+  void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {
     #ifdef STARBASE_USERMOD_MPU6050
       if (leds.proGyro) {
         pixel = trigoTiltPanRoll.tilt(pixel, leds.size/2, mpu6050->gyro.x);
@@ -330,28 +330,28 @@ class TiltPanRollProjection: public Projection {
     }
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     //tbd: implement variable by reference for rowNrs
     #ifdef STARBASE_USERMOD_MPU6050
       ui->initCheckBox(parentVar, "proGyro", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          if (rowNr < leds.fixture->listOfLeds.size())
-            leds.fixture->listOfLeds[rowNr]->proGyro = mdl->getValue(var, rowNr);
+          if (rowNr < leds.fixture->layers.size())
+            leds.fixture->layers[rowNr]->proGyro = mdl->getValue(var, rowNr);
           return true;
         default: return false;
       }});
     #endif
     ui->initSlider(parentVar, "proTilt", 128, 0, 254, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        if (rowNr < leds.fixture->listOfLeds.size())
-          leds.fixture->listOfLeds[rowNr]->proTiltSpeed = mdl->getValue(var, rowNr);
+        if (rowNr < leds.fixture->layers.size())
+          leds.fixture->layers[rowNr]->proTiltSpeed = mdl->getValue(var, rowNr);
         return true;
       default: return false;
     }});
     ui->initSlider(parentVar, "proPan", 128, 0, 254, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        if (rowNr < leds.fixture->listOfLeds.size())
-          leds.fixture->listOfLeds[rowNr]->proPanSpeed = mdl->getValue(var, rowNr);
+        if (rowNr < leds.fixture->layers.size())
+          leds.fixture->layers[rowNr]->proPanSpeed = mdl->getValue(var, rowNr);
         return true;
       default: return false;
     }});
@@ -360,8 +360,8 @@ class TiltPanRollProjection: public Projection {
         ui->setLabel(var, "Roll speed");
         return true;
       case onChange:
-        if (rowNr < leds.fixture->listOfLeds.size())
-          leds.fixture->listOfLeds[rowNr]->proRollSpeed = mdl->getValue(var, rowNr);
+        if (rowNr < leds.fixture->layers.size())
+          leds.fixture->layers[rowNr]->proRollSpeed = mdl->getValue(var, rowNr);
         return true;
       default: return false;
     }});
@@ -374,13 +374,13 @@ class DistanceFromPointProjection: public Projection {
 
   public:
 
-  void setup(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
     DefaultProjection dp;
     dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
     if (leds.projectionDimension == _2D && leds.effectDimension == _2D) postProcessing(leds, indexV);
   }
 
-  void postProcessing(Leds &leds, uint16_t &indexV) {
+  void postProcessing(LedsLayer &leds, uint16_t &indexV) {
     //2D2D: inverse mapping
     Trigo trigo(leds.size.x-1); // 8 bits trigo with period leds.size.x-1 (currentl Float trigo as same performance)
     float minDistance = 10;
@@ -427,23 +427,23 @@ class Preset1Projection: public Projection {
   const char * name() {return "Preset1";}
   const char * tags() {return "💫";}
 
-  void setup(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
     dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
   }
 
-  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     MultiplyProjection mp;
     mp.adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
   }
 
-  void adjustXYZ(Leds &leds, Coord3D &pixel) {
+  void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {
     TiltPanRollProjection tp;
     tp.adjustXYZ(leds, pixel);
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     MultiplyProjection mp;
     mp.controls(leds, parentVar);
     TiltPanRollProjection tp;
@@ -455,7 +455,7 @@ class RandomProjection: public Projection {
   const char * name() {return "Random";}
   const char * tags() {return "💫";}
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
   }
 }; //RandomProjection
 
@@ -465,13 +465,13 @@ class ReverseProjection: public Projection {
 
   public:
 
-  void setup(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) { 
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) { 
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
     dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
   }
 
-  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
     leds.projectionData.begin();
     bool reverseX = leds.projectionData.read<bool>();
@@ -483,7 +483,7 @@ class ReverseProjection: public Projection {
     if (reverseZ) pixelAdjusted.z = sizeAdjusted.z - pixelAdjusted.z - 1;
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     leds.projectionData.reset();
     bool *reverseX = leds.projectionData.write<bool>(false);
     bool *reverseY = leds.projectionData.write<bool>(false);
@@ -491,14 +491,14 @@ class ReverseProjection: public Projection {
 
     ui->initCheckBox(parentVar, "reverse X", reverseX, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->triggerMapping();
+        leds.fixture->layers[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
     if (leds.effectDimension >= _2D || leds.projectionDimension >= _2D) {
       ui->initCheckBox(parentVar, "reverse Y", reverseY, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->triggerMapping();
+          leds.fixture->layers[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
@@ -506,7 +506,7 @@ class ReverseProjection: public Projection {
     if (leds.effectDimension == _3D || leds.projectionDimension == _3D) {
       ui->initCheckBox(parentVar, "reverse Z", reverseZ, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->triggerMapping();
+          leds.fixture->layers[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
@@ -520,13 +520,13 @@ class MirrorProjection: public Projection {
 
   public:
 
-  void setup(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
     dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
   }
 
-  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
     leds.projectionData.begin();
     bool mirrorX = leds.projectionData.read<bool>();
@@ -547,21 +547,21 @@ class MirrorProjection: public Projection {
     }
 }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     leds.projectionData.reset();
     bool *mirrorX = leds.projectionData.write<bool>(false);
     bool *mirrorY = leds.projectionData.write<bool>(false);
     bool *mirrorZ = leds.projectionData.write<bool>(false);
     ui->initCheckBox(parentVar, "mirror X", mirrorX, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->triggerMapping();
+        leds.fixture->layers[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
     if (leds.projectionDimension >= _2D) {
       ui->initCheckBox(parentVar, "mirror Y", mirrorY, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->triggerMapping();
+          leds.fixture->layers[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
@@ -569,7 +569,7 @@ class MirrorProjection: public Projection {
     if (leds.projectionDimension == _3D) {
       ui->initCheckBox(parentVar, "mirror Z", mirrorZ, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->triggerMapping();
+          leds.fixture->layers[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
@@ -583,13 +583,13 @@ class GroupingProjection: public Projection {
 
   public:
 
-  void setup(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
     dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
   }
 
-  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
     leds.projectionData.begin();
     Coord3D grouping = leds.projectionData.read<Coord3D>();
@@ -602,12 +602,12 @@ class GroupingProjection: public Projection {
     sizeAdjusted = (sizeAdjusted + grouping - Coord3D{1,1,1}) / grouping; // round up
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     leds.projectionData.reset();
     Coord3D *grouping = leds.projectionData.write<Coord3D>({1,1,1});
     ui->initCoord3D(parentVar, "Grouping", grouping, 0, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->triggerMapping();
+        leds.fixture->layers[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
@@ -618,7 +618,7 @@ class SpacingProjection: public Projection {
   const char * name() {return "Spacing WIP";}
   const char * tags() {return "💡";}
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
   }
 }; //SpacingProjection
 
@@ -628,13 +628,13 @@ class TransposeProjection: public Projection {
 
   public:
 
-  void setup(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
     dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
   }
 
-  void adjustSizeAndPixel(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
     leds.projectionData.begin();
     bool transposeXY = leds.projectionData.read<bool>();
@@ -646,7 +646,7 @@ class TransposeProjection: public Projection {
     if (transposeYZ) { int temp = pixelAdjusted.y; pixelAdjusted.y = pixelAdjusted.z; pixelAdjusted.z = temp; }
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     leds.projectionData.reset();
     bool *transposeXY = leds.projectionData.write<bool>(false);
     bool *transposeXZ = leds.projectionData.write<bool>(false);
@@ -654,20 +654,20 @@ class TransposeProjection: public Projection {
 
     ui->initCheckBox(parentVar, "transpose XY", transposeXY, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->listOfLeds[rowNr]->triggerMapping();
+        leds.fixture->layers[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
     if (leds.effectDimension == _3D) {
       ui->initCheckBox(parentVar, "transpose XZ", transposeXZ, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->triggerMapping();
+          leds.fixture->layers[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
       ui->initCheckBox(parentVar, "transpose YZ", transposeYZ, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->listOfLeds[rowNr]->triggerMapping();
+          leds.fixture->layers[rowNr]->triggerMapping();
           return true;
         default: return false;
       }});
@@ -679,7 +679,7 @@ class KaleidoscopeProjection: public Projection {
   const char * name() {return "Kaleidoscope WIP";}
   const char * tags() {return "💫";}
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
   }
 }; //KaleidoscopeProjection
 
@@ -687,6 +687,6 @@ class TestProjection: public Projection {
   const char * name() {return "Test";}
   const char * tags() {return "💡";}
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
   }
 }; //TestProjection

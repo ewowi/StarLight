@@ -191,7 +191,7 @@ enum mapType {
   m_count //keep as last entry
 };
 
-class Leds; //forward
+class LedsLayer; //forward
 
 
 struct PhysMap {
@@ -209,13 +209,13 @@ struct PhysMap {
     rgb14 = 0;
   }
 
-  void addIndexP(Leds &leds, uint16_t indexP);
+  void addIndexP(LedsLayer &leds, uint16_t indexP);
 
 }; // 2 bytes
 
 class Projection; //forward for cached virtual class methods!
 
-class Leds {
+class LedsLayer {
 
 public:
 
@@ -229,8 +229,8 @@ public:
   unsigned8 projectionNr = p_Default;
 
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
-  void (Projection::*setupCached)(Leds &, Coord3D &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = nullptr;
-  void (Projection::*adjustXYZCached)(Leds &, Coord3D &) = nullptr;
+  void (Projection::*setupCached)(LedsLayer &, Coord3D &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = nullptr;
+  void (Projection::*adjustXYZCached)(LedsLayer &, Coord3D &) = nullptr;
 
   unsigned8 effectDimension = -1;
   unsigned8 projectionDimension = -1;
@@ -274,13 +274,13 @@ public:
 
   unsigned16 XYZ(Coord3D pixel);
 
-  Leds(Fixture &fixture) {
-    ppf("Leds constructor (PhysMap:%d)\n", sizeof(PhysMap));
+  LedsLayer(Fixture &fixture) {
+    ppf("LedsLayer constructor (PhysMap:%d)\n", sizeof(PhysMap));
     this->fixture = &fixture;
   }
 
-  ~Leds() {
-    ppf("Leds destructor\n");
+  ~LedsLayer() {
+    ppf("LedsLayer destructor\n");
     fadeToBlackBy();
     doMap = true; // so loop is not running while deleting
     for (std::vector<uint16_t> mappingTableIndex: mappingTableIndexes) {
@@ -293,12 +293,12 @@ public:
   void triggerMapping();
 
   // indexVLocal stored to be used by other operators
-  Leds& operator[](unsigned16 indexV) {
+  LedsLayer& operator[](unsigned16 indexV) {
     indexVLocal = indexV;
     return *this;
   }
 
-  Leds& operator[](Coord3D pos) {
+  LedsLayer& operator[](Coord3D pos) {
     indexVLocal = XYZ(pos.x, pos.y, pos.z);
     return *this;
   }
@@ -310,22 +310,22 @@ public:
   // }
 
   // uses indexVLocal and color to call setPixelColor
-  Leds& operator=(const CRGB color) {
+  LedsLayer& operator=(const CRGB color) {
     setPixelColor(indexVLocal, color);
     return *this;
   }
 
-  Leds& operator+=(const CRGB color) {
+  LedsLayer& operator+=(const CRGB color) {
     setPixelColor(indexVLocal, getPixelColor(indexVLocal) + color);
     return *this;
   }
-  Leds& operator|=(const CRGB color) {
+  LedsLayer& operator|=(const CRGB color) {
     // setPixelColor(indexVLocal, color);
     setPixelColor(indexVLocal, getPixelColor(indexVLocal) | color);
     return *this;
   }
 
-  // Leds& operator+(const CRGB color) {
+  // LedsLayer& operator+(const CRGB color) {
   //   setPixelColor(indexVLocal, getPixelColor(indexVLocal) + color);
   //   return *this;
   // }

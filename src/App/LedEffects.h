@@ -36,11 +36,11 @@ public:
   virtual const char * tags() {return "";}
   virtual uint8_t dim() {return _1D;};
 
-  virtual void setup(Leds &leds) {}
+  virtual void setup(LedsLayer &leds) {}
 
-  virtual void loop(Leds &leds) {}
+  virtual void loop(LedsLayer &leds) {}
 
-  virtual void controls(Leds &leds, JsonObject parentVar) {
+  virtual void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSelect(parentVar, "pal", 4, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         ui->setLabel(var, "Palette");
@@ -85,7 +85,7 @@ class SolidEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "💡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t red = leds.effectData.read<uint8_t>();
     uint8_t green = leds.effectData.read<uint8_t>();
@@ -95,7 +95,7 @@ class SolidEffect: public Effect {
     leds.fill_solid(color);
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "Red", leds.effectData.write<uint8_t>(182));
     ui->initSlider(parentVar, "Green", leds.effectData.write<uint8_t>(15));
     ui->initSlider(parentVar, "Blue", leds.effectData.write<uint8_t>(98));
@@ -107,7 +107,7 @@ class RainbowEffect: public Effect {
   uint8_t      dim()  {return _1D;}
   const char * tags() {return "💡";} //💡 means wled origin
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     // UI Variables
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t scale = leds.effectData.read<uint8_t>();
@@ -122,7 +122,7 @@ class RainbowEffect: public Effect {
     }
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(128));
     ui->initSlider(parentVar, "Scale", leds.effectData.write<uint8_t>(128));
@@ -134,7 +134,7 @@ class RainbowWithGlitterEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "⚡";} //⚡ means FastLED origin
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     uint8_t glitter = leds.effectData.read<bool>();
 
     // built-in FastLED rainbow, plus some random sparkly glitter
@@ -145,14 +145,14 @@ class RainbowWithGlitterEffect: public Effect {
       addGlitter(leds, 80);
   }
 
-  void addGlitter(Leds &leds, fract8 chanceOfGlitter) 
+  void addGlitter(LedsLayer &leds, fract8 chanceOfGlitter) 
   {
     if( random8() < chanceOfGlitter) {
       leds[ random16(leds.nrOfLeds) ] += CRGB::White;
     }
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     //no palette control is created
     ui->initCheckBox(parentVar, "glitter", leds.effectData.write<bool>(false));
   }
@@ -165,7 +165,7 @@ class FlowEffect: public Effect {
   uint8_t      dim()  {return _1D;}
   const char * tags() {return "💡";} //💡 means wled origin
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     // UI Variables
     uint8_t speed   = leds.effectData.read<uint8_t>();
     uint8_t zonesUI = leds.effectData.read<uint8_t>();
@@ -195,7 +195,7 @@ class FlowEffect: public Effect {
     }
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(128));
     ui->initSlider(parentVar, "Zones", leds.effectData.write<uint8_t>(128));
@@ -208,7 +208,7 @@ class SinelonEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "⚡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t bpm = leds.effectData.read<uint8_t>();
 
@@ -218,7 +218,7 @@ class SinelonEffect: public Effect {
     leds[pos] += CHSV( sys->now/50, 255, 255);
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(60));
   }
 }; //Sinelon
@@ -228,14 +228,14 @@ class ConfettiEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "⚡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     // random colored speckles that blink in and fade smoothly
     leds.fadeToBlackBy(10);
     int pos = random16(leds.nrOfLeds);
     leds[pos] += CHSV( sys->now/50 + random8(64), 200, 255);
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {} //so no palette control is created
+  void controls(LedsLayer &leds, JsonObject parentVar) {} //so no palette control is created
 };
 
 // colored stripes pulsing at a defined Beats-Per-Minute (BPM)
@@ -244,7 +244,7 @@ class BPMEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "⚡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     uint8_t BeatsPerMinute = 62;
     uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
     for (forUnsigned16 i = 0; i < leds.nrOfLeds; i++) { //9948
@@ -252,7 +252,7 @@ class BPMEffect: public Effect {
     }
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
   }
 };
@@ -263,7 +263,7 @@ class JuggleEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "⚡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     leds.fadeToBlackBy(20);
     uint8_t dothue = 0;
     for (unsigned i = 0; i < 8; i++) {
@@ -272,7 +272,7 @@ class JuggleEffect: public Effect {
     }
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {} //so no palette control is created
+  void controls(LedsLayer &leds, JsonObject parentVar) {} //so no palette control is created
 };
 
 //https://www.perfectcircuit.com/signal/difference-between-waveforms
@@ -281,7 +281,7 @@ class RunningEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t bpm = leds.effectData.read<uint8_t>();
     uint8_t fade = leds.effectData.read<uint8_t>();
@@ -293,7 +293,7 @@ class RunningEffect: public Effect {
     // leds[leds.nrOfLeds -1 - pos2] = CHSV( sys->now/50, 255, 255); //make sure the right physical leds get their value
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(60), 0, 255, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setComment(var, "in BPM!");
@@ -308,7 +308,7 @@ class RunningEffect: public Effect {
 class RingEffect: public Effect {
   protected:
 
-  void setRing(Leds &leds, int ring, CRGB colour) { //so britisch ;-)
+  void setRing(LedsLayer &leds, int ring, CRGB colour) { //so britisch ;-)
     leds[ring] = colour;
   }
 
@@ -319,7 +319,7 @@ class RingRandomFlowEffect: public RingEffect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //binding of loop persistent values (pointers)
     uint8_t *hue = leds.effectData.readWrite<uint8_t>(leds.nrOfLeds); //array
 
@@ -333,7 +333,7 @@ class RingRandomFlowEffect: public RingEffect {
     // FastLED.delay(SPEED);
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {} //so no palette control is created
+  void controls(LedsLayer &leds, JsonObject parentVar) {} //so no palette control is created
 };
 
 //BouncingBalls inspired by WLED
@@ -350,7 +350,7 @@ class BouncingBallsEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "💡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t grav = leds.effectData.read<uint8_t>();
     uint8_t numBalls = leds.effectData.read<uint8_t>();
@@ -365,7 +365,7 @@ class BouncingBallsEffect: public Effect {
     // const bool hasCol2 = SEGCOLOR(2);
     const unsigned long time = sys->now;
 
-    //not necessary as effectData is cleared at setup(Leds &leds)
+    //not necessary as effectData is cleared at setup(LedsLayer &leds)
     // if (call == 0) {
     //   for (size_t i = 0; i < maxNumBalls; i++) balls[i].lastBounceTime = time;
     // }
@@ -408,14 +408,14 @@ class BouncingBallsEffect: public Effect {
     } //balls
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "gravity", leds.effectData.write<uint8_t>(128));
     ui->initSlider(parentVar, "balls", leds.effectData.write<uint8_t>(8), 1, 16);
   }
 }; // BouncingBalls
 
-void mode_fireworks(Leds &leds, uint16_t *aux0, uint16_t *aux1, uint8_t speed, uint8_t intensity, bool useAudio = false) {
+void mode_fireworks(LedsLayer &leds, uint16_t *aux0, uint16_t *aux1, uint8_t speed, uint8_t intensity, bool useAudio = false) {
   // fade_out(0);
   leds.fadeToBlackBy(10);
   // if (SEGENV.call == 0) {
@@ -480,7 +480,7 @@ class RainEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "💡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t intensity = leds.effectData.read<uint8_t>();
@@ -522,7 +522,7 @@ class RainEffect: public Effect {
     mode_fireworks(leds, aux0, aux1, speed, intensity);
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128), 1, 255);
     ui->initSlider(parentVar, "intensity", leds.effectData.write<uint8_t>(64), 1, 128);
@@ -544,7 +544,7 @@ class DripEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "💡💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t grav = leds.effectData.read<uint8_t>();
     uint8_t drips = leds.effectData.read<uint8_t>();
@@ -616,7 +616,7 @@ class DripEffect: public Effect {
     }
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "gravity", leds.effectData.write<uint8_t>(128), 1, 255);
     ui->initSlider(parentVar, "drips", leds.effectData.write<uint8_t>(4), 1, 6);
@@ -630,7 +630,7 @@ class HeartBeatEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "💡💫♥";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t intensity = leds.effectData.read<uint8_t>();
@@ -663,7 +663,7 @@ class HeartBeatEffect: public Effect {
     }
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(15), 0, 31);
     ui->initSlider(parentVar, "intensity", leds.effectData.write<uint8_t>(128));
@@ -675,11 +675,11 @@ class FreqMatrixEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "♪💡";}
 
-  void setup(Leds &leds) {
+  void setup(LedsLayer &leds) {
     leds.fadeToBlackBy(16);
   }
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t fx = leds.effectData.read<uint8_t>();
@@ -723,7 +723,7 @@ class FreqMatrixEffect: public Effect {
     }
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(255));
     ui->initSlider(parentVar, "Sound effect", leds.effectData.write<uint8_t>(128));
     ui->initSlider(parentVar, "Low bin", leds.effectData.write<uint8_t>(18));
@@ -740,7 +740,7 @@ class PopCornEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "♪💡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t numPopcorn = leds.effectData.read<uint8_t>();
@@ -803,7 +803,7 @@ class PopCornEffect: public Effect {
     }
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128));
     ui->initSlider(parentVar, "corns", leds.effectData.write<uint8_t>(maxNumPopcorn/2), 1, maxNumPopcorn);
@@ -818,7 +818,7 @@ class NoiseMeterEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "♪💡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t fadeRate = leds.effectData.read<uint8_t>();
     uint8_t width = leds.effectData.read<uint8_t>();
@@ -843,7 +843,7 @@ class NoiseMeterEffect: public Effect {
     *aux1+=beatsin8(4,0,10);
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "fadeRate", leds.effectData.write<uint8_t>(248), 200, 254);
     ui->initSlider(parentVar, "width", leds.effectData.write<uint8_t>(128));
@@ -855,7 +855,7 @@ class AudioRingsEffect: public RingEffect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "♫💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     bool inWards = leds.effectData.read<bool>();
     uint8_t nrOfRings = leds.effectData.read<uint8_t>();
@@ -884,7 +884,7 @@ class AudioRingsEffect: public RingEffect {
     setRingFromFtt(leds, 0, 8); // set outer ring to bass
 
   }
-  void setRingFromFtt(Leds &leds, int index, int ring) {
+  void setRingFromFtt(LedsLayer &leds, int index, int ring) {
     byte val = wledAudioMod->fftResults[index];
     // Visualize leds to the beat
     CRGB color = ColorFromPalette(leds.palette, val);
@@ -892,7 +892,7 @@ class AudioRingsEffect: public RingEffect {
     setRing(leds, ring, color);
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initCheckBox(parentVar, "inWards", leds.effectData.write<bool>(true));
     ui->initSlider(parentVar, "rings", leds.effectData.write<uint8_t>(7), 1, 50);
@@ -904,11 +904,11 @@ class DJLightEffect: public Effect {
   uint8_t dim() {return _1D;}
   const char * tags() {return "♫💡";}
 
-  void setup(Leds &leds) {
+  void setup(LedsLayer &leds) {
     leds.fill_solid(CRGB::Black);
   }
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     bool candyFactory = leds.effectData.read<bool>();
@@ -970,7 +970,7 @@ class DJLightEffect: public Effect {
     }
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(255));
     ui->initCheckBox(parentVar, "candyFactory", leds.effectData.write<bool>(true));
     ui->initSlider(parentVar, "fade", leds.effectData.write<uint8_t>(4), 0, 10);
@@ -988,7 +988,7 @@ class LinesEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t bpm = leds.effectData.read<uint8_t>();
     bool vertical = leds.effectData.read<bool>();
@@ -1010,7 +1010,7 @@ class LinesEffect: public Effect {
     }
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(60));
     ui->initCheckBox(parentVar, "Vertical", leds.effectData.write<bool>(true));
   }
@@ -1022,7 +1022,7 @@ class BlackHoleEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t fade = leds.effectData.read<uint8_t>();
     uint8_t outX = leds.effectData.read<uint8_t>();
@@ -1054,7 +1054,7 @@ class BlackHoleEffect: public Effect {
 
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "fade", leds.effectData.write<uint8_t>(16), 0, 32);
     ui->initSlider(parentVar, "outX", leds.effectData.write<uint8_t>(16), 0, 32);
     ui->initSlider(parentVar, "outY", leds.effectData.write<uint8_t>(16), 0, 32);
@@ -1069,7 +1069,7 @@ class DNAEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t blur = leds.effectData.read<uint8_t>();
@@ -1090,7 +1090,7 @@ class DNAEffect: public Effect {
     leds.blur2d(blur);
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(16), 0, 32);
     ui->initSlider(parentVar, "blur", leds.effectData.write<uint8_t>(128));
@@ -1108,7 +1108,7 @@ class DistortionWavesEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>(); 
     uint8_t scale = leds.effectData.read<uint8_t>(); 
@@ -1152,7 +1152,7 @@ class DistortionWavesEffect: public Effect {
     }
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(4), 0, 8);
     ui->initSlider(parentVar, "scale", leds.effectData.write<uint8_t>(4), 0, 8);
   }
@@ -1170,7 +1170,7 @@ class OctopusEffect: public Effect {
     uint8_t radius;
   };
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t offsetX = leds.effectData.read<uint8_t>();
@@ -1227,7 +1227,7 @@ class OctopusEffect: public Effect {
     }
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
 
     Effect::controls(leds, parentVar); //palette
 
@@ -1253,7 +1253,7 @@ class LissajousEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t freqX = leds.effectData.read<uint8_t>();
     uint8_t fadeRate = leds.effectData.read<uint8_t>();
@@ -1290,7 +1290,7 @@ class LissajousEffect: public Effect {
     }
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
 
     // uint8_t *freqX = ; 
@@ -1311,7 +1311,7 @@ class FrizzlesEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t bpm = leds.effectData.read<uint8_t>();
     uint8_t intensity = leds.effectData.read<uint8_t>();
@@ -1329,7 +1329,7 @@ class FrizzlesEffect: public Effect {
     leds.blur2d(blur);
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(60));
     ui->initSlider(parentVar, "intensity", leds.effectData.write<uint8_t>(128));
@@ -1342,7 +1342,7 @@ class ScrollingTextEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t font = leds.effectData.read<uint8_t>();
@@ -1357,7 +1357,7 @@ class ScrollingTextEffect: public Effect {
 
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initText(parentVar, "text", "StarLight"); //effectData to be implemented!
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128));
     ui->initSelect(parentVar, "font", leds.effectData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
@@ -1380,7 +1380,7 @@ class Noise2DEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "💡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t scale = leds.effectData.read<uint8_t>();
@@ -1394,7 +1394,7 @@ class Noise2DEffect: public Effect {
     }
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
 
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(8), 0, 15);
@@ -1451,7 +1451,7 @@ class GameOfLifeEffect: public Effect {
   uint8_t dim() {return _3D;} //supports 3D but also 2D (1D as well?)
   const char * tags() {return "💫";}
 
-  void placePentomino(Leds &leds, byte *futureCells, bool colorByAge) {
+  void placePentomino(LedsLayer &leds, byte *futureCells, bool colorByAge) {
     byte pattern[5][2] = {{1, 0}, {0, 1}, {1, 1}, {2, 1}, {2, 2}}; // R-pentomino
     if (!random8(5)) pattern[0][1] = 3; // 1/5 chance to use glider
     CRGB color = ColorFromPalette(leds.palette, random8());
@@ -1477,7 +1477,7 @@ class GameOfLifeEffect: public Effect {
     }
   }
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     // UI Variables
     bool *setup       = leds.effectData.readWrite<bool>();
     bool *ruleChanged = leds.effectData.readWrite<bool>();
@@ -1681,7 +1681,7 @@ class GameOfLifeEffect: public Effect {
     *step = sys->now;
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     bool *setup       = leds.effectData.write<bool>(true);
     bool *ruleChanged = leds.effectData.write<bool>(true);
@@ -1849,7 +1849,7 @@ class RubiksCubeEffect: public Effect {
         if (width >= SIZE) rotateFace(top, !clockwise);
       }
 
-      void drawCube(Leds &leds) {
+      void drawCube(LedsLayer &leds) {
         int sizeX = max(leds.size.x-1, 1);
         int sizeY = max(leds.size.y-1, 1);
         int sizeZ = max(leds.size.z-1, 1);
@@ -1929,7 +1929,7 @@ class RubiksCubeEffect: public Effect {
       return move;
   }
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     // UI control variables
     bool   *setup      = leds.effectData.readWrite<bool>();
     uint8_t speed      = leds.effectData.read<uint8_t>();
@@ -1988,7 +1988,7 @@ class RubiksCubeEffect: public Effect {
     *step = sys->now;
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     bool *setup = leds.effectData.write<bool>(true);
     ui->initSlider  (parentVar, "Turns Per Second", leds.effectData.write<uint8_t>(1), 0, 20);   
@@ -2028,7 +2028,7 @@ class ParticleTestEffect: public Effect {
       return Coord3D({int(round(x)), int(round(y)), int(round(z))});
     }
 
-    void updatePositionandDraw(Leds &leds, int particleIndex = 0, bool debugPrint = false) {
+    void updatePositionandDraw(LedsLayer &leds, int particleIndex = 0, bool debugPrint = false) {
       if (debugPrint) ppf("Particle %d: Pos: %f, %f, %f Velocity: %f, %f, %f\n", particleIndex, x, y, z, vx, vy, vz);
 
       Coord3D prevPos = toCoord3DRounded();
@@ -2110,7 +2110,7 @@ class ParticleTestEffect: public Effect {
     }
   };
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     // UI Variables
     bool   *setup        = leds.effectData.readWrite<bool>();
     uint8_t speed        = leds.effectData.read<uint8_t>();
@@ -2219,7 +2219,7 @@ class ParticleTestEffect: public Effect {
     *step = sys->now;
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     bool *setup = leds.effectData.write<bool>(true);
     ui->initSlider  (parentVar, "Speed", leds.effectData.write<uint8_t>(1), 0, 30);
@@ -2253,7 +2253,7 @@ class WaverlyEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "♪💡";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t amplification = leds.effectData.read<uint8_t>();
     uint8_t sensitivity = leds.effectData.read<uint8_t>();
@@ -2282,7 +2282,7 @@ class WaverlyEffect: public Effect {
     leds.blur2d(16);
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "Amplification", leds.effectData.write<uint8_t>(128));
     ui->initSlider(parentVar, "Sensitivity", leds.effectData.write<uint8_t>(128));
@@ -2297,11 +2297,11 @@ class GEQEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "♫💡";}
 
-  void setup(Leds &leds) {
+  void setup(LedsLayer &leds) {
     leds.fadeToBlackBy(16);
   }
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t fadeOut = leds.effectData.read<uint8_t>();
     uint8_t ripple = leds.effectData.read<uint8_t>();
@@ -2385,7 +2385,7 @@ class GEQEffect: public Effect {
     }
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "fadeOut", leds.effectData.write<uint8_t>(255));
     ui->initSlider(parentVar, "ripple", leds.effectData.write<uint8_t>(128));
@@ -2414,11 +2414,11 @@ class LaserGEQEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "♫💫";}
 
-  void setup(Leds &leds) {
+  void setup(LedsLayer &leds) {
     leds.fadeToBlackBy(16);
   }
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t fadeOut = leds.effectData.read<uint8_t>();
 
@@ -2541,7 +2541,7 @@ class LaserGEQEffect: public Effect {
     }
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "fadeOut", leds.effectData.write<uint8_t>(255));
   }
@@ -2552,11 +2552,11 @@ class FunkyPlankEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "♫💡💫";}
 
-  void setup(Leds &leds) {
+  void setup(LedsLayer &leds) {
     leds.fill_solid(CRGB::Black);
   }
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t num_bands = leds.effectData.read<uint8_t>();
@@ -2590,7 +2590,7 @@ class FunkyPlankEffect: public Effect {
     }
   }
 
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(255));
     ui->initSlider(parentVar, "bands", leds.effectData.write<uint8_t>(NUM_GEQ_CHANNELS), 1, NUM_GEQ_CHANNELS);
   }
@@ -2608,7 +2608,7 @@ class RipplesEffect: public Effect {
   uint8_t dim() {return _3D;}
   const char * tags() {return "💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t interval = leds.effectData.read<uint8_t>();
@@ -2629,7 +2629,7 @@ class RipplesEffect: public Effect {
     }
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(50), 0, 99);
     ui->initSlider(parentVar, "interval", leds.effectData.write<uint8_t>(128));
   }
@@ -2640,7 +2640,7 @@ class SphereMoveEffect: public Effect {
   uint8_t dim() {return _3D;}
   const char * tags() {return "💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
 
@@ -2669,7 +2669,7 @@ class SphereMoveEffect: public Effect {
     }
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(50), 0, 99);
   }
 }; // SphereMove3DEffect
@@ -2679,7 +2679,7 @@ class PixelMapEffect: public Effect {
   uint8_t dim() {return _3D;}
   const char * tags() {return "💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t x = leds.effectData.read<uint8_t>();
     uint8_t y = leds.effectData.read<uint8_t>();
@@ -2691,7 +2691,7 @@ class PixelMapEffect: public Effect {
     leds[pos] = CHSV( sys->now/50 + random8(64), 255, 255);// ColorFromPalette(leds.palette,call, bri);
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     ui->initSlider(parentVar, "x", leds.effectData.write<uint8_t>(0), 0, leds.size.x - 1);
     ui->initSlider(parentVar, "y", leds.effectData.write<uint8_t>(0), 0, leds.size.y - 1);
     ui->initSlider(parentVar, "z", leds.effectData.write<uint8_t>(0), 0, leds.size.z - 1);
@@ -2703,7 +2703,7 @@ class Byte2TestEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     bool *setup        = leds.effectData.readWrite<bool>();
     uint8_t speed      = leds.effectData.read<uint8_t>();
@@ -2768,7 +2768,7 @@ class Byte2TestEffect: public Effect {
     *step = sys->now;    
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     bool *setup = leds.effectData.write<bool>(true);
     ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(0), 0, 20);
@@ -2794,7 +2794,7 @@ class Byte2TestEffect2: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     bool *setup        = leds.effectData.readWrite<bool>();
     uint8_t speed      = leds.effectData.read<uint8_t>();
@@ -2891,7 +2891,7 @@ class Byte2TestEffect2: public Effect {
     *step = sys->now;
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     bool *setup = leds.effectData.write<bool>(true);
     ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(0), 0, 20);
@@ -2931,10 +2931,10 @@ class LiveScriptEffect: public Effect {
   uint8_t dim() {return _2D;}
   const char * tags() {return "💫";}
 
-  void loop(Leds &leds) {
+  void loop(LedsLayer &leds) {
   }
   
-  void controls(Leds &leds, JsonObject parentVar) {
+  void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     ui->initSelect(parentVar, "script2", UINT16_MAX, false , [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI: {
@@ -2957,9 +2957,9 @@ class LiveScriptEffect: public Effect {
           files->seqNrToName(fileName, fileNr, ".sc");
           ppf("script f:%d f:%d s:%s\n", funType, fileNr, fileName);
 
-          // in ledleds.h: void setPixelColorLive(unsigned16 indexV, uint32_t color) {setPixelColor(indexV, CRGB::Black);}
-          // void (Leds::*sPCCached)(unsigned16, uint32_t) = &Leds::setPixelColorLive;
-          // Leds *leds2 = &leds;
+          // in LedLayer.h: void setPixelColorLive(unsigned16 indexV, uint32_t color) {setPixelColor(indexV, CRGB::Black);}
+          // void (LedsLayer::*sPCCached)(unsigned16, uint32_t) = &LedsLayer::setPixelColorLive;
+          // LedsLayer *leds2 = &leds;
           // (leds2->*sPCCached)(0, 0);
 
           gLeds = &leds; //set the leds class for live script

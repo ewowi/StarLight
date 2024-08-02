@@ -13,7 +13,7 @@
 
 #include "../Sys/SysModModel.h" //for Coord3D
 
-#include "LedLeds.h"
+#include "LedLayer.h"
 
 #define NUM_LEDS_Max 8192
 
@@ -22,18 +22,18 @@
 #define _3D 3
 
 
-class Leds; //forward
+class LedsLayer; //forward
 
 class Projection {
 public:
   virtual const char * name() {return "noname";}
   virtual const char * tags() {return "";}
 
-  virtual void setup(Leds &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {}
+  virtual void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {}
   
-  virtual void adjustXYZ(Leds &leds, Coord3D &pixel) {}
+  virtual void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {}
   
-  virtual void controls(Leds &leds, JsonObject parentVar) {}
+  virtual void controls(LedsLayer &leds, JsonObject parentVar) {}
 
 };
 
@@ -59,7 +59,7 @@ public:
   unsigned8 fixtureNr = -1;
   Coord3D fixSize = {8,8,1};
 
-  std::vector<Leds *> listOfLeds; //virtual leds
+  std::vector<LedsLayer *> layers; //virtual leds
 
   Coord3D head = {0,0,0};
 
