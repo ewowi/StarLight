@@ -2981,6 +2981,9 @@ class LiveScriptEffect: public Effect {
         return true; }
       default: return false; 
     }}); //script
+
+    ui->initSlider(parentVar, "Slider1", &slider1);
+
   }
 };
 

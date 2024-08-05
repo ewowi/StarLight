@@ -82,13 +82,15 @@ static float _sin(float j) {return sin(j);}
 static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);}
 static uint8_t _sin8(uint8_t a) {return sin8(a);}
 static LedsLayer *gLeds = nullptr;
-static void sPCLive(uint16_t pixel, CRGB color) {
-  // if (pixel == 0) ppf(".");
-  // if (pixel < 10)
-  //   ppf(" %d <- %d-%d-%d", pixel, color.r, color.g, color.b);
-  // gLeds->setPixelColor(pixel, CRGB(random8(), random8(), random8()));
-  if (gLeds) gLeds->setPixelColor(pixel, color);
+static void sPCLive(int t, uint16_t pixel, CRGB color) { // int t needed - otherwise wrong colors, very strange
+  if (gLeds) 
+  {
+    // if (t == 0) ppf(" %d,%d,%d", color.r, color.g, color.b);
+    gLeds->setPixelColor(pixel, color);
+  }
 }
+uint8_t slider1 = 10;
+
 //End LEDS specific
 
 class UserModLive:public SysModule {
@@ -170,10 +172,11 @@ public:
     //LEDS specific
     addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV);
     addExternalFun("uint8_t", "sin8","(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
-    addExternalFun("void", "sPC", "(int a1, CRGB a2)", (void *)sPCLive); 
+    addExternalFun("void", "sPC", "(int a0, int a1, CRGB a2)", (void *)sPCLive); // int t needed - otherwise wrong colors, very strange
     //address of overloaded function with no contextual type information: setPixelColorLive
     //ISO C++ forbids taking the address of a bound member function to form a pointer to member function.  Say '&LedsLayer::setPixelColorLive' [-fpermissive]
     //converting from 'void (LedsLayer::*)(uint16_t, uint32_t)' {aka 'void (LedsLayer::*)(short unsigned int, unsigned int)'} to 'void*' [-Wpmf-conversions]
+    addExternalVal("uint8_t", "slider1", &slider1); //used in map function
 
     //End LEDS specific
 
