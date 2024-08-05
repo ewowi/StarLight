@@ -12,7 +12,7 @@
 
 // #define __RUN_CORE 0
 #pragma once
-#include "parser.h"
+#include "newparser.h"
 
 long time1;
 long time4;
@@ -265,7 +265,7 @@ public:
         ppf("Before parsing\n");
         ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
-        if (p.parse_c(&scScript))
+        if (p.parseScript(&scScript))
         {
           ppf("parsing done\n");
           ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
