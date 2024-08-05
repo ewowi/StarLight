@@ -12,7 +12,7 @@
 
 // #define __RUN_CORE 0
 #pragma once
-#include "newparser.h"
+#include "newParser.h"
 
 long time1;
 long time4;
