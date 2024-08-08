@@ -79,7 +79,7 @@ static float _atan2(float x,float y) { return atan2(x,y);}
 static float _sin(float j) {return sin(j);}
 static float _triangle(float j) {return 1.0 - fabs(fmod(2 * j, 2.0) - 1.0);}
 static float _time(float j) {
-      float myVal = sys->now();
+      float myVal = sys->now;
       myVal = myVal / 65535 / j;           // PixelBlaze uses 1000/65535 = .015259. 
       myVal = fmod(myVal, 1.0);               // ewowi: with 0.015 as input, you get fmod(millis/1000,1.0), which has a period of 1 second, sounds right
       return myVal;
