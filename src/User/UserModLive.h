@@ -88,10 +88,11 @@ static float _time(float j) {
 //LEDS specific
 static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);} //why call POSV and not hsv?
 static uint8_t _sin8(uint8_t a) {return sin8(a);}
-static float _beatSin8(uint8_t a1, uint8_t a2, uint8_t a3) {return beatsin8(a1, a2, a3);}
+static uint8_t _cos8(uint8_t a) {return cos8(a);}
+static uint8_t _beatSin8(uint8_t a1, uint8_t a2, uint8_t a3) {return beatsin8(a1, a2, a3);}
 static LedsLayer *gLeds = nullptr;
 static void _fadeToBlackBy(uint8_t a1) {gLeds->fadeToBlackBy(a1);}
-static void sPCLive(int t, uint16_t pixel, CRGB color) { // int t needed - otherwise wrong colors, very strange
+static void sPCLive(uint16_t pixel, CRGB color) { // int t needed - otherwise wrong colors, very strange
   if (gLeds) 
   {
     // if (t == 0) ppf(" %d,%d,%d", color.r, color.g, color.b);
@@ -100,10 +101,7 @@ static void sPCLive(int t, uint16_t pixel, CRGB color) { // int t needed - other
 }
 static void sCFPLive(uint16_t pixel, uint8_t index, uint8_t brightness) { // int t needed - otherwise wrong colors, very strange
   if (gLeds) 
-  {
-    // if (t == 0) ppf(" %d,%d,%d", color.r, color.g, color.b);
     gLeds->setPixelColor(pixel, ColorFromPalette(gLeds->palette, index, brightness));
-  }
 }
 uint8_t slider1 = 128;
 uint8_t slider2 = 128;
@@ -192,8 +190,9 @@ public:
     //LEDS specific
     addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV);
     addExternalFun("uint8_t", "sin8","(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
-    addExternalFun("void", "sPC", "(int a0, int a1, CRGB a2)", (void *)sPCLive); // int t needed - otherwise wrong colors, very strange
-    addExternalFun("void", "sCFP", "(uint16_t pixel, uint8_t index, uint8_t brightness)", (void *)sCFPLive);
+    addExternalFun("uint8_t", "cos8","(uint8_t a1)",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
+    addExternalFun("void", "sPC", "(uint16_t a1, CRGB a2)", (void *)sPCLive); // int t needed - otherwise wrong colors, very strange
+    addExternalFun("void", "sCFP", "(uint16_t a1, uint8_t a2, uint8_t a3)", (void *)sCFPLive);
     addExternalFun("void", "fadeToBlackBy", "(uint8_t a1)", (void *)_fadeToBlackBy);
     //address of overloaded function with no contextual type information: setPixelColorLive
     //ISO C++ forbids taking the address of a bound member function to form a pointer to member function.  Say '&LedsLayer::setPixelColorLive' [-fpermissive]

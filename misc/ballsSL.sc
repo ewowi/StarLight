@@ -35,13 +35,13 @@ void drawBall(float xc, float yc, float r, int c)
          {
             v = (float)(255 * (1 - distance * distance / (r4)));
             CRGB cc=hsv(c,255,v);
-            sPC(0, i + j * panel_width, cc);
+            sPC(i + j * panel_width, cc);
            // int h=(int)(2 * xc - i) + j * panel_width;
-            sPC(0, (int)(2 * xc - i) + j * panel_width,cc);
+            sPC((int)(2 * xc - i) + j * panel_width,cc);
           // h=(int)(2 * xc - i) + (int)(2 * yc - j) * panel_widthsdfsdf;
-            sPC(0, (int)(2 * xc - i) + (int)(2 * yc - j) * panel_width,  cc);
+            sPC((int)(2 * xc - i) + (int)(2 * yc - j) * panel_width,  cc);
            // h=i + (int)(2 * yc - j) * panel_width;
-            sPC(0, i + (int)(2 * yc - j) * panel_width, cc);
+            sPC(i + (int)(2 * yc - j) * panel_width, cc);
          }
       }
    }
@@ -129,7 +129,7 @@ void loop()
       for(int j=0;j<height;j++)
       {
          CRGB gg = hsv(i+h+j,255,180);
-        sPC(0, i+panel_width*j, gg);
+        sPC(i+panel_width*j, gg);
       }
 }
 

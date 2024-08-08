@@ -43,7 +43,7 @@ void loop() {
       // leds[y*panel_width+x] = hsv(t + radius, 255, h);
 
       CRGB gg = hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches));
-      sPC(t, y*panel_width+x, gg);
+      sPC(y*panel_width+x, gg);
     }
   }
   t=t+speed;
