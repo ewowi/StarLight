@@ -72,16 +72,25 @@ static void resetShowStats()
 static void dispshit(int g) { ppf("coming from assembly int %x %d", g, g);}
 static void __print(char *s) {ppf("from assembly :%s\r\n", s);}
 static void showError(int line, uint32_t size, uint32_t got) { ppf("Overflow error line %d max size: %d got %d", line, size, got);}
-static void displayfloat(float j) {ppf("display float %f", j);}
+static void displayfloat(float j) {ppf(" %f", j);}
 
 static float _hypot(float x,float y) {return hypot(x,y);}
 static float _atan2(float x,float y) { return atan2(x,y);}
 static float _sin(float j) {return sin(j);}
+static float _triangle(float j) {return 1.0 - fabs(fmod(2 * j, 2.0) - 1.0);}
+static float _time(float j) {
+      float myVal = sys->now();
+      myVal = myVal / 65535 / j;           // PixelBlaze uses 1000/65535 = .015259. 
+      myVal = fmod(myVal, 1.0);               // ewowi: with 0.015 as input, you get fmod(millis/1000,1.0), which has a period of 1 second, sounds right
+      return myVal;
+}
 
 //LEDS specific
-static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);}
+static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);} //why call POSV and not hsv?
 static uint8_t _sin8(uint8_t a) {return sin8(a);}
+static float _beatSin8(uint8_t a1, uint8_t a2, uint8_t a3) {return beatsin8(a1, a2, a3);}
 static LedsLayer *gLeds = nullptr;
+static void _fadeToBlackBy(uint8_t a1) {gLeds->fadeToBlackBy(a1);}
 static void sPCLive(int t, uint16_t pixel, CRGB color) { // int t needed - otherwise wrong colors, very strange
   if (gLeds) 
   {
@@ -89,7 +98,15 @@ static void sPCLive(int t, uint16_t pixel, CRGB color) { // int t needed - other
     gLeds->setPixelColor(pixel, color);
   }
 }
-uint8_t slider1 = 10;
+static void sCFPLive(uint16_t pixel, uint8_t index, uint8_t brightness) { // int t needed - otherwise wrong colors, very strange
+  if (gLeds) 
+  {
+    // if (t == 0) ppf(" %d,%d,%d", color.r, color.g, color.b);
+    gLeds->setPixelColor(pixel, ColorFromPalette(gLeds->palette, index, brightness));
+  }
+}
+uint8_t slider1 = 128;
+uint8_t slider2 = 128;
 
 //End LEDS specific
 
@@ -160,6 +177,9 @@ public:
     addExternalFun("float", "atan2","(float a1, float a2)",(void*)_atan2);
     addExternalFun("float", "hypot","(float a1, float a2)",(void*)_hypot);
     addExternalFun("float", "sin", "(float a1)", (void *)_sin);
+    addExternalFun("float", "time", "(float a1)", (void *)_time);
+    addExternalFun("float", "triangle", "(float a1)", (void *)_triangle);
+    addExternalFun("uint8_t", "beatSin8", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)_beatSin8);
 
     // added by StarBase
     addExternalFun("void", "pinMode", "(int a1, int a2)", (void *)&pinMode);
@@ -173,10 +193,13 @@ public:
     addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV);
     addExternalFun("uint8_t", "sin8","(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
     addExternalFun("void", "sPC", "(int a0, int a1, CRGB a2)", (void *)sPCLive); // int t needed - otherwise wrong colors, very strange
+    addExternalFun("void", "sCFP", "(uint16_t pixel, uint8_t index, uint8_t brightness)", (void *)sCFPLive);
+    addExternalFun("void", "fadeToBlackBy", "(uint8_t a1)", (void *)_fadeToBlackBy);
     //address of overloaded function with no contextual type information: setPixelColorLive
     //ISO C++ forbids taking the address of a bound member function to form a pointer to member function.  Say '&LedsLayer::setPixelColorLive' [-fpermissive]
     //converting from 'void (LedsLayer::*)(uint16_t, uint32_t)' {aka 'void (LedsLayer::*)(short unsigned int, unsigned int)'} to 'void*' [-Wpmf-conversions]
     addExternalVal("uint8_t", "slider1", &slider1); //used in map function
+    addExternalVal("uint8_t", "slider2", &slider2); //used in map function
 
     //End LEDS specific
 

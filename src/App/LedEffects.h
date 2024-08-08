@@ -2983,6 +2983,7 @@ class LiveScriptEffect: public Effect {
     }}); //script
 
     ui->initSlider(parentVar, "Slider1", &slider1);
+    ui->initSlider(parentVar, "Slider2", &slider2);
 
   }
 };
