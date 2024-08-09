@@ -39,7 +39,7 @@ void loop() {
     //printCustom((float)index,a,b,c,v);
     CRGB gg = hsv(0.3 * 255, a * 255, v * 255);
     for (uint8_t y = 0; y < height; y++) {
-      sPC(0, y*panel_width+index, gg);
+      sPC(y*panel_width+index, gg);
     }
   }
 }

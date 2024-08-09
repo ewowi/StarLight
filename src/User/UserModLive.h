@@ -22,6 +22,7 @@ static uint32_t _nb_stat = 0;
 static float _totfps;
 static float fps = 0; //integer?
 static unsigned long frameCounter = 0;
+static uint8_t loopState = 0; //waiting on live script
 
 //external function implementation (tbd: move into class)
 
@@ -58,7 +59,14 @@ static void show()
 
   // SKIPPED: check that both v1 and v2 are int numbers
   // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
-  delay(1); //to feed the watchdog
+  delay(1); //to feed the watchdog (also if loopState == 0)
+  while (loopState != 0) { //not waiting on live script
+    delay(1); //to feed the watchdog
+    // set to 0 by main loop
+  }
+  //do live script cycle
+  loopState = 1; //live script produced a frame, main loop will deal with it
+  // ppf("loopState %d\n", loopState);
 }
 
 static void resetShowStats()
@@ -116,7 +124,6 @@ public:
   char fileName[32] = ""; //running sc file
   string scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
   string scPreCustomScript = ""; //externals etc generated (would prefer String for esp32...)
-  // bool setupDone = false;
 
   UserModLive() :SysModule("Live") {
     isEnabled = false; //need to enable after fresh setup
@@ -235,12 +242,16 @@ public:
   }
 
   void loop() {
-    // this will result in: Stopping the program...
-    // if (setupDone) {
-    //   SCExecutable.executeAsTask("loop");
-    //   ppf(".");
-    //   show();
-    // }
+    if (__run_handle) { //isRunning
+      if (loopState == 2) {// show has been called (in other loop)
+        loopState = 0; //waiting on live script
+        // ppf("loopState %d\n", loopState);
+      }
+      else if (loopState == 1) {
+        loopState = 2; //other loop can call show (or preview)
+        // ppf("loopState %d\n", loopState);
+      }
+    }
   }
 
   void loop20ms() {
@@ -283,22 +294,21 @@ public:
             preScriptNrOfLines++;
         }
 
-        ppf("preScript has %d lines\n", preScriptNrOfLines);
+        ppf("preScript of %s has %d lines\n", fileName, preScriptNrOfLines);
 
         scScript += string(f.readString().c_str()); // add sc file
 
-        ppf("Before parsing\n");
+        ppf("Before parsing of %s\n", fileName);
         ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
         if (p.parseScript(&scScript))
         {
-          ppf("parsing done\n");
+          ppf("parsing %s done\n", fileName);
           ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
           SCExecutable.executeAsTask("main"); //"setup" not working
           // ppf("setup done\n");
           strcpy(this->fileName, fileName);
-          // setupDone = true;
         }
         f.close();
       }
@@ -309,7 +319,6 @@ public:
 
   void kill() {
     ppf("kill %s\n", fileName);
-    // setupDone = false;
     SCExecutable._kill(); //kill any old tasks
     fps = 0;
     strcpy(fileName, "");
