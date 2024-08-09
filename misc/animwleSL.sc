@@ -96,23 +96,22 @@ void render2D(int x1, int y1)
   } 
 }
 
-void main()
+void setup()
 {
-clear();
-resetStat();
+  clear();
   cR = -0.94299;
   cI = 0.3162;
   int h = 1 ;
-  while (h > 0)
+}
+
+void loop()
+{
+  beforeRender();
+  for (int i = 0; i < width; i++)
   {
-    beforeRender();
-    for (int i = 0; i < width; i++)
+    for (int j = 0; j < height; j++)
     {
-      for (int j = 0; j < height; j++)
-      {
-        render2D(i, j);
-      }
+      render2D(i, j);
     }
-    show();
   }
 }

@@ -298,6 +298,8 @@ public:
 
         scScript += string(f.readString().c_str()); // add sc file
 
+        scScript += "void main(){resetStat();setup();while(2>1){loop();show();}}";
+
         ppf("Before parsing of %s\n", fileName);
         ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 

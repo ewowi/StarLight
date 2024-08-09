@@ -43,12 +43,3 @@ void loop() {
     }
   }
 }
-
-void main() {
-  resetStat();
-  setup();
-  while (2>1) {
-    loop();
-    show();
-  }
-}

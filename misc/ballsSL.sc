@@ -86,22 +86,9 @@ void updateBall(int index)
    drawBall(_xc, _yc, _r, _color);
 }
 
-void init()
-{
-   for(int i=0;i<max_nb_balls;i++)
-   {
-      vx[i] = rand(280)/255+0.7;
-      vy[i] = rand(280)/255+0.5;
-      r[i] = (rmax-rmin)*(rand(280)/180) +rmin;
-      xc[i] = width/2*(rand(280)/255+0.3)+15;
-      yc[i] = height/2*(rand(280)/255+0.3)+15;
-      
-      color[i] = rand(255);
-   }  
-}
 void updateParams()
 {
-nb_balls=slider1;
+   nb_balls=slider1;
 	if(nb_balls>max_nb_balls)
 	{
 		nb_balls=max_nb_balls;
@@ -113,11 +100,20 @@ nb_balls=slider1;
 }
 
 int h;
+
 void setup()
 {
-  resetStat();
-  //initleds(pins,NUM_STRIPS,NUM_LEDS_PER_STRIP);
-  init();
+   for(int i=0;i<max_nb_balls;i++)
+   {
+      vx[i] = rand(280)/255+0.7;
+      vy[i] = rand(280)/255+0.5;
+      r[i] = (rmax-rmin)*(rand(280)/180) +rmin;
+      xc[i] = width/2*(rand(280)/255+0.3)+15;
+      yc[i] = height/2*(rand(280)/255+0.3)+15;
+      
+      color[i] = rand(255);
+   }  
+
    h=0;
 }
 
@@ -131,25 +127,14 @@ void loop()
          CRGB gg = hsv(i+h+j,255,180);
         sPC(i+panel_width*j, gg);
       }
-}
+   }
 
-updateParams();
+   updateParams();
     for (int i = 0; i < nb_balls; i++)
     {
       updateBall(i);
       // drawBall(1,1,1,CRGB(255,255,255));
     }
 
-    show();
     h++;
-}
-
-
-void main()
-{ 
-  setup();
-  while (2 > 0)
-  {
-  loop();
-  }
 }

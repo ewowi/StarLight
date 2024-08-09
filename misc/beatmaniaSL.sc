@@ -34,12 +34,3 @@ void loop() {
     sCFP(y*panel_width+locn2%(length-1),colr1,bri2);
   }
 }
-
-void main() {
-  resetStat();
-  setup();
-  while (2>1) {
-    loop();
-    show();
-  }
-}
