@@ -1172,35 +1172,29 @@ class OctopusEffect: public Effect {
 
   void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
+    bool   *setup = leds.effectData.readWrite<bool>();
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t offsetX = leds.effectData.read<uint8_t>();
     uint8_t offsetY = leds.effectData.read<uint8_t>();
     uint8_t legs = leds.effectData.read<uint8_t>();
 
-    //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
+    // Effect Variables
+    Coord3D  *prevLedSize = leds.effectData.readWrite<Coord3D>();
     Map_t    *rMap = leds.effectData.readWrite<Map_t>(leds.size.x * leds.size.y); //array
-    uint8_t *offsX = leds.effectData.readWrite<uint8_t>();
-    uint8_t *offsY = leds.effectData.readWrite<uint8_t>();
-    uint16_t *aux0 = leds.effectData.readWrite<uint16_t>();
-    uint16_t *aux1 = leds.effectData.readWrite<uint16_t>();
     uint32_t *step = leds.effectData.readWrite<uint32_t>();
 
     const uint8_t mapp = 180 / max(leds.size.x,leds.size.y);
 
     Coord3D pos = {0,0,0};
 
-    // re-init if SEGMENT dimensions or offset changed
-    if (*aux0 != leds.size.x || *aux1 != leds.size.y || offsetX != *offsX || offsetY != *offsY) {
-      // *step = 0;
-      *aux0 = leds.size.x;
-      *aux1 = leds.size.y;
-      *offsX = offsetX;
-      *offsY = offsetY;
+    if (*setup || *prevLedSize != leds.size) { // Setup map if leds.size or offset changes
+      *setup = false;
+      *prevLedSize = leds.size;
       const uint8_t C_X = leds.size.x / 2 + (offsetX - 128)*leds.size.x/255;
       const uint8_t C_Y = leds.size.y / 2 + (offsetY - 128)*leds.size.y/255;
       for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
         for (pos.y = 0; pos.y < leds.size.y; pos.y++) {
-          uint16_t indexV = leds.XY(pos.x, pos.y);
+          uint16_t indexV = leds.XYZ(pos);
           if (indexV < leds.size.x * leds.size.y) { //excluding UINT16_MAX from XY if out of bounds due to projection
             rMap[indexV].angle = 40.7436f * atan2f(pos.y - C_Y, pos.x - C_X); // avoid 128*atan2()/PI
             rMap[indexV].radius = hypotf(pos.x - C_X, pos.y - C_Y) * mapp; //thanks Sutaburosu
@@ -1213,7 +1207,8 @@ class OctopusEffect: public Effect {
 
     for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
       for (pos.y = 0; pos.y < leds.size.y; pos.y++) {
-        uint16_t indexV = leds.XY(pos.x, pos.y);
+        // uint16_t indexV = leds.XYZ(pos);
+        uint16_t indexV = leds.XYZUnprojected(pos);
         if (indexV < leds.size.x * leds.size.y) { //excluding UINT16_MAX from XY if out of bounds due to projection
           byte angle = rMap[indexV].angle;
           byte radius = rMap[indexV].radius;
@@ -1228,22 +1223,18 @@ class OctopusEffect: public Effect {
   }
   
   void controls(LedsLayer &leds, JsonObject parentVar) {
-
     Effect::controls(leds, parentVar); //palette
-
-    // uint8_t *speed = ; 
-    // uint8_t *offsetX = ; 
-    // uint8_t *offsetY = ; 
-    // uint8_t *legs = ; 
-
-    // ppf("controls ptr %p,%p,%p,%p\n", speed, offsetX, offsetY, legs);
-    // ppf("controls before %d,%d,%d,%d\n", *speed, *offsetX, *offsetY, *legs);
-  
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128), 1, 255);
-    ui->initSlider(parentVar, "Offset X", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "Offset Y", leds.effectData.write<uint8_t>(128));
+    bool *setup = leds.effectData.write<bool>(true);
+    ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(128), 1, 255);
+    ui->initSlider(parentVar, "Offset X", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+      case onChange: {*setup = true; return true;}
+      default: return false;
+    }});
+    ui->initSlider(parentVar, "Offset Y", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+      case onChange: {*setup = true; return true;}
+      default: return false;
+    }});
     ui->initSlider(parentVar, "Legs", leds.effectData.write<uint8_t>(4), 1, 8);
-    // ppf("controls %d,%d,%d,%d\n", *speed, *offsetX, *offsetY, *legs);
   }
 }; // Octopus
 
