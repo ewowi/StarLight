@@ -683,6 +683,45 @@ class KaleidoscopeProjection: public Projection {
   }
 }; //KaleidoscopeProjection
 
+class ScrollingProjection: public Projection {
+  const char * name() {return "Scrolling WIP";}
+  const char * tags() {return "💫";}
+
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+    MirrorProjection mp;
+    mp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+  }
+
+  void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {
+    leds.projectionData.begin();
+    bool mirrorX = leds.projectionData.read<bool>(); // Not used 
+    bool mirrorY = leds.projectionData.read<bool>(); // Not used
+    bool mirrorZ = leds.projectionData.read<bool>(); // Not used
+
+    uint8_t xSpeed = leds.projectionData.read<uint8_t>();
+    uint8_t ySpeed = leds.projectionData.read<uint8_t>();
+    uint8_t zSpeed = leds.projectionData.read<uint8_t>();
+
+    if (xSpeed) pixel.x = (pixel.x + (sys->now * xSpeed / 255 / 100)) % leds.size.x;
+    if (ySpeed) pixel.y = (pixel.y + (sys->now * ySpeed / 255 / 100)) % leds.size.y;
+    if (zSpeed) pixel.z = (pixel.z + (sys->now * zSpeed / 255 / 100)) % leds.size.z;
+  }
+
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    MirrorProjection mp;
+    mp.controls(leds, parentVar);
+
+    uint8_t *xSpeed  = leds.projectionData.write<uint8_t>(0);
+    uint8_t *ySpeed  = leds.projectionData.write<uint8_t>(0);
+    uint8_t *zSpeed  = leds.projectionData.write<uint8_t>(0);
+
+    ui->initSlider(parentVar, "X Speed", xSpeed, 0, 255, false);
+    if (leds.projectionDimension >= _2D) ui->initSlider(parentVar, "Y Speed", ySpeed, 0, 255, false);
+    if (leds.projectionDimension == _3D) ui->initSlider(parentVar, "Z Speed", zSpeed, 0, 255, false);
+  }
+
+}; //ScrollingProjection
+
 class TestProjection: public Projection {
   const char * name() {return "Test";}
   const char * tags() {return "💡";}

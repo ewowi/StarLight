@@ -46,6 +46,7 @@ enum ProjectionsE
   p_Spacing,
   p_Transpose,
   p_Kaleidoscope,
+  p_Scrolling,
   p_count // keep as last entry
 };
 

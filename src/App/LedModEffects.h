@@ -138,6 +138,7 @@ public:
     fixture.projections.push_back(new SpacingProjection);
     fixture.projections.push_back(new TransposeProjection);
     fixture.projections.push_back(new KaleidoscopeProjection);
+    fixture.projections.push_back(new ScrollingProjection);
 
     #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
       #if !(CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2)
