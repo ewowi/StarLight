@@ -12,7 +12,7 @@
 
 // #define __RUN_CORE 0
 #pragma once
-#include "parser.h"
+#include "newParser.h"
 
 long time1;
 long time4;
@@ -22,6 +22,7 @@ static uint32_t _nb_stat = 0;
 static float _totfps;
 static float fps = 0; //integer?
 static unsigned long frameCounter = 0;
+static uint8_t loopState = 0; //waiting on live script
 
 //external function implementation (tbd: move into class)
 
@@ -58,7 +59,14 @@ static void show()
 
   // SKIPPED: check that both v1 and v2 are int numbers
   // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
-  delay(1); //to feed the watchdog
+  delay(1); //to feed the watchdog (also if loopState == 0)
+  while (loopState != 0) { //not waiting on live script
+    delay(1); //to feed the watchdog
+    // set to 0 by main loop
+  }
+  //do live script cycle
+  loopState = 1; //live script produced a frame, main loop will deal with it
+  // ppf("loopState %d\n", loopState);
 }
 
 static void resetShowStats()
@@ -72,23 +80,40 @@ static void resetShowStats()
 static void dispshit(int g) { ppf("coming from assembly int %x %d", g, g);}
 static void __print(char *s) {ppf("from assembly :%s\r\n", s);}
 static void showError(int line, uint32_t size, uint32_t got) { ppf("Overflow error line %d max size: %d got %d", line, size, got);}
-static void displayfloat(float j) {ppf("display float %f", j);}
+static void displayfloat(float j) {ppf(" %f", j);}
 
 static float _hypot(float x,float y) {return hypot(x,y);}
 static float _atan2(float x,float y) { return atan2(x,y);}
 static float _sin(float j) {return sin(j);}
+static float _triangle(float j) {return 1.0 - fabs(fmod(2 * j, 2.0) - 1.0);}
+static float _time(float j) {
+      float myVal = sys->now;
+      myVal = myVal / 65535 / j;           // PixelBlaze uses 1000/65535 = .015259. 
+      myVal = fmod(myVal, 1.0);               // ewowi: with 0.015 as input, you get fmod(millis/1000,1.0), which has a period of 1 second, sounds right
+      return myVal;
+}
 
 //LEDS specific
-static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);}
+static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);} //why call POSV and not hsv?
 static uint8_t _sin8(uint8_t a) {return sin8(a);}
+static uint8_t _cos8(uint8_t a) {return cos8(a);}
+static uint8_t _beatSin8(uint8_t a1, uint8_t a2, uint8_t a3) {return beatsin8(a1, a2, a3);}
 static LedsLayer *gLeds = nullptr;
-static void sPCLive(uint16_t pixel, CRGB color) {
-  // if (pixel == 0) ppf(".");
-  // if (pixel < 10)
-  //   ppf(" %d <- %d-%d-%d", pixel, color.r, color.g, color.b);
-  // gLeds->setPixelColor(pixel, CRGB(random8(), random8(), random8()));
-  if (gLeds) gLeds->setPixelColor(pixel, color);
+static void _fadeToBlackBy(uint8_t a1) {gLeds->fadeToBlackBy(a1);}
+static void sPCLive(uint16_t pixel, CRGB color) { // int t needed - otherwise wrong colors, very strange
+  if (gLeds) 
+  {
+    // if (t == 0) ppf(" %d,%d,%d", color.r, color.g, color.b);
+    gLeds->setPixelColor(pixel, color);
+  }
 }
+static void sCFPLive(uint16_t pixel, uint8_t index, uint8_t brightness) { // int t needed - otherwise wrong colors, very strange
+  if (gLeds) 
+    gLeds->setPixelColor(pixel, ColorFromPalette(gLeds->palette, index, brightness));
+}
+uint8_t slider1 = 128;
+uint8_t slider2 = 128;
+
 //End LEDS specific
 
 class UserModLive:public SysModule {
@@ -99,7 +124,6 @@ public:
   char fileName[32] = ""; //running sc file
   string scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
   string scPreCustomScript = ""; //externals etc generated (would prefer String for esp32...)
-  // bool setupDone = false;
 
   UserModLive() :SysModule("Live") {
     isEnabled = false; //need to enable after fresh setup
@@ -158,6 +182,9 @@ public:
     addExternalFun("float", "atan2","(float a1, float a2)",(void*)_atan2);
     addExternalFun("float", "hypot","(float a1, float a2)",(void*)_hypot);
     addExternalFun("float", "sin", "(float a1)", (void *)_sin);
+    addExternalFun("float", "time", "(float a1)", (void *)_time);
+    addExternalFun("float", "triangle", "(float a1)", (void *)_triangle);
+    addExternalFun("uint8_t", "beatSin8", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)_beatSin8);
 
     // added by StarBase
     addExternalFun("void", "pinMode", "(int a1, int a2)", (void *)&pinMode);
@@ -170,10 +197,15 @@ public:
     //LEDS specific
     addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV);
     addExternalFun("uint8_t", "sin8","(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
-    addExternalFun("void", "sPC", "(int a1, CRGB a2)", (void *)sPCLive); 
+    addExternalFun("uint8_t", "cos8","(uint8_t a1)",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
+    addExternalFun("void", "sPC", "(uint16_t a1, CRGB a2)", (void *)sPCLive); // int t needed - otherwise wrong colors, very strange
+    addExternalFun("void", "sCFP", "(uint16_t a1, uint8_t a2, uint8_t a3)", (void *)sCFPLive);
+    addExternalFun("void", "fadeToBlackBy", "(uint8_t a1)", (void *)_fadeToBlackBy);
     //address of overloaded function with no contextual type information: setPixelColorLive
     //ISO C++ forbids taking the address of a bound member function to form a pointer to member function.  Say '&LedsLayer::setPixelColorLive' [-fpermissive]
     //converting from 'void (LedsLayer::*)(uint16_t, uint32_t)' {aka 'void (LedsLayer::*)(short unsigned int, unsigned int)'} to 'void*' [-Wpmf-conversions]
+    addExternalVal("uint8_t", "slider1", &slider1); //used in map function
+    addExternalVal("uint8_t", "slider2", &slider2); //used in map function
 
     //End LEDS specific
 
@@ -210,12 +242,16 @@ public:
   }
 
   void loop() {
-    // this will result in: Stopping the program...
-    // if (setupDone) {
-    //   SCExecutable.executeAsTask("loop");
-    //   ppf(".");
-    //   show();
-    // }
+    if (__run_handle) { //isRunning
+      if (loopState == 2) {// show has been called (in other loop)
+        loopState = 0; //waiting on live script
+        // ppf("loopState %d\n", loopState);
+      }
+      else if (loopState == 1) {
+        loopState = 2; //other loop can call show (or preview)
+        // ppf("loopState %d\n", loopState);
+      }
+    }
   }
 
   void loop20ms() {
@@ -258,22 +294,23 @@ public:
             preScriptNrOfLines++;
         }
 
-        ppf("preScript has %d lines\n", preScriptNrOfLines);
+        ppf("preScript of %s has %d lines\n", fileName, preScriptNrOfLines);
 
         scScript += string(f.readString().c_str()); // add sc file
 
-        ppf("Before parsing\n");
+        scScript += "void main(){resetStat();setup();while(2>1){loop();show();}}";
+
+        ppf("Before parsing of %s\n", fileName);
         ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
-        if (p.parse_c(&scScript))
+        if (p.parseScript(&scScript))
         {
-          ppf("parsing done\n");
+          ppf("parsing %s done\n", fileName);
           ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
           SCExecutable.executeAsTask("main"); //"setup" not working
           // ppf("setup done\n");
           strcpy(this->fileName, fileName);
-          // setupDone = true;
         }
         f.close();
       }
@@ -284,7 +321,6 @@ public:
 
   void kill() {
     ppf("kill %s\n", fileName);
-    // setupDone = false;
     SCExecutable._kill(); //kill any old tasks
     fps = 0;
     strcpy(fileName, "");

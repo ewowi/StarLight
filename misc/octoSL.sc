@@ -2,7 +2,7 @@
 //save_reg
 define PI 3.1415926535
 define speed 1
-define nb_branches 5
+int nb_branches;
 uint8_t C_X ;
 uint8_t C_Y;
 uint8_t mapp;
@@ -12,6 +12,7 @@ uint32_t t; //=speed
 
 void setup()
 {
+  t = 0;
   C_X = width / 2;
   C_Y = height / 2;
   mapp = 255 / width;
@@ -29,6 +30,8 @@ void setup()
 
 void loop() {
 
+  nb_branches = slider1 / 25;
+
   // memset(leds, 0, width * height * 3);
   for (uint8_t x = 0; x < width; x++) {
     for (uint8_t y = 0; y < height; y++) {
@@ -39,18 +42,10 @@ void loop() {
       // int h=sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches);
       // leds[y*panel_width+x] = hsv(t + radius, 255, h);
 
-      sPC(y*panel_width+x, hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches)));
+      CRGB gg = hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches));
+      sPC(y*panel_width+x, gg);
     }
   }
   t=t+speed;
   //delay(16);
-}
-
-void main() {
-  resetStat();
-  setup();
-  while (2>1) {
-    loop();
-    show();
-  }
 }

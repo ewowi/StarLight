@@ -241,8 +241,8 @@ public:
         result = varFunctions[funNr](var, rowNr, funType);
         if (result && !mdl->varRO(var)) { //send rowNr = 0 if no rowNr
           //only print vars with a value and not onSetValue as that changes a lot due to insTbl clTbl etc (tbd)
-          // if (!var["value"].isNull() && 
-          if (funType != onSetValue) {
+          //don't print if onSetValue or oldValue is null
+          if (funType != onSetValue && (!var["oldValue"].isNull() || ((rowNr != UINT8_MAX) && !var["oldValue"][rowNr].isNull()))) {
             ppf("%sFun %s", funType==onSetValue?"val":funType==onUI?"ui":funType==onChange?"ch":funType==onAddRow?"add":funType==onDeleteRow?"del":"other", mdl->varID(var));
             if (rowNr != UINT8_MAX) {
               ppf("[%d] (", rowNr);

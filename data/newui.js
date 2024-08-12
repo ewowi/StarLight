@@ -1,5 +1,5 @@
 // @title     StarBase
-// @file      newui.css
+// @file      newui.js
 // @date      20240720
 // @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
 // @Authors   https://github.com/ewowi/StarBase/commits/main
@@ -7,191 +7,28 @@
 // @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
 // @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 
-let d = document;
 let ws = null;
-let navBar; //stores navBar class instance at onLoad
-
+let mainNav; //stores MainNav class instance at onLoad
 let model = []; //model.json (as send by the server), used by FindVar
 
-//C++ equivalents
-const UINT8_MAX = 255;
-const UINT16_MAX = 65535;
-
-function gId(c) {return d.getElementById(c);}
-function qS(e) { return d.querySelector(e); }
-function cE(e, id = null, classs = null, inner = null) {
-  let node = d.createElement(e);
-  if (id) node.id = id;
-  if (classs) node.className = classs;
-  if (inner) node.innerHTML = inner;
-  return node;
-}
-
-//by @aaroneous
-class NewApp {
-
-  init() {
-    // Update the copyright notice in the footer
-    // Fetch data from the server
-    this.#fetchModel() //async
-  }
-
-  async #fetchModel() {
-    // Mock fetch for testing while using Live Server. No error checking for brevity.
-    // Replace with call to server websocket
-    this.#modules = await (await fetch('../misc/model.json')).json()
-    // this.#modules = await (await fetch('model.json')).json()
-
-    // Print out the response for debugging
-    console.log(this.#modules)
-    // console.log(JSON.stringify(this.#modules, null, 2))
-
-    for (let module of this.#modules) {
-      addModule(module)
-    }
-
-  }
-
-  #modules = []
-
-}
-
-//by ewowi
-class NavBar {
-
-  //create navbar, menu, nav-list
-  constructor(parentNode) {
-    let navBarNode = cE("nav", "navbar", "navbar");
-    parentNode.appendChild(navBarNode);
-
-    let menuNode = cE("div", "mobile-menu", "menu-toggle", '<span class="bar"></span><span class="bar"></span><span class="bar"></span>');
-    menuNode.addEventListener('click', function () {
-      qS('.nav-list').classList.toggle('active'); //toggle nav-list visibility
-    });
-    navBarNode.appendChild(menuNode);
-
-    navBarNode.appendChild(cE("ul", "nav-list", "nav-list"));    
-  }
-
-  //create nav item and link
-  addNavItem(name, clickFun = null) {
-    let navItemNode = cE("li", null, "nav-item");
-    gId("nav-list").appendChild(navItemNode); //add the li node to the nav-list
-
-    let navLinkNode = cE("a", null, "nav-link", initCap(name));
-    navLinkNode.addEventListener('click', (event) => {
-      if (clickFun) clickFun(event);
-      qS('.nav-list').classList.remove('active');
-    });
-    navItemNode.appendChild(navLinkNode);
-
-    let dropdownNode = cE("ul", name, "dropdown");
-    navItemNode.appendChild(dropdownNode);
-
-    return dropdownNode; //return the node with id=name
-  }
-
-  //cretae dropdown item and link
-  addDropdownItem(navItemName, name, clickFun) {
-    let navItemNode = gId(navItemName);
-
-    //if navItemNode does not exist, create the node
-    if (!navItemNode)
-      navItemNode = this.addNavItem(navItemName);
-
-    let dropdownItemNode = cE("li", null, "dropdown-item");
-    navItemNode.appendChild(dropdownItemNode);
-
-    let dropdownLinkNode = cE("a", name, "dropdown-link", initCap(name));
-    dropdownItemNode.appendChild(dropdownLinkNode);
-    dropdownLinkNode.addEventListener('click', (event) => {
-      if (clickFun) clickFun(event);
-      qS('.nav-list').classList.remove('active');
-    });
-
-    return dropdownLinkNode; //return the node with id=name
-  }
-
-} //class NavBar
-
-// https://www.w3schools.com/howto/howto_js_topnav_responsive.asp
 function onLoad() {
+  mainNav = new MainNav();
+  mainNav.addBody();
 
-  let body = gId("body");
-
-  //body.style and divNode.style by aaroneous
-  body.style = "display: flex;  flex-direction: column;  height: 100vh;";
-
-  navBar = new NavBar(body); //adds the navBar to <body>
-
-  let divNode = cE("div");
-  divNode.style = "flex-grow: 1;   overflow-y: auto;";
-  body.appendChild(divNode);
-
-  //additional html 
-  divNode.appendChild(cE("h1", null, null, "StarBase💫 by MoonModules 🌔"));
-  
-  let node;
-  node = cE("a", null, null, "ⓘ");
-  node.href = "https://ewowi.github.io/StarDocs";
-  divNode.appendChild(node);
-
-  divNode.appendChild(cE("h2", "serverName"));
-  divNode.appendChild(cE("h3", "vApp"));
-
-  divNode.appendChild(cE("p", "screenSize"));
-
-  divNode.appendChild(cE("h3", "modName"));
-  divNode.appendChild(cE("pre", "modelJson"));
-  divNode.appendChild(cE("div", "connind", null, "&#9790;"));
-
-
-  node = cE("p", null, null, "© 2024 MoonModules ☾ - StarMod, StarBase and StarLight is licensed under GPL-v3");
-  node.style = "color:grey;";
-  divNode.appendChild(node);
-
-  
-  window.onresize = function() {
-    // Setting the current height & width
-    gId("screenSize").innerText = window.innerWidth + "x" + window.innerHeight;
-  };
-
-  //aaroneous: run this code if Live Server is invoked
-  if (window.location.href.includes("127.0.0.1")) {
-    //is window.app predefined?
-    window.app = new NewApp()
-    window.app.init();
-  }
+  if (window.location.href.includes("127.0.0.1"))
+    fetchModelForLiveServer();
   else 
     makeWS();
-
-  d.addEventListener('visibilitychange', function () {
-    console.log("handleVisibilityChange");
-    gId("screenSize").innerText = window.innerWidth + "x" + window.innerHeight;
-  });
-
 }
 
-//used by fetchModel and by makeWS
-function addModule(module) {
-  // let module = json;
-  model.push((module)); //this is the model
-  console.log("WS receive module", module);
+async function fetchModelForLiveServer() {
+  // Mock fetch for testing while using Live Server. No error checking for brevity.
+  // Replace with call to server websocket
+  model = await (await fetch('../misc/model.json')).json()
 
-  //create dropdownItem for module.id (level 2) under module.type (level 1 - module.type will be created if not exists)
-  navBar.addDropdownItem(module.type, module.id, function(event) {
-    console.log("DropdownItem click", event.target.innerText);
-    for (let module of model) {
-      if (module.id == event.target.innerText) {
-        gId("modName").innerText = module.id;
-        gId("modelJson").innerHTML = JSON.stringify(module, null, 2); //pretty
-      }
-    }
-  });
- 
-  gId("vApp").innerText = appName(); //tbd: should be set by server
-  gId("screenSize").innerText = window.innerWidth + "x" + window.innerHeight;
-
+  for (let module of model) {
+    addModule(module)
+  }
 }
 
 function makeWS() {
@@ -201,7 +38,7 @@ function makeWS() {
   ws = new WebSocket(url);
   ws.binaryType = "arraybuffer";
   ws.onmessage = (e)=>{
-    if (e.data instanceof ArrayBuffer) { // preview packet
+    if (e.data instanceof ArrayBuffer) { // binary packet - e.g. for preview
       let buffer = new Uint8Array(e.data);
       if (buffer[0]==0) {
         let pviewNode = gId("board");
@@ -213,8 +50,6 @@ function makeWS() {
         userFun(buffer);
     } 
     else {
-      gId('connind').style.backgroundColor = "var(--c-l)";
-
       // console.log("onmessage", e.data);
       let json = null;
       try {
@@ -232,6 +67,7 @@ function makeWS() {
               found = true;
           }
           if (!found) {
+            model.push((json)); //this is the model
             addModule(json);
           }
           else
@@ -262,9 +98,23 @@ function makeWS() {
   }
 }
 
-//utility function
-function initCap(s) {
-  if (typeof s !== 'string') return '';
-  // https://www.freecodecamp.org/news/how-to-capitalize-words-in-javascript/
-  return s.replace(/[\W_]/g,' ').replace(/(^\w{1})|(\s+\w{1})/g, l=>l.toUpperCase()); // replace - and _ with space, capitalize every 1st letter
+//used by fetchModel and by makeWS
+function addModule(module) {
+  // let module = json;
+  console.log("WS receive module", module);
+
+  //updateUI is made after all modules have been fetched, how to adapt to add one module?
+  mainNav.updateUI(function(activeModule) {
+    let code = "";
+    for (variable of activeModule.n) {
+      console.log(variable);
+      code += `<p>`
+      code += `<label>${variable.id}</label>`
+      code += `<input type=${variable.type}></input>`
+      code += `<p>`
+    }
+    code += '<pre>' + JSON.stringify(activeModule, null, 2) + '</pre>'
+    return code
+  });
+
 }
