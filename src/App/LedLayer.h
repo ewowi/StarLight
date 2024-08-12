@@ -348,17 +348,69 @@ public:
   void addPixelColor(unsigned16 indexV, CRGB color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
   void addPixelColor(Coord3D pixel, CRGB color) {setPixelColor(pixel, getPixelColor(pixel) + color);}
 
-  void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, CRGB color) {
+  void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX) {
     if (x0 >= size.x || x1 >= size.x || y0 >= size.y || y1 >= size.y) return;
+
+    // WLEDMM shorten line according to depth
+    if (depth < UINT8_MAX) {
+      if (depth == 0) return;         // nothing to paint
+      if (depth<2) {x1 = x0; y1=y0; } // single pixel
+      else {                          // shorten line
+        x0 *=2; y0 *=2; // we do everything "*2" for better rounding
+        int dx1 = ((int(2*x1) - int(x0)) * int(depth)) / 255;  // X distance, scaled down by depth 
+        int dy1 = ((int(2*y1) - int(y0)) * int(depth)) / 255;  // Y distance, scaled down by depth
+        x1 = (x0 + dx1 +1) / 2;
+        y1 = (y0 + dy1 +1) / 2;
+        x0 /=2; y0 /=2;
+      }
+    }
+
     const int16_t dx = abs(x1-x0), sx = x0<x1 ? 1 : -1;
     const int16_t dy = abs(y1-y0), sy = y0<y1 ? 1 : -1;
-    int16_t err = (dx>dy ? dx : -dy)/2, e2;
-    for (;;) {
-      setPixelColor(XY(x0,y0), color);
-      if (x0==x1 && y0==y1) break;
-      e2 = err;
-      if (e2 >-dx) { err -= dy; x0 += sx; }
-      if (e2 < dy) { err += dx; y0 += sy; }
+
+    // single pixel (line length == 0)
+    if (dx+dy == 0) {
+      setPixelColor(XY(x0, y0), color);
+      return;
+    }
+
+    if (soft) {
+      // Xiaolin Wu’s algorithm
+      const bool steep = dy > dx;
+      if (steep) {
+        // we need to go along longest dimension
+        std::swap(x0,y0);
+        std::swap(x1,y1);
+      }
+      if (x0 > x1) {
+        // we need to go in increasing fashion
+        std::swap(x0,x1);
+        std::swap(y0,y1);
+      }
+      float gradient = x1-x0 == 0 ? 1.0f : float(y1-y0) / float(x1-x0);
+      float intersectY = y0;
+      for (int x = x0; x <= x1; x++) {
+        unsigned keep = float(0xFFFF) * (intersectY-int(intersectY)); // how much color to keep
+        unsigned seep = 0xFFFF - keep; // how much background to keep
+        int y = int(intersectY);
+        if (steep) std::swap(x,y);  // temporarily swap if steep
+        // pixel coverage is determined by fractional part of y co-ordinate
+        setPixelColor(XY(x, y), blend(color, getPixelColor(XY(x, y)), keep));
+        setPixelColor(XY(x+int(steep), y+int(!steep)), blend(color, getPixelColor(XY(x+int(steep), y+int(!steep))), seep));
+        intersectY += gradient;
+        if (steep) std::swap(x,y);  // restore if steep
+      }
+    } else {
+      // Bresenham's algorithm
+      int err = (dx>dy ? dx : -dy)/2;   // error direction
+      for (;;) {
+        // if (x0 >= cols || y0 >= rows) break; // WLEDMM we hit the edge - should never happen
+        setPixelColor(XY(x0, y0), color);
+        if (x0==x1 && y0==y1) break;
+        int e2 = err;
+        if (e2 >-dx) { err -= dy; x0 += sx; }
+        if (e2 < dy) { err += dx; y0 += sy; }
+      }
     }
   }
 

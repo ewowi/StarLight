@@ -2408,9 +2408,10 @@ class GEQEffect: public Effect {
   }
 }; //GEQ
 
-//by @Troy
+// Author: @TroyHacks
+// @license GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
 class LaserGEQEffect: public Effect {
-  const char * name() {return "laserGEQ";}
+  const char * name() {return "GEQ 3D";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "♫💫";}
 
@@ -2420,130 +2421,137 @@ class LaserGEQEffect: public Effect {
 
   void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
-    uint8_t fadeOut = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectData.read<uint8_t>();
+    uint8_t frontFill = leds.effectData.read<uint8_t>();
+    uint8_t horizon = leds.effectData.read<uint8_t>() - 1;
+    uint8_t depth = leds.effectData.read<uint8_t>();
+    uint8_t numBands = leds.effectData.read<uint8_t>() - 1;
+    bool borders = leds.effectData.read<bool>();
+    bool soft = leds.effectData.read<bool>();
 
     uint16_t *projector = leds.effectData.readWrite<uint16_t>();
-    int8_t *projector_dir = leds.effectData.readWrite<int8_t>();;
+    int8_t *projector_dir = leds.effectData.readWrite<int8_t>();
+    uint32_t *counter = leds.effectData.readWrite<uint32_t>();
 
-    *projector += *projector_dir;
-    if (*projector > leds.size.x) *projector = leds.size.x; //init
-    if (*projector == leds.size.x) *projector_dir = -1;
-    if (*projector == 0) *projector_dir = 1;
+    const int cols = leds.size.x;
+    const int rows = leds.size.y;
 
-    if (fadeOut > 250) {
-      leds.fill_solid(CRGB::Black);
-    } else {
-      leds.fadeToBlackBy(fadeOut);
+    if ((*counter)++ % (11-speed) == 0) *projector += *projector_dir;
+    if (*projector >= cols) *projector_dir = -1;
+    if (*projector <= 0) *projector_dir = 1;
+
+    leds.fill_solid(CRGB::Black);
+
+    CRGB ledColorTemp;
+    const int NUM_BANDS = numBands;
+    uint_fast8_t split  = map(*projector,0,cols,0,(NUM_BANDS - 1));
+
+    uint8_t heights[NUM_GEQ_CHANNELS] = { 0 };
+    const uint8_t maxHeight = roundf(float(rows) * ((rows<18) ? 0.75f : 0.85f));           // slightly reduce bar height on small panels 
+    for (int i=0; i<NUM_BANDS; i++) {
+      unsigned band = i;
+      if (NUM_BANDS < NUM_GEQ_CHANNELS) band = map(band, 0, NUM_BANDS - 1, 0, NUM_GEQ_CHANNELS-1); // always use full range.
+      heights[i] = map8(wledAudioMod->fftResults[band],0,maxHeight); // cache fftResult[] as data might be updated in parallel by the audioreactive core
     }
 
-    const int NUM_BANDS = 16; // map(SEGMENT.custom1, 0, 255, 1, 16);
 
-    uint8_t heights[16] = { 0 };
-
-    for (int i=0; i<16; i++) {
-      heights[i] = map(wledAudioMod->fftResults[i],0,255,0,leds.size.y-10);
-    }
-
-    for (int i=0; i<8; i++) {
-
-      uint16_t colorIndex = map(leds.size.x/16*i, 0, leds.size.x-1, 0, 255);
+    for (int i=0; i<=split; i++) { // paint right vertical faces and top - LEFT to RIGHT
+      uint16_t colorIndex = map(cols/NUM_BANDS*i, 0, cols-1, 0, 255);
       CRGB ledColor = ColorFromPalette(leds.palette, colorIndex);
-
-      int linex = i*(leds.size.x/16);
+      int linex = i*(cols/NUM_BANDS);
 
       if (heights[i] > 1) {
+        ledColorTemp = blend(ledColor, CRGB::Black, 255-32);
+        int pPos = max(0, linex+(cols/NUM_BANDS)-1);
+        for (int y = (i<NUM_BANDS-1) ? heights[i+1] : 0; y <= heights[i]; y++) { // don't bother drawing what we'll hide anyway
+          if (rows-y > 0) leds.drawLine(pPos,rows-y-1,*projector,horizon,ledColorTemp,false,depth); // right side perspective
+        } 
 
-        if (linex < *projector) {
-          for (int y = 0; y <= heights[i]; y++) {
-            leds.drawLine(linex+(leds.size.x/16)-1,leds.size.y-y-1,*projector,0, blend(ledColor, CRGB::Black, 32));
-          } 
-        }
-
-        if (linex > *projector) {
-          for (int y = 0; y <= heights[i]; y++) {
-            leds.drawLine(linex           ,leds.size.y-y-1,*projector,0, blend(ledColor, CRGB::Black, 32));
-          } 
-        }
-
-      }
-
-    }
-
-    for (int i=15; i>7; i--) {
-
-      uint16_t colorIndex = map(leds.size.x/16*i, 0, leds.size.x-1, 0, 255);
-      CRGB ledColor = ColorFromPalette(leds.palette, colorIndex);
-
-      int linex = i*(leds.size.x/16);
-
-      if (heights[i] > 1) {
-
-        if (linex < *projector) {
-          for (int y = 0; y <= heights[i]; y++) {
-            leds.drawLine(linex+(leds.size.x/16)-1,leds.size.y-y-1,*projector,0, blend(ledColor, CRGB::Black, 32));
-          } 
-        }
-
-        if (linex > *projector) {
-          for (int y = 0; y <= heights[i]; y++) {
-            leds.drawLine(linex           ,leds.size.y-y-1,*projector,0, blend(ledColor, CRGB::Black, 32));
-          } 
+        ledColorTemp = blend(ledColor, CRGB::Black, 255-128);
+        if (heights[i] < rows-horizon && (*projector <=linex || *projector >= pPos)) { // draw if above horizon AND not directly under projector (special case later)
+          if (rows-heights[i] > 1) {  // sanity check - avoid negative Y
+            for (uint_fast8_t x=linex; x<=pPos;x++) { 
+              bool doSoft = soft && ((x==linex) || (x==pPos)); // only first and last line need AA
+              leds.drawLine(x,rows-heights[i]-2,*projector,horizon,ledColorTemp,doSoft,depth); // top perspective
+            }
+          }
         }
       }
     }
 
-    for (int i=0; i<8; i++) {
 
-      uint16_t colorIndex = map(leds.size.x/16*i, 0, leds.size.x-1, 0, 255);
+    for (int i=(NUM_BANDS - 1); i>split; i--) { // paint left vertical faces and top - RIGHT to LEFT
+      uint16_t colorIndex = map(cols/NUM_BANDS*i, 0, cols-1, 0, 255);
       CRGB ledColor = ColorFromPalette(leds.palette, colorIndex);
-
-      int linex = i*(leds.size.x/16);
+      int linex = i*(cols/NUM_BANDS);
+      int pPos = max(0, linex+(cols/NUM_BANDS)-1);
 
       if (heights[i] > 1) {
-        for (int x=linex; x<=linex+(leds.size.x/16)-1;x++) {
-          leds.drawLine(x,            leds.size.y-heights[i]-2,*projector,0, blend(ledColor, CRGB::Black, 128)); // top perspective
+        ledColorTemp = blend(ledColor, CRGB::Black, 255-32);
+        for (uint_fast8_t y = (i>0) ? heights[i-1] : 0; y <= heights[i]; y++) { // don't bother drawing what we'll hide anyway
+          if (rows-y > 0) leds.drawLine(linex,rows-y-1,*projector,horizon,ledColorTemp,false,depth); // left side perspective
+        }
+
+        ledColorTemp = blend(ledColor, CRGB::Black, 255-128);
+        if (heights[i] < rows-horizon && (*projector <=linex || *projector >= pPos)) { // draw if above horizon AND not directly under projector (special case later)
+          if (rows-heights[i] > 1) {  // sanity check - avoid negative Y
+            for (uint_fast8_t x=linex; x<=pPos;x++) {
+              bool doSoft = soft && ((x==linex) || (x==pPos)); // only first and last line need AA
+              leds.drawLine(x,rows-heights[i]-2,*projector,horizon,ledColorTemp,doSoft,depth); // top perspective
+            }
+          }
+        }
+      }
+    }
+
+
+    for (int i=0; i<NUM_BANDS; i++) {
+      uint16_t colorIndex = map(cols/NUM_BANDS*i, 0, cols-1, 0, 255);
+      CRGB ledColor = ColorFromPalette(leds.palette, colorIndex);
+      int linex = i*(cols/NUM_BANDS);
+      int pPos  = linex+(cols/NUM_BANDS)-1;
+      int pPos1 = linex+(cols/NUM_BANDS);
+
+      if (*projector >=linex && *projector <= pPos) { // special case when top perspective is directly under the projector
+        if ((heights[i] > 1) && (heights[i] < rows-horizon) && (rows-heights[i] > 1)) {
+          ledColorTemp = blend(ledColor, CRGB::Black, 255-128);
+          for (uint_fast8_t x=linex; x<=pPos;x++) {
+            bool doSoft = soft && ((x==linex) || (x==pPos)); // only first and last line need AA
+            leds.drawLine(x,rows-heights[i]-2,*projector,horizon,ledColorTemp,doSoft,depth); // top perspective
+          }
         }
       }
 
-    }
-
-    for (int i=15; i>7; i--) {
-
-      uint16_t colorIndex = map(leds.size.x/16*i, 0, leds.size.x-1, 0, 255);
-      CRGB ledColor = ColorFromPalette(leds.palette, colorIndex);
-
-      int linex = i*(leds.size.x/16);
-
-      if (heights[i] > 1) {
-        for (int x=linex; x<=linex+(leds.size.x/16)-1;x++) {
-          leds.drawLine(x,            leds.size.y-heights[i]-2,*projector,0, blend(ledColor, CRGB::Black, 128)); // top perspective
+      if ((heights[i] > 1) && (rows-heights[i] > 0)) {
+        ledColorTemp = blend(ledColor, CRGB::Black, 255-frontFill);
+        for (uint_fast8_t x=linex; x<pPos1;x++) { 
+          leds.drawLine(x,rows-1,x,rows-heights[i]-1,ledColorTemp); // front fill
         }
-      }
 
-    }
-
-    for (int i=0; i<16; i++) {
-
-      uint8_t colorIndex = map(leds.size.x/16*i, 0, leds.size.x-1, 0, 255);
-      CRGB ledColor = ColorFromPalette(leds.palette, colorIndex);
-
-      int linex = i*(leds.size.x/16);
-
-      if (heights[i] > 1) {
-        for (int x=linex+1; x<linex+(leds.size.x/16)-1;x++) { 
-          leds.drawLine(x,leds.size.y-2,x,leds.size.y-heights[i]-2, blend(ledColor, CRGB::Black, 32)); // front fill
+        if (!borders && heights[i] > rows-horizon) {
+          if (frontFill == 0) ledColorTemp = blend(ledColor, CRGB::Black, 255-32); // match side fill if we're in blackout mode
+          leds.drawLine(linex,rows-heights[i]-1,linex+(cols/NUM_BANDS)-1,rows-heights[i]-1,ledColorTemp); // top line to simulate hidden top fill
         }
-        leds.drawLine(linex,            leds.size.y-1,linex,leds.size.y-heights[i]-1,ledColor); // left side
-        leds.drawLine(linex+(leds.size.x/16)-1,leds.size.y-1,linex+(leds.size.x/16)-1,leds.size.y-heights[i]-1,ledColor); // right side
-        leds.drawLine(linex,            leds.size.y-heights[i]-2,linex+(leds.size.x/16)-1,leds.size.y-heights[i]-2,ledColor); // top
-        leds.drawLine(linex,            leds.size.y-1,linex+(leds.size.x/16)-1,leds.size.y-1,ledColor); // bottom
+
+        if ((borders) && (rows-heights[i] > 1)) {
+          leds.drawLine(linex,                   rows-1,linex,rows-heights[i]-1,ledColor); // left side line
+          leds.drawLine(linex+(cols/NUM_BANDS)-1,rows-1,linex+(cols/NUM_BANDS)-1,rows-heights[i]-1,ledColor); // right side line
+          leds.drawLine(linex,                   rows-heights[i]-2,linex+(cols/NUM_BANDS)-1,rows-heights[i]-2,ledColor); // top line
+          leds.drawLine(linex,                   rows-1,linex+(cols/NUM_BANDS)-1,rows-1,ledColor); // bottom line
+        }
       }
     }
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
-    ui->initSlider(parentVar, "fadeOut", leds.effectData.write<uint8_t>(255));
+    ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(5), 1, 10);
+    ui->initSlider(parentVar, "Front Fill", leds.effectData.write<uint8_t>(16));
+    ui->initSlider(parentVar, "Horizon", leds.effectData.write<uint8_t>(leds.size.x), 1, leds.size.x);
+    ui->initSlider(parentVar, "Depth", leds.effectData.write<uint8_t>(176));
+    ui->initSlider(parentVar, "Num bands", leds.effectData.write<uint8_t>(8), 2, 16); // constrain NUM_BANDS between 2(for split) and cols (for small width segments)
+    ui->initCheckBox(parentVar, "Borders", leds.effectData.write<bool>(false));
+    ui->initCheckBox(parentVar, "Soft hack", leds.effectData.write<bool>(true));
   }
 }; //LaserGEQEffect
 
