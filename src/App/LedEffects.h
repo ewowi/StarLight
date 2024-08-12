@@ -1507,6 +1507,7 @@ class GameOfLifeEffect: public Effect {
     CRGB     *prevPalette      = leds.effectData.readWrite<CRGB>();
     byte     *cells            = leds.effectData.readWrite<byte>(dataSize);
     byte     *futureCells      = leds.effectData.readWrite<byte>(dataSize);
+    byte     *cellColors       = leds.effectData.readWrite<byte>(leds.size.x * leds.size.y * leds.size.z);
 
     CRGB bgColor = CRGB(bgC.x, bgC.y, bgC.z);
     CRGB color   = ColorFromPalette(leds.palette, random8()); // Used if all parents died
@@ -1520,11 +1521,16 @@ class GameOfLifeEffect: public Effect {
 
       // Setup Grid
       memset(cells, 0, dataSize);
+      memset(cellColors, 0, leds.size.x * leds.size.y * leds.size.z);
+
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
         if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZUnprojected({x,y,z}))) continue;
         if (random8(100) < lifeChance) {
-          setBitValue(cells, leds.XYZUnprojected({x,y,z}), true);
-          leds.setPixelColor({x,y,z}, bgColor); // Color set in redraw loop
+          int index = leds.XYZUnprojected({x,y,z});
+          setBitValue(cells, index, true);
+          cellColors[index] = random8(1, 255);
+          leds.setPixelColor({x,y,z}, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, cellColors[index]));
+          // leds.setPixelColor({x,y,z}, bgColor); // Color set in redraw loop
         }
       }
       memcpy(futureCells, cells, dataSize);
@@ -1544,30 +1550,30 @@ class GameOfLifeEffect: public Effect {
       blur -= (blur-220);
     }
     bool blurDead = *step > sys->now && !fadedBackground;
-    bool paletteChanged = !colorByAge && *prevPalette != ColorFromPalette(leds.palette, 0);
-
-    if (paletteChanged) *prevPalette = ColorFromPalette(leds.palette, 0);
     // Redraw Loop
-    if (*generation <= 1 || paletteChanged || blurDead) { // Readd overlay support when implemented
+    if (*generation <= 1 || blurDead) { // Readd overlay support when implemented
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
         uint16_t cIndex = leds.XYZUnprojected({x,y,z}); // Current cell index (bit grid lookup)
         uint16_t cLoc   = leds.XYZ({x,y,z});            // Current cell location (led index)
         if (!leds.isMapped(cIndex)) continue;
         bool alive = getBitValue(cells, cIndex);
-        CRGB cellColor = leds.getPixelColor(cLoc);
-        bool recolor = (paletteChanged || (alive && *generation == 1 && cellColor == bgColor && !random(16))); // Palette change or Initial Color
+        bool recolor = (alive && *generation == 1 && cellColors[cIndex] == 0 && !random(16)); // Palette change or Initial Color
         // Redraw alive if palette changed, spawn initial colors randomly, age alive cells while paused
-        if      (alive && recolor) leds.setPixelColor(cLoc, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, random8()));
+        if      (alive && recolor) {
+          cellColors[cIndex] = random8(1, 255);
+          leds.setPixelColor(cLoc, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, cellColors[cIndex]));
+        }
         else if (alive && colorByAge && !*generation) leds.blendPixelColor(cLoc, CRGB::Red, 248); // Age alive cells while paused
+        else if (alive && cellColors[cIndex] != 0) leds.setPixelColor(cLoc, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, cellColors[cIndex]));
         // Redraw dead if palette changed, blur paused game, fade on newgame
-        if      (!alive && (paletteChanged || disablePause)) leds.setPixelColor(cLoc, bgColor);   // Remove blended dead cells
+        // if      (!alive && (paletteChanged || disablePause)) leds.setPixelColor(cLoc, bgColor);   // Remove blended dead cells
         else if (!alive && blurDead)         leds.blendPixelColor(cLoc, bgColor, blur);           // Blend dead cells while paused
         else if (!alive && *generation == 1) leds.blendPixelColor(cLoc, bgColor, 248);            // Fade dead on new game
       }
     }
 
-    if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) return; // Check if enough time has passed for updating
-    // if (!speed || *step > sys->now || (speed != 60 && sys->now - *step < 1000 / speed)) return; // Uncapped speed when slider maxed
+    // if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) return; // Check if enough time has passed for updating
+    if (!speed || *step > sys->now || (speed != 100 && sys->now - *step < 1000 / speed)) return; // Uncapped speed when slider maxed
 
     //Rule set for game of life
     if (*ruleChanged) {
@@ -1596,8 +1602,8 @@ class GameOfLifeEffect: public Effect {
     }
     //Update Game of Life
     int aliveCount = 0, deadCount = 0; // Detect solo gliders and dead grids
-    bool disableWrap = *soloGlider || *generation % 1500 == 0;
-    const int zAxis = (leds.projectionDimension == _3D) ? -1 : 0; // Avoids looping through z axis neighbors if 2D
+    const int zAxis  = (leds.projectionDimension == _3D) ? 1 : 0; // Avoids looping through z axis neighbors if 2D
+    bool disableWrap = !wrap || *soloGlider || *generation % 1500 == 0 || zAxis;
     //Loop through all cells. Count neighbors, apply rules, setPixel
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
       Coord3D  cPos      = {x, y, z};
@@ -1606,26 +1612,23 @@ class GameOfLifeEffect: public Effect {
       if (cellValue) aliveCount++; else deadCount++;
       if (zAxis && !leds.isMapped(cIndex)) continue; // Skip if not physical led on 3D fixtures
       byte neighbors = 0, colorCount = 0;
-      CRGB nColors[9];
+      byte nColors[9];
 
-      for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = zAxis; k <= -zAxis; k++) {
+      for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -zAxis; k <= zAxis; k++) {
         if (i==0 && j==0 && k==0) continue; // Ignore itself
         Coord3D nPos = {x+i, y+j, z+k};
         if (nPos.isOutofBounds(leds.size)) {
           // Wrap is disabled when unchecked, for 3D fixtures, every 1500 generations, and solo gliders
-          if (!wrap || zAxis || disableWrap) continue;
-          if (wrap) nPos = (nPos + leds.size) % leds.size; // Wrap around 3D
+          if (disableWrap) continue;
+          nPos = (nPos + leds.size) % leds.size; // Wrap around 3D
         }
         uint16_t nIndex = leds.XYZUnprojected(nPos);
         // Count neighbors and store up to 9 neighbor colors
         if (getBitValue(cells, nIndex)) {
           neighbors++;
-          if (cellValue || colorByAge) continue;           // Skip if cell is alive (color already set) or color by age (colors are not used)
-          if (!getBitValue(futureCells, nIndex)) continue; // Skip if parent died in this loop (color lost or blended)
-          CRGB nColor = leds.getPixelColor(nPos);
-          if (nColor == bgColor) continue;
-          color = nColor; // Set color to last seen color
-          nColors[colorCount % 9] = color;
+          if (cellValue || colorByAge) continue; // Skip if cell is alive (color already set) or color by age (colors are not used)
+          if (cellColors[nIndex] == 0) continue; // Skip if neighbor color is 0 (dead cell)
+          nColors[colorCount % 9] = cellColors[nIndex];
           colorCount++;
         }
       }
@@ -1638,11 +1641,10 @@ class GameOfLifeEffect: public Effect {
       else if (!cellValue && birthNumbers[neighbors]){
         // Reproduction
         setBitValue(futureCells, cIndex, true);
-        CRGB randomParentColor = color; // Last seen color, overwrite if colors are found
-        if (colorCount) randomParentColor = nColors[random8(colorCount)];
-        if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8());
-        leds.setPixelColor(cPos, colorByAge ? CRGB::Green : randomParentColor);
-
+        byte colorIndex = nColors[random8(colorCount)];
+        if (random8(100) < mutation) colorIndex = random8();
+        cellColors[cIndex] = colorIndex;
+        leds.setPixelColor(cPos, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, colorIndex));
       }
       else {
         // Blending, fade dead cells further causing blurring effect to moving cells
@@ -1653,7 +1655,10 @@ class GameOfLifeEffect: public Effect {
           }
           else leds.blendPixelColor(cPos, bgColor, blur);
         }
-        if (cellValue && colorByAge) leds.blendPixelColor(cPos, CRGB::Red, 248);
+        else { // alive
+          if (colorByAge) leds.blendPixelColor(cPos, CRGB::Red, 248);
+          else leds.setPixelColor(cPos, ColorFromPalette(leds.palette, cellColors[cIndex]));
+        }
       }
     }
 
