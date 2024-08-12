@@ -135,7 +135,7 @@ void SysModNetwork::initConnection() {
     WiFi.setHostname(mdns->cmDNS); //use the mdns name (instance name or star-mac)
   }
   else
-    ppf("initConnection error s:%s p:%s\n", ssid?ssid:"No SSID", password?password:"No Password");
+    ppf("initConnection error ssid:%s pw:%s\n", ssid?ssid:"No SSID", password?password:"No Password");
 
   isConfirmedConnection = false; //need to test if really connected in handleConnection
 }
@@ -176,7 +176,7 @@ void SysModNetwork::handleAP() {
   if (stac != stacO) {
     stacO = stac;
     if (WiFi.status() != WL_CONNECTED) {
-      ppf("Connected AP clients: %d %d\n", stac, WiFi.status());
+      ppf("Connected AP clients: %d %d\n", stac, WiFi.status()); //6 is disconnected
       if (stac)
         WiFi.disconnect();        // disable search so that AP can work
       else

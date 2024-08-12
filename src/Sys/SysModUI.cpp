@@ -87,7 +87,7 @@ JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * ty
 
   //create new var
   if (differentParents || var.isNull()) {
-    ppf("initVar new %s var: %s->%s\n", type, parentId?parentId:"", id); //parentId not null otherwise crash
+    // ppf("initVar new %s var: %s->%s\n", type, parentId?parentId:"", id); //parentId not null otherwise crash
     if (parent.isNull()) {
       JsonArray vars = mdl->model->as<JsonArray>();
       var = vars.add<JsonObject>();
@@ -172,7 +172,7 @@ void SysModUI::processJson(JsonVariant json) {
         if (value.is<JsonObject>()) {
           JsonObject command = value;
           JsonObject var = mdl->findVar(command["id"]);
-          stackUnsigned8 rowNr = command["rowNr"];
+          stackUnsigned8 rowNr = command["rowNr"].isNull()?UINT8_MAX:command["rowNr"];
           ppf("processJson %s - %s[%d]\n", key, mdl->varID(var), rowNr);
 
           //first remove the deleted row both on server and on client(s)

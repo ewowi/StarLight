@@ -49,12 +49,3 @@ void loop() {
   t=t+speed;
   //delay(16);
 }
-
-void main() {
-  resetStat();
-  setup();
-  while (2>1) {
-    loop();
-    show();
-  }
-}
