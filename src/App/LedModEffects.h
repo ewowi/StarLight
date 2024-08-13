@@ -229,7 +229,7 @@ public:
 
             Effect* effect = effects[leds->fx];
 
-            // effect->loop(leds); //do a loop to set effectData right
+            effect->loop(*leds); //do a loop to set effectData right
             leds->effectData.reset(); //make sure all values are 0 and reset for a fresh start of the effect
             // leds->effectData.begin();
             mdl->varPreDetails(var, rowNr);

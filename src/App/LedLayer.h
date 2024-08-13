@@ -132,10 +132,10 @@ class SharedData {
   public:
 
   SharedData() {
-    // ppf("SharedData constructor %d %d\n", index, bytesAllocated);
+    ppf("SharedData constructor %d %d\n", index, bytesAllocated);
   }
   ~SharedData() {
-    // ppf("SharedData destructor WIP %d %d\n", index, bytesAllocated);
+    ppf("SharedData destructor WIP %d %d\n", index, bytesAllocated);
     // free(data);
   }
 
@@ -227,7 +227,7 @@ public:
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
 
   uint16_t fx = UINT16_MAX;
-  unsigned8 projectionNr = p_Default;
+  unsigned8 projectionNr = UINT8_MAX;
 
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
   void (Projection::*setupCached)(LedsLayer &, Coord3D &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = nullptr;

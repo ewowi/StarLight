@@ -1389,7 +1389,7 @@ class Noise2DEffect: public Effect {
     Effect::controls(leds, parentVar);
 
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(8), 0, 15);
-    ui->initSlider(parentVar, "scale", leds.effectData.write<uint8_t>(128), 2, 255);
+    ui->initSlider(parentVar, "scale", leds.effectData.write<uint8_t>(64), 2, 255);
   }
 }; //Noise2D
 
@@ -2213,7 +2213,7 @@ class ParticleTestEffect: public Effect {
   void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
     bool *setup = leds.effectData.write<bool>(true);
-    ui->initSlider  (parentVar, "Speed", leds.effectData.write<uint8_t>(1), 0, 30);
+    ui->initSlider  (parentVar, "Speed", leds.effectData.write<uint8_t>(15), 0, 30);
     ui->initSlider  (parentVar, "Number of Particles", leds.effectData.write<uint8_t>(10), 1, 255, false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
       case onChange: {*setup = true; return true;}
       default: return false;
