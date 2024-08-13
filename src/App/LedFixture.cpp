@@ -256,7 +256,7 @@ void Fixture::projectAndMap() {
           print->fFormat(buf, sizeof(buf)-1,"%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           mdl->setValue("ledsSize", JsonString(buf, JsonString::Copied), rowNr);
 
-          ppf("projectAndMap leds[%d].size = %d + m:(%d * %d) B\n", rowNr, sizeof(LedsLayer), leds->mappingTable.size(), sizeof(PhysMap)); //44 -> 164
+          ppf("projectAndMap leds[%d].size = %d + m:(%d * %d) + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), leds->mappingTable.size(), sizeof(PhysMap), leds->effectData.bytesAllocated, leds->projectionData.bytesAllocated); //44 -> 164
 
         } //leds->doMap
         rowNr++;

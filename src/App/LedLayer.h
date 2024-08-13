@@ -124,22 +124,24 @@ class Fixture; //forward
 class SharedData {
 
   private:
-    byte *data;
+    byte *data = nullptr;
     unsigned16 index = 0;
-    unsigned16 bytesAllocated = 0;
 
   public:
+    unsigned16 bytesAllocated = 0;
 
   SharedData() {
     ppf("SharedData constructor %d %d\n", index, bytesAllocated);
   }
   ~SharedData() {
     ppf("SharedData destructor WIP %d %d\n", index, bytesAllocated);
-    free(data);
+    if (data)
+      free(data);
   }
 
   void clear() {
-    free(data);
+    if (data)
+      free(data);
     bytesAllocated = 0;
     begin();
   }
