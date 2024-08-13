@@ -67,6 +67,15 @@ public:
   bool doAllocPins = false;
 
   unsigned8 globalBlend = 128;
+
+  Fixture() {
+    //init pixelsToBlend
+    for (uint16_t i=0; i<nrOfLeds; i++) {
+      if (pixelsToBlend.size() < nrOfLeds)
+        pixelsToBlend.push_back(false);
+    }
+    ppf("Fixture constructor ptb:%d", pixelsToBlend.size());
+  }
   
   //load fixture json file, parse it and depending on the projection, create a mapping for it
   void projectAndMap();
