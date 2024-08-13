@@ -135,12 +135,18 @@ class SharedData {
   }
   ~SharedData() {
     ppf("SharedData destructor WIP %d %d\n", index, bytesAllocated);
-    // free(data);
+    free(data);
   }
 
-  void reset() {
+  void clear() {
+    free(data);
+    bytesAllocated = 0;
+    begin();
+  }
+
+  void resetTo0() {
     memset(data, 0, bytesAllocated);
-    index = 0;
+    begin();
   }
 
   //sets the effectData pointer back to 0 so loop effect can go through it
@@ -250,10 +256,9 @@ public:
   std::vector<PhysMap> mappingTable;
   std::vector<std::vector<unsigned16>> mappingTableIndexes;
 
-
   unsigned16 indexVLocal = 0; //set in operator[], used by operator=
 
-  bool doMap = false;
+  bool doMap = true; //so a mapping will be made
 
   CRGBPalette16 palette;
 
