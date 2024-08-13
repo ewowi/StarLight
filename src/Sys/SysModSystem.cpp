@@ -58,7 +58,7 @@ void SysModSystem::setup() {
 
   ui->initText(parentVar, "upTime", nullptr, 16, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
-      ui->setComment(var, "Uptime of board");
+      ui->setComment(var, "s. Uptime of board");
       return true;
     default: return false;
   }});
@@ -66,6 +66,7 @@ void SysModSystem::setup() {
   ui->initNumber(parentVar, "now", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "now");
+      ui->setComment(var, "s");
       return true;
     default: return false;
   }});
@@ -73,6 +74,7 @@ void SysModSystem::setup() {
   ui->initNumber(parentVar, "timeBase", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "TimeBase");
+      ui->setComment(var, "s");
       return true;
     default: return false;
   }});
@@ -218,8 +220,10 @@ void SysModSystem::loop() {
 
 void SysModSystem::loop1s() {
   mdl->setUIValueV("upTime", "%lu s", millis()/1000);
-  mdl->setUIValueV("now", "%lu s", now/1000);
-  mdl->setUIValueV("timeBase", "%lu s", (now<millis())? - (UINT32_MAX - timebase)/1000:timebase/1000);
+  // mdl->setUIValueV("now", "%lu s", now/1000);
+  mdl->setValue(mdl->findVar("now"), now/1000);
+  // mdl->setUIValueV("timeBase", "%lu s", (now<millis())? - (UINT32_MAX - timebase)/1000:timebase/1000);
+  mdl->setValue(mdl->findVar("timeBase"), (now<millis())? - (UINT32_MAX - timebase)/1000:timebase/1000);
   mdl->setUIValueV("loops", "%lu /s", loopCounter);
 
   loopCounter = 0;

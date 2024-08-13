@@ -22,11 +22,11 @@
 
 #include "LedFixture.h"
 
-#include "../data/font/console_font_4x6.h"
-#include "../data/font/console_font_5x8.h"
-#include "../data/font/console_font_5x12.h"
-#include "../data/font/console_font_6x8.h"
-#include "../data/font/console_font_7x9.h"
+#include "../misc/font/console_font_4x6.h"
+#include "../misc/font/console_font_5x8.h"
+#include "../misc/font/console_font_5x12.h"
+#include "../misc/font/console_font_6x8.h"
+#include "../misc/font/console_font_7x9.h"
 
 #define NUM_VLEDS_Max 8192
 

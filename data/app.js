@@ -11,7 +11,7 @@ function appName() {
   return "Led";
 }
 
-function userFun(buffer) {
+function userFun(buffer, jsonValues) {
   if (buffer[0]==1 && jsonValues.pview) {
     let pviewNode = gId("pview");
 
@@ -33,7 +33,7 @@ function userFun(buffer) {
     //   pviewNode.addEventListener('dblclick', (event) => {toggleModal(event.target);});
     // }
 
-    // console.log("userFun", buffer);
+    // console.log("userFun", buffer, jsonValues);
 
     // if (jsonValues.pview.depth == 1)
     //   preview2D(pviewNode, buffer);
@@ -42,6 +42,7 @@ function userFun(buffer) {
 
     return true;
   }
+  
   return false;
 }
 

@@ -1,5 +1,5 @@
 // @title     StarBase
-// @file      newui.css
+// @file      mainnav.js
 // @date      20240720
 // @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
 // @Authors   https://github.com/ewowi/StarBase/commits/main
@@ -13,7 +13,7 @@
  */
 class MainNav {
 
-  addBody() {
+  createHTML() {
     let body = document.getElementById("body");//gId("body");
 
     body.classList += "d-flex flex-column";
@@ -78,93 +78,121 @@ class MainNav {
    * Set the active module
    * @param {object} module - A module
    */
-  set activeModule(module) {
-    if (!module) return
+  set activeModuleJson(moduleJson) {
+    if (!moduleJson) return
 
-    this.#activeModule = module
+    this.#activeModuleJson = moduleJson
+
+    localStorage.setItem('activeModuleId', moduleJson.id);
 
     // Update the main navigation
     document.querySelectorAll('#main-nav .menu-item').forEach(menuItem => {
-      if (menuItem.dataset.type == this.#activeModule.type) {
+      if (menuItem.dataset.type == this.#activeModuleJson.type) {
         menuItem.classList.add('selected')
       } else {
         menuItem.classList.remove('selected')
       }
     })
 
-    // Update the secondary navigation menu
-    const modules = model.filter(module => module.type == this.#activeModule.type)
-    
-    const html = modules
-      .map(module => {
-        const selected = module.id == this.#activeModule.id ? 'selected' : ''
-        return `<div onclick="mainNav.activeModuleId=this.dataset.id" class="menu-item selectable ${selected} text-truncate pa-3" data-id="${module.id}">${module.id}</div>`
-      })
-      .join('')
-    document.getElementById('second-nav').innerHTML = html
+    // Update the secondary navigation
+    document.querySelectorAll('#second-nav .menu-item').forEach(menuItem => {
+      if (menuItem.dataset.id == this.#activeModuleJson.id) {
+        menuItem.classList.add('selected')
+      } else {
+        menuItem.classList.remove('selected')
+      }
+    })
 
     // Update the page content
-    // TODO: Real code needed, for now, just dump out the JSON with a header
+    // TODO: Real code needed: done: this.#moduleFun
     if (this.#moduleFun) {
         document.getElementById('page').innerHTML = 
       `<div class="d-flex flex-column h-100 overflow-hidden">
         <div class="flex-shrink-0">
-          <h1 class="title">${this.#activeModule.id}</h1>
+          <h1 class="title">${this.#activeModuleJson.id}</h1>
         </div>
-        <div class="overflow-y-auto">` + this.#moduleFun(this.#activeModule) +
+        <div class="overflow-y-auto">` + this.#moduleFun(this.#activeModuleJson) +
         `</div>
       </div>`
     }
-  }
+  } //set activeModuleJson(moduleJson)
 
   /**
    * Set the active module to the first one in the module list whose type matches
    * @param {string} moduleType - The module type
+   * triggered by menu onclick
    */
   set activeModuleType(moduleType) {
-    this.activeModule = model.find(module => module.type == moduleType)
+    this.activeModuleJson = controller.modules.model.find(moduleJson => moduleJson.type == moduleType)
+    this.#updateSecondaryMenu();
   }
 
   /**
    * Set the active module to the module specified by the id
    * @param {string} id - The module id
+   * triggered by menu onclick
    */
   set activeModuleId(id) {
-    this.activeModule = model.find(module => module.id == id)
+    this.activeModuleJson = controller.modules.model.find(moduleJson => moduleJson.id == id)
+  }
+
+  // Get the unique list of module types
+  #updateMainMenu() {
+    const uniqueTypes = controller.modules.model
+    .filter((moduleJson, index, modules) => {
+      return modules.findIndex(m => m.type === moduleJson.type) === index
+    })
+    .map(moduleJson => moduleJson.type)
+
+    // Each module type becomes a top level menu
+    const html = uniqueTypes
+      .map(type => {
+        const selected = type == this.#activeModuleJson.type ? 'selected' : ''
+        return `<div onclick="controller.mainNav.activeModuleType=this.dataset.type" class="menu-item selectable ${selected} pa-4" data-type="${type}">${type}</div>`
+      })
+      .join('')
+    document.getElementById('main-nav').innerHTML = html
+  }
+
+  // Update the secondary navigation menu
+  #updateSecondaryMenu() {
+    const modules = controller.modules.model.filter(moduleJson => moduleJson.type == this.#activeModuleJson.type)
+
+    const html = modules
+    .map(moduleJson => {
+      const selected = moduleJson.id == this.#activeModuleJson.id ? 'selected' : ''
+      return `<div onclick="controller.mainNav.activeModuleId=this.dataset.id" class="menu-item selectable ${selected} text-truncate pa-3" data-id="${moduleJson.id}">${moduleJson.id}</div>`
+    })
+    .join('')
+    document.getElementById('second-nav').innerHTML = html
   }
 
   /**
    * Update the UI
    */
   //updateUI is made after all modules have been fetched, how to adapt to add one module?
-  updateUI(fun) {
-    this.#moduleFun = fun
+  updateUI(moduleJson, fun) {
 
-    // Get the unique list of module types
-    const uniqueTypes = model
-      .filter((module, index, modules) => {
-        return modules.findIndex(m => m.type === module.type) === index
-      })
-      .map(module => module.type)
+    this.#moduleFun = fun //sets the function which displays a module
 
-    // Each module type becomes a top level menu
-    const html = uniqueTypes
-      .map(type => {
-        return `<div onclick="mainNav.activeModuleType=this.dataset.type" class="menu-item selectable pa-4" data-type="${type}">${type}</div>`
-      })
-      .join('')
-    document.getElementById('main-nav').innerHTML = html
+    this.#updateMainMenu();
+    this.#updateSecondaryMenu();
+  
+    let activeModuleId = localStorage.getItem('activeModuleId');
+    if (moduleJson.id == activeModuleId) {
+      this.activeModuleJson = moduleJson //set triggered
+    }
 
     // If there is no active module set it to the first one
-    if (this.#activeModule == '' && model.length) {
-      this.activeModule = model[0]
+    if (activeModuleId == null && this.#activeModuleJson == '' && controller.modules.model.length) {
+      this.activeModuleJson = controller.modules.model[0]
     }
   }
 
   /**
    * Store the currently active module
    */
-  #activeModule = ''
+  #activeModuleJson = ''
 
   //stores the function to execute to display one module
   #moduleFun = null;

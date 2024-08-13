@@ -220,4 +220,4 @@ function writeChunks(srcDir, specs, resultFile) {
 }
 
 writeHtmlGzipped("data/index.htm", "src/html_ui.h", 'index');
-writeHtmlGzipped("data/newui.htm", "src/html_newui.h", 'newui');
+writeHtmlGzipped("data/newui/index.htm", "src/html_newui.h", 'newui');
