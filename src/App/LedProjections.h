@@ -642,7 +642,7 @@ class SpacingProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.reset();
+    leds.projectionData.clear();
     Coord3D *spacing = leds.projectionData.write<Coord3D>({1,1,1});
     ui->initCoord3D(parentVar, "Spacing", spacing, 0, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
@@ -790,7 +790,7 @@ class AccelerationProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.reset();
+    leds.projectionData.clear();
     bool *wrap = leds.projectionData.write<bool>(false);
     uint8_t *sensitivity = leds.projectionData.write<uint8_t>(0);
     uint8_t *deadzone = leds.projectionData.write<uint8_t>(10);
@@ -837,7 +837,7 @@ class CheckerboardProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.reset();
+    leds.projectionData.clear();
     Coord3D *size = leds.projectionData.write<Coord3D>({3,3,3});
     bool *invert = leds.projectionData.write<bool>(false);
     bool *group = leds.projectionData.write<bool>(false);
