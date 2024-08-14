@@ -2411,9 +2411,9 @@ class GEQEffect: public Effect {
 // Author: @TroyHacks
 // @license GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
 class LaserGEQEffect: public Effect {
-  const char * name() {return "GEQ 3D";}
+  const char * name() {return "Laser GEQ";}
   uint8_t dim() {return _2D;}
-  const char * tags() {return "♫💫";}
+  const char * tags() {return "♫💡";}
 
   void setup(LedsLayer &leds) {
     leds.fadeToBlackBy(16);
@@ -2423,15 +2423,17 @@ class LaserGEQEffect: public Effect {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t frontFill = leds.effectData.read<uint8_t>();
-    uint8_t horizon = leds.effectData.read<uint8_t>() - 1;
+    uint8_t horizon = leds.effectData.read<uint8_t>();
     uint8_t depth = leds.effectData.read<uint8_t>();
-    uint8_t numBands = leds.effectData.read<uint8_t>() - 1;
+    uint8_t numBands = leds.effectData.read<uint8_t>();
     bool borders = leds.effectData.read<bool>();
     bool soft = leds.effectData.read<bool>();
 
     uint16_t *projector = leds.effectData.readWrite<uint16_t>();
     int8_t *projector_dir = leds.effectData.readWrite<int8_t>();
     uint32_t *counter = leds.effectData.readWrite<uint32_t>();
+
+    if (numBands < 2) numBands = 2; //initEffect
 
     const int cols = leds.size.x;
     const int rows = leds.size.y;
@@ -2547,7 +2549,7 @@ class LaserGEQEffect: public Effect {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(5), 1, 10);
     ui->initSlider(parentVar, "Front Fill", leds.effectData.write<uint8_t>(16));
-    ui->initSlider(parentVar, "Horizon", leds.effectData.write<uint8_t>(leds.size.x), 1, leds.size.x);
+    ui->initSlider(parentVar, "Horizon", leds.effectData.write<uint8_t>(leds.size.x / 2), 0, leds.size.x-1);
     ui->initSlider(parentVar, "Depth", leds.effectData.write<uint8_t>(176));
     ui->initSlider(parentVar, "Num bands", leds.effectData.write<uint8_t>(8), 2, 16); // constrain NUM_BANDS between 2(for split) and cols (for small width segments)
     ui->initCheckBox(parentVar, "Borders", leds.effectData.write<bool>(false));
