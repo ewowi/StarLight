@@ -618,7 +618,38 @@ class SpacingProjection: public Projection {
   const char * name() {return "Spacing WIP";}
   const char * tags() {return "💡";}
 
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    DefaultProjection dp;
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+  }
+
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    // UI Variables
+    leds.projectionData.begin();
+    Coord3D spacing = leds.projectionData.read<Coord3D>();
+
+    // ppf ("pixel: %d,%d,%d -> ", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
+    spacing = spacing.maximum(Coord3D{0, 0, 0}) + Coord3D{1,1,1}; // {1, 1, 1} is the minimum value
+
+    if (pixelAdjusted % spacing == Coord3D{0,0,0}) pixelAdjusted /= spacing; 
+    else pixelAdjusted = Coord3D{UINT16_MAX, UINT16_MAX, UINT16_MAX};
+
+    // ppf ("%d,%d,%d\n", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
+
+    sizeAdjusted = (sizeAdjusted + spacing - Coord3D{1,1,1}) / spacing; // round up
+    midPosAdjusted /= spacing;
+  }
+
   void controls(LedsLayer &leds, JsonObject parentVar) {
+    leds.projectionData.reset();
+    Coord3D *spacing = leds.projectionData.write<Coord3D>({1,1,1});
+    ui->initCoord3D(parentVar, "Spacing", spacing, 0, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->layers[rowNr]->triggerMapping();
+        return true;
+      default: return false;
+    }});
   }
 }; //SpacingProjection
 
@@ -769,6 +800,67 @@ class AccelerationProjection: public Projection {
     ui->initSlider(parentVar, "Deadzone", deadzone, 0, 100, false);
   }
 }; //Acceleration
+
+class CheckerboardProjection: public Projection {
+  const char * name() {return "Checkerboard";}
+  const char * tags() {return "💫";}
+
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+    leds.projectionData.begin();
+    Coord3D size = leds.projectionData.read<Coord3D>();
+    bool invert = leds.projectionData.read<bool>();
+    bool group = leds.projectionData.read<bool>();
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    if (group) {GroupingProjection gp; gp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);}
+    else       {DefaultProjection  dp; dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);}
+  }
+
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    // UI Variables
+    leds.projectionData.begin();
+    Coord3D size = leds.projectionData.read<Coord3D>();
+    bool invert = leds.projectionData.read<bool>();
+
+    // ppf ("pixel: %d,%d,%d -> ", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
+    size = size.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
+
+    Coord3D check = pixelAdjusted / size;
+    if ((check.x + check.y + check.z) % 2 == 0) {
+      if (invert) pixelAdjusted = {UINT16_MAX, UINT16_MAX, UINT16_MAX};
+    }
+    else {
+      if (!invert) pixelAdjusted = {UINT16_MAX, UINT16_MAX, UINT16_MAX};
+    }
+      
+    // ppf ("%d,%d,%d", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
+    // ppf (" Check: %d,%d,%d  Even: %d\n", check.x, check.y, check.z, (check.x + check.y + check.z) % 2 == 0);
+  }
+
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    leds.projectionData.reset();
+    Coord3D *size = leds.projectionData.write<Coord3D>({3,3,3});
+    bool *invert = leds.projectionData.write<bool>(false);
+    bool *group = leds.projectionData.write<bool>(false);
+    ui->initCoord3D(parentVar, "Square Size", size, 0, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->layers[rowNr]->triggerMapping();
+        return true;
+      default: return false;
+    }});
+    ui->initCheckBox(parentVar, "Invert", invert, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->layers[rowNr]->triggerMapping();
+        return true;
+      default: return false;
+    }});
+    ui->initCheckBox(parentVar, "Group", group, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->layers[rowNr]->triggerMapping();
+        return true;
+      default: return false;
+    }});
+  }
+}; //CheckerboardProjection
 
 class TestProjection: public Projection {
   const char * name() {return "Test";}

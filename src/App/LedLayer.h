@@ -48,6 +48,7 @@ enum ProjectionsE
   p_Kaleidoscope,
   p_Scrolling,
   p_Acceleration,
+  p_Checkerboard,
   p_count // keep as last entry
 };
 
