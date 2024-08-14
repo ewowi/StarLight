@@ -2231,7 +2231,89 @@ class ParticleTestEffect: public Effect {
   }
 };
 
+class StarFieldEffect: public Effect {  // Inspired by Daniel Shiffman's Coding Train https://www.youtube.com/watch?v=17WoOqgXsRM
+  const char * name() {return "StarField";}
+  unsigned8     dim() {return _2D;}
+  const char * tags() {return "💫";}
 
+  struct Star {
+    int x, y, z;
+    uint8_t colorIndex;
+  };
+
+  static float fmap(const float x, const float in_min, const float in_max, const float out_min, const float out_max) {
+    return (out_max - out_min) * (x - in_min) / (in_max - in_min) + out_min;
+  }
+
+  void loop(LedsLayer &leds) {
+    // UI Variables
+    bool   *setup = leds.effectData.readWrite<bool>();
+    uint8_t speed = leds.effectData.read<uint8_t>();
+    uint8_t numStars = leds.effectData.read<uint8_t>();
+    uint8_t blur = map(leds.effectData.read<uint8_t>(), 0, 255, 255, 0);
+    bool usePalette = leds.effectData.read<bool>();
+
+    // Effect Variables
+    unsigned long *step = leds.effectData.readWrite<unsigned long>();
+    Star *stars         = leds.effectData.readWrite<Star>(255);
+
+
+    if (*setup) {
+      *setup = false; 
+      leds.fill_solid(CRGB::Black);
+      //set up all stars
+      for (int i = 0; i < 255; i++) {
+        stars[i].x = random(-leds.size.x, leds.size.x);
+        stars[i].y = random(-leds.size.y, leds.size.y);
+        stars[i].z = random(leds.size.x);
+        stars[i].colorIndex = random8();
+      }
+    }
+
+    if (!speed || sys->now - *step < 1000 / speed) return; // Not enough time passed
+
+    leds.fadeToBlackBy(blur);
+
+    for (int i = 0; i < numStars; i++) {
+      //update star
+      // ppf("Star %d Pos: %d, %d, %d -> ", i, stars[i].x, stars[i].y, stars[i].z);
+      float sx = leds.size.x/2.0 + fmap(float(stars[i].x) / stars[i].z, 0, 1, 0, leds.size.x/2.0);
+      float sy = leds.size.y/2.0 + fmap(float(stars[i].y) / stars[i].z, 0, 1, 0, leds.size.y/2.0);
+
+      // ppf(" %f, %f\n", sx, sy);
+
+      Coord3D pos = {int(sx), int(sy), 0};
+      if (!pos.isOutofBounds(leds.size)) {
+        if (usePalette) leds.setPixelColor(leds.XY(int(sx), int(sy)), ColorFromPalette(leds.palette, stars[i].colorIndex, map(stars[i].z, 0, leds.size.x, 255, 150)));
+        else {
+          uint8_t color = map(stars[i].colorIndex, 0, 255, 120, 255);
+          int brightness = map(stars[i].z, 0, leds.size.x, 7, 10);
+          color *= brightness/10.0;
+          leds.setPixelColor(leds.XY(int(sx), int(sy)), CRGB(color, color, color));
+        }
+      }
+      stars[i].z -= 1;
+      if (stars[i].z <= 0 || pos.isOutofBounds(leds.size)) {
+        stars[i].x = random(-leds.size.x, leds.size.x);
+        stars[i].y = random(-leds.size.y, leds.size.y);
+        stars[i].z = leds.size.x;
+        stars[i].colorIndex = random8();
+      }
+    }
+
+    *step = sys->now;
+  }
+
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    bool *setup = leds.effectData.write<bool>(true);
+    ui->initSlider(parentVar, "Speed",           leds.effectData.write<uint8_t>(20), 0, 30); // 0 - 30 updates per second
+    ui->initSlider(parentVar, "Number of Stars", leds.effectData.write<uint8_t>(16), 1, 255);
+    ui->initSlider(parentVar, "Blur",            leds.effectData.write<uint8_t>(128), 0, 255);
+    ui->initCheckBox(parentVar, "UsePalette",    leds.effectData.write<bool>(false));
+  }
+
+}; //StarField
 
 
 
