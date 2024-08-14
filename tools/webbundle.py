@@ -20,10 +20,11 @@ else:
         env.Execute("npm run build")
 
     latest_source = max(glob.glob('data/*.*'), key=os.path.getmtime) #any file in data folder
+    latest_source2 = max(glob.glob('data/newui/*.*'), key=os.path.getmtime) #any file in data/newui folder (temp)
     latest_export = max(glob.glob('src/html_*.h'), key=os.path.getmtime)
 
     # if any files in data newer then html_*.h, recreate it (and others)
-    if os.path.getmtime(latest_source) > os.path.getmtime(latest_export):
+    if os.path.getmtime(latest_source) > os.path.getmtime(latest_export) or os.path.getmtime(latest_source2) > os.path.getmtime(latest_export):
         print ('  updated file(s) in /data -> npm run build')
         env.Execute("npm run build")
 

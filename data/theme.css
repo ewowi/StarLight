@@ -1,0 +1,98 @@
+/*
+   @title     StarBase
+   @file      theme.css
+   @date      20240720
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
+   @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
+   @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
+*/
+
+:root,
+	:root.starbase {
+		--bg-color: #121212;
+		--text-color: #cfd096;
+		--th-color: #c27e66;
+		--h-color:#c27e66;
+		--border-color: #cdad6a;
+		--select-color: #1a8aff; /*used for view buttons*/
+		--label-color: #83c5eb;
+		--comment-color: #598a43;
+		--font-size: 10px;
+	}
+	:root.starlight {
+		--bg-color: linear-gradient(to bottom, #ffbe33 0%, #b60f62 100%);
+		--text-color: #030303;
+		--th-color: #b60f6281;
+		--h-color: #b60f62;
+		--border-color: #666;
+		--select-color: #FFFFFF; /*used for view buttons*/
+		--label-color: #86eb83;
+		--font-size: 10px;
+	}
+    :root.wled {
+		--bg-color: #121212;
+		--text-color: #fff;
+		--th-color: rgb(255, 160, 0);
+		--h-color: rgb(255, 160, 0);
+		--border-color: rgb(255, 160, 0);
+		--select-color: rgb(255, 160, 0);
+		--font-size: 10px;
+	}
+	:root.grayeen {
+		--bg-color: linear-gradient(to bottom, #979294 0%, #474542 100%);
+		--text-color: #fbf4f4;
+		--th-color: #21482b;
+		--h-color: #21482b;
+		--border-color: #21482b;
+		--select-color: #21482b; /*used for view buttons*/
+		--font-size: 10px;
+		--font-size-s: 8px; /*var(--font-size-s) not working for some reason */
+	}
+	:root.dev {
+		--bg-color: #121212;
+		--text-color: #cfd096;
+		--th-color: #c27e66;
+		--h-color:#c27e66;
+		--border-color: #cdad6a;
+		--select-color: #1a8aff; /*used for view buttons*/
+		--label-color: #83c5eb;
+		--comment-color: #598a43;
+		--font-size: 10px;
+	}
+	:root.light {
+		--bg-color: #fff;
+		--text-color: #123;
+		--h-color: #000000;
+		--th-color: #6d686a81;
+		--select-color: #6d686a81;
+    }
+    :root.dark {
+		--bg-color: #121212;
+		--text-color: #696d7d;
+    }
+    :root.blue {
+		--bg-color: #05396B;
+		--text-color: #E7F1FE;
+		--th-color: #b60f6281;
+		--h-color: #b60f62;
+		--select-color: #b60f6281;
+    }
+    :root.pink {
+		--bg-color: #ffcad4;
+		--text-color: #e75480;
+		--select-color: #e75480; /*used for view buttons*/
+	}
+    :root.space {
+		--bg-color: #000;
+		--text-color: #f2bd16;
+		--bg-url: url(//space);
+		--font-family: 'Press Start 2P', cursive;
+    }
+    :root.nyan {
+		--bg-color: #013367;
+		--text-color: #fff;
+		--bg-url: url(//nyan);
+		--font-family: 'Comic Neue', cursive;
+    }

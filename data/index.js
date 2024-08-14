@@ -47,8 +47,8 @@ async function fetchModel() {
   // Replace with call to server websocket
   model = await (await fetch('../misc/model.json')).json()
 
-  for (let module of model) {
-    addModule(module)
+  for (let moduleJson of model) {
+    addModule(moduleJson)
   }
 }
 
@@ -94,18 +94,18 @@ function ppf() {
 }
 
 //used by fetchModel and by makeWS
-function addModule(module) {
+function addModule(moduleJson) {
   // let module = json;
-  console.log("WS receive createHTML", module);
-  ppf("WS receive createHTML", module.id);
-  createHTML(module); //no parentNode
+  console.log("WS receive createHTML", moduleJson);
+  ppf("WS receive createHTML", moduleJson.id);
+  createHTML(moduleJson); //no parentNode
 
-  if (module.id == "System") {
-    console.log("system changes", module);
-    if (module.view)
-      savedView = module.view;
-    if (module.theme)
-      changeHTMLTheme(module.theme);
+  if (moduleJson.id == "System") {
+    console.log("system changes", moduleJson);
+    if (moduleJson.view)
+      savedView = moduleJson.view;
+    if (moduleJson.theme)
+      changeHTMLTheme(moduleJson.theme);
   }
 
   //rerun after each module added
@@ -137,7 +137,7 @@ function makeWS() {
         previewBoard(pviewNode, buffer);
       }
       else 
-        userFun(buffer);
+        userFun(buffer, jsonValues);
     } 
     else {
       // console.log("onmessage", e.data);

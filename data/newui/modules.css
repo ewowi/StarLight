@@ -1,0 +1,30 @@
+/*
+   @title     StarBase
+   @file      modules.css
+   @date      20240720
+   @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
+   @Authors   https://github.com/ewowi/StarBase/commits/main
+   @Copyright © 2024 Github StarBase Commit Authors
+   @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
+   @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
+*/
+
+/* default nodes */
+label {
+	margin-right: 6px; /*space after*/
+	color: var(--label-color);
+  }
+  
+  comment {
+	/* font-size: 10px; */
+	font-style: italic;
+	margin-left: 6px; /*space before*/
+	color: var(--comment-color);
+  }
+  
+  input {
+	  background: transparent;
+	  color: var(--text-color);
+	  font-size: 8px; /*var(--font-size-s) not working for some reason */
+  }
+  
