@@ -124,23 +124,31 @@ class Fixture; //forward
 class SharedData {
 
   private:
-    byte *data;
+    byte *data = nullptr;
     unsigned16 index = 0;
-    unsigned16 bytesAllocated = 0;
 
   public:
+    unsigned16 bytesAllocated = 0;
 
   SharedData() {
     ppf("SharedData constructor %d %d\n", index, bytesAllocated);
   }
   ~SharedData() {
     ppf("SharedData destructor WIP %d %d\n", index, bytesAllocated);
-    // free(data);
+    if (data)
+      free(data);
   }
 
-  void reset() {
+  void clear() {
+    if (data)
+      free(data);
+    bytesAllocated = 0;
+    begin();
+  }
+
+  void resetTo0() {
     memset(data, 0, bytesAllocated);
-    index = 0;
+    begin();
   }
 
   //sets the effectData pointer back to 0 so loop effect can go through it
@@ -250,10 +258,9 @@ public:
   std::vector<PhysMap> mappingTable;
   std::vector<std::vector<unsigned16>> mappingTableIndexes;
 
-
   unsigned16 indexVLocal = 0; //set in operator[], used by operator=
 
-  bool doMap = false;
+  bool doMap = true; //so a mapping will be made
 
   CRGBPalette16 palette;
 
