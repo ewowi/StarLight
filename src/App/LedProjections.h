@@ -199,7 +199,7 @@ class PinwheelProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.reset();
+    leds.projectionData.clear();
 
     uint8_t *petals   = leds.projectionData.write<uint8_t>(60); // Initalize petal first for adjustSizeAndPixel
     uint8_t *swirlVal = leds.projectionData.write<uint8_t>(30);
@@ -280,7 +280,7 @@ class MultiplyProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.reset();
+    leds.projectionData.clear();
     Coord3D *proMulti = leds.projectionData.write<Coord3D>({2,2,1});
     bool *mirror = leds.projectionData.write<bool>(false);
     ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
@@ -484,7 +484,7 @@ class ReverseProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.reset();
+    leds.projectionData.clear();
     bool *reverseX = leds.projectionData.write<bool>(false);
     bool *reverseY = leds.projectionData.write<bool>(false);
     bool *reverseZ = leds.projectionData.write<bool>(false);
@@ -548,7 +548,7 @@ class MirrorProjection: public Projection {
 }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.reset();
+    leds.projectionData.clear();
     bool *mirrorX = leds.projectionData.write<bool>(false);
     bool *mirrorY = leds.projectionData.write<bool>(false);
     bool *mirrorZ = leds.projectionData.write<bool>(false);
@@ -603,7 +603,7 @@ class GroupingProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.reset();
+    leds.projectionData.clear();
     Coord3D *grouping = leds.projectionData.write<Coord3D>({1,1,1});
     ui->initCoord3D(parentVar, "Grouping", grouping, 0, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
@@ -678,7 +678,7 @@ class TransposeProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.reset();
+    leds.projectionData.clear();
     bool *transposeXY = leds.projectionData.write<bool>(false);
     bool *transposeXZ = leds.projectionData.write<bool>(false);
     bool *transposeYZ = leds.projectionData.write<bool>(false);

@@ -76,7 +76,7 @@ void LedsLayer::setPixelColor(unsigned16 indexV, CRGB color) {
     fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], fixture->globalBlend): color;
   }
   else if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
-    ppf(" dev sPC V:%d >= %d", indexV, NUM_LEDS_Max);
+    ppf(" dev sPC %d >= %d", indexV, NUM_LEDS_Max);
 }
 
 void LedsLayer::setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri) {
@@ -106,7 +106,7 @@ CRGB LedsLayer::getPixelColor(unsigned16 indexV) {
   else if (indexV < NUM_LEDS_Max) //no mapping
     return fixture->ledsP[indexV];
   else {
-    ppf(" dev gPC N: %d >= %d", indexV, NUM_LEDS_Max);
+    ppf(" dev gPC %d >= %d", indexV, NUM_LEDS_Max);
     return CRGB::Black;
   }
 }

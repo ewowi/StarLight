@@ -171,7 +171,6 @@ public:
         if (rowNr >= fixture.layers.size()) {
           ppf("layerTbl creating new LedsLayer instance %d\n", rowNr);
           LedsLayer *leds = new LedsLayer(fixture);
-          leds->doMap = true;
           fixture.layers.push_back(leds);
         }
         return true; }
@@ -215,7 +214,6 @@ public:
           ppf("layers fx[%d] onChange %d %s\n", rowNr, fixture.layers.size(), mdl->findVar("fx")["value"].as<String>().c_str());
           ppf("fx creating new LedsLayer instance %d\n", rowNr);
           LedsLayer *leds = new LedsLayer(fixture);
-          leds->doMap = true;
           fixture.layers.push_back(leds);
         }
 
@@ -232,25 +230,15 @@ public:
 
             Effect* effect = effects[leds->fx];
 
-            effect->loop(*leds); //do a loop to set effectData right
-            leds->effectData.reset(); //make sure all values are 0 and reset for a fresh start of the effect
-            // leds->effectData.begin();
-            mdl->varPreDetails(var, rowNr);
-            effect->controls(*leds, var);
-            mdl->varPostDetails(var, rowNr);
-
-            effect->setup(*leds); //if changed then run setup once (like call==0 in WLED)
-
-            ppf("control ");
-            print->printVar(var);
-            ppf("\n");
-
             if (effect->dim() != leds->effectDimension) {
               leds->effectDimension = effect->dim();
               leds->triggerMapping();
             }
-            else
-              leds->doMap = false; //run the effects again
+            else {
+              leds->doMap = false;
+              initEffect(*leds, rowNr);
+            }
+
           } // fx < size
 
         }
@@ -305,7 +293,7 @@ public:
           }
           // ppf("onChange pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.layers.size());
 
-          leds->triggerMapping();
+          leds->triggerMapping(); //set also fixture.doMap
         }
         return true;
       default: return false;
@@ -530,9 +518,9 @@ public:
       newFrame = false;
     }
 
-    JsonObject var = mdl->findVar("System");
-    if (!var["canvasData"].isNull()) {
-      const char * canvasData = var["canvasData"]; //0 - 494 - 140,150,0
+    JsonObject varSystem = mdl->findVar("System");
+    if (!varSystem["canvasData"].isNull()) {
+      const char * canvasData = varSystem["canvasData"]; //0 - 494 - 140,150,0
       ppf("LedModEffects loop canvasData %s\n", canvasData);
 
       uint8_t rowNr = 0; //currently only leds[0] supported
@@ -560,7 +548,7 @@ public:
           fixture.layers[rowNr]->triggerMapping();
         }
 
-        var.remove("canvasData"); //convasdata has been processed
+        varSystem.remove("canvasData"); //convasdata has been processed
       }
     }
 
@@ -568,6 +556,18 @@ public:
     if (sys->now - lastMappingMillis >= 1000 && fixture.doMap) { //not more then once per second (for E131)
       lastMappingMillis = sys->now;
       fixture.projectAndMap();
+
+      //init the effect after a remapping
+      stackUnsigned8 rowNr = 0;
+      for (LedsLayer *leds: fixture.layers) {
+        if (leds->doMap) {
+          initEffect(*leds, rowNr);
+          leds->doMap = false;
+        }
+        rowNr++;
+      }
+      fixture.doMap = false;
+
 
       //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
 
@@ -833,6 +833,21 @@ public:
     // ppf("caching %u %u\n", trigoCached, trigoUnCached); //not working for some reason!!
     // trigoCached = 0;
     // trigoUnCached = 0;
+  }
+
+  void initEffect(LedsLayer &leds, uint8_t rowNr) {
+    Effect *effect = effects[leds.fx];
+    JsonObject var = mdl->findVar("fx");
+
+    leds.effectData.clear(); //delete effectData memory so it can be rebuild
+    effect->loop(leds); //do a loop to set effectData right
+    leds.effectData.resetTo0(); //make sure all values are 0 and reset for a fresh start of the effect
+
+    mdl->varPreDetails(var, rowNr);
+    effect->controls(leds, var);
+    mdl->varPostDetails(var, rowNr);
+
+    effect->setup(leds); //if changed then run setup once (like call==0 in WLED)
   }
 
 private:
