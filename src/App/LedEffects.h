@@ -2315,7 +2315,44 @@ class StarFieldEffect: public Effect {  // Inspired by Daniel Shiffman's Coding 
 
 }; //StarField
 
+class BasicTemplate: public Effect { // add effects.push_back(new Name); to LedModEffects.h
+  const char * name() {return "Template";}
+  unsigned8     dim() {return _3D;} // _1D, _2D, or _3D
+  const char * tags() {return "💫";}
+  // 💫 StarLed 
+  // 💡 WLED
+  // ⚡ FastLed
+  //  ♪ Volume Reactive
+  //  ♫ Frequency Reactive
+  // 🧭 Gyro Support
+  // 🎮 Game?
 
+
+  void loop(LedsLayer &leds) {
+    // UI Variables
+    bool   *setup = leds.effectData.readWrite<bool>();
+    uint8_t speed = leds.effectData.read<uint8_t>(); // Updates per second
+
+    // Effect Variables
+    unsigned long *step  = leds.effectData.readWrite<unsigned long>();
+
+    if (*setup) {
+      *setup = false; 
+      // Setup here if needed
+    }
+
+    if (!speed || sys->now - *step < 1000 / speed) return; // Not enough time passed
+    // Update Here
+
+    *step = sys->now; // Update step
+  }
+
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    bool *setup = leds.effectData.write<bool>(true);
+    ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(1), 0, 30); // 0 - 30 updates per second
+  }
+};
 
 
 
