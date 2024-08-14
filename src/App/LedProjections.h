@@ -722,6 +722,54 @@ class ScrollingProjection: public Projection {
 
 }; //ScrollingProjection
 
+class AccelerationProjection: public Projection {
+  const char * name() {return "Acceleration WIP";}
+  const char * tags() {return "💫🧭";}
+
+  public:
+
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+    DefaultProjection dp;
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+  }
+
+  void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {
+    leds.projectionData.begin();
+    bool wrap = leds.projectionData.read<bool>();
+    float sensitivity = float(leds.projectionData.read<uint8_t>()) / 20.0 + 1; // 0 - 100 slider -> 1.0 - 6.0 multiplier 
+    uint16_t deadzone = map(leds.projectionData.read<uint8_t>(), 0, 255, 0 , 1000); // 0 - 1000
+
+    int accelX = mpu6050->accell.x; 
+    int accelY = mpu6050->accell.y;
+
+    if (abs(accelX) < deadzone) accelX = 0;
+    if (abs(accelY) < deadzone) accelY = 0;
+
+    int xMove = map(accelX, -32768, 32767, -leds.size.x, leds.size.x) * sensitivity;
+    int yMove = map(accelY, -32768, 32767, -leds.size.y, leds.size.y) * sensitivity;
+
+    // if (pixel.x == 0 && pixel.y == 0) ppf("Accel: %d %d xMove: %d yMove: %d\n", accelX, accelY, xMove, yMove);
+  
+    pixel.x += xMove;
+    pixel.y += yMove;
+    if (wrap) {
+      pixel.x %= leds.size.x;
+      pixel.y %= leds.size.y;
+    }
+  }
+
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    leds.projectionData.reset();
+    bool *wrap = leds.projectionData.write<bool>(false);
+    uint8_t *sensitivity = leds.projectionData.write<uint8_t>(0);
+    uint8_t *deadzone = leds.projectionData.write<uint8_t>(10);
+
+    ui->initCheckBox(parentVar, "Wrap", wrap);
+    ui->initSlider(parentVar, "Sensitivity", sensitivity, 0, 100, false);
+    ui->initSlider(parentVar, "Deadzone", deadzone, 0, 100, false);
+  }
+}; //Acceleration
+
 class TestProjection: public Projection {
   const char * name() {return "Test";}
   const char * tags() {return "💡";}
