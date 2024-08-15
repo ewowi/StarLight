@@ -193,7 +193,7 @@ function makeWS() {
         previewBoard(canvasNode, buffer);
       }
       else 
-        userFun(buffer, jsonValues);
+        userFun(buffer);
     } 
     else {
       // console.log("onmessage", e.data);

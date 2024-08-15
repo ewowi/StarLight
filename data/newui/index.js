@@ -59,6 +59,14 @@ class Controller {
       json.sysInfo.pinTypes[pinNr] = Math.round(Math.random() * 3)
     this.receiveData(json);
 
+    //LED specific
+    //send F_ixture.json
+    json = {}
+    json.pview = {}
+    json.pview.file = 'F_panel2x2-16x16.json'
+    this.receiveData(json);
+    //end LED specific
+    
     // every 1 second
     window.setInterval(function() {
       controller.modules.generateData() //generates data for each variabe in model
@@ -80,8 +88,22 @@ class Controller {
           controller.modules.previewBoard(canvasNode, buffer);
         }
       }
-      else {
-        userFun(buffer, {});
+      else if (buffer[0] == 1) {
+        let canvasNode = document.getElementById("pview");
+        if (canvasNode) {
+          // console.log(buffer, canvasNode);
+          buffer[1] = 0
+          buffer[2] = 0
+          buffer[3] = 0
+          let pviewVar = controller.modules.findVar("pview");
+          for (let i = 0; i < pviewVar.file.nrOfLeds; i++) {
+            buffer[4+i*3] = Math.random() * 256
+            buffer[4+i*3+1] = Math.random() * 256
+            buffer[4+i*3+2] = Math.random() * 256
+          }
+
+          userFun(buffer);
+        }
       }
     }, 100);
 
