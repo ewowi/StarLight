@@ -11,52 +11,67 @@ function appName() {
   return "Led";
 }
 
-function userFun(buffer, jsonValues) {
-  if (buffer[0]==1 && jsonValues.pview) {
-    let pviewNode = gId("pview");
+function userFunSetup() {
+  let body = gId("body");
 
-    //replace the canvas: in case we switch from 2D to 3D as they cannot be reused between them
-    //not needed anymore as we do only three.js
-    // if (jsonValues.pview.new)
-    // {
-    //   console.log("replace the canvas!", jsonValues.pview);
-    //   let canvasNode = cE("canvas");
-    //   canvasNode.width = pviewNode.width;
-    //   canvasNode.height = pviewNode.height;
-    //   canvasNode.className = pviewNode.className;
-    //   canvasNode.draggable = true;
-    //   canvasNode.addEventListener('dragstart', (event) => {event.preventDefault(); event.stopPropagation();});
+  body.innerHTML += `<div id="canvasMenu" style="position:absolute;display:none"> <!--;background-color:#b60f62-->
+    <p><button id="canvasButton1"></button></p>
+    <p><button id="canvasButton2"></button></p>
+    <p><button id="canvasButton3"></button></p>
+    <span id="canvasData" hidden="true"></span>
+  </div>`
+}
 
-    //   pviewNode.parentNode.replaceChild(canvasNode, pviewNode);
-    //   pviewNode = canvasNode;
-    //   pviewNode.id = "pview";
-    //   pviewNode.addEventListener('dblclick', (event) => {toggleModal(event.target);});
-    // }
+function userFun(buffer) {
+  if (buffer[0]==1) {
+    let canvasNode = gId("pview");
 
-    // console.log("userFun", buffer, jsonValues);
+    if (canvasNode) {
+      let pviewVar = controller.modules.findVar("pview");
+  
+      //replace the canvas: in case we switch from 2D to 3D as they cannot be reused between them
+      //not needed anymore as we do only three.js
+      // if (pviewVar.file.new)
+      // {
+      //   console.log("replace the canvas!", pviewVar.file);
+      //   let canvasNode = cE("canvas");
+      //   canvasNode.width = pviewNode.width;
+      //   canvasNode.height = pviewNode.height;
+      //   canvasNode.className = pviewNode.className;
+      //   canvasNode.draggable = true;
+      //   canvasNode.addEventListener('dragstart', (event) => {event.preventDefault(); event.stopPropagation();});
 
-    // if (jsonValues.pview.depth == 1)
-    //   preview2D(pviewNode, buffer);
-    // else
-      preview3D(pviewNode, buffer);
+      //   pviewNode.parentNode.replaceChild(canvasNode, pviewNode);
+      //   pviewNode = canvasNode;
+      //   pviewNode.id = "pview";
+      //   pviewNode.addEventListener('dblclick', (event) => {toggleModal(event.target);});
+      // }
 
+      // console.log("userFun", buffer, pviewVar);
+
+      // if (pviewVar.file.depth == 1)
+      //   preview2D(pviewNode, buffer, pviewVar);
+      // else
+        preview3D(canvasNode, buffer, pviewVar);
+
+    }
     return true;
   }
   
   return false;
 }
 
-function preview2D(canvasNode, buffer) {
+function preview2D(canvasNode, buffer, pviewVar) {
   let ctx = canvasNode.getContext('2d');
   let i = 5;
   let factor = 10;//fixed value: from mm to cm
   ctx.clearRect(0, 0, canvasNode.width, canvasNode.height);
-  if (jsonValues.pview) {
-    let pPL = Math.min(canvasNode.width / jsonValues.pview.width, canvasNode.height / jsonValues.pview.height); // pixels per LED (width of circle)
-    let lOf = Math.floor((canvasNode.width - pPL*jsonValues.pview.width)/2); //left offeset (to center matrix)
-    if (jsonValues.pview.outputs) {
-      // console.log("preview2D jsonValues", jsonValues.pview);
-      for (var output of jsonValues.pview.outputs) {
+  if (pviewVar.file) {
+    let pPL = Math.min(canvasNode.width / pviewVar.file.width, canvasNode.height / pviewVar.file.height); // pixels per LED (width of circle)
+    let lOf = Math.floor((canvasNode.width - pPL*pviewVar.file.width)/2); //left offeset (to center matrix)
+    if (pviewVar.file.outputs) {
+      // console.log("preview2D jsonValues", pviewVar.file);
+      for (var output of pviewVar.file.outputs) {
         if (output.buffer) {
           for (var led of output.buffer) {
             if (buffer[i] + buffer[i+1] + buffer[i+2] > 20) { //do not show nearly blacks
@@ -69,16 +84,16 @@ function preview2D(canvasNode, buffer) {
           }
         }
         else {
-          console.log("preview2D jsonValues no leds", jsonValues.pview);
-          jsonValues.pview = null;
+          console.log("preview2D jsonValues no leds", pviewVar.file);
+          pviewVar.file = null;
         }            
       }
     }
     else {
-      console.log("preview2D jsonValues no outputs", jsonValues.pview);
-      jsonValues.pview = null;
+      console.log("preview2D jsonValues no outputs", pviewVar.file);
+      pviewVar.file = null;
     }
-    jsonValues.pview.new = null;
+    pviewVar.file.new = null;
   }
 }
 
@@ -93,7 +108,7 @@ let mousePointer = null;
 //https://stackoverflow.com/questions/8426822/rotate-camera-in-three-js-with-mouse
 
 //inspiration: https://discoverthreejs.com/book/first-steps/transformations/
-function preview3D(canvasNode, buffer) {
+function preview3D(canvasNode, buffer, pviewVar) {
   //3D vars
   import ('three').then((THREE) => {
 
@@ -131,7 +146,7 @@ function preview3D(canvasNode, buffer) {
         gId("canvasMenu").style.top = (event.clientY) + "px"; //- rect.top
         gId("canvasMenu").style.display = ""; //not none -> show
         let sp = intersect.name.split(" - "); //output and led index is encoded in the name
-        gId("canvasData").innerText = jsonValues.pview.outputs[sp[0]].leds[sp[1]];// event.clientY;
+        gId("canvasData").innerText = pviewVar.file.outputs[sp[0]].leds[sp[1]];// event.clientY;
       }
       // else{
       //   intersect = undefined;
@@ -144,7 +159,7 @@ function preview3D(canvasNode, buffer) {
       let d = 5 / factor; //distanceLED;
 
       //init three - done once
-      if (!renderer || (jsonValues.pview && jsonValues.pview.new)) { //init 3D
+      if (!renderer || (pviewVar.file && pviewVar.file.new)) { //init 3D
 
         console.log("preview3D create new renderer");
 
@@ -154,7 +169,7 @@ function preview3D(canvasNode, buffer) {
         renderer.setClearColor( 0x000000, 0 );
 
         camera = new THREE.PerspectiveCamera( 45, canvasNode.width/canvasNode.width, 1, 500); //aspectRatio is 1 for the time being
-        camera.position.set( 0, 0, d*Math.sqrt(jsonValues.pview.width*jsonValues.pview.width + jsonValues.pview.height*jsonValues.pview.height + jsonValues.pview.depth*jsonValues.pview.depth) );
+        camera.position.set( 0, 0, d*Math.sqrt(pviewVar.file.width*pviewVar.file.width + pviewVar.file.height*pviewVar.file.height + pviewVar.file.depth*pviewVar.file.depth) );
         camera.lookAt( 0, 0, 0 );
 
         scene = new THREE.Scene();
@@ -211,17 +226,17 @@ function preview3D(canvasNode, buffer) {
       } //new
 
       //init fixture - anytime a new fixture
-      if (jsonValues.pview && jsonValues.pview.new) { //set the new coordinates
-        var offset_x = -d*(jsonValues.pview.width-1)/2;
-        var offset_y = -d*(jsonValues.pview.height-1)/2;
-        var offset_z = -d*(jsonValues.pview.depth-1)/2;
+      if (pviewVar.file && pviewVar.file.new) { //set the new coordinates
+        var offset_x = -d*(pviewVar.file.width-1)/2;
+        var offset_y = -d*(pviewVar.file.height-1)/2;
+        var offset_z = -d*(pviewVar.file.depth-1)/2;
 
-        console.log("preview3D new jsonValues", jsonValues.pview);
+        console.log("preview3D new jsonValues", pviewVar.file);
 
-        if (jsonValues.pview.outputs) {
-          // console.log("preview3D jsonValues", jsonValues.pview);
+        if (pviewVar.file.outputs) {
+          // console.log("preview3D jsonValues", pviewVar.file);
           let outputsIndex = 0;
-          for (var output of jsonValues.pview.outputs) {
+          for (var output of pviewVar.file.outputs) {
             if (output.leds) {
               let ledsIndex = 0;
               for (var led of output.leds) {
@@ -230,14 +245,14 @@ function preview3D(canvasNode, buffer) {
                 if (led.length <= 2) //1D and 2D: maak 3D 
                   led.push(0);
 
-                // ppf("size and shape", jsonValues.pview.ledSize, jsonValues.pview.shape);
-                if (!jsonValues.pview.ledSize) jsonValues.pview.ledSize = 7;
+                // ppf("size and shape", pviewVar.file.ledSize, pviewVar.file.shape);
+                if (!pviewVar.file.ledSize) pviewVar.file.ledSize = 7;
                   
                 let geometry;
-                if (jsonValues.pview.shape == 1)
-                  geometry = new THREE.TetrahedronGeometry(jsonValues.pview.ledSize / 30); //was 1/factor
+                if (pviewVar.file.shape == 1)
+                  geometry = new THREE.TetrahedronGeometry(pviewVar.file.ledSize / 30); //was 1/factor
                 else // default
-                  geometry = new THREE.SphereGeometry(jsonValues.pview.ledSize / 30); //was 1/factor
+                  geometry = new THREE.SphereGeometry(pviewVar.file.ledSize / 30); //was 1/factor
                 const material = new THREE.MeshBasicMaterial({transparent: true, opacity: 1.0});
                 // material.color = new THREE.Color(`${x/mW}`, `${y/mH}`, `${z/mD}`);
                 const mesh = new THREE.Mesh( geometry, material );
@@ -247,21 +262,21 @@ function preview3D(canvasNode, buffer) {
               }
             }
             else {
-              console.log("preview3D jsonValues no leds", jsonValues.pview);
-              jsonValues.pview = null;
+              console.log("preview3D jsonValues no leds", pviewVar.file);
+              pviewVar.file = null;
             }
             outputsIndex++;
           } //outputs
         }
         else {
-          console.log("preview3D jsonValues no outputs", jsonValues.pview);
-          jsonValues.pview = null;
+          console.log("preview3D jsonValues no outputs", pviewVar.file);
+          pviewVar.file = null;
         }
-        jsonValues.pview.new = null;
+        pviewVar.file.new = null;
       }
 
       //animate / render
-      if (jsonValues.pview) {
+      if (pviewVar.file) {
         //https://stackoverflow.com/questions/29884485/threejs-canvas-size-based-on-container
         if (canvasNode.width != canvasNode.clientWidth) { //} || canvasNode.height != canvasNode.clientHeight) {
           console.log("3D pview update size", canvasNode.width, canvasNode.clientWidth, canvasNode.height, canvasNode.clientHeight);
@@ -271,11 +286,11 @@ function preview3D(canvasNode, buffer) {
         //light up the cube
         let headerBytes = 4;
         var i = 0;
-        let rgb1B = jsonValues.pview.nrOfLeds == buffer.length - headerBytes; //1-byte rgb
-        // console.log(jsonValues.pview.nrOfLeds, buffer.length);
-        if (jsonValues.pview.outputs) {
-          // console.log("preview3D jsonValues", jsonValues.pview);
-          for (var output of jsonValues.pview.outputs) {
+        let rgb1B = pviewVar.file.nrOfLeds == buffer.length - headerBytes; //1-byte rgb
+        // console.log(pviewVar.file.nrOfLeds, buffer.length);
+        if (pviewVar.file.outputs) {
+          // console.log("preview3D jsonValues", pviewVar.file);
+          for (var output of pviewVar.file.outputs) {
             if (output.leds) {
               for (var led of output.leds) {
                 if (i < scene.children.length) {
@@ -296,14 +311,14 @@ function preview3D(canvasNode, buffer) {
               }
             }
             else {
-              console.log("preview3D jsonValues no leds", jsonValues.pview);
-              jsonValues.pview = null;
+              console.log("preview3D jsonValues no leds", pviewVar.file);
+              pviewVar.file = null;
             }
           }
         }
         else {
-          console.log("preview3D jsonValues no outputs", jsonValues.pview);
-          jsonValues.pview = null;
+          console.log("preview3D jsonValues no outputs", pviewVar.file);
+          pviewVar.file = null;
         }
       }
 
