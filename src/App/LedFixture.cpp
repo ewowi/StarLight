@@ -38,7 +38,6 @@ void Fixture::projectAndMap() {
         }
         leds->mappingTableIndexes.clear();
         leds->mappingTable.clear();
-        // leds->effectData.resetTo0(); //do not reset as want to save settings.
       }
       rowNr++;
     }
@@ -258,6 +257,7 @@ void Fixture::projectAndMap() {
 
           ppf("projectAndMap leds[%d].size = %d + m:(%d * %d) + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), leds->mappingTable.size(), sizeof(PhysMap), leds->effectData.bytesAllocated, leds->projectionData.bytesAllocated); //44 -> 164
 
+          leds->doMap = false;
         } //leds->doMap
         rowNr++;
       } // leds
@@ -279,5 +279,6 @@ void Fixture::projectAndMap() {
   else
     ppf("projectAndMap: Filename for fixture %d not found\n", fixtureNr);
 
+  doMap = false;
   ppf("projectAndMap done %d ms\n", millis()-start);
 }

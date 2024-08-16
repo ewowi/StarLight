@@ -132,6 +132,7 @@ class SharedData {
 
   public:
     unsigned16 bytesAllocated = 0;
+    bool alertIfChanged = false;
 
   SharedData() {
     ppf("SharedData constructor %d %d\n", index, bytesAllocated);
@@ -146,11 +147,7 @@ class SharedData {
     if (data)
       free(data);
     bytesAllocated = 0;
-    begin();
-  }
-
-  void resetTo0() {
-    memset(data, 0, bytesAllocated);
+    alertIfChanged = false;
     begin();
   }
 
@@ -164,12 +161,14 @@ class SharedData {
   Type * readWrite(int length = 1) {
     size_t newIndex = index + length * sizeof(Type);
     if (newIndex > bytesAllocated) {
-      size_t newSize = bytesAllocated + (1 + ( newIndex - bytesAllocated)/1024) * 1024; // add a multitude of 1024 bytes
-      ppf("bind add more %d->%d %d->%d\n", index, newIndex, bytesAllocated, newSize);
+      size_t newSize = bytesAllocated + (1 + ( newIndex - bytesAllocated)/32) * 32; // add a multitude of 32 bytes
+      ppf("sharedData.readWrite add more %d->%d %d->%d\n", index, newIndex, bytesAllocated, newSize);
       if (bytesAllocated == 0)
         data = (byte*) malloc(newSize);
       else
         data = (byte*)realloc(data, newSize);
+      if (alertIfChanged)
+        ppf("dev sharedData.readWrite reallocating!!! %d -> %d\n", bytesAllocated, newSize);
       bytesAllocated = newSize;
     }
     // ppf("bind %d->%d %d\n", index, newIndex, bytesAllocated);

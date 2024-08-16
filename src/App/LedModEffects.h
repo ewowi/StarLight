@@ -218,13 +218,12 @@ public:
         if (rowNr < fixture.layers.size()) {
           LedsLayer *leds = fixture.layers[rowNr];
 
-          leds->doMap = true; //stop the effects loop already here
+          // leds->doMap = true; //stop the effects loop already here
 
           leds->fx = mdl->getValue(var, rowNr);
 
-          ppf("setEffect fx[%d]: %d\n", rowNr, leds->fx);
-
           if (leds->fx < effects.size()) {
+            ppf("setEffect fx[%d]: %d\n", rowNr, leds->fx);
 
             Effect* effect = effects[leds->fx];
 
@@ -232,10 +231,19 @@ public:
               leds->effectDimension = effect->dim();
               leds->triggerMapping();
             }
-            else {
-              leds->doMap = false;
-              initEffect(*leds, rowNr);
-            }
+
+            ppf("initEffect leds[%d] fx:%d a:%d\n", rowNr, leds->fx, leds->effectData.bytesAllocated);
+
+            leds->effectData.clear(); //delete effectData memory so it can be rebuild
+            effect->loop(*leds); leds->effectData.begin(); //do a loop to set effectData right
+
+            mdl->varPreDetails(var, rowNr);
+            effect->controls(*leds, var); //set all defaults in effectData
+            mdl->varPostDetails(var, rowNr);
+
+            leds->effectData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
+
+            effect->setup(*leds); //if changed then run setup once (like call==0 in WLED)
 
           } // fx < size
 
@@ -272,7 +280,7 @@ public:
         if (rowNr < fixture.layers.size()) {
           LedsLayer *leds = fixture.layers[rowNr];
 
-          leds->doMap = true; //stop the effects loop already here
+          // leds->doMap = true; //stop the effects loop already here
 
           stackUnsigned8 proValue = mdl->getValue(var, rowNr);
           leds->projectionNr = proValue;
@@ -285,9 +293,17 @@ public:
             leds->setupCached = &Projection::setup;
             leds->adjustXYZCached = &Projection::adjustXYZ;
 
+            //initProjection
+
+            ppf("initProjection leds[%d] fx:%d a:%d\n", rowNr, leds->fx, leds->projectionData.bytesAllocated);
+
+            leds->projectionData.clear(); //delete effectData memory so it can be rebuild
+
             mdl->varPreDetails(var, rowNr); //set all positive var N orders to negative
             projection->controls(*leds, var);
             mdl->varPostDetails(var, rowNr);
+
+            leds->projectionData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
           }
           // ppf("onChange pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.layers.size());
 
@@ -461,7 +477,7 @@ public:
       //  run the next frame of the effect
       stackUnsigned8 rowNr = 0;
       for (LedsLayer *leds: fixture.layers) {
-        if (!leds->doMap && leds->fx < effects.size()) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
+        if (leds->fx < effects.size()) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
           // ppf(" %d %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->fx, leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
           mdl->getValueRowNr = rowNr++;
 
@@ -550,22 +566,10 @@ public:
       }
     }
 
-    //update projection
+    //run projectAndMap
     if (sys->now - lastMappingMillis >= 1000 && fixture.doMap) { //not more then once per second (for E131)
       lastMappingMillis = sys->now;
       fixture.projectAndMap();
-
-      //init the effect after a remapping
-      stackUnsigned8 rowNr = 0;
-      for (LedsLayer *leds: fixture.layers) {
-        if (leds->doMap) {
-          initEffect(*leds, rowNr);
-          leds->doMap = false;
-        }
-        rowNr++;
-      }
-      fixture.doMap = false;
-
 
       //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
 
@@ -831,21 +835,6 @@ public:
     // ppf("caching %u %u\n", trigoCached, trigoUnCached); //not working for some reason!!
     // trigoCached = 0;
     // trigoUnCached = 0;
-  }
-
-  void initEffect(LedsLayer &leds, uint8_t rowNr) {
-    Effect *effect = effects[leds.fx];
-    JsonObject var = mdl->findVar("fx");
-
-    leds.effectData.clear(); //delete effectData memory so it can be rebuild
-    effect->loop(leds); //do a loop to set effectData right
-    leds.effectData.resetTo0(); //make sure all values are 0 and reset for a fresh start of the effect
-
-    mdl->varPreDetails(var, rowNr);
-    effect->controls(leds, var);
-    mdl->varPostDetails(var, rowNr);
-
-    effect->setup(leds); //if changed then run setup once (like call==0 in WLED)
   }
 
 private:

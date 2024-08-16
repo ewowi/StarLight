@@ -199,8 +199,6 @@ class PinwheelProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.clear();
-
     uint8_t *petals   = leds.projectionData.write<uint8_t>(60); // Initalize petal first for adjustSizeAndPixel
     uint8_t *swirlVal = leds.projectionData.write<uint8_t>(30);
     bool    *reverse  = leds.projectionData.write<bool>(false);
@@ -280,7 +278,6 @@ class MultiplyProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.clear();
     Coord3D *proMulti = leds.projectionData.write<Coord3D>({2,2,1});
     bool *mirror = leds.projectionData.write<bool>(false);
     ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
@@ -484,7 +481,6 @@ class ReverseProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.clear();
     bool *reverseX = leds.projectionData.write<bool>(false);
     bool *reverseY = leds.projectionData.write<bool>(false);
     bool *reverseZ = leds.projectionData.write<bool>(false);
@@ -548,7 +544,6 @@ class MirrorProjection: public Projection {
 }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.clear();
     bool *mirrorX = leds.projectionData.write<bool>(false);
     bool *mirrorY = leds.projectionData.write<bool>(false);
     bool *mirrorZ = leds.projectionData.write<bool>(false);
@@ -603,7 +598,6 @@ class GroupingProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.clear();
     Coord3D *grouping = leds.projectionData.write<Coord3D>({1,1,1});
     ui->initCoord3D(parentVar, "Grouping", grouping, 0, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
@@ -642,7 +636,6 @@ class SpacingProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.clear();
     Coord3D *spacing = leds.projectionData.write<Coord3D>({1,1,1});
     ui->initCoord3D(parentVar, "Spacing", spacing, 0, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
@@ -678,7 +671,6 @@ class TransposeProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.clear();
     bool *transposeXY = leds.projectionData.write<bool>(false);
     bool *transposeXZ = leds.projectionData.write<bool>(false);
     bool *transposeYZ = leds.projectionData.write<bool>(false);
@@ -747,6 +739,7 @@ class ScrollingProjection: public Projection {
     uint8_t *zSpeed  = leds.projectionData.write<uint8_t>(0);
 
     ui->initSlider(parentVar, "X Speed", xSpeed, 0, 255, false);
+    //ewowi: 2D/3D inits will be done automatically in the future, then the if's are not needed here
     if (leds.projectionDimension >= _2D) ui->initSlider(parentVar, "Y Speed", ySpeed, 0, 255, false);
     if (leds.projectionDimension == _3D) ui->initSlider(parentVar, "Z Speed", zSpeed, 0, 255, false);
   }
@@ -790,7 +783,6 @@ class AccelerationProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.clear();
     bool *wrap = leds.projectionData.write<bool>(false);
     uint8_t *sensitivity = leds.projectionData.write<uint8_t>(0);
     uint8_t *deadzone = leds.projectionData.write<uint8_t>(10);
@@ -837,7 +829,6 @@ class CheckerboardProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    leds.projectionData.clear();
     Coord3D *size = leds.projectionData.write<Coord3D>({3,3,3});
     bool *invert = leds.projectionData.write<bool>(false);
     bool *group = leds.projectionData.write<bool>(false);
