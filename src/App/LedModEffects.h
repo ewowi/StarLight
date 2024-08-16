@@ -65,22 +65,22 @@ public:
     //1D Basis
     effects.push_back(new SolidEffect);
     // 1D FastLed
-    effects.push_back(new RainbowEffect);
-    effects.push_back(new RainbowWithGlitterEffect);
-    effects.push_back(new FlowEffect);
-    effects.push_back(new SinelonEffect);
-    effects.push_back(new ConfettiEffect);
     effects.push_back(new BPMEffect);
+    effects.push_back(new ConfettiEffect);
     effects.push_back(new JuggleEffect);
+    effects.push_back(new RainbowWithGlitterEffect);
+    effects.push_back(new SinelonEffect);
     //1D StarLight
-    effects.push_back(new RunningEffect);
     effects.push_back(new RingRandomFlowEffect);
+    effects.push_back(new RunningEffect);
     // 1D WLED
     effects.push_back(new BouncingBallsEffect);
-    effects.push_back(new RainEffect);
     effects.push_back(new DripEffect);
+    effects.push_back(new FlowEffect);
     effects.push_back(new HeartBeatEffect);
     effects.push_back(new PopCornEffect); //contains wledaudio: useaudio, conditional compile
+    effects.push_back(new RainEffect);
+    effects.push_back(new RainbowEffect);
 
     #ifdef STARLIGHT_USERMOD_WLEDAUDIO
       //1D Volume
@@ -92,32 +92,31 @@ public:
     #endif
 
     //2D StarLight
+    effects.push_back(new GameOfLifeEffect); //2D & 3D
     effects.push_back(new LinesEffect);
+    effects.push_back(new ParticleTestEffect); //2D & 3D
+    effects.push_back(new StarFieldEffect);
     //2D WLED
     effects.push_back(new BlackHoleEffect);
     effects.push_back(new DNAEffect);
     effects.push_back(new DistortionWavesEffect);
-    effects.push_back(new OctopusEffect);
-    effects.push_back(new LissajousEffect);
     effects.push_back(new FrizzlesEffect);
-    effects.push_back(new ScrollingTextEffect);
+    effects.push_back(new LissajousEffect);
     effects.push_back(new Noise2DEffect);
-    effects.push_back(new GameOfLifeEffect);
-    effects.push_back(new RubiksCubeEffect);
-    effects.push_back(new ParticleTestEffect);
+    effects.push_back(new OctopusEffect);
+    effects.push_back(new ScrollingTextEffect);
     #ifdef STARLIGHT_USERMOD_WLEDAUDIO
       //2D WLED
-      effects.push_back(new WaverlyEffect);
+      effects.push_back(new FunkyPlankEffect);
       effects.push_back(new GEQEffect);
       effects.push_back(new LaserGEQEffect);
-      effects.push_back(new FunkyPlankEffect);
+      effects.push_back(new WaverlyEffect);
     #endif
     //3D
     effects.push_back(new RipplesEffect);
+    effects.push_back(new RubiksCubeEffect);
     effects.push_back(new SphereMoveEffect);
     effects.push_back(new PixelMapEffect);
-    effects.push_back(new Byte2TestEffect); // not 3D but next to pixelMap for testing
-    effects.push_back(new Byte2TestEffect2); // not 3D but next to pixelMap for testing
 
     #ifdef STARBASE_USERMOD_LIVE
       effects.push_back(new LiveScriptEffect);
@@ -138,6 +137,9 @@ public:
     fixture.projections.push_back(new SpacingProjection);
     fixture.projections.push_back(new TransposeProjection);
     fixture.projections.push_back(new KaleidoscopeProjection);
+    fixture.projections.push_back(new ScrollingProjection);
+    fixture.projections.push_back(new AccelerationProjection);
+    fixture.projections.push_back(new CheckerboardProjection);
 
     #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
       #if !(CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2)

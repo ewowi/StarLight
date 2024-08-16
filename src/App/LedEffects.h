@@ -1172,35 +1172,29 @@ class OctopusEffect: public Effect {
 
   void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
+    bool   *setup = leds.effectData.readWrite<bool>();
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t offsetX = leds.effectData.read<uint8_t>();
     uint8_t offsetY = leds.effectData.read<uint8_t>();
     uint8_t legs = leds.effectData.read<uint8_t>();
 
-    //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
+    // Effect Variables
+    Coord3D  *prevLedSize = leds.effectData.readWrite<Coord3D>();
     Map_t    *rMap = leds.effectData.readWrite<Map_t>(leds.size.x * leds.size.y); //array
-    uint8_t *offsX = leds.effectData.readWrite<uint8_t>();
-    uint8_t *offsY = leds.effectData.readWrite<uint8_t>();
-    uint16_t *aux0 = leds.effectData.readWrite<uint16_t>();
-    uint16_t *aux1 = leds.effectData.readWrite<uint16_t>();
     uint32_t *step = leds.effectData.readWrite<uint32_t>();
 
     const uint8_t mapp = 180 / max(leds.size.x,leds.size.y);
 
     Coord3D pos = {0,0,0};
 
-    // re-init if SEGMENT dimensions or offset changed
-    if (*aux0 != leds.size.x || *aux1 != leds.size.y || offsetX != *offsX || offsetY != *offsY) {
-      // *step = 0;
-      *aux0 = leds.size.x;
-      *aux1 = leds.size.y;
-      *offsX = offsetX;
-      *offsY = offsetY;
+    if (*setup || *prevLedSize != leds.size) { // Setup map if leds.size or offset changes
+      *setup = false;
+      *prevLedSize = leds.size;
       const uint8_t C_X = leds.size.x / 2 + (offsetX - 128)*leds.size.x/255;
       const uint8_t C_Y = leds.size.y / 2 + (offsetY - 128)*leds.size.y/255;
       for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
         for (pos.y = 0; pos.y < leds.size.y; pos.y++) {
-          uint16_t indexV = leds.XY(pos.x, pos.y);
+          uint16_t indexV = leds.XYZ(pos);
           if (indexV < leds.size.x * leds.size.y) { //excluding UINT16_MAX from XY if out of bounds due to projection
             rMap[indexV].angle = 40.7436f * atan2f(pos.y - C_Y, pos.x - C_X); // avoid 128*atan2()/PI
             rMap[indexV].radius = hypotf(pos.x - C_X, pos.y - C_Y) * mapp; //thanks Sutaburosu
@@ -1213,7 +1207,8 @@ class OctopusEffect: public Effect {
 
     for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
       for (pos.y = 0; pos.y < leds.size.y; pos.y++) {
-        uint16_t indexV = leds.XY(pos.x, pos.y);
+        // uint16_t indexV = leds.XYZ(pos);
+        uint16_t indexV = leds.XYZUnprojected(pos);
         if (indexV < leds.size.x * leds.size.y) { //excluding UINT16_MAX from XY if out of bounds due to projection
           byte angle = rMap[indexV].angle;
           byte radius = rMap[indexV].radius;
@@ -1228,22 +1223,18 @@ class OctopusEffect: public Effect {
   }
   
   void controls(LedsLayer &leds, JsonObject parentVar) {
-
     Effect::controls(leds, parentVar); //palette
-
-    // uint8_t *speed = ; 
-    // uint8_t *offsetX = ; 
-    // uint8_t *offsetY = ; 
-    // uint8_t *legs = ; 
-
-    // ppf("controls ptr %p,%p,%p,%p\n", speed, offsetX, offsetY, legs);
-    // ppf("controls before %d,%d,%d,%d\n", *speed, *offsetX, *offsetY, *legs);
-  
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128), 1, 255);
-    ui->initSlider(parentVar, "Offset X", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "Offset Y", leds.effectData.write<uint8_t>(128));
+    bool *setup = leds.effectData.write<bool>(true);
+    ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(128), 1, 255);
+    ui->initSlider(parentVar, "Offset X", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+      case onChange: {*setup = true; return true;}
+      default: return false;
+    }});
+    ui->initSlider(parentVar, "Offset Y", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+      case onChange: {*setup = true; return true;}
+      default: return false;
+    }});
     ui->initSlider(parentVar, "Legs", leds.effectData.write<uint8_t>(4), 1, 8);
-    // ppf("controls %d,%d,%d,%d\n", *speed, *offsetX, *offsetY, *legs);
   }
 }; // Octopus
 
@@ -1507,6 +1498,7 @@ class GameOfLifeEffect: public Effect {
     CRGB     *prevPalette      = leds.effectData.readWrite<CRGB>();
     byte     *cells            = leds.effectData.readWrite<byte>(dataSize);
     byte     *futureCells      = leds.effectData.readWrite<byte>(dataSize);
+    byte     *cellColors       = leds.effectData.readWrite<byte>(leds.size.x * leds.size.y * leds.size.z);
 
     CRGB bgColor = CRGB(bgC.x, bgC.y, bgC.z);
     CRGB color   = ColorFromPalette(leds.palette, random8()); // Used if all parents died
@@ -1520,11 +1512,16 @@ class GameOfLifeEffect: public Effect {
 
       // Setup Grid
       memset(cells, 0, dataSize);
+      memset(cellColors, 0, leds.size.x * leds.size.y * leds.size.z);
+
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
         if (leds.projectionDimension == _3D && !leds.isMapped(leds.XYZUnprojected({x,y,z}))) continue;
         if (random8(100) < lifeChance) {
-          setBitValue(cells, leds.XYZUnprojected({x,y,z}), true);
-          leds.setPixelColor({x,y,z}, bgColor); // Color set in redraw loop
+          int index = leds.XYZUnprojected({x,y,z});
+          setBitValue(cells, index, true);
+          cellColors[index] = random8(1, 255);
+          leds.setPixelColor({x,y,z}, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, cellColors[index]));
+          // leds.setPixelColor({x,y,z}, bgColor); // Color set in redraw loop
         }
       }
       memcpy(futureCells, cells, dataSize);
@@ -1544,30 +1541,30 @@ class GameOfLifeEffect: public Effect {
       blur -= (blur-220);
     }
     bool blurDead = *step > sys->now && !fadedBackground;
-    bool paletteChanged = !colorByAge && *prevPalette != ColorFromPalette(leds.palette, 0);
-
-    if (paletteChanged) *prevPalette = ColorFromPalette(leds.palette, 0);
     // Redraw Loop
-    if (*generation <= 1 || paletteChanged || blurDead) { // Readd overlay support when implemented
+    if (*generation <= 1 || blurDead) { // Readd overlay support when implemented
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
         uint16_t cIndex = leds.XYZUnprojected({x,y,z}); // Current cell index (bit grid lookup)
         uint16_t cLoc   = leds.XYZ({x,y,z});            // Current cell location (led index)
         if (!leds.isMapped(cIndex)) continue;
         bool alive = getBitValue(cells, cIndex);
-        CRGB cellColor = leds.getPixelColor(cLoc);
-        bool recolor = (paletteChanged || (alive && *generation == 1 && cellColor == bgColor && !random(16))); // Palette change or Initial Color
+        bool recolor = (alive && *generation == 1 && cellColors[cIndex] == 0 && !random(16)); // Palette change or Initial Color
         // Redraw alive if palette changed, spawn initial colors randomly, age alive cells while paused
-        if      (alive && recolor) leds.setPixelColor(cLoc, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, random8()));
+        if      (alive && recolor) {
+          cellColors[cIndex] = random8(1, 255);
+          leds.setPixelColor(cLoc, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, cellColors[cIndex]));
+        }
         else if (alive && colorByAge && !*generation) leds.blendPixelColor(cLoc, CRGB::Red, 248); // Age alive cells while paused
+        else if (alive && cellColors[cIndex] != 0) leds.setPixelColor(cLoc, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, cellColors[cIndex]));
         // Redraw dead if palette changed, blur paused game, fade on newgame
-        if      (!alive && (paletteChanged || disablePause)) leds.setPixelColor(cLoc, bgColor);   // Remove blended dead cells
+        // if      (!alive && (paletteChanged || disablePause)) leds.setPixelColor(cLoc, bgColor);   // Remove blended dead cells
         else if (!alive && blurDead)         leds.blendPixelColor(cLoc, bgColor, blur);           // Blend dead cells while paused
         else if (!alive && *generation == 1) leds.blendPixelColor(cLoc, bgColor, 248);            // Fade dead on new game
       }
     }
 
-    if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) return; // Check if enough time has passed for updating
-    // if (!speed || *step > sys->now || (speed != 60 && sys->now - *step < 1000 / speed)) return; // Uncapped speed when slider maxed
+    // if (!speed || *step > sys->now || sys->now - *step < 1000 / speed) return; // Check if enough time has passed for updating
+    if (!speed || *step > sys->now || (speed != 100 && sys->now - *step < 1000 / speed)) return; // Uncapped speed when slider maxed
 
     //Rule set for game of life
     if (*ruleChanged) {
@@ -1596,8 +1593,8 @@ class GameOfLifeEffect: public Effect {
     }
     //Update Game of Life
     int aliveCount = 0, deadCount = 0; // Detect solo gliders and dead grids
-    bool disableWrap = *soloGlider || *generation % 1500 == 0;
-    const int zAxis = (leds.projectionDimension == _3D) ? -1 : 0; // Avoids looping through z axis neighbors if 2D
+    const int zAxis  = (leds.projectionDimension == _3D) ? 1 : 0; // Avoids looping through z axis neighbors if 2D
+    bool disableWrap = !wrap || *soloGlider || *generation % 1500 == 0 || zAxis;
     //Loop through all cells. Count neighbors, apply rules, setPixel
     for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
       Coord3D  cPos      = {x, y, z};
@@ -1606,26 +1603,23 @@ class GameOfLifeEffect: public Effect {
       if (cellValue) aliveCount++; else deadCount++;
       if (zAxis && !leds.isMapped(cIndex)) continue; // Skip if not physical led on 3D fixtures
       byte neighbors = 0, colorCount = 0;
-      CRGB nColors[9];
+      byte nColors[9];
 
-      for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = zAxis; k <= -zAxis; k++) {
+      for (int i = -1; i <= 1; i++) for (int j = -1; j <= 1; j++) for (int k = -zAxis; k <= zAxis; k++) {
         if (i==0 && j==0 && k==0) continue; // Ignore itself
         Coord3D nPos = {x+i, y+j, z+k};
         if (nPos.isOutofBounds(leds.size)) {
           // Wrap is disabled when unchecked, for 3D fixtures, every 1500 generations, and solo gliders
-          if (!wrap || zAxis || disableWrap) continue;
-          if (wrap) nPos = (nPos + leds.size) % leds.size; // Wrap around 3D
+          if (disableWrap) continue;
+          nPos = (nPos + leds.size) % leds.size; // Wrap around 3D
         }
         uint16_t nIndex = leds.XYZUnprojected(nPos);
         // Count neighbors and store up to 9 neighbor colors
         if (getBitValue(cells, nIndex)) {
           neighbors++;
-          if (cellValue || colorByAge) continue;           // Skip if cell is alive (color already set) or color by age (colors are not used)
-          if (!getBitValue(futureCells, nIndex)) continue; // Skip if parent died in this loop (color lost or blended)
-          CRGB nColor = leds.getPixelColor(nPos);
-          if (nColor == bgColor) continue;
-          color = nColor; // Set color to last seen color
-          nColors[colorCount % 9] = color;
+          if (cellValue || colorByAge) continue; // Skip if cell is alive (color already set) or color by age (colors are not used)
+          if (cellColors[nIndex] == 0) continue; // Skip if neighbor color is 0 (dead cell)
+          nColors[colorCount % 9] = cellColors[nIndex];
           colorCount++;
         }
       }
@@ -1638,11 +1632,10 @@ class GameOfLifeEffect: public Effect {
       else if (!cellValue && birthNumbers[neighbors]){
         // Reproduction
         setBitValue(futureCells, cIndex, true);
-        CRGB randomParentColor = color; // Last seen color, overwrite if colors are found
-        if (colorCount) randomParentColor = nColors[random8(colorCount)];
-        if (random8(100) < mutation) randomParentColor = ColorFromPalette(leds.palette, random8());
-        leds.setPixelColor(cPos, colorByAge ? CRGB::Green : randomParentColor);
-
+        byte colorIndex = nColors[random8(colorCount)];
+        if (random8(100) < mutation) colorIndex = random8();
+        cellColors[cIndex] = colorIndex;
+        leds.setPixelColor(cPos, colorByAge ? CRGB::Green : ColorFromPalette(leds.palette, colorIndex));
       }
       else {
         // Blending, fade dead cells further causing blurring effect to moving cells
@@ -1653,7 +1646,10 @@ class GameOfLifeEffect: public Effect {
           }
           else leds.blendPixelColor(cPos, bgColor, blur);
         }
-        if (cellValue && colorByAge) leds.blendPixelColor(cPos, CRGB::Red, 248);
+        else { // alive
+          if (colorByAge) leds.blendPixelColor(cPos, CRGB::Red, 248);
+          else leds.setPixelColor(cPos, ColorFromPalette(leds.palette, cellColors[cIndex]));
+        }
       }
     }
 
@@ -2240,9 +2236,128 @@ class ParticleTestEffect: public Effect {
   }
 };
 
+class StarFieldEffect: public Effect {  // Inspired by Daniel Shiffman's Coding Train https://www.youtube.com/watch?v=17WoOqgXsRM
+  const char * name() {return "StarField";}
+  unsigned8     dim() {return _2D;}
+  const char * tags() {return "💫";}
+
+  struct Star {
+    int x, y, z;
+    uint8_t colorIndex;
+  };
+
+  static float fmap(const float x, const float in_min, const float in_max, const float out_min, const float out_max) {
+    return (out_max - out_min) * (x - in_min) / (in_max - in_min) + out_min;
+  }
+
+  void loop(LedsLayer &leds) {
+    // UI Variables
+    bool   *setup = leds.effectData.readWrite<bool>();
+    uint8_t speed = leds.effectData.read<uint8_t>();
+    uint8_t numStars = leds.effectData.read<uint8_t>();
+    uint8_t blur = map(leds.effectData.read<uint8_t>(), 0, 255, 255, 0);
+    bool usePalette = leds.effectData.read<bool>();
+
+    // Effect Variables
+    unsigned long *step = leds.effectData.readWrite<unsigned long>();
+    Star *stars         = leds.effectData.readWrite<Star>(255);
 
 
+    if (*setup) {
+      *setup = false; 
+      leds.fill_solid(CRGB::Black);
+      //set up all stars
+      for (int i = 0; i < 255; i++) {
+        stars[i].x = random(-leds.size.x, leds.size.x);
+        stars[i].y = random(-leds.size.y, leds.size.y);
+        stars[i].z = random(leds.size.x);
+        stars[i].colorIndex = random8();
+      }
+    }
 
+    if (!speed || sys->now - *step < 1000 / speed) return; // Not enough time passed
+
+    leds.fadeToBlackBy(blur);
+
+    for (int i = 0; i < numStars; i++) {
+      //update star
+      // ppf("Star %d Pos: %d, %d, %d -> ", i, stars[i].x, stars[i].y, stars[i].z);
+      float sx = leds.size.x/2.0 + fmap(float(stars[i].x) / stars[i].z, 0, 1, 0, leds.size.x/2.0);
+      float sy = leds.size.y/2.0 + fmap(float(stars[i].y) / stars[i].z, 0, 1, 0, leds.size.y/2.0);
+
+      // ppf(" %f, %f\n", sx, sy);
+
+      Coord3D pos = {int(sx), int(sy), 0};
+      if (!pos.isOutofBounds(leds.size)) {
+        if (usePalette) leds.setPixelColor(leds.XY(int(sx), int(sy)), ColorFromPalette(leds.palette, stars[i].colorIndex, map(stars[i].z, 0, leds.size.x, 255, 150)));
+        else {
+          uint8_t color = map(stars[i].colorIndex, 0, 255, 120, 255);
+          int brightness = map(stars[i].z, 0, leds.size.x, 7, 10);
+          color *= brightness/10.0;
+          leds.setPixelColor(leds.XY(int(sx), int(sy)), CRGB(color, color, color));
+        }
+      }
+      stars[i].z -= 1;
+      if (stars[i].z <= 0 || pos.isOutofBounds(leds.size)) {
+        stars[i].x = random(-leds.size.x, leds.size.x);
+        stars[i].y = random(-leds.size.y, leds.size.y);
+        stars[i].z = leds.size.x;
+        stars[i].colorIndex = random8();
+      }
+    }
+
+    *step = sys->now;
+  }
+
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    bool *setup = leds.effectData.write<bool>(true);
+    ui->initSlider(parentVar, "Speed",           leds.effectData.write<uint8_t>(20), 0, 30); // 0 - 30 updates per second
+    ui->initSlider(parentVar, "Number of Stars", leds.effectData.write<uint8_t>(16), 1, 255);
+    ui->initSlider(parentVar, "Blur",            leds.effectData.write<uint8_t>(128), 0, 255);
+    ui->initCheckBox(parentVar, "UsePalette",    leds.effectData.write<bool>(false));
+  }
+
+}; //StarField
+
+class BasicTemplate: public Effect { // add effects.push_back(new Name); to LedModEffects.h
+  const char * name() {return "Template";}
+  unsigned8     dim() {return _3D;} // _1D, _2D, or _3D
+  const char * tags() {return "💫";}
+  // 💫 StarLed 
+  // 💡 WLED
+  // ⚡ FastLed
+  //  ♪ Volume Reactive
+  //  ♫ Frequency Reactive
+  // 🧭 Gyro Support
+  // 🎮 Game?
+
+
+  void loop(LedsLayer &leds) {
+    // UI Variables
+    bool   *setup = leds.effectData.readWrite<bool>();
+    uint8_t speed = leds.effectData.read<uint8_t>(); // Updates per second
+
+    // Effect Variables
+    unsigned long *step  = leds.effectData.readWrite<unsigned long>();
+
+    if (*setup) {
+      *setup = false; 
+      // Setup here if needed
+    }
+
+    if (!speed || sys->now - *step < 1000 / speed) return; // Not enough time passed
+    // Update Here
+
+    *step = sys->now; // Update step
+  }
+
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    bool *setup = leds.effectData.write<bool>(true);
+    ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(1), 0, 30); // 0 - 30 updates per second
+  }
+};
 
 
 
@@ -2707,232 +2822,6 @@ class PixelMapEffect: public Effect {
     ui->initSlider(parentVar, "z", leds.effectData.write<uint8_t>(0), 0, leds.size.z - 1);
   }
 }; // PixelMap
-
-class Byte2TestEffect: public Effect {
-  const char * name() {return "2ByteTest";}
-  uint8_t dim() {return _2D;}
-  const char * tags() {return "💫";}
-
-  void loop(LedsLayer &leds) {
-    //Binding of controls. Keep before binding of vars and keep in same order as in controls()
-    bool *setup        = leds.effectData.readWrite<bool>();
-    uint8_t speed      = leds.effectData.read<uint8_t>();
-    uint8_t drawMethod = leds.effectData.read<uint8_t>();
-    Coord3D color      = leds.effectData.read<Coord3D>();
-    bool debugPrint    = leds.effectData.read<bool>();
-
-    unsigned long *step = leds.effectData.readWrite<unsigned long>();
-
-    if (*setup) {
-      // leds.fill_solid(CRGB::Black); //ewowi: this should work now...
-      for (int x = 0; x < leds.size.x; x++) {
-        for (int y = 0; y < leds.size.y; y++) {
-          leds.setPixelColor(leds.XY(x, y), CRGB::Black);
-        }
-      }
-      *setup = false;
-    }
-
-    if (!speed || sys->now - *step < 1000 / speed) return;
-
-    //shift down
-    for (int y = leds.size.y - 1; y > 0; y--) {
-      for (int x = 0; x < leds.size.x; x++) {
-        // Blend test
-        // ewowi: haha didn't realize globalBlend was hardcoded here!
-        // CRGB color = blend(leds.getPixelColor(leds.XY(x, y - 1)), leds.getPixelColor(leds.XY(x, y)), leds.fixture->globalBlend);
-        // leds.setPixelColor(leds.XY(x, y), color, 0);
-        leds.setPixelColor(leds.XY(x, y), leds.getPixelColor(leds.XY(x, y - 1)));
-      }
-    }
-
-    //draw new line
-    byte r = random8();
-    byte g = random8();
-    byte b = random8();
-    for (int x = 0; x < leds.size.x; x++) {
-      if      (drawMethod == 0) leds.setPixelColor(leds.XY(x, 0), ColorFromPalette(leds.palette, r));
-      else if (drawMethod == 1) leds.setPixelColorPal(leds.XY(x, 0), r, 255);
-      else if (drawMethod == 2) leds.setPixelColor(leds.XY(x, 0), CRGB(r, g, b));
-      else if (drawMethod == 3) leds.setPixelColor(leds.XY(x, 0), CRGB(color.x, color.y, color.z));
-    }
-
-    if (debugPrint) {
-      int diffR = 0;
-      int diffG = 0;
-      int diffB = 0;
-
-      for (int y = 0; y < leds.size.y; y++) {
-        CRGB colorL = leds.getPixelColor(leds.XY(0, y));
-        CRGB colorR = leds.getPixelColor(leds.XY(leds.size.x - 1, y));
-        diffR += abs(colorL.r - colorR.r);
-        diffG += abs(colorL.g - colorR.g);
-        diffB += abs(colorL.b - colorR.b);
-        ppf("Row %2d:  Left: %3d %3d %3d Right: %3d %3d %3d\n", y, colorL.r, colorL.g, colorL.b, colorR.r, colorR.g, colorR.b);
-      }
-      ppf("--------------------\n");
-
-      ppf("Average Error: %3f %3f %3f\n", (float)diffR / leds.size.y, (float)diffG / leds.size.y, (float)diffB / leds.size.y);
-    }
-
-    *step = sys->now;    
-  }
-  
-  void controls(LedsLayer &leds, JsonObject parentVar) {
-    Effect::controls(leds, parentVar);
-    bool *setup = leds.effectData.write<bool>(true);
-    ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(0), 0, 20);
-    ui->initSelect(parentVar, "Method", leds.effectData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
-      case onUI: {
-        JsonArray options = ui->setOptions(var);
-        options.add("setPixelColor");
-        options.add("setPixelColorPal");
-        options.add("RandomColor");
-        options.add("SolidColor");
-        return true;
-      }
-      default: return false;
-    }}); 
-    ui->initCoord3D(parentVar, "Solid Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
-    ui->initCheckBox(parentVar, "Debug Print", leds.effectData.write<bool>(false));
-
-  }
-}; // 2ByteTest
-
-class Byte2TestEffect2: public Effect {
-  const char * name() {return "2ByteTest2";}
-  uint8_t dim() {return _2D;}
-  const char * tags() {return "💫";}
-
-  void loop(LedsLayer &leds) {
-    //Binding of controls. Keep before binding of vars and keep in same order as in controls()
-    bool *setup        = leds.effectData.readWrite<bool>();
-    uint8_t speed      = leds.effectData.read<uint8_t>();
-    uint8_t colorMode  = leds.effectData.read<uint8_t>();
-    Coord3D customColor= leds.effectData.read<Coord3D>();
-    uint8_t drawMethod = leds.effectData.read<uint8_t>();
-    bool debugPrint    = leds.effectData.read<bool>();
-
-    unsigned long *step = leds.effectData.readWrite<unsigned long>();
-
-    if (*setup) {
-      // leds.fill_solid(CRGB::Black); //ewowi: this should work now...
-      for (int x = 0; x < leds.size.x; x++) {
-        for (int y = 0; y < leds.size.y; y++) {
-          leds.setPixelColor(leds.XY(x, y), CRGB::Black);
-        }
-      }
-      *setup = false;
-    }
-
-    if (!speed || sys->now - *step < 1000 / speed) return;
-
-    CRGB color;
-
-    if (colorMode == 0) {         // Palette
-      color = ColorFromPalette(leds.palette, random8(), 255);
-    } else if (colorMode == 1) {  // Random
-      color = CRGB(random8(), random8(), random8());
-    } else if (colorMode == 2) {  // Custom
-      color = CRGB(customColor.x, customColor.y, customColor.z);
-    }
-
-    CRGB rColor;
-
-    // Define masks for different bit depths
-    const uint8_t MASK_6BIT = 0xFC; // 6 bits: 1111 1100
-    const uint8_t MASK_5BIT = 0xF8; // 5 bits: 1111 1000
-    const uint8_t MASK_4BIT = 0xF0; // 4 bits: 1111 0000
-    const uint8_t MASK_3BIT = 0xE0; // 3 bits: 1110 0000
-
-    // Apply different draw methods using the masks
-    if (drawMethod == 0) { // 653
-      rColor.r = color.r & MASK_6BIT; // 6 bit
-      rColor.g = color.g & MASK_5BIT; // 5 bit
-      rColor.b = color.b & MASK_3BIT; // 3 bit
-    }
-    else if (drawMethod == 1) { // 653 rounding b
-      rColor.r = color.r & MASK_6BIT; // 6 bit
-      rColor.g = color.g & MASK_5BIT; // 5 bit
-      rColor.b = (min(color.b + 15, 255)) & MASK_3BIT; // 3 bit
-    }
-    else if (drawMethod == 2) { // 554
-      rColor.r = color.r & MASK_5BIT; // 5 bit
-      rColor.g = color.g & MASK_5BIT; // 5 bit
-      rColor.b = color.b & MASK_4BIT; // 4 bit
-    }
-      else if (drawMethod == 3) { // 554 with offset (offset would be added in getPixelColor)
-        rColor.r = (color.r & MASK_5BIT); // 5 bit
-        rColor.g = (color.g & MASK_5BIT); // 5 bit
-        rColor.b = (color.b & MASK_4BIT); // 4 bit
-        if (rColor.r == 248) rColor.r += 6;  else rColor.r += 4; // + offset
-        if (rColor.g == 248) rColor.g += 6;  else rColor.g += 4; // + offset
-        if (rColor.b == 240) rColor.b += 12; else rColor.b += 8; // + offset
-    }
-    else if (drawMethod == 4) { // 554 with rounding
-      rColor.r = (min(color.r + 3, 255)) & MASK_5BIT; // 5 bit
-      rColor.g = (min(color.g + 3, 255)) & MASK_5BIT; // 5 bit
-      rColor.b = (min(color.b + 7, 255)) & MASK_4BIT; // 4 bit
-    }
-    else if (drawMethod == 5) { // 554 custom (random methods)
-      rColor.r = color.r & MASK_5BIT; // 5 bit
-      rColor.g = color.g & MASK_5BIT; // 5 bit
-      rColor.b = color.b & MASK_4BIT; // 4 bit
-      if (rColor.r == 248) rColor.r += 2;
-      if (rColor.g == 248) rColor.g += 2;
-      if (rColor.b == 240) rColor.b += 4;
-      if (rColor.r > 0) rColor.r += 4;
-      if (rColor.g > 0) rColor.g += 4;
-      if (rColor.b > 0) rColor.b += 8;
-    }
-
-    int half = leds.size.x/2;
-    for (int x = 0; x < half; x++) {
-      for (int y = 0; y < leds.size.y; y++) {
-        leds.setPixelColor(leds.XY(x, y), color);
-        leds.setPixelColor(leds.XY(x+half, y), rColor);
-      }
-    }
-
-    if (debugPrint) {
-        ppf("Left: %3d,%3d,%3d Right: %3d,%3d,%3d Difference: %d, %d, %d\n", color.r, color.g, color.b, rColor.r, rColor.g, rColor.b, rColor.r - color.r, rColor.g - color.g, rColor.b - color.b);
-    }
-
-    *step = sys->now;
-  }
-  
-  void controls(LedsLayer &leds, JsonObject parentVar) {
-    Effect::controls(leds, parentVar);
-    bool *setup = leds.effectData.write<bool>(true);
-    ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(0), 0, 20);
-    ui->initSelect(parentVar, "Color", leds.effectData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
-      case onUI: {
-        JsonArray options = ui->setOptions(var);
-        options.add("Palette");
-        options.add("Random");
-        options.add("Custom");
-        return true;
-      }
-      default: return false;
-    }}); 
-    ui->initCoord3D(parentVar, "Custom Color", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
-    ui->initSelect(parentVar, "Method", leds.effectData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
-      case onUI: {
-        JsonArray options = ui->setOptions(var);
-        options.add("653");
-        options.add("653 round b");
-        options.add("554");
-        options.add("554 offset");
-        options.add("554 rounding");
-        options.add("554 custom");
-        return true;
-      }
-      default: return false;
-    }}); 
-    ui->initCheckBox(parentVar, "Debug Print", leds.effectData.write<bool>(1));
-
-  }
-}; // 2ByteTest2
 
 #ifdef STARBASE_USERMOD_LIVE
 

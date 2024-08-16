@@ -64,10 +64,22 @@ struct Coord3D {
     z = rhs.z;
     return *this;
   }
+  Coord3D operator+=(Coord3D rhs) {
+    x += rhs.x;
+    y += rhs.y;
+    z += rhs.z;
+    return *this;
+  }
   Coord3D operator-=(Coord3D rhs) {
     x -= rhs.x;
     y -= rhs.y;
     z -= rhs.z;
+    return *this;
+  }
+  Coord3D operator*=(Coord3D rhs) {
+    x *= rhs.x;
+    y *= rhs.y;
+    z *= rhs.z;
     return *this;
   }
   Coord3D operator/=(Coord3D rhs) {
@@ -89,6 +101,9 @@ struct Coord3D {
   }
   Coord3D operator+(Coord3D rhs) {
     return Coord3D{x + rhs.x, y + rhs.y, z + rhs.z};
+  }
+  Coord3D operator*(Coord3D rhs) {
+    return Coord3D{x * rhs.x, y * rhs.y, z * rhs.z};
   }
   Coord3D operator/(Coord3D rhs) {
     return Coord3D{x / rhs.x, y / rhs.y, z / rhs.z};
