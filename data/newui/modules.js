@@ -21,7 +21,7 @@ class Modules {
   //for some strange reason, this method does not accept this.otherMethodInThisClass ???
   createHTML(moduleJson) {
     let code = ""
-    controller.modules.test("ew")
+    controller.modules.test("test")
     // this.test("ew") //this.otherMethodInThisClass: [Error] Unhandled Promise Rejection: TypeError: this.test is not a function. (In 'this.test("ew")', 'this.test' is undefined)
 
     // sort module variables
@@ -39,7 +39,8 @@ class Modules {
         let command = {};
         command.onUI = [variable.id];
         // console.log("flushOnUICommands", command);
-        controller.requestJson(command);
+        controller.requestJson(command); //only works on esp32, not on live server ... (generateData)
+        // this can be done here becasue of the async nature of requestJson, better is to do it after innerHTML+=...
 
         variable.fun = -1; //requested
       }
@@ -213,7 +214,7 @@ function varJsonToClass(variable) {
       return new ProgressVariable(variable);
     case "canvas":
       return new CanvasVariable(variable);
-      default:
+    default:
       return new Variable(variable);
   }
 }
@@ -247,10 +248,25 @@ class Variable {
       }
       if (properties.comment) {
         let commentNode = this.node.parentNode.querySelector("comment")
-        if (commentNode)
-          commentNode.innerText = properties.comment
-        else
-          this.node.parentNode.innerHTML += `<comment>${properties.comment}</comment>`
+        if (!commentNode) {
+          commentNode = cE("comment")
+          this.node.parentNode.appendChild(commentNode) // disturbing canvas: this.node.parentNode.innerHTML += `<comment>${properties.comment}</comment>`
+        }        
+        commentNode.innerText = properties.comment
+      }
+      if (properties.file) {
+        let url;
+        if (window.location.href.includes("127.0.0.1"))
+          url = "/misc/" //get the files from the misc folder in the repo
+        else 
+          url = `http://${window.location.hostname}/file/`
+
+        fetchAndExecute(url, properties.file, this.node.id, function(id, text) { //send node.id as parameter
+          let variable = controller.modules.findVar(id)
+          variable.file = JSON.parse(text); //assuming it is json, should we call this file?
+          variable.file.new = true;
+          console.log("receiveData file fetched", variable.id, variable.file);
+        }); 
       }
     } 
   }
@@ -327,11 +343,16 @@ class ProgressVariable extends Variable {
 class CanvasVariable extends Variable {
 
   createHTML() { //base
-    return super.createHTML(`<canvas id=${this.variable.id} class="${this.variable.type}" value="${this.variable.value}"></canvas>`);
+    // console.log(this.variable)
+    if (this.variable.file) {
+      this.variable.file.new = true;
+      console.log("canvas createHTML", this.variable.file, this.variable.file.new);
+    }
+    return super.createHTML(`<canvas id=${this.variable.id} class="${this.variable.type}"></canvas>`);
   }
 
   generateData() {
-    super.generateData(`"value":"${Math.random().toString(36).slice(2)}"`)
+    super.generateData(`"value":"n/a"`) //no value needed for canvas...
   }
 
 } //class CanvasVariable

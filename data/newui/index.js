@@ -31,6 +31,8 @@ class Controller {
   
     this.mainNav = new MainNav(this.modules.model);
     this.mainNav.createHTML();
+
+    userFunSetup()
   }
 
   async fetchModelForLiveServer() {
@@ -55,12 +57,19 @@ class Controller {
     json.sysInfo.pinTypes = []
     for (let pinNr = 0; pinNr < json.sysInfo.nrOfPins; pinNr++)
       json.sysInfo.pinTypes[pinNr] = Math.round(Math.random() * 3)
-
     this.receiveData(json);
 
+    //LED specific
+    //send F_ixture.json
+    json = {}
+    json.pview = {}
+    json.pview.file = 'F_panel2x2-16x16.json'
+    this.receiveData(json);
+    //end LED specific
+    
     // every 1 second
-    window.setInterval(function(){
-      controller.modules.generateData()
+    window.setInterval(function() {
+      controller.modules.generateData() //generates data for each variabe in model
     }, 1000);
 
     // every 10th second send binarydata
@@ -71,17 +80,31 @@ class Controller {
       // console.log(buffer)
       // let buffer = new Uint8Array([0,1,2,3,4,5,6,7,8]);
       if (buffer[0] == 0) {
-        for (let pinNr = 0; pinNr < controller.sysInfo.nrOfPins; pinNr++)
-          buffer[pinNr+5] = Math.round(Math.random() * 256)
-        let pviewNode = document.getElementById("board");
-        // console.log(buffer, pviewNode);
-        if (pviewNode)
-          controller.modules.previewBoard(pviewNode, buffer);
+        let canvasNode = document.getElementById("board");
+        if (canvasNode) {
+          // console.log(buffer, pviewNode);
+          for (let pinNr = 0; pinNr < controller.sysInfo.nrOfPins; pinNr++)
+            buffer[pinNr+5] = Math.round(Math.random() * 256)
+          controller.modules.previewBoard(canvasNode, buffer);
+        }
       }
-      else {
-        userFun(buffer, {});
-      }
+      else if (buffer[0] == 1) {
+        let canvasNode = document.getElementById("pview");
+        if (canvasNode) {
+          // console.log(buffer, canvasNode);
+          buffer[1] = 0
+          buffer[2] = 0
+          buffer[3] = 0
+          let pviewVar = controller.modules.findVar("pview");
+          for (let i = 0; i < pviewVar.file.nrOfLeds; i++) {
+            buffer[4+i*3] = Math.random() * 256
+            buffer[4+i*3+1] = Math.random() * 256
+            buffer[4+i*3+2] = Math.random() * 256
+          }
 
+          userFun(buffer);
+        }
+      }
     }, 100);
 
   }
@@ -96,13 +119,15 @@ class Controller {
       if (e.data instanceof ArrayBuffer) { // binary packet - e.g. for preview
         let buffer = new Uint8Array(e.data);
         if (buffer[0]==0) {
-          let pviewNode = document.getElementById("board");
-          // console.log(buffer, pviewNode);
-          if (pviewNode)
-            this.modules.previewBoard(pviewNode, buffer);
+          let canvasNode = document.getElementById("board");
+          if (canvasNode) {
+            // console.log(buffer, canvasNode);
+            this.modules.previewBoard(canvasNode, buffer);
+          }
         }
-        else 
-          userFun(buffer, {});
+        else {
+          userFun(buffer);
+        }
       } 
       else {
         // console.log("onmessage", e.data);
@@ -152,13 +177,23 @@ class Controller {
   } // makeWS
 
   requestJson(command) {
-    if (!this.ws) return;
+    if (window.location.href.includes("127.0.0.1")) { //Live Server
 
-    let req = JSON.stringify(command);
-    
-    console.log("requestJson", command);
+      // after a short delay (ws roundtrip)
+      //find variable
+      //create class of variable
+      //generate data for variable
+
+    } else {
+
+      if (!this.ws) return;
+
+      let req = JSON.stringify(command);
       
-    this.ws.send(req);  
+      console.log("requestJson", command);
+        
+      this.ws.send(req);  
+    }
   }
 
   receiveData(json) {
@@ -198,6 +233,9 @@ window.controller = new Controller()
 const UINT8_MAX = 255;
 const UINT16_MAX = 256*256-1;
 
+function gId(c) {return document.getElementById(c);}
+function cE(e) { return document.createElement(e); }
+
 function initCap(s) {
   if (typeof s !== 'string') return '';
   // https://www.freecodecamp.org/news/how-to-capitalize-words-in-javascript/
@@ -211,4 +249,32 @@ function isObject(val) {
   return ( (typeof val === 'function') || (typeof val === 'object'));
 
   //or   return obj === Object(obj); //true for arrays.???
+}
+
+//WLEDMM: utility function to load contents of file from FS (used in draw)
+function fetchAndExecute(url, name, parms, callback, callError = null)
+{
+  fetch
+  (url+name, {
+    method: 'get'
+  })
+  .then(res => {
+    if (!res.ok) {
+      if (callError) callError("File " + name + " not found");
+    	return "";
+    }
+    // console.log("res", res, res.text(), res.text().result);
+    return res.text();
+  })
+  .then(text => {
+    // console.log("text", text);
+    callback(parms, text);
+  })
+  .catch(function (error) {
+	if (callError) callError(parms, "Error getting " + name);
+	console.log(error);
+  })
+  .finally(() => {
+    // if (callback) setTimeout(callback,99);
+  });
 }

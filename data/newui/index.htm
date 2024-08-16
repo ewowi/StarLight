@@ -26,6 +26,14 @@
   <script src="modules.js"></script>
   <link rel="stylesheet" href="modules.css">
   <script src="../app.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.156.1/examples/jsm/"
+      }
+    }
+  </script>
 </head>
 <body id="body" onload="controller.onLoad()"></body>
 </html>

@@ -11,7 +11,6 @@ let d = document;
 let ws = null;
 
 let nrOfMdlColumns = 4;
-let jsonValues = {};
 let onUICommands = [];
 let model = []; //model.json (as send by the server), used by FindVar
 let savedView = null;
@@ -41,6 +40,8 @@ function handleVisibilityChange() {
   console.log("handleVisibilityChange");
 }
 
+//newUI compatibility
+
 //Live Server Mode
 async function fetchModel() {
   // Mock fetch for testing while using Live Server. No error checking for brevity.
@@ -52,7 +53,62 @@ async function fetchModel() {
   }
 }
 
+class Modules {
+  findVar(id, parent = model) {
+    // console.log("findVar", id, parent, model);
+  
+    let foundVar = null;
+    for (var variable of parent) {
+      if (foundVar == null) {
+        if (variable.id == id)
+          foundVar = variable;
+        else if (variable.n)
+          foundVar = this.findVar(id, variable.n); //recursive
+      }
+    }
+    return foundVar;
+  }
+  
+  findParentVar(id, parent = model) {
+    // console.log("findParentVar", id, parent, model);
+  
+    let varArray;
+    if (Array.isArray(parent))
+      varArray = parent;
+    else if (parent.n)
+      varArray = parent.n;
+  
+    let foundVar = null;
+  
+    if (varArray) {
+      for (var variable of varArray) {
+        if (foundVar == null) {
+          if (variable.id == id)
+            foundVar = parent;
+          else if (variable.n)
+            foundVar = this.findParentVar(id, variable); //recursive
+        }
+      }
+    }
+    return foundVar;
+  }
+}
+
+class Controller {
+
+  modules = null
+
+  onLoad() {
+    this.modules = new Modules();
+  }
+}
+
+window.controller = new Controller()
+
 function onLoad() {
+  controller.onLoad(); //newUI compatibility
+  userFunSetup()
+
   getTheme();
 
   //aaroneous: run this code if Live Server is invoked
@@ -132,12 +188,12 @@ function makeWS() {
     if (e.data instanceof ArrayBuffer) { // preview packet
       let buffer = new Uint8Array(e.data);
       if (buffer[0]==0) {
-        let pviewNode = gId("board");
-        // console.log(buffer, pviewNode);
-        previewBoard(pviewNode, buffer);
+        let canvasNode = gId("board");
+        // console.log(buffer, canvasNode);
+        previewBoard(canvasNode, buffer);
       }
       else 
-        userFun(buffer, jsonValues);
+        userFun(buffer);
     } 
     else {
       // console.log("onmessage", e.data);
@@ -260,7 +316,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
     let ndivNeeded = true; //for details ("n"), module and table do not need an extra div for details
        
     let labelNode = cE("label");
-    let parentVar = findParentVar(variable.id);
+    let parentVar = controller.modules.findParentVar(variable.id);
     if (parentVar && variable.id != parentVar.id && parentVar.id && variable.id.substring(0, parentVar.id.length) == parentVar.id) { // if parent id is beginning of the name of the child id then remove that part
       labelNode.innerText = initCap(variable.id.substring(parentVar.id.length)); // the default when not overridden by onUI
     }
@@ -279,12 +335,12 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       ndivNeeded = false;
 
       varNode = cE("div");
-      let mdlName = findVar("mdlName");
+      let mdlName = controller.modules.findVar("mdlName");
       if (mdlName && mdlName.value) { //sometimes value not set yet
         // console.log("createModule", variable, mdlName);
         let index = mdlName.value.indexOf(variable.id); //find this module
         if (index != -1) {
-          let mdlEnabled = findVar("mdlEnabled");
+          let mdlEnabled = controller.modules.findVar("mdlEnabled");
           if (mdlEnabled)
             varNode.hidden = !mdlEnabled.value[index]; //hidden if not enabled
         }
@@ -720,7 +776,7 @@ function receiveData(json) {
         ppf("receiveData details", key, variable.id, nodeId, rowNr);
         if (gId(nodeId + "_n")) gId(nodeId + "_n").remove(); //remove old ndiv
 
-        let modelVar = findVar(variable.id);
+        let modelVar = controller.modules.findVar(variable.id);
         modelVar.n = variable.n;
 
         //create new ndiv
@@ -740,7 +796,7 @@ function receiveData(json) {
           let tableId = value.id;
           let rowNr = value.rowNr;
 
-          let tableVar = findVar(tableId);
+          let tableVar = controller.modules.findVar(tableId);
           let tableNode = gId(tableId);
           let tbodyNode = tableNode.querySelector("tbody");
 
@@ -757,7 +813,7 @@ function receiveData(json) {
 
         ppf("receiveData", key, value);
         let tableId = value.id;
-        let tableVar = findVar(tableId);
+        let tableVar = controller.modules.findVar(tableId);
         let rowNr = value.rowNr;
 
         //delete the row here as well...
@@ -773,7 +829,7 @@ function receiveData(json) {
       } else if (key == "updRow") { //update the row of a table
 
         let tableId = value.id;
-        let tableVar = findVar(tableId);
+        let tableVar = controller.modules.findVar(tableId);
         let rowNr = value.rowNr;
         let tableRow = value.value;
 
@@ -793,7 +849,7 @@ function receiveData(json) {
         sysInfo = value;
       } else { //{variable:{label:value:options:comment:}}
 
-        let variable = findVar(key);
+        let variable = controller.modules.findVar(key);
 
         if (variable) {
           let rowNr = value.rowNr == null?UINT8_MAX:value.rowNr;
@@ -1009,7 +1065,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
 
       let tableNode = node.parentNode.parentNode.parentNode;
       let trNodes = tableNode.querySelector('tbody').querySelectorAll("tr");
-      let tableVar = findVar(tableNode.id); //tbd: table in table
+      let tableVar = controller.modules.findVar(tableNode.id); //tbd: table in table
       let valueLength = Array.isArray(commandJson.value)?commandJson.value.length:1; //tbd: use table nr of rows (not saved yet)
       // console.log("changeHTML th column", node.id, (rowNr == UINT8_MAX)?JSON.stringify(commandJson.value):commandJson.value[rowNr], commandJson.chk, rowNr);
 
@@ -1020,7 +1076,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
           newValue = commandJson.value[newRowNr];
           //hide/show disabled/enabled modules
           if (variable.id == "mdlEnabled") {
-            let nameVar = findVar("mdlName");
+            let nameVar = controller.modules.findVar("mdlName");
             let mdlNode = nameVar.value?gId(nameVar.value[newRowNr]):null; //Live Server Mode: no value
             // console.log("mdlEnabled", variable, node, newValue, newRowNr, nameVar, mdlNode);
             if (mdlNode) {
@@ -1242,8 +1298,8 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
 
   if (commandJson.hasOwnProperty("json")) { //json send html nodes cannot process, store in jsonValues array
     console.log("changeHTML json", variable, node, commandJson, rowNr);
-    jsonValues[node.id] = commandJson.json;
-    // variable[node.id].json = commandJson.json;
+    // jsonValues[node.id] = commandJson.json;
+    variable.json = commandJson.json;
   }
 
   if (commandJson.hasOwnProperty("file")) { //json send html nodes cannot process, store in jsonValues array
@@ -1253,12 +1309,10 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
     let url = `http://${window.location.hostname}/file/`;
     fetchAndExecute(url, commandJson.file, node.id, function(id, text) { //send node.id as parameter
       // console.log("fetchAndExecute", text); //in case of invalid commandJson
-      var ledmapJson = JSON.parse(text);
-      jsonValues[id] = ledmapJson;
-      jsonValues[id].new = true;
-      // variable[id].file = ledmapJson;
-      // variable[id].file.new = true;
-      console.log("changeHTML file fetched", id, ledmapJson);
+      var json = JSON.parse(text);
+      variable.file = json;
+      variable.file.new = true;
+      // console.log("changeHTML file fetched", id, variable, json);
     }); 
   }
 } //changeHTML
@@ -1273,44 +1327,6 @@ function flushOnUICommands() {
   }
 }
 
-function findVar(id, parent = model) {
-  // console.log("findVar", id, parent, model);
-
-  let foundVar = null;
-  for (var variable of parent) {
-    if (foundVar == null) {
-      if (variable.id == id)
-        foundVar = variable;
-      else if (variable.n)
-        foundVar = findVar(id, variable.n); //recursive
-    }
-  }
-  return foundVar;
-}
-
-function findParentVar(id, parent = model) {
-  // console.log("findParentVar", id, parent, model);
-
-  let varArray;
-  if (Array.isArray(parent))
-    varArray = parent;
-  else if (parent.n)
-    varArray = parent.n;
-
-  let foundVar = null;
-
-  if (varArray) {
-    for (var variable of varArray) {
-      if (foundVar == null) {
-        if (variable.id == id)
-          foundVar = parent;
-        else if (variable.n)
-          foundVar = findParentVar(id, variable); //recursive
-      }
-    }
-  }
-  return foundVar;
-}
 
 var jsonTimeout;
 var reqsLegal = false;
@@ -1647,7 +1663,7 @@ function changeHTMLView(viewName) {
       else {
         for (let moduleNode of divNode.childNodes) {
           if (moduleNode.className) {
-            if (viewName=="vSetup" && findVar(moduleNode.id).s) // show all module with setup variable (s) set to true
+            if (viewName=="vSetup" && controller.modules.findVar(moduleNode.id).s) // show all module with setup variable (s) set to true
               found = true;
             if (viewName=="vApp" && moduleNode.className == "appmod")
               found = true;
