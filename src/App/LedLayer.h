@@ -45,7 +45,7 @@ enum ProjectionsE
   p_Grouping,
   p_Spacing,
   p_Transpose,
-  p_Kaleidoscope,
+  // p_Kaleidoscope,
   p_Scrolling,
   p_Acceleration,
   p_Checkerboard,

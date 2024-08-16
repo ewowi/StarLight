@@ -1194,7 +1194,7 @@ class OctopusEffect: public Effect {
       const uint8_t C_Y = leds.size.y / 2 + (offsetY - 128)*leds.size.y/255;
       for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
         for (pos.y = 0; pos.y < leds.size.y; pos.y++) {
-          uint16_t indexV = leds.XYZ(pos);
+          uint16_t indexV = leds.XYZUnprojected(pos);
           if (indexV < leds.size.x * leds.size.y) { //excluding UINT16_MAX from XY if out of bounds due to projection
             rMap[indexV].angle = 40.7436f * atan2f(pos.y - C_Y, pos.x - C_X); // avoid 128*atan2()/PI
             rMap[indexV].radius = hypotf(pos.x - C_X, pos.y - C_Y) * mapp; //thanks Sutaburosu

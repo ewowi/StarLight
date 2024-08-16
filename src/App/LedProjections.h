@@ -604,7 +604,7 @@ class GroupingProjection: public Projection {
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
     leds.projectionData.clear();
-    Coord3D *grouping = leds.projectionData.write<Coord3D>({1,1,1});
+    Coord3D *grouping = leds.projectionData.write<Coord3D>({2,2,2});
     ui->initCoord3D(parentVar, "Grouping", grouping, 0, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         leds.fixture->layers[rowNr]->triggerMapping();
@@ -742,7 +742,7 @@ class ScrollingProjection: public Projection {
     MirrorProjection mp;
     mp.controls(leds, parentVar);
 
-    uint8_t *xSpeed  = leds.projectionData.write<uint8_t>(0);
+    uint8_t *xSpeed  = leds.projectionData.write<uint8_t>(128);
     uint8_t *ySpeed  = leds.projectionData.write<uint8_t>(0);
     uint8_t *zSpeed  = leds.projectionData.write<uint8_t>(0);
 

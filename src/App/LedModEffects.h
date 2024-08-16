@@ -136,7 +136,7 @@ public:
     fixture.projections.push_back(new GroupingProjection);
     fixture.projections.push_back(new SpacingProjection);
     fixture.projections.push_back(new TransposeProjection);
-    fixture.projections.push_back(new KaleidoscopeProjection);
+    // fixture.projections.push_back(new KaleidoscopeProjection);
     fixture.projections.push_back(new ScrollingProjection);
     fixture.projections.push_back(new AccelerationProjection);
     fixture.projections.push_back(new CheckerboardProjection);
