@@ -167,6 +167,7 @@ class SharedData {
         data = (byte*) malloc(newSize);
       else
         data = (byte*)realloc(data, newSize);
+      memset(data, 0, newSize); //init data with 0
       if (alertIfChanged)
         ppf("dev sharedData.readWrite reallocating!!! %d -> %d\n", bytesAllocated, newSize);
       bytesAllocated = newSize;
