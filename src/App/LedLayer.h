@@ -49,6 +49,7 @@ enum ProjectionsE
   p_Scrolling,
   p_Acceleration,
   p_Checkerboard,
+  p_Rotate,
   p_count // keep as last entry
 };
 

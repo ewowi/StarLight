@@ -309,8 +309,20 @@ class TiltPanRollProjection: public Projection {
   public:
 
   void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+    // adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted); // Uncomment to expand grid to fill corners
     DefaultProjection dp;
     dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+  }
+
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    uint8_t size = max(sizeAdjusted.x, max(sizeAdjusted.y, sizeAdjusted.z));
+    size = sqrt(size * size * 2) + 1;
+    Coord3D offset = {(size - sizeAdjusted.x) / 2, (size - sizeAdjusted.y) / 2, 0};
+    sizeAdjusted = Coord3D{size, size, 1};
+
+    pixelAdjusted.x += offset.x;
+    pixelAdjusted.y += offset.y;
+    pixelAdjusted.z += offset.z;
   }
 
   void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {
@@ -861,6 +873,122 @@ class CheckerboardProjection: public Projection {
     }});
   }
 }; //CheckerboardProjection
+
+class RotateProjection: public Projection {
+  const char * name() {return "Rotate";}
+  const char * tags() {return "💫";}
+
+  public:
+
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    DefaultProjection dp;
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+  }
+
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    leds.projectionData.begin();
+    bool     expand   = leds.projectionData.read<bool>();
+    Coord3D *halfSize = leds.projectionData.readWrite<Coord3D>();
+    if (expand) {
+      uint8_t size = max(sizeAdjusted.x, max(sizeAdjusted.y, sizeAdjusted.z));
+      size = sqrt(size * size * 2) + 1;
+      Coord3D offset = {(size - sizeAdjusted.x) / 2, (size - sizeAdjusted.y) / 2, 0};
+      sizeAdjusted = Coord3D{size, size, 1};
+      pixelAdjusted.x += offset.x;
+      pixelAdjusted.y += offset.y;
+      pixelAdjusted.z += offset.z;
+    }
+    *halfSize = sizeAdjusted / 2;
+  }
+
+  void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {
+    if (leds.proRollSpeed == 0) return;
+    leds.projectionData.begin();
+    bool   expand    = leds.projectionData.read<bool>(); // Not used
+    Coord3D halfSize = leds.projectionData.read<Coord3D>();
+    int   *prevAngle = leds.projectionData.readWrite<int>();
+    float *shearX    = leds.projectionData.readWrite<float>();
+    float *shearY    = leds.projectionData.readWrite<float>();
+    bool  *flip      = leds.projectionData.readWrite<bool>();
+    bool   freeze    = leds.projectionData.read<bool>();
+
+    int angle = sys->now * 5 / (255 - leds.proRollSpeed);
+
+    if (angle != *prevAngle && !freeze) {
+      *prevAngle = angle;
+      angle %= 360;
+      angle -= 180;
+      if (angle >= -90 && angle <= 90) *flip = false;
+      else {*flip = true; angle = angle - 180;}
+      // calculate shearX and shearY
+      float angleRadians = radians(angle);
+      *shearX = -tan(angleRadians / 2);
+      *shearY = sin(angleRadians);
+    }
+
+    if (*flip) {
+      // Reverse x and y values
+      pixel.x = leds.size.x - pixel.x;
+      pixel.y = leds.size.y - pixel.y;
+    }
+
+    // Translate pixel to origin
+    int dx = pixel.x - halfSize.x;
+    int dy = pixel.y - halfSize.y;
+
+    // // Apply the first shear on x
+    int x1 = dx + round(*shearX * dy);
+
+    // Apply the shear on y
+    int y1 = dy + round(*shearY * x1);
+
+    // Apply the second shear on x
+    int x2 = x1 + round(*shearX * y1);
+
+    // Translate pixel back and assign
+    pixel.x = x2 + halfSize.x;
+    pixel.y = y1 + halfSize.y;
+    pixel.z = 0;
+
+    // Clamp the pixel to the bounds
+    if      (pixel.x < 0)            pixel.x = 0;
+    else if (pixel.x >= leds.size.x) pixel.x = leds.size.x - 1;
+    if      (pixel.y < 0)            pixel.y = 0;
+    else if (pixel.y >= leds.size.y) pixel.y = leds.size.y - 1;
+  }
+
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    leds.projectionData.begin();
+    bool    *expand    = leds.projectionData.write<bool>(false);
+    Coord3D *halfSize  = leds.projectionData.write<Coord3D>(leds.size/2);
+    int     *prevAngle = leds.projectionData.write<int>(0);
+    float   *shearX    = leds.projectionData.write<float>(0);
+    float   *shearY    = leds.projectionData.write<float>(0);
+    bool    *flip      = leds.projectionData.write<bool>(false);
+    bool    *freeze    = leds.projectionData.write<bool>(false);
+
+    ui->initButton(parentVar, "Freeze", false, [freeze](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        *freeze = !*freeze;
+        return true;
+      default: return false;
+    }});
+    ui->initSlider(parentVar, "Rotate Speed", 128, 0, 254, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        if (rowNr < leds.fixture->layers.size())
+          leds.fixture->layers[rowNr]->proRollSpeed = mdl->getValue(var, rowNr);
+        return true;
+      default: return false;
+    }});
+    ui->initCheckBox(parentVar, "Expand", expand, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->layers[rowNr]->triggerMapping();
+        return true;
+      default: return false;
+    }});
+  }
+}; //RotateProjection
 
 class TestProjection: public Projection {
   const char * name() {return "Test";}
