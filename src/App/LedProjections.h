@@ -915,13 +915,14 @@ class RotateProjection: public Projection {
 
     int angle = sys->now * 5 / (255 - leds.proRollSpeed);
 
-    if (angle != *prevAngle && !freeze) {
+    if (angle != *prevAngle && !freeze) { // Only update if the angle has changed
       *prevAngle = angle;
       angle %= 360;
       angle -= 180;
-      if (angle >= -90 && angle <= 90) *flip = false;
-      else {*flip = true; angle = angle - 180;}
-      // calculate shearX and shearY
+      *flip = (angle < -90 || angle > 90);
+      if (*flip) angle -= 180;
+
+      // Calculate shearX and shearY
       float angleRadians = radians(angle);
       *shearX = -tan(angleRadians / 2);
       *shearY = sin(angleRadians);
@@ -937,7 +938,7 @@ class RotateProjection: public Projection {
     int dx = pixel.x - halfSize.x;
     int dy = pixel.y - halfSize.y;
 
-    // // Apply the first shear on x
+    // Apply the first shear on x
     int x1 = dx + round(*shearX * dy);
 
     // Apply the shear on y
