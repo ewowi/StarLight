@@ -18,6 +18,7 @@ class Controller {
   mainNav = null
 
   onLoad() {
+    document.title = appName() + "💫 by MoonModules 🌔"
     if (window.location.href.includes("127.0.0.1"))
       this.fetchModelForLiveServer();
     else 
@@ -178,19 +179,14 @@ class Controller {
 
   requestJson(command) {
     if (window.location.href.includes("127.0.0.1")) { //Live Server
-
       // after a short delay (ws roundtrip)
-      //find variable
-      //create class of variable
-      //generate data for variable
-
+      // Live server generates data every second
     } else {
-
       if (!this.ws) return;
 
       let req = JSON.stringify(command);
       
-      console.log("requestJson", command);
+      // console.log("requestJson", command);
         
       this.ws.send(req);  
     }
@@ -204,7 +200,6 @@ class Controller {
         
         let variable = this.modules.findVar(key);       
         if (variable) {
-          variable.fun = -2; // request processed
           let variableClass = varJsonToClass(variable);
           variableClass.receiveData(value)
         } // if variable

@@ -28,3 +28,9 @@ label {
 	  font-size: 8px; /*var(--font-size-s) not working for some reason */
   }
   
+  .ndiv {
+    /* border: 2px solid black; */
+    margin-left: 20px;
+    /* border-radius: 12px; */
+  }
+  

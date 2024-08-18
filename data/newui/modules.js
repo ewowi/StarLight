@@ -30,28 +30,30 @@ class Modules {
     });
 
     for (let variable of moduleJson.n) {
-
       let variableClass = varJsonToClass(variable);
       code += variableClass.createHTML()
-
-      if (variable.fun >= 0) { //>=0 as element in var
-
-        let command = {};
-        command.onUI = [variable.id];
-        // console.log("flushOnUICommands", command);
-        controller.requestJson(command); //only works on esp32, not on live server ... (generateData)
-        // this can be done here becasue of the async nature of requestJson, better is to do it after innerHTML+=...
-
-        variable.fun = -1; //requested
-      }
     }
     code += '<pre>' + JSON.stringify(moduleJson, null, 2) + '</pre>'
     return code
   }
 
+  //done after innerHTML as it needs to find the nodes. tbd: createHTMLFun adds to dom directly
+  setDefaultValues(moduleJson) {
+    // console.log("setDefaultValues", moduleJson)
+    controller.modules.walkThroughModel(function(variable) { //this.walkThroughModel not working for some reason???
+      
+      if (Array.isArray(variable.value)) variable.value = variable.value[0] //temp hack to deal with table values
+
+      if (variable.value != null) {
+        let variableClass = varJsonToClass(variable);
+        variableClass.receiveData({"value":variable.value}); //receiveData knows how the value should be assigned to the node
+      }
+    }, moduleJson.n)
+  }
+
   //temporary to test issue above
   test(name) {
-    console.log(name)
+    // console.log(name)
   }
 
   //used by fetchModel and by makeWS
@@ -60,13 +62,13 @@ class Modules {
     this.model.push(moduleJson);
 
     //updateUI is made after all modules have been fetched, how to adapt to add one module?
-    controller.mainNav.updateUI(moduleJson, this.createHTML); //moduleFun returns the html to show in the module panel of the UI
+    controller.mainNav.updateUI(moduleJson, this.createHTML, this.setDefaultValues); //moduleFun returns the html to show in the module panel of the UI
     //still doesn't maker sense  to call updateUI for every module ...
   }
 
   //walkthrough, if a variable is returned by fun, it stops the walkthrough with this variable
   walkThroughModel(fun, parent = this.model) {
-    for (var variable of parent) {
+    for (let variable of parent) {
       let foundVar = null
       foundVar = fun(variable);
 
@@ -206,6 +208,8 @@ function varJsonToClass(variable) {
       return new TextVariable(variable);
     case "checkbox":
       return new CheckboxVariable(variable);
+    case "range":
+      return new RangeVariable(variable);
     case "button":
       return new ButtonVariable(variable);
     case "select":
@@ -214,6 +218,10 @@ function varJsonToClass(variable) {
       return new ProgressVariable(variable);
     case "canvas":
       return new CanvasVariable(variable);
+    case "coord3D":
+      return new Coord3DVariable(variable);
+    case "table":
+      return new TableVariable(variable);
     default:
       return new Variable(variable);
   }
@@ -226,15 +234,30 @@ class Variable {
     this.node = document.getElementById(variable.id);
   }
 
-  createHTML(node = `<input id=${this.variable.id} type=${this.variable.type} class="${this.variable.type}" value="${this.variable.value}"></input>`) { //base
-    return `<p>
+  createHTML(node = `<input id=${this.variable.id} type=${this.variable.type} class="${this.variable.type}" value="${this.variable.value}"></input>`) {
+    let code = `<p>
             <label>${initCap(this.variable.id)}</label>
             ${node}
             <p>`
-  }
+
+    //ask server for onUI
+    let command = {};
+    command.onUI = [this.variable.id];
+    controller.requestJson(command); // this can be done here because of the async nature of requestJson, better is to do it after innerHTML+=...
+
+    if (this.variable.n) {
+      code += `<div id=${this.variable.id}_n class="ndiv">`
+      for (let childVar of this.variable.n) {
+        let childClass = varJsonToClass(childVar)
+        code += childClass.createHTML();
+      }
+      code += `</div>`
+    }
+    return code
+}
 
   //sets the value of the node to value of properties
-  receiveData(properties) { //base
+  receiveData(properties) {
     if (this.node) {
       if (properties.label) {
         let labelNode = this.node.parentNode.querySelector("label")
@@ -243,6 +266,9 @@ class Variable {
         else
           this.node.parentNode.innerHTML = `<label>${properties.label}</label>` + this.node.parentNode.innerHTML
       }
+
+      if (Array.isArray(properties.value)) properties.value = properties.value[0] //temp hack to deal with table values
+
       if (properties.value != null && this.node.value != null) {
         this.node.value = properties.value;
       }
@@ -271,7 +297,8 @@ class Variable {
     } 
   }
 
-  generateData(custom = `"value":${Math.random() * 1000}`) {
+  //used by Live Server
+  generateData(custom = `"value":${Math.random() * 256}`) {
     if (custom != "") custom += ", "
     controller.receiveData(JSON.parse(`{"${this.variable.id}":{${custom}"comment":"${Math.random().toString(36).slice(2)}"}}`));
   }
@@ -279,10 +306,6 @@ class Variable {
 } //class Variable
 
 class TextVariable extends Variable {
-
-  createHTML() { //base
-    return super.createHTML(`<input id=${this.variable.id} type=${this.variable.type} class="${this.variable.type}" value="${this.variable.value}"></input>`);
-  }
 
   generateData() {
     super.generateData(`"value":"${Math.random().toString(36).slice(2)}"`)
@@ -292,21 +315,46 @@ class TextVariable extends Variable {
 
 class CheckboxVariable extends Variable {
 
-  receiveData(properties) { //base
+  createHTML() {
+    return super.createHTML(`<input id=${this.variable.id} type=${this.variable.type} class="${this.variable.type}"></input><span class="checkmark"></span>`);
+  }
+
+  receiveData(properties) {
     super.receiveData(properties)
-    if (this.node && properties.value != null)
+    if (this.node && properties.value != null) { //
       this.node.checked = properties.value
+      this.node.indeterminate = (properties.value == -1); //tbd: gen -1
+    }
   }
 
   generateData() {
-    super.generateData(`"value":${(Math.random()<0.5)?1:0}`)
+    super.generateData(`"value":${Math.random() <.33?-1:Math.random() <.66?0:1}`)
   }
 
 } //class CheckboxVariable
 
+class RangeVariable extends Variable {
+
+  createHTML() {
+    return super.createHTML(`<input id=${this.variable.id} type=${this.variable.type} min="0" max="255" class="${this.variable.type}"></input><span id=${this.variable.id}_rv>${this.variable.value}</span>`)
+  }
+
+  receiveData(properties) {
+    super.receiveData(properties)
+    let rvNode = gId(this.variable.id + "_rv")
+    if (rvNode && properties.value != null)
+      rvNode.innerText = properties.value
+  }
+
+  generateData() {
+    super.generateData(`"value":${Math.round(Math.random()*255)}`) //no value update
+  }
+
+} //class RangeVariable
+
 class ButtonVariable extends Variable {
 
-  createHTML() { //override
+  createHTML() {
     return super.createHTML(`<input id=${this.variable.id} type=${this.variable.type} class="${this.variable.type}" value="${initCap(this.variable.id)}"></input>`)
   }
 
@@ -318,14 +366,27 @@ class ButtonVariable extends Variable {
 
 class SelectVariable extends Variable {
 
-  createHTML() { //override
+  createHTML() {
     return super.createHTML(`<select id="${this.variable.id}" class="select"></select>`)
   }
 
+  receiveData(properties) {
+    super.receiveData(properties)
+    // if (this.node && properties.value != null)
+    //   console.log("select.receiveData value", this.node, properties)
+    if (this.node && properties.options != null) {
+      this.node.innerHTML = ""
+      let optionCounter = 0;
+      for (let option of properties.options)
+        this.node.innerHTML+=`<option value=${optionCounter++}>${option}</option>`
+      this.node.value = this.variable.value //select the right option
+    }
+  }
+
   generateData() {
-    //add sample options
+    //add sample options if not yet existing
     if (this.node && this.node.childNodes.length == 0)
-      this.node.innerHTML+='<option value=0>One</option><option value=1>Two</option><option value=2>Three</option>'
+      super.generateData(`"options":["ein","zwei","drei"]`)
 
     super.generateData(`"value":${Math.random() <.33?0:Math.random() <.66?1:2}`)
   }
@@ -334,7 +395,7 @@ class SelectVariable extends Variable {
 
 class ProgressVariable extends Variable {
 
-  createHTML() { //override
+  createHTML() {
     return super.createHTML(`<progress max="${this.variable.max}" id="${this.variable.id}" class="progress"></progress>`)
   }
 
@@ -342,7 +403,7 @@ class ProgressVariable extends Variable {
 
 class CanvasVariable extends Variable {
 
-  createHTML() { //base
+  createHTML() {
     // console.log(this.variable)
     if (this.variable.file) {
       this.variable.file.new = true;
@@ -352,7 +413,44 @@ class CanvasVariable extends Variable {
   }
 
   generateData() {
-    super.generateData(`"value":"n/a"`) //no value needed for canvas...
+    if (this.node && this.variable.file == null)
+      super.generateData(`"file":"F_panel2x2-16x16.json"`)
+
+    super.generateData(`"value":"n/a"`) //no value needed for canvas, but only comment update ...
   }
 
 } //class CanvasVariable
+
+class TableVariable extends Variable {
+
+  createHTML() {
+    return super.createHTML(`<table id=${this.variable.id} class="${this.variable.type}"></table>`);
+  }
+
+  generateData() {
+    super.generateData(`"value":"n/a"`) //no value needed for canvas...
+  }
+
+} //class TableVariable
+
+class Coord3DVariable extends Variable {
+
+  createHTML() {
+    return super.createHTML(`<span id=${this.variable.id} class="${this.variable.type}"><input type="number" placeholder="x"/><input type="number" placeholder="y"/><input type="number" placeholder="z"/></span>`);
+  }
+
+  receiveData(properties) {
+    super.receiveData(properties)
+    if (this.node && properties.value != null) {
+      this.node.childNodes[0].value = properties.value.x
+      this.node.childNodes[1].value = properties.value.y
+      this.node.childNodes[2].value = properties.value.z
+    }
+  }
+
+  generateData() {
+    super.generateData(`"value":{"x":${Math.random()*360}, "y":${Math.random()*360}, "z":${Math.random()*360}}`)
+  }
+
+} //class Coord3DVariable
+

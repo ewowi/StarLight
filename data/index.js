@@ -1302,7 +1302,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
     variable.json = commandJson.json;
   }
 
-  if (commandJson.hasOwnProperty("file")) { //json send html nodes cannot process, store in jsonValues array
+  if (commandJson.hasOwnProperty("file")) {
     console.log("changeHTML file requested", variable.id, rowNr, commandJson);
   
     //we need to send a request which the server can handle using request variable

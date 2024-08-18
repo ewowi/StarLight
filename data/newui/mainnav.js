@@ -104,16 +104,19 @@ class MainNav {
     })
 
     // Update the page content
-    // TODO: Real code needed: done: this.#moduleFun
-    if (this.#moduleFun) {
+    if (this.#createHTMLFun) {
         document.getElementById('page').innerHTML = 
       `<div class="d-flex flex-column h-100 overflow-hidden">
         <div class="flex-shrink-0">
           <h1 class="title">${this.#activeModuleJson.id}</h1>
         </div>
-        <div class="overflow-y-auto">` + this.#moduleFun(this.#activeModuleJson) +
+        <div class="overflow-y-auto">` + this.#createHTMLFun(this.#activeModuleJson) +
         `</div>
       </div>`
+    }
+    //done after innerHTML as it needs to find the nodes. tbd: createHTMLFun adds to dom directly
+    if (this.#setDefaultValuesFun) {
+      this.#setDefaultValuesFun(this.#activeModuleJson)
     }
   } //set activeModuleJson(moduleJson)
 
@@ -171,9 +174,11 @@ class MainNav {
    * Update the UI
    */
   //updateUI is made after all modules have been fetched, how to adapt to add one module?
-  updateUI(moduleJson, fun) {
+  updateUI(moduleJson, createHTMLFun, setDefaultValuesFun) {
 
-    this.#moduleFun = fun //sets the function which displays a module
+    //functions called when selecting a module
+    this.#createHTMLFun = createHTMLFun
+    this.#setDefaultValuesFun = setDefaultValuesFun
 
     this.#updateMainMenu();
     this.#updateSecondaryMenu();
@@ -195,5 +200,6 @@ class MainNav {
   #activeModuleJson = ''
 
   //stores the function to execute to display one module
-  #moduleFun = null;
+  #createHTMLFun = null;
+  #setDefaultValuesFun = null;
 }
