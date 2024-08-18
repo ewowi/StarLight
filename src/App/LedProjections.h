@@ -306,8 +306,20 @@ class TiltPanRollProjection: public Projection {
   public:
 
   void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+    // adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted); // Uncomment to expand grid to fill corners
     DefaultProjection dp;
     dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+  }
+
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    uint8_t size = max(sizeAdjusted.x, max(sizeAdjusted.y, sizeAdjusted.z));
+    size = sqrt(size * size * 2) + 1;
+    Coord3D offset = {(size - sizeAdjusted.x) / 2, (size - sizeAdjusted.y) / 2, 0};
+    sizeAdjusted = Coord3D{size, size, 1};
+
+    pixelAdjusted.x += offset.x;
+    pixelAdjusted.y += offset.y;
+    pixelAdjusted.z += offset.z;
   }
 
   void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {
@@ -598,7 +610,7 @@ class GroupingProjection: public Projection {
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
-    Coord3D *grouping = leds.projectionData.write<Coord3D>({1,1,1});
+    Coord3D *grouping = leds.projectionData.write<Coord3D>({2,2,2});
     ui->initCoord3D(parentVar, "Grouping", grouping, 0, 100, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         leds.fixture->layers[rowNr]->triggerMapping();
@@ -734,7 +746,7 @@ class ScrollingProjection: public Projection {
     MirrorProjection mp;
     mp.controls(leds, parentVar);
 
-    uint8_t *xSpeed  = leds.projectionData.write<uint8_t>(0);
+    uint8_t *xSpeed  = leds.projectionData.write<uint8_t>(128);
     uint8_t *ySpeed  = leds.projectionData.write<uint8_t>(0);
     uint8_t *zSpeed  = leds.projectionData.write<uint8_t>(0);
 
@@ -852,6 +864,148 @@ class CheckerboardProjection: public Projection {
     }});
   }
 }; //CheckerboardProjection
+
+class RotateProjection: public Projection {
+  const char * name() {return "Rotate";}
+  const char * tags() {return "💫";}
+
+  struct RotateData { // 16 bytes
+    union {
+      struct {
+        bool flip : 1;
+        bool reverse : 1;
+        bool alternate : 1;
+        bool expand : 1; 
+      };
+      uint8_t flags;
+    };
+    uint8_t  speed;
+    uint8_t  midX;
+    uint8_t  midY;
+    uint16_t angle;
+    uint16_t interval; // ms between updates
+    int16_t  shearX;
+    int16_t  shearY;
+    unsigned long lastUpdate; // last sys->now update
+  };
+
+  public:
+
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    DefaultProjection dp;
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+  }
+
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    leds.projectionData.begin();
+    RotateData *data = leds.projectionData.readWrite<RotateData>();
+    if (leds.size == Coord3D{0, 0, 0}) {
+      data->expand = mdl->getValue("Expand");
+    }
+    if (data->expand) {
+      uint8_t size = max(sizeAdjusted.x, max(sizeAdjusted.y, sizeAdjusted.z));
+      size = sqrt(size * size * 2) + 1;
+      Coord3D offset = {(size - sizeAdjusted.x) / 2, (size - sizeAdjusted.y) / 2, 0};
+      sizeAdjusted = Coord3D{size, size, 1};
+      pixelAdjusted.x += offset.x;
+      pixelAdjusted.y += offset.y;
+      pixelAdjusted.z += offset.z;
+    }
+    if (leds.size == Coord3D{0, 0, 0}) {
+      data->midX = sizeAdjusted.x / 2;
+      data->midY = sizeAdjusted.y / 2;
+      return;
+    }
+  }
+
+  void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {
+    leds.projectionData.begin();
+    RotateData *data = leds.projectionData.readWrite<RotateData>();
+
+    constexpr int Fixed_Scale = 1 << 10;
+
+    if ((sys->now - data->lastUpdate > data->interval) && data->speed) { // Only update if the angle has changed
+      data->lastUpdate = sys->now;
+      // Increment the angle
+      data->angle = data->reverse ? (data->angle <= 0 ? 359 : data->angle - 1) : (data->angle >= 359 ? 0 : data->angle + 1);
+      
+      if (data->alternate && (data->angle == 0)) data->reverse = !data->reverse;
+
+      data->flip = (data->angle > 90 && data->angle < 270);
+
+      int newAngle = data->angle; // Flip newAngle if needed. Don't change angle in data
+      if (data->flip) {newAngle += 180; newAngle %= 360;}
+
+      // Calculate shearX and shearY
+      float angleRadians = radians(newAngle);
+      data->shearX = -tan(angleRadians / 2) * Fixed_Scale;
+      data->shearY =  sin(angleRadians)     * Fixed_Scale;
+    }
+
+    int maxX = leds.size.x;
+    int maxY = leds.size.y;
+
+    if (data->flip) {
+      // Reverse x and y values
+      pixel.x = maxX - pixel.x;
+      pixel.y = maxY - pixel.y;
+    }
+
+    // Translate pixel to origin
+    int dx = pixel.x - data->midX;
+    int dy = pixel.y - data->midY;
+
+    // Apply the 3 shear transformations
+    int x1 = dx + data->shearX * dy / Fixed_Scale;
+    int y1 = dy + data->shearY * x1 / Fixed_Scale;
+    int x2 = x1 + data->shearX * y1 / Fixed_Scale;
+
+    // Translate pixel back and assign
+    pixel.x = x2 + data->midX;
+    pixel.y = y1 + data->midY;
+    pixel.z = 0;
+
+    // Clamp the pixel to the bounds
+    if      (pixel.x < 0)     pixel.x = 0;
+    else if (pixel.x >= maxX) pixel.x = maxX - 1;
+    if      (pixel.y < 0)     pixel.y = 0;
+    else if (pixel.y >= maxY) pixel.y = maxY - 1;
+  }
+
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    RotateData *data = leds.projectionData.readWrite<RotateData>();
+
+    ui->initSelect(parentVar, "Direction", 0, false, [data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      case onUI: {
+        JsonArray options = ui->setOptions(var);
+        options.add("Clockwise");
+        options.add("Counter-Clockwise");
+        options.add("Alternate");
+        return true; }
+      case onChange: {
+        uint8_t val = mdl->getValue(var, rowNr);
+        if (val == 0) data->reverse = false;
+        if (val == 1) data->reverse = true;
+        if (val == 2) data->alternate = true; else data->alternate = false;
+        return true; }
+      default: return false;
+    }});
+    ui->initSlider(parentVar, "Rotate Speed", 128, 0, 254, false, [data](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        data->speed = mdl->getValue(var, rowNr);
+        data->interval = 1000 / (data->speed + 1);
+        return true;
+      default: return false;
+    }});
+    ui->initCheckBox(parentVar, "Expand", false, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onChange:
+        leds.fixture->layers[rowNr]->triggerMapping();
+        return true;
+      default: return false;
+    }});
+  }
+}; //RotateProjection
 
 class TestProjection: public Projection {
   const char * name() {return "Test";}

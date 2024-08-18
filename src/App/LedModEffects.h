@@ -117,6 +117,7 @@ public:
     effects.push_back(new RubiksCubeEffect);
     effects.push_back(new SphereMoveEffect);
     effects.push_back(new PixelMapEffect);
+    effects.push_back(new MarioTestEffect);
 
     #ifdef STARBASE_USERMOD_LIVE
       effects.push_back(new LiveScriptEffect);
@@ -136,10 +137,11 @@ public:
     fixture.projections.push_back(new GroupingProjection);
     fixture.projections.push_back(new SpacingProjection);
     fixture.projections.push_back(new TransposeProjection);
-    fixture.projections.push_back(new KaleidoscopeProjection);
+    // fixture.projections.push_back(new KaleidoscopeProjection);
     fixture.projections.push_back(new ScrollingProjection);
     fixture.projections.push_back(new AccelerationProjection);
     fixture.projections.push_back(new CheckerboardProjection);
+    fixture.projections.push_back(new RotateProjection);
 
     #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
       #if !(CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2)

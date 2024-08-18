@@ -1194,7 +1194,7 @@ class OctopusEffect: public Effect {
       const uint8_t C_Y = leds.size.y / 2 + (offsetY - 128)*leds.size.y/255;
       for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
         for (pos.y = 0; pos.y < leds.size.y; pos.y++) {
-          uint16_t indexV = leds.XYZ(pos);
+          uint16_t indexV = leds.XYZUnprojected(pos);
           if (indexV < leds.size.x * leds.size.y) { //excluding UINT16_MAX from XY if out of bounds due to projection
             rMap[indexV].angle = 40.7436f * atan2f(pos.y - C_Y, pos.x - C_X); // avoid 128*atan2()/PI
             rMap[indexV].radius = hypotf(pos.x - C_X, pos.y - C_Y) * mapp; //thanks Sutaburosu
@@ -2822,6 +2822,52 @@ class PixelMapEffect: public Effect {
     ui->initSlider(parentVar, "z", leds.effectData.write<uint8_t>(0), 0, leds.size.z - 1);
   }
 }; // PixelMap
+
+class MarioTestEffect: public Effect {
+  const char * name() {return "MarioTest";}
+  uint8_t       dim() {return _2D;}
+  const char * tags() {return "💫";}
+
+  void loop(LedsLayer &leds) {
+    bool background = leds.effectData.read<bool>();
+    uint8_t offsetX = leds.effectData.read<uint8_t>();
+    uint8_t offsetY = leds.effectData.read<uint8_t>();
+
+    const uint8_t mario[16][16] = {
+      {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0},
+      {0, 0, 0, 0, 2, 2, 2, 3, 3, 4, 3, 0, 0, 0, 0, 0},
+      {0, 0, 0, 2, 3, 2, 3, 3, 3, 4, 3, 3, 3, 0, 0, 0},
+      {0, 0, 0, 2, 3, 2, 2, 3, 3, 3, 4, 3, 3, 3, 0, 0},
+      {0, 0, 0, 0, 2, 3, 3, 3, 3, 4, 4, 4, 4, 0, 0, 0},
+      {0, 0, 0, 0, 0, 3, 3, 3, 3, 3, 3, 0, 0, 0, 0, 0},
+      {0, 0, 0, 0, 5, 5, 1, 5, 5, 1, 0, 0, 0, 0, 0, 0},
+      {0, 0, 0, 5, 5, 5, 1, 5, 5, 1, 5, 5, 5, 0, 0, 0},
+      {0, 0, 5, 5, 5, 5, 1, 5, 5, 1, 5, 5, 5, 5, 0, 0},
+      {0, 0, 3, 3, 5, 5, 1, 1, 1, 1, 5, 5, 3, 3, 0, 0},
+      {0, 0, 3, 3, 3, 1, 6, 1, 1, 6, 1, 3, 3, 3, 0, 0},
+      {0, 0, 3, 3, 1, 1, 1, 1, 1, 1, 1, 1, 3, 3, 0, 0},
+      {0, 0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0},
+      {0, 0, 0, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 0, 0, 0},
+      {0, 0, 2, 2, 2, 2, 0, 0, 0, 0, 2, 2, 2, 2, 0, 0}
+    };
+
+    CRGB colors[7] = {CRGB::DimGrey, CRGB::Red, CRGB::Brown, CRGB::Tan, CRGB::Black, CRGB::Blue, CRGB::Yellow};
+
+    if (background) leds.fill_solid(CRGB::DimGrey);
+    else leds.fill_solid(CRGB::Black);
+    //draw 16x16 mario
+    for (int x = 0; x < 16; x++) for (int y = 0; y < 16; y++) {
+      leds[Coord3D({x + offsetX, y + offsetY, 0})] = colors[mario[y][x]];
+    }
+  }
+  
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    ui->initCheckBox(parentVar, "Background", leds.effectData.write<bool>(false));
+    ui->initSlider(parentVar, "OffsetX", leds.effectData.write<uint8_t>(leds.size.x/2 - 8), 0, leds.size.x - 16);
+    ui->initSlider(parentVar, "OffsetY", leds.effectData.write<uint8_t>(leds.size.y/2 - 8), 0, leds.size.y - 16);
+  }
+}; // MarioTest
 
 #ifdef STARBASE_USERMOD_LIVE
 
