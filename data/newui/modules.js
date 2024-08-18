@@ -57,7 +57,7 @@ class Modules {
   }
 
   //used by fetchModel and by makeWS
-  addModule(moduleJson) {
+  addModule(moduleJson) { 
     moduleJson.type = moduleJson.type=="appmod"?appName():moduleJson.type=="usermod"?"User":"System"; 
     this.model.push(moduleJson);
 
@@ -410,6 +410,10 @@ class CanvasVariable extends Variable {
       console.log("canvas createHTML", this.variable.file, this.variable.file.new);
     }
     return super.createHTML(`<canvas id=${this.variable.id} class="${this.variable.type}"></canvas>`);
+  }
+
+  receiveData(properties) {
+    super.receiveData(properties)
   }
 
   generateData() {

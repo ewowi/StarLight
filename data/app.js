@@ -8,7 +8,7 @@
 // @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 
 function appName() {
-  return "Led";
+  return "StarLight";
 }
 
 function userFunSetup() {
