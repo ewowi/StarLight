@@ -878,7 +878,7 @@ class RotateProjection: public Projection {
   const char * name() {return "Rotate";}
   const char * tags() {return "💫";}
 
-  struct RotateData { // 20 bytes
+  struct RotateData { // 16 bytes
     union {
       struct {
         bool flip : 1;
@@ -891,11 +891,11 @@ class RotateProjection: public Projection {
     uint8_t  speed;
     uint8_t  midX;
     uint8_t  midY;
-    uint16_t interval;   // ms between updates
     uint16_t angle;
-    float    shearX;
-    float    shearY;
-    long     lastUpdate; // last sys->now update
+    uint16_t interval; // ms between updates
+    int16_t  shearX;
+    int16_t  shearY;
+    unsigned long lastUpdate; // last sys->now update
   };
 
   public:
@@ -932,16 +932,13 @@ class RotateProjection: public Projection {
     leds.projectionData.begin();
     RotateData *data = leds.projectionData.readWrite<RotateData>();
 
+    constexpr int Fixed_Scale = 1 << 10;
+
     if ((sys->now - data->lastUpdate > data->interval) && data->speed) { // Only update if the angle has changed
       data->lastUpdate = sys->now;
       // Increment the angle
-      if (data->reverse) {
-        if (data->angle <= 0) data->angle = 359; else data->angle--;
-      }
-      else {
-        if (data->angle >= 359) data->angle = 0; else data->angle++;
-      }
-
+      data->angle = data->reverse ? (data->angle <= 0 ? 359 : data->angle - 1) : (data->angle >= 359 ? 0 : data->angle + 1);
+      
       if (data->alternate && (data->angle == 0)) data->reverse = !data->reverse;
 
       data->flip = (data->angle > 90 && data->angle < 270);
@@ -951,28 +948,27 @@ class RotateProjection: public Projection {
 
       // Calculate shearX and shearY
       float angleRadians = radians(newAngle);
-      data->shearX = -tan(angleRadians / 2);
-      data->shearY =  sin(angleRadians);
+      data->shearX = -tan(angleRadians / 2) * Fixed_Scale;
+      data->shearY =  sin(angleRadians)     * Fixed_Scale;
     }
+
+    int maxX = leds.size.x;
+    int maxY = leds.size.y;
 
     if (data->flip) {
       // Reverse x and y values
-      pixel.x = leds.size.x - pixel.x;
-      pixel.y = leds.size.y - pixel.y;
+      pixel.x = maxX - pixel.x;
+      pixel.y = maxY - pixel.y;
     }
 
     // Translate pixel to origin
     int dx = pixel.x - data->midX;
     int dy = pixel.y - data->midY;
 
-    // Apply the first shear on x
-    int x1 = dx + round(data->shearX * dy);
-
-    // Apply the shear on y
-    int y1 = dy + round(data->shearY * x1);
-
-    // Apply the second shear on x
-    int x2 = x1 + round(data->shearX * y1);
+    // Apply the 3 shear transformations
+    int x1 = dx + data->shearX * dy / Fixed_Scale;
+    int y1 = dy + data->shearY * x1 / Fixed_Scale;
+    int x2 = x1 + data->shearX * y1 / Fixed_Scale;
 
     // Translate pixel back and assign
     pixel.x = x2 + data->midX;
@@ -980,10 +976,10 @@ class RotateProjection: public Projection {
     pixel.z = 0;
 
     // Clamp the pixel to the bounds
-    if      (pixel.x < 0)            pixel.x = 0;
-    else if (pixel.x >= leds.size.x) pixel.x = leds.size.x - 1;
-    if      (pixel.y < 0)            pixel.y = 0;
-    else if (pixel.y >= leds.size.y) pixel.y = leds.size.y - 1;
+    if      (pixel.x < 0)     pixel.x = 0;
+    else if (pixel.x >= maxX) pixel.x = maxX - 1;
+    if      (pixel.y < 0)     pixel.y = 0;
+    else if (pixel.y >= maxY) pixel.y = maxY - 1;
   }
 
   void controls(LedsLayer &leds, JsonObject parentVar) {
