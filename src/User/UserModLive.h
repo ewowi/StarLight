@@ -128,7 +128,6 @@ public:
   Parser p = Parser();
   char fileName[32] = ""; //running sc file
   string scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
-  string scPreCustomScript = ""; //externals etc generated (would prefer String for esp32...)
 
   UserModLive() :SysModule("Live") {
     isEnabled = false; //need to enable after fresh setup
@@ -151,20 +150,12 @@ public:
         //set script
         uint8_t fileNr = var["value"];
 
-        ppf("%s script f:%d f:%d\n", name, funType, fileNr);
+        ppf("%s script.onChange f:%d\n", name, fileNr);
 
-        char fileName[32] = "";
-
-        if (fileNr > 0 && scPreBaseScript.length()) { //not None and setup done
+        if (fileNr > 0) { //not None and setup done
           fileNr--;  //-1 as none is no file
-          files->seqNrToName(fileName, fileNr, ".sc");
-          // ppf("%s script f:%d f:%d\n", name, funType, fileNr);
-        }
-
-        if (strcmp(fileName, "") != 0)
-          run(fileName, true); //force a new file to run
-        else {
-          kill();
+          files->seqNrToName(web->lastFileUpdated, fileNr, ".sc");
+          ppf("%s script.onChange f:%d n:%s\n", name, fileNr, web->lastFileUpdated);
         }
 
         return true; }
@@ -266,7 +257,7 @@ public:
 
   void loop20ms() {
     //workaround
-    if (strstr(web->lastFileUpdated, ".sc") != nullptr) {
+    if (strstr(web->lastFileUpdated, ".sc") != nullptr && gLeds && !gLeds->doMap) {
       run(web->lastFileUpdated);
       strcpy(web->lastFileUpdated, "");
     }
@@ -278,11 +269,8 @@ public:
     frameCounter = 0;
   }
 
-  void run(const char *fileName, bool force = false) {
-    ppf("live run n:%s o:%s (f:%d)\n", fileName, this->fileName, force);
-
-    if (!force && strcmp(fileName, this->fileName) != 0) // if another fileName then force should be true;
-      return;
+  void run(const char *fileName) {
+    ppf("live run n:%s o:%s (f:%d)\n", fileName, this->fileName);
 
     kill();
 
@@ -293,7 +281,16 @@ public:
         ppf("UserModLive setup script open %s for %s failed\n", fileName, "r");
       else {
 
-        string scScript = scPreBaseScript + scPreCustomScript;
+        string scScript = scPreBaseScript;
+
+        //LEDs specific
+        if (gLeds != nullptr) {
+          scScript += "define width " + to_string(gLeds->size.x) + "\n";
+          scScript += "define height " + to_string(gLeds->size.y) + "\n";
+          scScript += "define NUM_LEDS " + to_string(gLeds->nrOfLeds) + "\n";
+          scScript += "define panel_width " + to_string(gLeds->size.x) + "\n"; //isn't panel_width always the same as width?
+        }
+        //end LEDs specific
 
         Serial.println(scScript.c_str());
 

@@ -2893,35 +2893,20 @@ class LiveScriptEffect: public Effect {
         //set script
         uint8_t fileNr = var["value"][rowNr];
 
-        char fileName[32] = "";
+        if (fileNr > 0) { //not None and live setup done (before )
+          gLeds = &leds; //set the leds class for live script
 
-        if (fileNr > 0 && liveM->scPreBaseScript.length()) { //not None and live setup done (before )
           fileNr--;  //-1 as none is no file
-          files->seqNrToName(fileName, fileNr, ".sc");
-          ppf("script2.onChange f:%d s:%s\n", fileNr, fileName);
+          files->seqNrToName(web->lastFileUpdated, fileNr, ".sc");
+          ppf("script2.onChange f:%d s:%s\n", fileNr, web->lastFileUpdated);
 
           // in LedLayer.h: void setPixelColorLive(unsigned16 indexV, uint32_t color) {setPixelColor(indexV, CRGB::Black);}
           // void (LedsLayer::*sPCCached)(unsigned16, uint32_t) = &LedsLayer::setPixelColorLive;
           // LedsLayer *leds2 = &leds;
           // (leds2->*sPCCached)(0, 0);
-
-          gLeds = &leds; //set the leds class for live script
-
-          //set the custom defines
-          liveM->scPreCustomScript = "";
-          liveM->scPreCustomScript += "define width " + to_string(leds.size.x) + "\n";
-          liveM->scPreCustomScript += "define height " + to_string(leds.size.y) + "\n";
-          liveM->scPreCustomScript += "define NUM_LEDS " + to_string(leds.nrOfLeds) + "\n";
-          liveM->scPreCustomScript += "define panel_width " + to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
         }
         else
           ppf("script2.onChange not ready:%d\n", fileNr);
-
-        if (strcmp(fileName, "") != 0)
-          liveM->run(fileName, true); //force a new file to run
-        else {
-          liveM->kill();
-        }
 
         return true; }
       default: return false; 
