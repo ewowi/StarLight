@@ -222,6 +222,16 @@ public:
 
           // leds->doMap = true; //stop the effects loop already here
 
+          #ifdef STARBASE_USERMOD_LIVE
+            //kill live script of moving to other effect
+            if (leds->fx < effects.size()) {
+              Effect* effect = effects[leds->fx];
+              if (strcmp(effect->name(), "Live Script") == 0) {
+                liveM->kill();
+              }
+            }
+          #endif
+
           leds->fx = mdl->getValue(var, rowNr);
 
           if (leds->fx < effects.size()) {

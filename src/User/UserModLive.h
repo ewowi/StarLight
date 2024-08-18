@@ -51,7 +51,7 @@ static void show()
     _max = fps;
   if (_nb_stat > 10)
     _totfps += fps;
-  if (_nb_stat%1000 == 0)
+  if (_nb_stat%10000 == 0) //every 10 sec. (temp)
     //Serial.printf("current show fps:%.2f\tglobal fps:%.2f\tfps animation:%.2f\taverage:%.2f\tmin:%.2f\tmax:%.2f\r\n", fps2, fps3, fps, _totfps / (_nb_stat - 10), _min, _max);
     ppf("current show fps:%.2f\tglobal fps:%.2f\tfps animation:%.2f  average:%.2f min:%.2f max:%.2f\r\n",fps2, fps3,  fps, _totfps / (_nb_stat - 10), _min, _max);
   time1 = ESP.getCycleCount();
@@ -92,18 +92,22 @@ static float _time(float j) {
       myVal = fmod(myVal, 1.0);               // ewowi: with 0.015 as input, you get fmod(millis/1000,1.0), which has a period of 1 second, sounds right
       return myVal;
 }
+// static millis()
 
 //LEDS specific
 static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);} //why call POSV and not hsv?
+static CRGB rgb(uint8_t r, uint8_t g, uint8_t b) {return CRGB(r, g, b);} //why call POSV and not hsv?
 static uint8_t _sin8(uint8_t a) {return sin8(a);}
 static uint8_t _cos8(uint8_t a) {return cos8(a);}
 static uint8_t _beatSin8(uint8_t a1, uint8_t a2, uint8_t a3) {return beatsin8(a1, a2, a3);}
+static uint8_t _inoise8(uint16_t a1, uint16_t a2, uint16_t a3) {return inoise8(a1, a2, a3);}
+static uint8_t _random8() {return random8();}
 static LedsLayer *gLeds = nullptr;
 static void _fadeToBlackBy(uint8_t a1) {gLeds->fadeToBlackBy(a1);}
 static void sPCLive(uint16_t pixel, CRGB color) { // int t needed - otherwise wrong colors, very strange
   if (gLeds) 
   {
-    // if (t == 0) ppf(" %d,%d,%d", color.r, color.g, color.b);
+    // ppf(" %d,%d,%d", color.r, color.g, color.b);
     gLeds->setPixelColor(pixel, color);
   }
 }
@@ -113,6 +117,7 @@ static void sCFPLive(uint16_t pixel, uint8_t index, uint8_t brightness) { // int
 }
 uint8_t slider1 = 128;
 uint8_t slider2 = 128;
+uint8_t slider3 = 128;
 
 //End LEDS specific
 
@@ -184,7 +189,7 @@ public:
     addExternalFun("float", "sin", "(float a1)", (void *)_sin);
     addExternalFun("float", "time", "(float a1)", (void *)_time);
     addExternalFun("float", "triangle", "(float a1)", (void *)_triangle);
-    addExternalFun("uint8_t", "beatSin8", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)_beatSin8);
+    addExternalFun("uint32_t", "millis", "()", (void *)millis);
 
     // added by StarBase
     addExternalFun("void", "pinMode", "(int a1, int a2)", (void *)&pinMode);
@@ -196,6 +201,10 @@ public:
 
     //LEDS specific
     addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV);
+    addExternalFun("CRGB", "rgb", "(int a1, int a2, int a3)", (void *)rgb);
+    addExternalFun("uint8_t", "beatSin8", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)_beatSin8);
+    addExternalFun("uint8_t", "inoise8", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_inoise8);
+    addExternalFun("uint8_t", "random8", "()", (void *)_random8);
     addExternalFun("uint8_t", "sin8","(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
     addExternalFun("uint8_t", "cos8","(uint8_t a1)",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
     addExternalFun("void", "sPC", "(uint16_t a1, CRGB a2)", (void *)sPCLive); // int t needed - otherwise wrong colors, very strange
@@ -206,6 +215,7 @@ public:
     //converting from 'void (LedsLayer::*)(uint16_t, uint32_t)' {aka 'void (LedsLayer::*)(short unsigned int, unsigned int)'} to 'void*' [-Wpmf-conversions]
     addExternalVal("uint8_t", "slider1", &slider1); //used in map function
     addExternalVal("uint8_t", "slider2", &slider2); //used in map function
+    addExternalVal("uint8_t", "slider3", &slider3); //used in map function
 
     //End LEDS specific
 
@@ -294,7 +304,7 @@ public:
             preScriptNrOfLines++;
         }
 
-        ppf("preScript of %s has %d lines\n", fileName, preScriptNrOfLines);
+        ppf("preScript of %s has %d lines\n", fileName, preScriptNrOfLines+1); //+1 to subtract the line from parser error line reported
 
         scScript += string(f.readString().c_str()); // add sc file
 
@@ -320,10 +330,12 @@ public:
   }
 
   void kill() {
-    ppf("kill %s\n", fileName);
-    SCExecutable._kill(); //kill any old tasks
-    fps = 0;
-    strcpy(fileName, "");
+    if (__run_handle) { //isRunning
+      ppf("kill %s\n", fileName);
+      SCExecutable._kill(); //kill any old tasks
+      fps = 0;
+      strcpy(fileName, "");
+    }
   }
 
 };
