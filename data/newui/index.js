@@ -82,6 +82,7 @@ class Controller {
         }
       }
       else if (buffer[0] == 1) {
+        //LEDs specific
         let canvasNode = document.getElementById("pview");
         if (canvasNode) {
           // console.log(buffer, canvasNode);
@@ -99,6 +100,8 @@ class Controller {
             userFun(buffer);
           }
         }
+        //end LEDs specific
+
       }
     }, 100);
 

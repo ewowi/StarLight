@@ -2893,8 +2893,8 @@ class LiveScriptEffect: public Effect {
         //set script
         uint8_t fileNr = var["value"][rowNr];
 
+        gLeds = &leds; //LEDs specific set the leds class for live script
         if (fileNr > 0) { //not None and live setup done (before )
-          gLeds = &leds; //set the leds class for live script
 
           fileNr--;  //-1 as none is no file
           files->seqNrToName(web->lastFileUpdated, fileNr, ".sc");
