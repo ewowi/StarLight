@@ -1,7 +1,7 @@
 /*
    @title     StarLight
    @file      UserModArtNet.h
-   @date      20240720
+   @date      20240819
    @repo      https://github.com/MoonModules/StarLight
    @Authors   https://github.com/MoonModules/StarLight/commits/main
    @Copyright © 2024 Github StarLight Commit Authors
