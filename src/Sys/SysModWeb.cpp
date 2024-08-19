@@ -526,7 +526,7 @@ void SysModWeb::serveUpload(WebRequest *request, const String& fileName, size_t 
     //if sc files send command to live
     #ifdef STARBASE_USERMOD_LIVE
 
-      strcpy(lastFileUpdated, filename.c_str()); //workaround 
+      strcpy(lastFileUpdated, fileName.c_str()); //workaround 
 
       // got multiple definition error here ???
       // if (filename.indexOf(".sc") > 0)
@@ -535,10 +535,10 @@ void SysModWeb::serveUpload(WebRequest *request, const String& fileName, size_t 
   }
 }
 
-void SysModWeb::serveUpdate(WebRequest *request, const String& filename, size_t index, byte *data, size_t len, bool final) {
+void SysModWeb::serveUpdate(WebRequest *request, const String& fileName, size_t index, byte *data, size_t len, bool final) {
 
   // curl -F 'data=@fixture1.json' 192.168.8.213/upload
-  // ppf("serveUpdate r:%s f:%s i:%d l:%d f:%d\n", request->url().c_str(), filename.c_str(), index, len, final);
+  // ppf("serveUpdate r:%s f:%s i:%d l:%d f:%d\n", request->url().c_str(), fileName.c_str(), index, len, final);
   
   mdl->setValue("update", index/10000);
   sendResponseObject(); //otherwise not send in asyn_tcp thread
