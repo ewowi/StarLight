@@ -1,6 +1,6 @@
 // @title     StarBase
 // @file      modules.js
-// @date      20240720
+// @date      20240819
 // @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
 // @Authors   https://github.com/ewowi/StarBase/commits/main
 // @Copyright © 2024 Github StarBase Commit Authors
@@ -407,7 +407,7 @@ class CanvasVariable extends Variable {
     // console.log(this.variable)
     if (this.variable.file) {
       this.variable.file.new = true;
-      console.log("canvas createHTML", this.variable.file, this.variable.file.new);
+      // console.log("canvas createHTML", this.variable.file, this.variable.file.new);
     }
     return super.createHTML(`<canvas id=${this.variable.id} class="${this.variable.type}"></canvas>`);
   }
@@ -417,6 +417,7 @@ class CanvasVariable extends Variable {
   }
 
   generateData() {
+    //tbd: this is StarLight, remove here...
     if (this.node && this.variable.file == null)
       super.generateData(`"file":"F_panel2x2-16x16.json"`)
 

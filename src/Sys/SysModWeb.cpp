@@ -1,7 +1,7 @@
 /*
    @title     StarBase
    @file      SysModWeb.cpp
-   @date      20240720
+   @date      20240819
    @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
    @Authors   https://github.com/ewowi/StarBase/commits/main
    @Copyright © 2024 Github StarBase Commit Authors
@@ -526,7 +526,10 @@ void SysModWeb::serveUpload(WebRequest *request, const String& fileName, size_t 
     //if sc files send command to live
     #ifdef STARBASE_USERMOD_LIVE
 
-      strcpy(lastFileUpdated, fileName.c_str()); //workaround 
+      if (fileName.indexOf(".sc") > 0) {
+        ppf("sc file added %s\n", fileName.c_str());
+        strcpy(lastFileUpdated, ("/"+fileName).c_str()); //workaround 
+      }
 
       // got multiple definition error here ???
       // if (filename.indexOf(".sc") > 0)

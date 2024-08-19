@@ -1,7 +1,7 @@
 /*
    @title     StarBase
    @file      SysModModel.cpp
-   @date      20240720
+   @date      20240819
    @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
    @Authors   https://github.com/ewowi/StarBase/commits/main
    @Copyright © 2024 Github StarBase Commit Authors

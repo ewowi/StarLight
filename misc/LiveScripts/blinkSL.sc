@@ -1,3 +1,5 @@
+//blinkSL.sc
+
 //externals generated
 
 //how to deal with external defines?
@@ -20,14 +22,4 @@ void loop() {
     delay(1000);                      // wait for a second
     digitalWrite(blinkPin, LOW);   // turn the LED off by making the voltage LOW
     delay(1000);                      // wait for a second
-}
-
-void main()
-{
-  setup();
-  while (0==0)
-  {
-    loop();
-    show();
-  }
 }

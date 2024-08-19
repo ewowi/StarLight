@@ -1,7 +1,7 @@
 /*
    @title     StarBase
    @file      UserModLive.h
-   @date      20240720
+   @date      20240819
    @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
    @Authors   https://github.com/ewowi/StarBase/commits/main
    @Copyright © 2024 Github StarBase Commit Authors, asmParser © https://github.com/hpwit/ASMParser
@@ -94,6 +94,10 @@ static float _time(float j) {
 }
 // static millis()
 
+uint8_t slider1 = 128;
+uint8_t slider2 = 128;
+uint8_t slider3 = 128;
+
 //LEDS specific
 static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);} //why call POSV and not hsv?
 static CRGB rgb(uint8_t r, uint8_t g, uint8_t b) {return CRGB(r, g, b);} //why call POSV and not hsv?
@@ -115,10 +119,6 @@ static void sCFPLive(uint16_t pixel, uint8_t index, uint8_t brightness) { // int
   if (gLeds) 
     gLeds->setPixelColor(pixel, ColorFromPalette(gLeds->palette, index, brightness));
 }
-uint8_t slider1 = 128;
-uint8_t slider2 = 128;
-uint8_t slider3 = 128;
-
 //End LEDS specific
 
 class UserModLive:public SysModule {
@@ -155,7 +155,7 @@ public:
         if (fileNr > 0) { //not None and setup done
           fileNr--;  //-1 as none is no file
           files->seqNrToName(web->lastFileUpdated, fileNr, ".sc");
-          ppf("%s script.onChange f:%d n:%s\n", name, fileNr, web->lastFileUpdated);
+          ppf("script.onChange f:%d n:%s\n", fileNr, web->lastFileUpdated);
         }
         else {
           kill();
@@ -194,6 +194,10 @@ public:
     // addExternalFun("delay", [](int ms) {delay(ms);});
     // addExternalFun("digitalWrite", [](int pin, int val) {digitalWrite(pin, val);});
 
+    addExternalVal("uint8_t", "slider1", &slider1); //used in map function
+    addExternalVal("uint8_t", "slider2", &slider2); //used in map function
+    addExternalVal("uint8_t", "slider3", &slider3); //used in map function
+
     //LEDS specific
     addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV);
     addExternalFun("CRGB", "rgb", "(int a1, int a2, int a3)", (void *)rgb);
@@ -208,9 +212,6 @@ public:
     //address of overloaded function with no contextual type information: setPixelColorLive
     //ISO C++ forbids taking the address of a bound member function to form a pointer to member function.  Say '&LedsLayer::setPixelColorLive' [-fpermissive]
     //converting from 'void (LedsLayer::*)(uint16_t, uint32_t)' {aka 'void (LedsLayer::*)(short unsigned int, unsigned int)'} to 'void*' [-Wpmf-conversions]
-    addExternalVal("uint8_t", "slider1", &slider1); //used in map function
-    addExternalVal("uint8_t", "slider2", &slider2); //used in map function
-    addExternalVal("uint8_t", "slider3", &slider3); //used in map function
 
     //End LEDS specific
 
@@ -261,8 +262,20 @@ public:
 
   void loop20ms() {
     //workaround
-    if (strstr(web->lastFileUpdated, ".sc") != nullptr && gLeds && !gLeds->doMap) {
-      run(web->lastFileUpdated);
+    if (strstr(web->lastFileUpdated, ".sc") != nullptr) {
+      if (strstr(web->lastFileUpdated, "del:/") != nullptr) {
+        if (strcmp(this->fileName, web->lastFileUpdated+4) == 0) { //+4 remove del:
+          ppf("loop20ms kill %s\n", web->lastFileUpdated);
+          kill();
+          // ui->callVarFun("script2", UINT8_MAX, onUI); //rebuild options
+        }
+        //else nothing
+      }
+      else {
+        ppf("loop20ms run %s -> %s\n", this->fileName, web->lastFileUpdated);
+        run(web->lastFileUpdated);
+        // ui->callVarFun("script2", UINT8_MAX, onUI); //rebuild options
+      }
       strcpy(web->lastFileUpdated, "");
     }
   }
@@ -336,7 +349,7 @@ public:
       SCExecutable._kill(); //kill any old tasks
       fps = 0;
       strcpy(fileName, "");
-      if (gLeds) gLeds->fadeToBlackBy(255);
+      if (gLeds) gLeds->fadeToBlackBy(255); // LEDs specific
     }
   }
 

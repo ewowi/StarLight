@@ -1,7 +1,7 @@
 /*
    @title     StarBase
    @file      SysModFiles.cpp
-   @date      20240720
+   @date      20240819
    @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
    @Authors   https://github.com/ewowi/StarBase/commits/main
    @Copyright © 2024 Github StarBase Commit Authors
@@ -39,12 +39,22 @@ void SysModFiles::setup() {
       rowNr = fileList.size();
       web->getResponseObject()["addRow"]["rowNr"] = rowNr;
       //add a row with all defaults
+      //tbd: File upload does not call onAddRow (bug?)
       return true;
     case onDeleteRow:
       if (rowNr != UINT8_MAX && rowNr < fileList.size()) {
         const char * fileName = fileList[rowNr].name;
         // ppf("fileTbl delRow %s[%d] = %s %s\n", mdl->varID(var), rowNr, var["value"].as<String>().c_str(), fileName);
         this->removeFiles(fileName, false);
+
+        #ifdef STARBASE_USERMOD_LIVE
+          if (strstr(fileName, ".sc") != nullptr) {
+            char name[32]="del:/"; //del:/ is recognized by LiveM->loop20ms
+            strcat(name, fileName);
+            ppf("sc file removed %s\n", name);
+            strcpy(web->lastFileUpdated, name);
+          }
+        #endif
 
         // print->printVar(var);
         // ppf("\n");
