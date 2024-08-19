@@ -157,6 +157,10 @@ public:
           files->seqNrToName(web->lastFileUpdated, fileNr, ".sc");
           ppf("%s script.onChange f:%d n:%s\n", name, fileNr, web->lastFileUpdated);
         }
+        else {
+          kill();
+          ppf("script.onChange set to None\n");
+        }
 
         return true; }
       default: return false; 
@@ -272,7 +276,7 @@ public:
   void run(const char *fileName) {
     ppf("live run n:%s o:%s (f:%d)\n", fileName, this->fileName);
 
-    kill();
+    kill(); //kill any old script
 
     if (strcmp(fileName, "") != 0) {
 
@@ -332,6 +336,7 @@ public:
       SCExecutable._kill(); //kill any old tasks
       fps = 0;
       strcpy(fileName, "");
+      if (gLeds) gLeds->fadeToBlackBy(255);
     }
   }
 

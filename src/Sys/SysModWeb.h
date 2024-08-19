@@ -87,9 +87,9 @@ public:
 
 
   // curl -F 'data=@fixture1.json' 192.168.8.213/upload
-  void serveUpload(WebRequest *request, const String& filename, size_t index, byte *data, size_t len, bool final);
+  void serveUpload(WebRequest *request, const String& fileName, size_t index, byte *data, size_t len, bool final);
   // curl -s -F "update=@/Users/ewoudwijma/Developer/GitHub/ewowi/StarBase/.pio/build/esp32dev/firmware.bin" 192.168.8.102/update /dev/null &
-  void serveUpdate(WebRequest *request, const String& filename, size_t index, byte *data, size_t len, bool final);
+  void serveUpdate(WebRequest *request, const String& fileName, size_t index, byte *data, size_t len, bool final);
   void serveFiles(WebRequest *request);
 
   //processJsonUrl handles requests send in javascript using fetch and from a browser or curl

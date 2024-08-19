@@ -1,3 +1,5 @@
+//animwleSL.sc
+
 // WIP, By Yves but time and triangle is now external, not working yet
 // Unexpected    at line:115
 // preScript has 27 lines, so should be 88, or a but around but looks okay there 
@@ -8,27 +10,8 @@ uint32_t __deltamillis[1];
 
 uint32_t __baseTime[1];
 
-__ASM__ uint32_t millis()
-{
-   "entry a1,32"
-   "l32r a5,__baseTime"
-   "l32i a14,a5,0"
-   "rsr a13,234"
-   "l32r a4,__deltamillis"
-   "s32i a13,a4,0"
-   "sub a13,a13,a14"
-   "movi a14,240"
-   "quou a13,a13,a14"
-   "movi a14,1000"
-   "quou a13,a13,a14"
-   "l32r a4,stackr"
-   "s32i a13,a4,0"
-   "retw.n"
-}
-    
-    float cR; // = -0.94299;
+float cR; // = -0.94299;
 float cI;     // = 0.3162;
-
 
 float cX;
 float cY;

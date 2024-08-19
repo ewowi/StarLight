@@ -2905,8 +2905,10 @@ class LiveScriptEffect: public Effect {
           // LedsLayer *leds2 = &leds;
           // (leds2->*sPCCached)(0, 0);
         }
-        else
-          ppf("script2.onChange not ready:%d\n", fileNr);
+        else {
+          liveM->kill();
+          ppf("script2.onChange set to None:%d\n", fileNr);
+        }
 
         return true; }
       default: return false; 

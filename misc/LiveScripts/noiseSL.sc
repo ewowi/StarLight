@@ -1,3 +1,7 @@
+//noiseSL.sc
+
+//compile error: line:56 incorrect value 32 should be between 0 and 15
+
 void setup()
 {
 }

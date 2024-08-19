@@ -163,7 +163,7 @@ public:
 
         char fileName[32] = "";
         if (files->seqNrToName(fileName, eff->fixture.fixtureNr)) {
-          //send to pview a message to get file filename
+          //send to pview a message to get file fileName
           web->addResponse("pview", "file", JsonString(fileName, JsonString::Copied));
         }
         return true; }

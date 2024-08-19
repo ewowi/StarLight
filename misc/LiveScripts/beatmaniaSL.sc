@@ -1,3 +1,5 @@
+//beatmaniaSL.sc
+
 //from https://github.com/MoonModules/WLED-Effects/blob/master/ARTIFX/wled/beatmania.wled
 //Created by Andrew Tuline Converted by Ewoud Wijma
 
