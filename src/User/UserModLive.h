@@ -136,6 +136,8 @@ public:
   void setup() override {
     SysModule::setup();
 
+    //note: -mtext-section-literals needed in pio.ini, first only for s2, now for all due to something in setup...
+
     parentVar = ui->initUserMod(parentVar, name, 6310);
 
     ui->initSelect(parentVar, "script", UINT16_MAX, false , [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
