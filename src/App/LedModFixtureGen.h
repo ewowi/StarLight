@@ -669,7 +669,7 @@ public:
       default: return false;
     }});
 
-    // mdl->varPreDetails(fixtureVar);
+    // Variable(fixtureVar).preDetails();
 
     bool showTable = true;
     JsonObject parentVar = fixtureVar;
@@ -812,7 +812,7 @@ public:
         return true; }
       case onChange: {
         //set remaining rows to same pin
-        JsonArray valArray = mdl->varValArray(var);
+        JsonArray valArray = Variable(var).valArray();
 
         stackUnsigned8 thisVal = var["value"];
         stackUnsigned8 rowNrL = 0;
@@ -866,7 +866,8 @@ public:
       }
     }
 
-    mdl->varPostDetails(fixtureVar, UINT8_MAX);
+    Variable(fixtureVar).postDetails(UINT8_MAX);
+    mdl->setValueRowNr = UINT8_MAX;
   }
 
   //tbd: move to utility functions

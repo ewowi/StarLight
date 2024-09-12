@@ -164,7 +164,7 @@ public:
         return true;
       case onAddRow: {
         rowNr = fixture.layers.size();
-        // ppf("layerTbl addRow %s[%d]\n", mdl->varID(var), rowNr);
+        // ppf("layerTbl addRow %s[%d]\n", Variable(var).id(), rowNr);
 
         web->getResponseObject()["addRow"]["rowNr"] = rowNr;
 
@@ -175,7 +175,7 @@ public:
         }
         return true; }
       case onDeleteRow: {
-        // ppf("layerTbl delrow %s[%d]\n", mdl->varID(var), rowNr);
+        // ppf("layerTbl delrow %s[%d]\n", Variable(var).id(), rowNr);
         //tbd: fade to black
         if (rowNr <fixture.layers.size()) {
           LedsLayer *leds = fixture.layers[rowNr];
@@ -211,7 +211,7 @@ public:
 
         //create a new leds instance if a new row is created
         if (rowNr >= fixture.layers.size()) {
-          ppf("layers fx[%d] onChange %d %s\n", rowNr, fixture.layers.size(), mdl->findVar("fx")["value"].as<String>().c_str());
+          ppf("layers fx[%d] onChange %d %s\n", rowNr, fixture.layers.size(), Variable(mdl->findVar("fx")).valueString());
           ppf("fx creating new LedsLayer instance %d\n", rowNr);
           LedsLayer *leds = new LedsLayer(fixture);
           fixture.layers.push_back(leds);
@@ -249,9 +249,11 @@ public:
             leds->effectData.clear(); //delete effectData memory so it can be rebuild
             effect->loop(*leds); leds->effectData.begin(); //do a loop to set effectData right
 
-            mdl->varPreDetails(var, rowNr);
+            Variable(var).preDetails();
+            mdl->setValueRowNr = rowNr;
             effect->controls(*leds, var); //set all defaults in effectData
-            mdl->varPostDetails(var, rowNr);
+            Variable(var).postDetails(rowNr);
+            mdl->setValueRowNr = UINT8_MAX;
 
             leds->effectData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
 
@@ -311,9 +313,11 @@ public:
 
             leds->projectionData.clear(); //delete effectData memory so it can be rebuild
 
-            mdl->varPreDetails(var, rowNr); //set all positive var N orders to negative
+            Variable(var).preDetails(); //set all positive var N orders to negative
+            mdl->setValueRowNr = rowNr;
             projection->controls(*leds, var);
-            mdl->varPostDetails(var, rowNr);
+            Variable(var).postDetails(rowNr);
+            mdl->setValueRowNr = UINT8_MAX;
 
             leds->projectionData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
           }
@@ -452,7 +456,7 @@ public:
 
           // ui->dashVarChanged = true;
           // //rebuild the table
-          for (JsonObject childVar: mdl->varChildren("e131Tbl"))
+          for (JsonObject childVar: Variable(mdl->findVar("e131Tbl")).children())
             ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
 
       // }
