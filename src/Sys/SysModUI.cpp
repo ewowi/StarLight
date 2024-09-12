@@ -62,7 +62,7 @@ void SysModUI::loop20ms() { //never more then 50 times a second!
       varLoop.loopFun(varLoop.var, 1, onLoop); //rowNr..
 
       varLoop.counter++;
-      // ppf("%s %u %u %d %d\n", varLoop->mdl->varID(var), varLoop->lastMillis, millis(), varLoop->interval, varLoop->counter);
+      // ppf("%s %u %u %d %d\n", varLoop->Variable(var).id(), varLoop->lastMillis, millis(), varLoop->interval, varLoop->counter);
     }
   }
 }
@@ -108,9 +108,19 @@ JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * ty
       // print->printJson("initVar set type", var);
     }
 
-    if (var["ro"].isNull() || mdl->varRO(var) != readOnly) mdl->varRO(var, readOnly);
+    Variable variable = Variable(var);
 
-    mdl->varInitOrder(parent, var);
+    if (var["ro"].isNull() || variable.readOnly() != readOnly) variable.readOnly(readOnly);
+
+    //set order. make order negative to check if not obsolete, see cleanUpModel
+    if (variable.order() >= 1000) //predefined! (modules) - positive as saved in model.json
+      variable.order( -variable.order()); //leave the order as is
+    else {
+      if (!parent.isNull() && Variable(parent).order() >= 0) // if checks on the parent already done so vars added later, e.g. controls, will be autochecked
+        variable.order( mdl->varCounter++); //redefine order
+      else
+        variable.order( -mdl->varCounter++); //redefine order
+    }
 
     //if varFun, add it to the list
     if (varFun) {
@@ -134,7 +144,7 @@ JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * ty
 
         loopFunctions.push_back(loop);
         var["loopFun"] = loopFunctions.size()-1;
-        // ppf("iObject loopFun %s %u %u %d %d\n", mdl->varID(var));
+        // ppf("iObject loopFun %s %u %u %d %d\n", Variable(var).id());
       }
     }
   }
@@ -164,7 +174,7 @@ void SysModUI::processJson(JsonVariant json) {
       }
       else if (pair.key() == "view" || pair.key() == "canvasData" || pair.key() == "theme") { //save the chosen view in System (see index.js)
         JsonObject var = mdl->findVar("System");
-        ppf("processJson %s v:%s n: %d s:%s\n", pair.key().c_str(), pair.value().as<String>().c_str(), var.isNull(), mdl->varID(var));
+        ppf("processJson %s v:%s n: %d s:%s\n", pair.key().c_str(), pair.value().as<String>().c_str(), var.isNull(), Variable(var).id());
         var[JsonString(key, JsonString::Copied)] = JsonString(value, JsonString::Copied); //this is needed as key can become a dangling pointer
         // json.remove(key); //key should stay as all clients use this to perform the changeHTML action
       }
@@ -173,12 +183,12 @@ void SysModUI::processJson(JsonVariant json) {
           JsonObject command = value;
           JsonObject var = mdl->findVar(command["id"]);
           stackUnsigned8 rowNr = command["rowNr"].isNull()?UINT8_MAX:command["rowNr"];
-          ppf("processJson %s - %s[%d]\n", key, mdl->varID(var), rowNr);
+          ppf("processJson %s - %s[%d]\n", key, Variable(var).id(), rowNr);
 
           //first remove the deleted row both on server and on client(s)
           if (pair.key() == "delRow") {
             ppf("delRow remove values\n");
-            mdl->varRemoveValuesForRow(var, rowNr);
+            Variable(var).removeValuesForRow(rowNr);
             web->sendResponseObject(); //async response //trigger receiveData->delRow
           }
 
@@ -232,10 +242,10 @@ void SysModUI::processJson(JsonVariant json) {
           //a button never sets the value
           if (var["type"] == "button") { //button always
             mdl->callVarChangeFun(var, rowNr);
-            if (rowNr != UINT8_MAX) web->getResponseObject()[mdl->varID(var)]["rowNr"] = rowNr;
+            if (rowNr != UINT8_MAX) web->getResponseObject()[Variable(var).id()]["rowNr"] = rowNr;
           }
           else {
-            mdl->setValueJV(mdl->varID(var), newValue, rowNr);
+            mdl->setValueJV(Variable(var).id(), newValue, rowNr);
           }
           // json.remove(key); //key / var["id"] processed we don't need the key in the response
         }

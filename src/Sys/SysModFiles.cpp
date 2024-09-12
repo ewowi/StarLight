@@ -44,7 +44,7 @@ void SysModFiles::setup() {
     case onDeleteRow:
       if (rowNr != UINT8_MAX && rowNr < fileList.size()) {
         const char * fileName = fileList[rowNr].name;
-        // ppf("fileTbl delRow %s[%d] = %s %s\n", mdl->varID(var), rowNr, var["value"].as<String>().c_str(), fileName);
+        // ppf("fileTbl delRow %s[%d] = %s %s\n", Variable(var).id(), rowNr, Variable(var).valueString(), fileName);
         this->removeFiles(fileName, false);
 
         #ifdef STARBASE_USERMOD_LIVE
@@ -163,7 +163,7 @@ void SysModFiles::loop20ms() {
 
     mdl->setValue("drsize", files->usedBytes());
 
-    for (JsonObject childVar: mdl->varChildren("fileTbl"))
+    for (JsonObject childVar: Variable(mdl->findVar("fileTbl")).children())
       ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
   }
 }

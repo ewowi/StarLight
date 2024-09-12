@@ -163,14 +163,14 @@ void SysModWeb::loop20ms() {
     clientsChanged = false;
 
     // ppf("SysModWeb clientsChanged\n");
-    for (JsonObject childVar: mdl->varChildren("clTbl"))
+    for (JsonObject childVar: Variable(mdl->findVar("clTbl")).children())
       ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
   }
 
 }
 
 void SysModWeb::loop1s() {
-  for (JsonObject childVar: mdl->varChildren("clTbl"))
+  for (JsonObject childVar: Variable(mdl->findVar("clTbl")).children())
     ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
 
   mdl->setUIValueV("wsSend", "#: %d /s T: %d B/s B:%d B/s", sendWsCounter, sendWsTBytes, sendWsBBytes);
@@ -270,7 +270,7 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
     for (JsonObject moduleVar: model) {
       ArrayIndexSortValue aisv;
       aisv.index = index++;
-      aisv.value = mdl->varOrder(moduleVar);
+      aisv.value = Variable(moduleVar).order();
       aisvs.push_back(aisv);
     }
     //sort the vector by the order

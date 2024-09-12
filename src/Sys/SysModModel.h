@@ -191,6 +191,132 @@ struct RAM_Allocator: ArduinoJson::Allocator {
   }
 };
 
+class Variable {
+  public:
+
+  JsonObject var;
+
+  Variable(JsonObject var) {
+    this->var = var;
+  }
+
+  const char * id() {
+    return var["id"];
+  }
+
+  String valueString() {
+    return var["value"].as<String>();
+  }
+
+  int order() {return var["o"];}
+  void order(int value) {var["o"] = value;}
+
+  bool readOnly() {return var["ro"];}
+  void readOnly(bool value) {var["ro"] = value;}
+
+  JsonArray children() {return var["n"];}
+
+  void defaultOrder(int value) {if (order() > -1000) order(- value); } //set default order (in range >=1000). Don't use auto generated order as order can be changed in the ui (WIP)
+
+  //recursively remove all value[rowNr] from children of var
+  void removeValuesForRow(unsigned8 rowNr) {
+    for (JsonObject childVar: children()) {
+      Variable childVariable = Variable(childVar);
+      JsonArray valArray = childVariable.valArray();
+      if (!valArray.isNull()) {
+        valArray.remove(rowNr);
+        //recursive
+        childVariable.removeValuesForRow(rowNr);
+      }
+    }
+  }
+
+  JsonArray valArray() {if (var["value"].is<JsonArray>()) return var["value"]; else return JsonArray(); }
+
+  unsigned8 linearToLogarithm(unsigned8 value) {
+    if (value == 0) return 0;
+
+    float minp = var["min"].isNull()?var["min"]:0;
+    float maxp = var["max"].isNull()?var["max"]:255;
+
+    // The result should be between 100 an 10000000
+    float minv = minp?log(minp):0;
+    float maxv = log(maxp);
+
+    // calculate adjustment factor
+    float scale = (maxv-minv) / (maxp-minp);
+
+    return round(exp(minv + scale*((float)value-minp)));
+  }
+
+  void preDetails() {
+    for (JsonObject varChild: children()) { //for all controls
+      if (Variable(varChild).order() >= 0) { //post init
+        Variable(varChild).order( -Variable(varChild).order()); // set all negative
+      }
+    }
+    ppf("preDetails post ");
+    print->printVar(var);
+    ppf("\n");
+  }
+
+  void postDetails(uint8_t rowNr) {
+
+    if (rowNr != UINT8_MAX) 
+    {
+
+      ppf("varPostDetails pre ");
+      print->printVar(var);
+      ppf("\n");
+
+      //check if post init added: parent is already >=0
+      if (order() >= 0) {
+        for (JsonArray::iterator childVarIt=children().begin(); childVarIt!=children().end(); ++childVarIt) { //use iterator to make .remove work!!!
+        // for (JsonObject &childVarIt: children) { //use iterator to make .remove work!!!
+          JsonObject childVar = *childVarIt;
+          Variable childVariable = Variable(childVar);
+          JsonArray valArray = childVariable.valArray();
+          if (!valArray.isNull())
+          {
+            if (childVariable.order() < 0) { //if not updated
+              valArray[rowNr] = (char*)0; // set element in valArray to 0
+
+              ppf("varPostDetails %s.%s[%d] <- null\n", id(), childVariable.id(), rowNr);
+              // setValue(var, -99, rowNr); //set value -99
+              childVariable.order(-childVariable.order());
+              //if some values in array are not -99
+            }
+
+            //if all values null, remove value
+            bool allNull = true;
+            for (JsonVariant element: valArray) {
+              if (!element.isNull())
+                allNull = false;
+            }
+            if (allNull) {
+              ppf("remove allnulls %s\n", childVariable.id());
+              children().remove(childVarIt);
+            }
+          }
+          else {
+            print->printJson("remove non valArray", childVar);
+            children().remove(childVarIt);
+          }
+
+        }
+      } //if new added
+      ppf("varPostDetails post ");
+      print->printVar(var);
+      ppf("\n");
+
+      web->addResponse("details", "rowNr", rowNr);
+    }
+
+    //post update details
+    web->addResponse("details", "var", var);
+  }
+
+}; //class Variable
 
 
 class SysModModel:public SysModule {
@@ -206,6 +332,7 @@ public:
 
   unsigned8 setValueRowNr = UINT8_MAX;
   unsigned8 getValueRowNr = UINT8_MAX;
+  int varCounter = 1; //start with 1 so it can be negative, see var["o"]
 
   SysModModel();
   void setup();
@@ -248,24 +375,25 @@ public:
 
   template <typename Type>
   JsonObject setValue(JsonObject var, Type value, unsigned8 rowNr = UINT8_MAX) {
+    Variable variable = Variable(var);
 
     bool changed = false;
 
     if (rowNr == UINT8_MAX) { //normal situation
       if (var["value"].isNull() || var["value"].as<Type>() != value) { //const char * will be JsonString so comparison works
-        if (!var["value"].isNull() && !varRO(var)) var["oldValue"] = var["value"];
+        if (!var["value"].isNull() && !variable.readOnly()) var["oldValue"] = var["value"];
         var["value"] = value;
         //trick to remove null values
         if (var["value"].isNull() || var["value"].as<unsigned16>() == UINT16_MAX) {
           var.remove("value");
-          // ppf("dev setValue value removed %s %s\n", varID(var), var["oldValue"].as<String>().c_str());
+          // ppf("dev setValue value removed %s %s\n", Variable(var).id(), var["oldValue"].as<String>().c_str());
         }
         else {
           //only print if ! read only
-          if (!varRO(var))
-            ppf("setValue changed %s %s -> %s\n", varID(var), var["oldValue"].as<String>().c_str(), var["value"].as<String>().c_str());
+          if (!variable.readOnly())
+            ppf("setValue changed %s %s -> %s\n", variable.id(), var["oldValue"].as<String>().c_str(), variable.valueString());
           // else
-          //   ppf("setValue changed %s %s\n", varID(var), var["value"].as<String>().c_str());
+          //   ppf("setValue changed %s %s\n", Variable(var).id(), var["value"].as<String>().c_str());
           web->addResponse(var["id"], "value", var["value"]);
           changed = true;
         }
@@ -275,7 +403,7 @@ public:
       //if we deal with multiple rows, value should be an array, if not we create one
 
       if (var["value"].isNull() || !var["value"].is<JsonArray>()) {
-        // ppf("setValue var %s[%d] value %s not array, creating\n", varID(var), rowNr, var["value"].as<String>().c_str());
+        // ppf("setValue var %s[%d] value %s not array, creating\n", Variable(var).id(), rowNr, var["value"].as<String>().c_str());
         var["value"].to<JsonArray>();
       }
 
@@ -297,7 +425,7 @@ public:
         }
       }
       else {
-        ppf("setValue %s could not create value array\n", varID(var));
+        ppf("setValue %s could not create value array\n", Variable(var).id());
       }
     }
 
@@ -344,15 +472,16 @@ public:
     }
   }
   JsonVariant getValue(JsonObject var, unsigned8 rowNr = UINT8_MAX) {
+    Variable variable = Variable(var);
     if (var["value"].is<JsonArray>()) {
-      JsonArray valueArray = var["value"].as<JsonArray>();
+      JsonArray valueArray = variable.valArray();
       if (rowNr == UINT8_MAX) rowNr = getValueRowNr;
       if (rowNr != UINT8_MAX && rowNr < valueArray.size())
         return valueArray[rowNr];
       else if (valueArray.size())
         return valueArray[0]; //return the first element
       else {
-        ppf("dev getValue no array or rownr wrong %s %s %d\n", varID(var), var["value"].as<String>().c_str(), rowNr);
+        ppf("dev getValue no array or rownr wrong %s %s %d\n", variable.id(), variable.valueString(), rowNr);
         return JsonVariant(); // return null
       }
     }
@@ -371,132 +500,9 @@ public:
   //sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
   bool callVarChangeFun(JsonObject var, unsigned8 rowNr = UINT8_MAX, bool init = false);
 
-  //pseudo VarObject: public JsonObject functions
-  const char * varID(JsonObject var) {return var["id"];}
-
-  bool varRO(JsonObject var) {return var["ro"];}
-  void varRO(JsonObject var, bool value) {var["ro"] = value;}
-
-  JsonArray varChildren(const char * id) {return varChildren(findVar(id));}
-  JsonArray varChildren(JsonObject var) {return var["n"];}
-
-  JsonArray varValArray(JsonObject var) {if (var["value"].is<JsonArray>()) return var["value"]; else return JsonArray(); }
-
-  int varOrder(JsonObject var) {return var["o"];}
-  void varOrder(JsonObject var, int value) {var["o"] = value;}
-  
-  void varInitOrder(JsonObject parent, JsonObject var) {
-        //set order. make order negative to check if not obsolete, see cleanUpModel
-    if (varOrder(var) >= 1000) //predefined! (modules) - positive as saved in model.json
-      varOrder(var, -varOrder(var)); //leave the order as is
-    else {
-      if (!parent.isNull() && varOrder(parent) >= 0) // if checks on the parent already done so vars added later, e.g. controls, will be autochecked
-        varOrder(var, varCounter++); //redefine order
-      else
-        varOrder(var, -varCounter++); //redefine order
-    }
-  }
-  void varSetDefaultOrder(JsonObject var, int value) {if (varOrder(var) > -1000) varOrder(var, - value); } //set default order (in range >=1000). Don't use auto generated order as order can be changed in the ui (WIP)
-  
-  //recursively remove all value[rowNr] from children of var
-  void varRemoveValuesForRow(JsonObject var, unsigned8 rowNr) {
-    for (JsonObject childVar: varChildren(var)) {
-      JsonArray valArray = varValArray(childVar);
-      if (!valArray.isNull()) {
-        valArray.remove(rowNr);
-        //recursive
-        varRemoveValuesForRow(childVar, rowNr);
-      }
-    }
-  }
-
-  void varPreDetails(JsonObject var, unsigned8 rowNr = UINT8_MAX) {
-    for (JsonObject var: varChildren(var)) { //for all controls
-      if (varOrder(var) >= 0) { //post init
-        varOrder(var, -varOrder(var)); // set all negative
-      }
-    }
-    setValueRowNr = rowNr;
-    ppf("varPreDetails post ");
-    print->printVar(var);
-    ppf("\n");
-  }
-
-  void varPostDetails(JsonObject var, unsigned8 rowNr) {
-
-    setValueRowNr = UINT8_MAX;
-    if (rowNr != UINT8_MAX) {
-
-      ppf("varPostDetails pre ");
-      print->printVar(var);
-      ppf("\n");
-
-      //check if post init added: parent is already >=0
-      if (varOrder(var) >= 0) {
-        for (JsonArray::iterator childVar=varChildren(var).begin(); childVar!=varChildren(var).end(); ++childVar) { //use iterator to make .remove work!!!
-        // for (JsonObject &childVar: varChildren(var)) { //use iterator to make .remove work!!!
-          JsonArray valArray = varValArray(*childVar);
-          if (!valArray.isNull())
-          {
-            if (varOrder(*childVar) < 0) { //if not updated
-              valArray[rowNr] = (char*)0; // set element in valArray to 0
-
-              ppf("varPostDetails %s.%s[%d] <- null\n", varID(var), varID(*childVar), rowNr);
-              // setValue(var, -99, rowNr); //set value -99
-              varOrder(*childVar, -varOrder(*childVar)); //make positive again
-              //if some values in array are not -99
-            }
-
-            //if all values null, remove value
-            bool allNull = true;
-            for (JsonVariant element: valArray) {
-              if (!element.isNull())
-                allNull = false;
-            }
-            if (allNull) {
-              ppf("remove allnulls %s\n", varID(*childVar));
-              varChildren(var).remove(childVar);
-            }
-          }
-          else {
-            print->printJson("remove non valArray", *childVar);
-            varChildren(var).remove(childVar);
-          }
-
-        }
-      } //if new added
-      ppf("varPostDetails post ");
-      print->printVar(var);
-      ppf("\n");
-
-      web->addResponse("details", "rowNr", rowNr);
-    }
-
-    //post update details
-    web->addResponse("details", "var", var);
-  }
-
-  unsigned8 varLinearToLogarithm(JsonObject var, unsigned8 value) {
-    if (value == 0) return 0;
-
-    float minp = var["min"].isNull()?var["min"]:0;
-    float maxp = var["max"].isNull()?var["max"]:255;
-
-    // The result should be between 100 an 10000000
-    float minv = minp?log(minp):0;
-    float maxv = log(maxp);
-
-    // calculate adjustment factor
-    float scale = (maxv-minv) / (maxp-minp);
-
-    return round(exp(minv + scale*((float)value-minp)));
-  }
-
-
 private:
   bool doShowObsolete = false;
   bool cleanUpModelDone = false;
-  int varCounter = 1; //start with 1 so it can be negative, see var["o"]
 
 };
 

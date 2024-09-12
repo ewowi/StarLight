@@ -40,7 +40,7 @@ public:
         ui->setComment(var, "First channel");
         return true;
       case onChange:
-        for (JsonObject childVar: mdl->varChildren("e131Tbl"))
+        for (JsonObject childVar: Variable(mdl->findVar("e131Tbl")).children())
           ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
         return true;
       default: return false;

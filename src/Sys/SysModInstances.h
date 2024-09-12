@@ -256,7 +256,7 @@ public:
     //find dash variables and add them to the table
     mdl->findVars("dash", true, [tableVar, this](JsonObject var) { //findFun
 
-      ppf("dash %s %s found\n", mdl->varID(var), var["value"].as<String>().c_str());
+      ppf("dash %s %s found\n", Variable(var).id(), Variable(var).valueString());
 
       char columnVarID[32] = "ins";
       strcat(columnVarID, var["id"]);
@@ -267,13 +267,13 @@ public:
         case onSetValue:
           //should not trigger onChange
           for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++) {
-            // ppf("initVar dash %s[%d]\n", mdl->varID(insVar), rowNrL);
+            // ppf("initVar dash %s[%d]\n", Variable(insVar).id(), rowNrL);
             //do what setValue is doing except calling onChange
-            // insVar["value"][rowNrL] = instances[rowNrL].jsonData[mdl->varID(var)]; //only int values...
+            // insVar["value"][rowNrL] = instances[rowNrL].jsonData[Variable(var).id()]; //only int values...
 
-            web->addResponse(insVar["id"], "value", instances[rowNrL].jsonData[mdl->varID(var)], rowNrL);
+            web->addResponse(insVar["id"], "value", instances[rowNrL].jsonData[Variable(var).id()], rowNrL);
 
-            // mdl->setValue(insVar, instances[rowNrL].jsonData[mdl->varID(var)], rowNr);
+            // mdl->setValue(insVar, instances[rowNrL].jsonData[Variable(var).id()], rowNr);
           //send to ws?
           }
           return true;
@@ -288,7 +288,7 @@ public:
             if (instances[rowNr].ip == WiFi.localIP()) {
               mdl->setValue(var, mdl->getValue(insVar, rowNr).as<unsigned8>()); //this will call sendDataWS (tbd...), do not set for rowNr
             } else {
-              sendMessageUDP(instances[rowNr].ip, mdl->varID(var), mdl->getValue(insVar, rowNr));
+              sendMessageUDP(instances[rowNr].ip, Variable(var).id(), mdl->getValue(insVar, rowNr));
             }
           }
           // print->printJson(" ", var);
@@ -464,7 +464,7 @@ public:
           // Serial.println();
 
           ppf("insTbl handleNotifications %d\n", notifierUdp.remoteIP()[3]);
-          for (JsonObject childVar: mdl->varChildren("insTbl"))
+          for (JsonObject childVar: Variable(mdl->findVar("insTbl")).children())
             ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP) ); //rowNr //instance - instances.begin()
 
           web->recvUDPCounter++;
@@ -558,7 +558,7 @@ public:
     }
     if (erased) {
       ppf("insTbl remove inactive instances\n");
-      for (JsonObject childVar: mdl->varChildren("insTbl"))
+      for (JsonObject childVar: Variable(mdl->findVar("insTbl")).children())
         ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //no rowNr so all rows updated
 
       ui->callVarFun("ddpInst", UINT8_MAX, onUI); //rebuild options
@@ -623,12 +623,12 @@ public:
 
         //send dash values
         mdl->findVars("dash", true, [&instance](JsonObject var) { //varFun
-          instance.jsonData[mdl->varID(var)] = var["value"];
+          instance.jsonData[Variable(var).id()] = var["value"];
           // // print->printJson("setVar", var);
-          // JsonArray valArray = mdl->varValArray(var);
+          // JsonArray valArray = Variable(var).valArray();
           // if (valArray.isNull())
           // else if (valArray.size())
-          //   instance.jsonData[mdl->varID(var)] = valArray;
+          //   instance.jsonData[Variable(var).id()] = valArray;
         });
 
         serializeJson(instance.jsonData, starMessage.jsonString);
@@ -796,7 +796,7 @@ public:
 
           // ppf("updateInstance updRow\n");
 
-          for (JsonObject childVar: mdl->varChildren("insTbl"))
+          for (JsonObject childVar: Variable(mdl->findVar("insTbl")).children())
             ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //rowNr instance - instances.begin()
 
           //tbd: now done for all rows, should be done only for updated rows!
@@ -816,7 +816,7 @@ public:
       //run though it sorted to find the right rowNr
       // for (std::vector<InstanceInfo>::iterator instance=instances.begin(); instance!=instances.end(); ++instance) {
       //   if (instance->ip == messageIP) {
-          for (JsonObject childVar: mdl->varChildren("insTbl")) {
+          for (JsonObject childVar: Variable(mdl->findVar("insTbl")).children()) {
             ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //no rowNr, update all
           }
       //   }

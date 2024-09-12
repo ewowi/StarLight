@@ -104,28 +104,29 @@ void SysModModel::cleanUpModel(JsonObject parent, bool oPos, bool ro) {
   if (parent.isNull()) //no parent
     vars = model->as<JsonArray>();
   else
-    vars = varChildren(parent);
+    vars = Variable(parent).children();
 
   for (JsonArray::iterator varV=vars.begin(); varV!=vars.end(); ++varV) {
   // for (JsonVariant varV : vars) {
     if (varV->is<JsonObject>()) {
       JsonObject var = *varV;
+      Variable variable = Variable(var);
 
       //no cleanup of o in case of ro value removal
       if (!ro) {
         if (oPos) {
-          if (var["o"].isNull() || varOrder(var) >= 0) { //not set negative in initVar
+          if (var["o"].isNull() || variable.order() >= 0) { //not set negative in initVar
             if (!doShowObsolete) {
-              ppf("cleanUpModel remove var %s (""o"">=0)\n", varID(var));          
+              ppf("cleanUpModel remove var %s (""o"">=0)\n", variable.id());          
               vars.remove(varV); //remove the obsolete var (no o or )
             }
           }
           else {
-            varOrder(var, -varOrder(var)); //make it possitive
+            variable.order( -variable.order()); //make it possitive
           }
         } else { //!oPos
-          if (var["o"].isNull() || varOrder(var) < 0) { 
-            ppf("cleanUpModel remove var %s (""o""<0)\n", varID(var));          
+          if (var["o"].isNull() || variable.order() < 0) { 
+            ppf("cleanUpModel remove var %s (""o""<0)\n", variable.id());          
             vars.remove(varV); //remove the obsolete var (no o or o is negative - not cleanedUp)
           }
         }
@@ -133,13 +134,13 @@ void SysModModel::cleanUpModel(JsonObject parent, bool oPos, bool ro) {
 
       //remove ro values (ro vars cannot be deleted as SM uses these vars)
       // remove if var is ro or table is instance table (exception here, values don't need to be saved)
-      if (ro && (parent["id"] == "insTbl" || varRO(var))) {// && !var["value"].isNull())
-        // ppf("remove ro value %s\n", varID(var));          
+      if (ro && (parent["id"] == "insTbl" || variable.readOnly())) {// && !var["value"].isNull())
+        // ppf("remove ro value %s\n", variable.id());          
         var.remove("value");
       }
 
       //recursive call
-      if (!varChildren(var).isNull())
+      if (!variable.children().isNull())
         cleanUpModel(var, oPos, ro);
     } 
   }
@@ -163,7 +164,7 @@ JsonObject SysModModel::findVar(const char * id, JsonArray parent) {
         JsonObject foundVar = findVar(id, var["n"]);
         if (!foundVar.isNull()) {
           if (modelParentVar.isNull()) modelParentVar = var;  //only recursive lowest assigns parentVar
-          // ppf("findvar parent of %s is %s\n", id, varID(modelParentVar));
+          // ppf("findvar parent of %s is %s\n", id, Variable(modelParentVar).id());
           return foundVar;
         }
       }
@@ -237,6 +238,7 @@ bool checkDash(JsonObject var) {
 }
 
 bool SysModModel::callVarChangeFun(JsonObject var, unsigned8 rowNr, bool init) {
+  Variable variable = Variable(var);
   //not in SysModModel.h as ui->callVarFun cannot be used in SysModModel.h
 
   if (!init) {
@@ -260,37 +262,37 @@ bool SysModModel::callVarChangeFun(JsonObject var, unsigned8 rowNr, bool init) {
       uint8_t *valuePointer = (uint8_t *)pointer;
       if (valuePointer != nullptr) {
         *valuePointer = value;
-        ppf("pointer set8 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+        ppf("pointer set8 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", variable.id(), *valuePointer, valuePointer, rowNr, variable.valueString(), pointer);
       }
       else
-        ppf("dev pointer set8 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+        ppf("dev pointer set8 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", variable.id(), *valuePointer, valuePointer, rowNr, variable.valueString(), pointer);
     }
     else if (var["type"] == "number") {
       uint16_t *valuePointer = (uint16_t *)pointer;
       if (valuePointer != nullptr) {
         *valuePointer = value;
-        ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+        ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", variable.id(), *valuePointer, valuePointer, rowNr, variable.valueString(), pointer);
       }
       else
-        ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+        ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", variable.id(), *valuePointer, valuePointer, rowNr, variable.valueString(), pointer);
     }
     // else if (var["type"] == "text") {
     //   const char *valuePointer = (const char *)pointer;
     //   if (valuePointer != nullptr) {
     //     *valuePointer = value;
-    //     ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+    //     ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
     //   }
     //   else
-    //     ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+    //     ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
     // }
     else if (var["type"] == "coord3D") {
       Coord3D *valuePointer = (Coord3D *)pointer;
       if (valuePointer != nullptr) {
         *valuePointer = value;
-        // ppf("pointer set coord3D %s: v:%d,%d,%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), (*valuePointer).x, (*valuePointer).y, (*valuePointer).z, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+        // ppf("pointer set coord3D %s: v:%d,%d,%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), (*valuePointer).x, (*valuePointer).y, (*valuePointer).z, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
       }
       else
-        ppf("dev pointer set coord3D %s: v:%d,%d,%d (p:%p) (r:%d v:%s p:%d)\n", varID(var), (*valuePointer).x, (*valuePointer).y, (*valuePointer).z, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+        ppf("dev pointer set coord3D %s: v:%d,%d,%d (p:%p) (r:%d v:%s p:%d)\n", variable.id(), (*valuePointer).x, (*valuePointer).y, (*valuePointer).z, valuePointer, rowNr, variable.valueString(), pointer);
     }
     else
       ppf("dev pointer of type %s not supported yet\n", var["type"].as<String>().c_str());

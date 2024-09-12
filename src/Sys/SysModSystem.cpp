@@ -50,7 +50,7 @@ void SysModSystem::setup() {
       char name[24];
       removeInvalidCharacters(name, var["value"]);
       ppf("instance name stripped %s\n", name);
-      mdl->setValue(mdl->varID(var), JsonString(name, JsonString::Copied)); //update with stripped name
+      mdl->setValue(Variable(var).id(), JsonString(name, JsonString::Copied)); //update with stripped name
       mdns->resetMDNS(); // set the new name for mdns
       return true;
     default: return false;

@@ -51,17 +51,17 @@ public:
   //order: order%4 determines the column (WIP)
   JsonObject initAppMod(JsonObject parent, const char * id, int order = 0) {
     JsonObject var = initVarAndUpdate<const char *>(parent, id, "appmod", (const char *)nullptr);
-    if (order) mdl->varSetDefaultOrder(var, order + 1000);
+    if (order) Variable(var).defaultOrder(order + 1000);
     return var;
   }
   JsonObject initSysMod(JsonObject parent, const char * id, int order = 0) {
     JsonObject var = initVarAndUpdate<const char *>(parent, id, "sysmod", (const char *)nullptr);
-    if (order) mdl->varSetDefaultOrder(var, order + 1000);
+    if (order) Variable(var).defaultOrder(order + 1000);
     return var;
   }
   JsonObject initUserMod(JsonObject parent, const char * id, int order = 0) {
     JsonObject var = initVarAndUpdate<const char *>(parent, id, "usermod", (const char *)nullptr);
-    if (order) mdl->varSetDefaultOrder(var, order + 1000);
+    if (order) Variable(var).defaultOrder(order + 1000);
     return var;
   }
 
@@ -166,6 +166,7 @@ public:
   template <typename Type>
   JsonObject initVarAndUpdate(JsonObject parent, const char * id, const char * type, Type value, int min = 0, int max = 255, bool readOnly = true, VarFun varFun = nullptr, int pointer = 0) {
     JsonObject var = initVar(parent, id, type, readOnly, varFun);
+    Variable variable = Variable(var);
     if (pointer != 0) {
       if (mdl->setValueRowNr == UINT8_MAX)
         var["p"] = pointer; //store pointer!
@@ -182,7 +183,7 @@ public:
         valueNeedsUpdate = true;
         // print->printJson("initVarAndUpdate varFun value is null", var);
       } else if (var["value"].is<JsonArray>()) {
-        JsonArray valueArray = var["value"].as<JsonArray>();
+        JsonArray valueArray = variable.valArray();
         if (mdl->setValueRowNr != UINT8_MAX) { // if var in table
           if (mdl->setValueRowNr >= valueArray.size())
             valueNeedsUpdate = true;
@@ -207,7 +208,7 @@ public:
         bool onChangeExists = false;
         if (var["value"].is<JsonArray>()) {
           int rowNr = 0;
-          for (JsonVariant val:var["value"].as<JsonArray>()) {
+          for (JsonVariant val:variable.valArray()) {
             onChangeExists |= mdl->callVarChangeFun(var, rowNr++, true); //init, also set var["p"]
           }
         }
@@ -216,7 +217,7 @@ public:
         }
 
         if (onChangeExists)
-          ppf("initVarAndUpdate onChange init %s[x] <- %s\n", mdl->varID(var), var["value"].as<String>().c_str());
+          ppf("initVarAndUpdate onChange init %s[x] <- %s\n", variable.id(), variable.valueString());
       }
     }
 
@@ -233,17 +234,18 @@ public:
 
   //checks if var has fun of type funType implemented by calling it and checking result (for onUI on RO var, also onSetValue is called)
   bool callVarFun(JsonObject var, unsigned8 rowNr = UINT8_MAX, unsigned8 funType = onSetValue) {
+    Variable variable = Variable(var);
     bool result = false;
 
     if (!var["fun"].isNull()) {//isNull needed here!
       size_t funNr = var["fun"];
       if (funNr < varFunctions.size()) {
         result = varFunctions[funNr](var, rowNr, funType);
-        if (result && !mdl->varRO(var)) { //send rowNr = 0 if no rowNr
+        if (result && !variable.readOnly()) { //send rowNr = 0 if no rowNr
           //only print vars with a value and not onSetValue as that changes a lot due to insTbl clTbl etc (tbd)
           //don't print if onSetValue or oldValue is null
           if (funType != onSetValue && (!var["oldValue"].isNull() || ((rowNr != UINT8_MAX) && !var["oldValue"][rowNr].isNull()))) {
-            ppf("%sFun %s", funType==onSetValue?"val":funType==onUI?"ui":funType==onChange?"ch":funType==onAddRow?"add":funType==onDeleteRow?"del":"other", mdl->varID(var));
+            ppf("%sFun %s", funType==onSetValue?"val":funType==onUI?"ui":funType==onChange?"ch":funType==onAddRow?"add":funType==onDeleteRow?"del":"other", Variable(var).id());
             if (rowNr != UINT8_MAX) {
               ppf("[%d] (", rowNr);
               if (funType == onChange) ppf("%s ->", var["oldValue"][rowNr].as<String>().c_str());
@@ -252,17 +254,17 @@ public:
             else {
               ppf(" (");
               if (funType == onChange) ppf("%s ->", var["oldValue"].as<String>().c_str());
-              ppf("%s)\n", var["value"].as<String>().c_str());
+              ppf("%s)\n", variable.valueString());
             }
           }
         }
       }
       else    
-        ppf("dev callVarFun function nr %s outside bounds %d >= %d\n", mdl->varID(var), funNr, varFunctions.size());
+        ppf("dev callVarFun function nr %s outside bounds %d >= %d\n", variable.id(), funNr, varFunctions.size());
     }
 
     //for ro variables, call onSetValue to add also the value in responseDoc (as it is not stored in the model)
-    if (funType == onUI && mdl->varRO(var)) {
+    if (funType == onUI && variable.readOnly()) {
       callVarFun(var, rowNr, onSetValue);
     }
 
@@ -301,16 +303,16 @@ public:
   //return the options from onUI (don't forget to clear responseObject)
   JsonArray getOptions(JsonObject var) {
     callVarFun(var, UINT8_MAX, onUI); //rebuild options
-    return web->getResponseObject()[mdl->varID(var)]["options"];
+    return web->getResponseObject()[Variable(var).id()]["options"];
   }
   void clearOptions(JsonObject var) {
-    web->getResponseObject()[mdl->varID(var)].remove("options");
+    web->getResponseObject()[Variable(var).id()].remove("options");
   }
 
   //find options text in a hierarchy of options
   void findOptionsText(JsonObject var, uint8_t value, char * groupName, char * optionName) {
     uint8_t startValue = 0;
-    bool optionsExisted = !web->getResponseObject()[mdl->varID(var)]["options"].isNull();
+    bool optionsExisted = !web->getResponseObject()[Variable(var).id()]["options"].isNull();
     JsonString groupNameJS;
     JsonString optionNameJS;
     JsonArray options = getOptions(var);

@@ -137,7 +137,7 @@ void SysModPrint::printVar(JsonObject var) {
     }
     else if (pair.key() == "n") {
       printf("[");
-      for (JsonObject childVar: mdl->varChildren(var)) {
+      for (JsonObject childVar: Variable(var).children()) {
         printVar(childVar);
       }
       printf("]");
