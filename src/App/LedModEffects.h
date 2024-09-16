@@ -164,9 +164,9 @@ public:
         return true;
       case onAdd: {
         rowNr = fixture.layers.size();
-        // ppf("layerTbl addRow %s[%d]\n", Variable(var).id(), rowNr);
+        // ppf("layerTbl onAdd %s[%d]\n", Variable(var).id(), rowNr);
 
-        web->getResponseObject()["addRow"]["rowNr"] = rowNr;
+        web->getResponseObject()["onAdd"]["rowNr"] = rowNr;
 
         if (rowNr >= fixture.layers.size()) {
           ppf("layerTbl creating new LedsLayer instance %d\n", rowNr);
@@ -175,7 +175,7 @@ public:
         }
         return true; }
       case onDelete: {
-        // ppf("layerTbl delrow %s[%d]\n", Variable(var).id(), rowNr);
+        // ppf("layerTbl onDelete %s[%d]\n", Variable(var).id(), rowNr);
         //tbd: fade to black
         if (rowNr <fixture.layers.size()) {
           LedsLayer *leds = fixture.layers[rowNr];

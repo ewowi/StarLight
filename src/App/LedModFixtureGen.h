@@ -683,10 +683,10 @@ public:
           ui->setComment(var, "Multiple parts");
           return true;
         case onAdd:
-          web->getResponseObject()["addRow"]["rowNr"] = rowNr;
+          web->getResponseObject()["onAdd"]["rowNr"] = rowNr;
           return true;
         case onDelete:
-          // web->getResponseObject()["addRow"]["rowNr"] = rowNr;
+          // web->getResponseObject()["onDelete"]["rowNr"] = rowNr;
           return true;
         default: return false;
       }});

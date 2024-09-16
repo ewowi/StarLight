@@ -1340,7 +1340,7 @@ class ScrollingTextEffect: public Effect {
     const char * text = mdl->getValue("text"); //effectData to be implemented!
 
     // text might be nullified by selecting other effects and if effect is selected, controls are run afterwards  
-    // tbd: this should be removed and fx.changeFUn (setEffect) must make sure this cannot happen!!
+    // tbd: this should be removed and fx.onChange (setEffect) must make sure this cannot happen!!
     if (text && strlen(text)>0) {
       leds.fadeToBlackBy();
       leds.drawText(text, 0, 0, font, CRGB::Red, - (sys->now/25*speed/256)); //instead of call
