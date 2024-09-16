@@ -393,8 +393,8 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
           console.log("Table +", event.target);
 
           var command = {};
-          command.addRow = {};
-          command.addRow.id = variable.id;
+          command.onAdd = {};
+          command.onAdd.id = variable.id;
           requestJson(command);
         });
         divNode.appendChild(buttonNode);
@@ -719,9 +719,9 @@ function genTableRowHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       console.log("Table -", event.target);
 
       var command = {};
-      command.delRow = {};
-      command.delRow.id = variable.id;
-      command.delRow.rowNr = rowNr;
+      command.onDelete = {};
+      command.onDelete.id = variable.id;
+      command.onDelete.rowNr = rowNr;
       requestJson(command);
 
     });
@@ -789,7 +789,7 @@ function receiveData(json) {
         }
         flushOnUICommands(); //make sure onUIs of new elements are called
       }
-      else if (key == "addRow") { //update the row of a table
+      else if (key == "onAdd") { //update the row of a table
         ppf("receiveData", key, value);
 
         if (value.id && value.rowNr != null) {
@@ -800,16 +800,16 @@ function receiveData(json) {
           let tableNode = gId(tableId);
           let tbodyNode = tableNode.querySelector("tbody");
 
-          ppf("addRow ", tableVar, tableNode, rowNr);
+          ppf("onAdd ", tableVar, tableNode, rowNr);
 
           let newRowNr = tbodyNode.querySelectorAll("tr").length;
 
           genTableRowHTML(tableVar, tableNode, newRowNr);
         }
         else 
-          ppf("dev receiveData addRow no id and/or rowNr specified", key, value);
+          ppf("dev receiveData onAdd no id and/or rowNr specified", key, value);
 
-      } else if (key == "delRow") { //update the row of a table
+      } else if (key == "onDelete") { //update the row of a table
 
         ppf("receiveData", key, value);
         let tableId = value.id;
@@ -824,7 +824,7 @@ function receiveData(json) {
 
         varRemoveValuesForRow(tableVar, rowNr);
 
-        ppf("delRow ", tableVar, tableNode, rowNr);
+        ppf("onDelete ", tableVar, tableNode, rowNr);
 
       } else if (key == "updRow") { //update the row of a table
 

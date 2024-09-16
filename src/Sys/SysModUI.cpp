@@ -178,23 +178,29 @@ void SysModUI::processJson(JsonVariant json) {
         var[JsonString(key, JsonString::Copied)] = JsonString(value, JsonString::Copied); //this is needed as key can become a dangling pointer
         // json.remove(key); //key should stay as all clients use this to perform the changeHTML action
       }
-      else if (pair.key() == "addRow" || pair.key() == "delRow") {
+      else if (pair.key() == "onAdd" || pair.key() == "onDelete") {
         if (value.is<JsonObject>()) {
           JsonObject command = value;
           JsonObject var = mdl->findVar(command["id"]);
           stackUnsigned8 rowNr = command["rowNr"].isNull()?UINT8_MAX:command["rowNr"];
           ppf("processJson %s - %s[%d]\n", key, Variable(var).id(), rowNr);
 
-          //first remove the deleted row both on server and on client(s)
-          if (pair.key() == "delRow") {
-            ppf("delRow remove values\n");
-            Variable(var).removeValuesForRow(rowNr);
-            web->sendResponseObject(); //async response //trigger receiveData->delRow
+          bool doWS = false;
+
+          if (callVarFun(var, rowNr, pair.key() == "onAdd"?onAdd:onDelete)) {
+            doWS = true;
           }
 
-          if (callVarFun(var, rowNr, pair.key() == "addRow"?onAddRow:onDeleteRow)) {
-            web->sendResponseObject(); //async response
+          //first remove the deleted row both on server and on client(s)
+          if (pair.key() == "onDelete") {
+            ppf("onDelete remove values\n");
+            Variable(var).removeValuesForRow(rowNr);
+            doWS = true;
           }
+
+          if (doWS)
+            web->sendResponseObject(); //async response //trigger receiveData->onDelete
+
         }
         json.remove(key); //key processed we don't need the key in the response
       }
@@ -241,7 +247,7 @@ void SysModUI::processJson(JsonVariant json) {
         {
           //a button never sets the value
           if (var["type"] == "button") { //button always
-            mdl->callVarChangeFun(var, rowNr);
+            mdl->callVarOnChange(var, rowNr);
             if (rowNr != UINT8_MAX) web->getResponseObject()[Variable(var).id()]["rowNr"] = rowNr;
           }
           else {

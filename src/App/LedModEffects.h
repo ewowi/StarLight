@@ -162,7 +162,7 @@ public:
         ui->setLabel(var, "Layers");
         ui->setComment(var, "List of effects");
         return true;
-      case onAddRow: {
+      case onAdd: {
         rowNr = fixture.layers.size();
         // ppf("layerTbl addRow %s[%d]\n", Variable(var).id(), rowNr);
 
@@ -174,7 +174,7 @@ public:
           fixture.layers.push_back(leds);
         }
         return true; }
-      case onDeleteRow: {
+      case onDelete: {
         // ppf("layerTbl delrow %s[%d]\n", Variable(var).id(), rowNr);
         //tbd: fade to black
         if (rowNr <fixture.layers.size()) {
@@ -833,7 +833,7 @@ public:
               driver.initled((uint8_t*) fixture.ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
               //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
             #endif
-            mdl->callVarChangeFun(mdl->findVar("bri"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+            mdl->callVarOnChange(mdl->findVar("bri"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
             // driver.setBrightness(fixture.setMaxPowerBrightness / 256); //not brighter then the set limit (WIP)
           }
         #endif

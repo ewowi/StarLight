@@ -16,7 +16,6 @@
 #include "SysModules.h" //isConnected
 
 typedef std::function<void(JsonObject)> FindFun;
-typedef std::function<void(JsonObject, size_t)> ChangeFun;
 
 struct Coord3D {
   int x;
@@ -200,12 +199,16 @@ class Variable {
     this->var = var;
   }
 
+  //core methods 
   const char * id() {
     return var["id"];
   }
 
-  String valueString() {
-    return var["value"].as<String>();
+  String valueString(uint8_t rowNr = UINT8_MAX) {
+    if (rowNr == UINT8_MAX)
+      return var["value"].as<String>();
+    else
+      return var["value"][rowNr].as<String>();
   }
 
   int order() {return var["o"];}
@@ -232,6 +235,31 @@ class Variable {
   }
 
   JsonArray valArray() {if (var["value"].is<JsonArray>()) return var["value"]; else return JsonArray(); }
+
+  //if variable is a table, loop through its rows
+  void rows(std::function<void(Variable, uint8_t)> fun = nullptr) {
+    //tbd table check ... 
+    //tbd move to table subclass??
+    // get the first child
+    JsonObject firstChild = children()[0];
+    //loop through its rows
+    uint8_t rowNr = 0;
+    for (JsonVariant value: Variable(firstChild).valArray()) {
+      if (fun) fun(*this, rowNr);
+      // find the other columns
+      //loop over children to get the table columns
+      // ppf("row %d:", rowNr);
+      // for (JsonObject child: children()) {
+      //   Variable childVariable = Variable(child);
+      //   ppf(" %s: %s", childVariable.id(), childVariable.valueString(rowNr));
+      //   //process each ...
+      // }
+      // ppf("\n");
+      rowNr++;
+    }
+  }
+
+  //extra methods
 
   unsigned8 linearToLogarithm(unsigned8 value) {
     if (value == 0) return 0;
@@ -408,7 +436,7 @@ public:
       }
 
       if (var["value"].is<JsonArray>()) {
-        JsonArray valueArray = var["value"].as<JsonArray>();
+        JsonArray valueArray = variable.valArray();
         //set the right value in the array (if array did not contain values yet, all values before rownr are set to false)
         bool notSame = true; //rowNr >= size
 
@@ -425,11 +453,11 @@ public:
         }
       }
       else {
-        ppf("setValue %s could not create value array\n", Variable(var).id());
+        ppf("setValue %s could not create value array\n", variable.id());
       }
     }
 
-    if (changed) callVarChangeFun(var, rowNr);
+    if (changed) callVarOnChange(var, rowNr);
     
     return var;
   }
@@ -498,7 +526,7 @@ public:
   // void varToValues(JsonObject var, JsonArray values);
 
   //sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
-  bool callVarChangeFun(JsonObject var, unsigned8 rowNr = UINT8_MAX, bool init = false);
+  bool callVarOnChange(JsonObject var, unsigned8 rowNr = UINT8_MAX, bool init = false);
 
 private:
   bool doShowObsolete = false;

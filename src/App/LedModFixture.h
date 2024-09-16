@@ -29,7 +29,7 @@ public:
         ui->setLabel(var, "On");
         return true;
       case onChange:
-        mdl->callVarChangeFun(mdl->findVar("bri"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+        mdl->callVarOnChange(mdl->findVar("bri"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
         return true;
       default: return false;
     }});

@@ -682,10 +682,10 @@ public:
           ui->setLabel(var, "Fixtures");
           ui->setComment(var, "Multiple parts");
           return true;
-        case onAddRow:
+        case onAdd:
           web->getResponseObject()["addRow"]["rowNr"] = rowNr;
           return true;
-        case onDeleteRow:
+        case onDelete:
           // web->getResponseObject()["addRow"]["rowNr"] = rowNr;
           return true;
         default: return false;

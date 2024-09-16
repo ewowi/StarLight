@@ -35,16 +35,16 @@ void SysModFiles::setup() {
       ui->setLabel(var, "Files");
       ui->setComment(var, "List of files");
       return true;
-    case onAddRow:
+    case onAdd:
       rowNr = fileList.size();
-      web->getResponseObject()["addRow"]["rowNr"] = rowNr;
+      web->getResponseObject()["onAdd"]["rowNr"] = rowNr;
       //add a row with all defaults
-      //tbd: File upload does not call onAddRow (bug?)
+      //tbd: File upload does not call onAdd (bug?)
       return true;
-    case onDeleteRow:
+    case onDelete:
       if (rowNr != UINT8_MAX && rowNr < fileList.size()) {
         const char * fileName = fileList[rowNr].name;
-        // ppf("fileTbl delRow %s[%d] = %s %s\n", Variable(var).id(), rowNr, Variable(var).valueString(), fileName);
+        // ppf("fileTbl onDelete %s[%d] = %s %s\n", Variable(var).id(), rowNr, Variable(var).valueString(), fileName);
         this->removeFiles(fileName, false);
 
         #ifdef STARBASE_USERMOD_LIVE

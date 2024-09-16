@@ -237,7 +237,7 @@ bool checkDash(JsonObject var) {
   return false;
 }
 
-bool SysModModel::callVarChangeFun(JsonObject var, unsigned8 rowNr, bool init) {
+bool SysModModel::callVarOnChange(JsonObject var, unsigned8 rowNr, bool init) {
   Variable variable = Variable(var);
   //not in SysModModel.h as ui->callVarFun cannot be used in SysModModel.h
 
@@ -248,55 +248,69 @@ bool SysModModel::callVarChangeFun(JsonObject var, unsigned8 rowNr, bool init) {
 
   //if var is bound by pointer, set the pointer value before calling onChange
   if (!var["p"].isNull()) {
-    JsonVariant value;
+    //pointer is an array if set by setValueRowNr, used for controls as each control has a seperate variable
     int pointer;
-    if (rowNr == UINT8_MAX) {
-      value = var["value"]; 
-      pointer = var["p"];
-    } else {
-      value = var["value"][rowNr];
+    if (var["p"].is<JsonArray>())
       pointer = var["p"][rowNr];
-    }
+    else
+      pointer = var["p"];
 
-    if (var["type"] == "select" || var["type"] == "checkbox" || var["type"] == "range") {
-      uint8_t *valuePointer = (uint8_t *)pointer;
-      if (valuePointer != nullptr) {
-        *valuePointer = value;
-        ppf("pointer set8 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", variable.id(), *valuePointer, valuePointer, rowNr, variable.valueString(), pointer);
+    if (pointer != 0) {
+
+      if (var["value"].is<JsonArray>()) {
+        if (rowNr != UINT8_MAX) {
+          if (var["type"] == "select" || var["type"] == "checkbox" || var["type"] == "range") {
+            std::vector<uint8_t> *valuePointer = (std::vector<uint8_t> *)pointer;
+            while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT8_MAX); //create vector space if needed...
+            (*valuePointer)[rowNr] = var["value"][rowNr]; //value should be an uint16_t
+          }
+          else if (var["type"] == "number") {
+            std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
+            while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT16_MAX); //create vector space if needed...
+            (*valuePointer)[rowNr] = var["value"][rowNr]; //value should be an uint16_t
+          }
+          else if (var["type"] == "coord3D") {
+            std::vector<Coord3D> *valuePointer = (std::vector<Coord3D> *)pointer;
+            while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back({-1,-1,-1}); //create vector space if needed...
+            (*valuePointer)[rowNr] = var["value"][rowNr]; //value should be an uint16_t
+          }
+          else
+            print->printJson("dev callVarOnChange type not supported yet", var);
+
+          ppf("callVarOnChange set pointer to vector %s[%d]: v:%s p:%d\n", variable.id(), rowNr, variable.valueString(), pointer);
+        } else 
+          print->printJson("dev value is array but no rowNr\n", var);
+      } else {
+        if (var["type"] == "select" || var["type"] == "checkbox" || var["type"] == "range") {
+          uint8_t *valuePointer = (uint8_t *)pointer;
+          *valuePointer = var["value"];
+        }
+        else if (var["type"] == "number") {
+          uint16_t *valuePointer = (uint16_t *)pointer;
+          *valuePointer = var["value"];
+        }
+        else if (var["type"] == "coord3D") {
+          Coord3D *valuePointer = (Coord3D *)pointer;
+          *valuePointer = var["value"];
+        }
+
+        ppf("callVarOnChange set pointer %s[%d]: v:%s p:%d\n", variable.id(), rowNr, variable.valueString(), pointer);
       }
-      else
-        ppf("dev pointer set8 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", variable.id(), *valuePointer, valuePointer, rowNr, variable.valueString(), pointer);
-    }
-    else if (var["type"] == "number") {
-      uint16_t *valuePointer = (uint16_t *)pointer;
-      if (valuePointer != nullptr) {
-        *valuePointer = value;
-        ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", variable.id(), *valuePointer, valuePointer, rowNr, variable.valueString(), pointer);
-      }
-      else
-        ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", variable.id(), *valuePointer, valuePointer, rowNr, variable.valueString(), pointer);
-    }
-    // else if (var["type"] == "text") {
-    //   const char *valuePointer = (const char *)pointer;
-    //   if (valuePointer != nullptr) {
-    //     *valuePointer = value;
-    //     ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
-    //   }
-    //   else
-    //     ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
-    // }
-    else if (var["type"] == "coord3D") {
-      Coord3D *valuePointer = (Coord3D *)pointer;
-      if (valuePointer != nullptr) {
-        *valuePointer = value;
-        // ppf("pointer set coord3D %s: v:%d,%d,%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), (*valuePointer).x, (*valuePointer).y, (*valuePointer).z, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
-      }
-      else
-        ppf("dev pointer set coord3D %s: v:%d,%d,%d (p:%p) (r:%d v:%s p:%d)\n", variable.id(), (*valuePointer).x, (*valuePointer).y, (*valuePointer).z, valuePointer, rowNr, variable.valueString(), pointer);
+
+      // else if (var["type"] == "text") {
+      //   const char *valuePointer = (const char *)pointer;
+      //   if (valuePointer != nullptr) {
+      //     *valuePointer = value;
+      //     ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+      //   }
+      //   else
+      //     ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+      // }
     }
     else
-      ppf("dev pointer of type %s not supported yet\n", var["type"].as<String>().c_str());
-  }
+      // ppf("dev pointer of type %s is 0\n", var["type"].as<String>().c_str());
+      print->printJson("dev pointer is 0", var);
+  } //pointer
 
   return ui->callVarFun(var, rowNr, onChange);
 
