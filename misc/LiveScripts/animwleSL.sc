@@ -30,8 +30,7 @@ void beforeRender()
 //  float jj=triangle(time(0.2));
 //     dp(2.4*(jj-0.5));
 //§§float g=2.4;
- //§ t1 = g*(triangle(time(0.2)) - 0.5)
-                                        ;
+ //§ t1 = g*(triangle(time(0.2)) - 0.5);
 //dp(t1);
   t1 = (triangle(time(0.2)) - 0.5)*2.4 ;
 //dp(t1);
@@ -81,7 +80,7 @@ void render2D(int x1, int y1)
 
 void setup()
 {
-  clear();
+  //clear();
   cR = -0.94299;
   cI = 0.3162;
   int h = 1 ;
