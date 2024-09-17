@@ -270,7 +270,7 @@ bool SysModModel::callVarOnChange(JsonObject var, unsigned8 rowNr, bool init) {
           if (var["type"] == "select" || var["type"] == "checkbox" || var["type"] == "range") {
             std::vector<uint8_t> *valuePointer = (std::vector<uint8_t> *)pointer;
             while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT8_MAX); //create vector space if needed...
-            ppf("%s[%d]:%s (%d - %d - %s)\n", variable.id(), rowNr, variable.valueString().c_str().c_str(), pointer, (*valuePointer).size(), var["p"].as<String>().c_str());
+            ppf("%s[%d]:%s (%d - %d - %s)\n", variable.id(), rowNr, variable.valueString().c_str(), pointer, (*valuePointer).size(), var["p"].as<String>().c_str());
             (*valuePointer)[rowNr] = value; //value should be an uint16_t
           }
           else if (var["type"] == "number") {
