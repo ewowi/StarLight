@@ -19,6 +19,8 @@ class UserModArtNet:public SysModule {
 public:
 
   IPAddress targetIp; //tbd: targetip also configurable from fixtures and artnet instead of pin output
+  std::vector<uint16_t> hardware_outputs = {1024,1024,1024,1024,1024,1024,1024,1024};
+  std::vector<uint16_t> hardware_outputs_universe_start = { 0,7,14,21,28,35,42,49 }; //7*170 = 1190 leds => last universe not completely used
 
   UserModArtNet() :SysModule("ArtNet") {
     isEnabled = false; //default off
@@ -30,107 +32,129 @@ public:
 
     parentVar = ui->initUserMod(parentVar, name, 6100);
 
-    ui->initIP(parentVar, "artInst", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "artIP", 11, 0, 255, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI: {
-        ui->setLabel(var, "Instance");
-        ui->setComment(var, "Instance to send data");
-        JsonArray options = ui->setOptions(var);
-        //keyValueOption: add key (ip[3] and value instance name/ip)
-        JsonArray keyValueOption = options.add<JsonArray>();
-        keyValueOption.add(0);
-        keyValueOption.add("no sync");
-        for (InstanceInfo &instance : instances->instances) {
-          if (instance.ip != WiFi.localIP()) {
-            char option[64] = { 0 };
-            strncpy(option, instance.name, sizeof(option)-1);
-            strncat(option, " ", sizeof(option)-1);
-            strncat(option, instance.ip.toString().c_str(), sizeof(option)-1);
-            keyValueOption = options.add<JsonArray>();
-            keyValueOption.add(instance.ip[3]);
-            keyValueOption.add(option);
-          }
-        }
+        ui->setLabel(var, "Target IP");
+        ui->setComment(var, "IP to send data to");
         return true; }
       case onChange: {
-        uint8_t value = var["value"]; //ip[3] chosen
-        for (InstanceInfo &instance : instances->instances) {
-          if (instance.ip[3] == value) {
-            targetIp = instance.ip;
-            ppf("Start ArtNet to %s\n", targetIp.toString().c_str());
-          }
-        }
+        uint8_t value = var["value"];
+        targetIp[3] = value;
         return true; }
       default: return false;
-    }}); //artInst
+    }});
+
+    JsonObject tableVar = ui->initTable(parentVar, "anTbl", nullptr, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onUI:
+        ui->setLabel(var, "Outputs");
+        return true;
+      case onAdd:
+        web->getResponseObject()["onAdd"]["rowNr"] = rowNr;
+        return true;
+      case onDelete:
+        // web->getResponseObject()["onDelete"]["rowNr"] = rowNr;
+        return true;
+      default: return false;
+    }});
+
+    ui->initNumber(tableVar, "anStart", &hardware_outputs_universe_start, 0, UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onUI:
+        ui->setLabel(var, "Start");
+        ui->setComment(var, "Start universe");
+        return true;
+      default: return false;
+    }});
+    ui->initNumber(tableVar, "anSize", &hardware_outputs, 0, UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onUI:
+        ui->setLabel(var, "Size");
+        ui->setComment(var, "# pixels");
+        return true;
+      default: return false;
+    }});
+
   }
 
-  void loop() {
+  void loop20ms() {
     // SysModule::loop();
 
     if(!mdls->isConnected) return;
+
+    targetIp[0] = WiFi.localIP()[0];
+    targetIp[1] = WiFi.localIP()[1];
+    targetIp[2] = WiFi.localIP()[2];
 
     if(!targetIp) return;
 
     if(!eff->newFrame) return;
 
+    uint8_t bri = mdl->linearToLogarithm(fix->bri);
+
     // calculate the number of UDP packets we need to send
-    bool isRGBW = false;
 
-    const size_t channelCount = eff->fixture.nrOfLeds * (isRGBW?4:3); // 1 channel for every R,G,B,(W?) value
-    const size_t ARTNET_CHANNELS_PER_PACKET = isRGBW?512:510; // 512/4=128 RGBW LEDs, 510/3=170 RGB LEDs
-    const size_t packetCount = ((channelCount-1)/ARTNET_CHANNELS_PER_PACKET)+1;
+    byte packet_buffer[ART_NET_HEADER_SIZE + 6 + 512];
+    memcpy(packet_buffer, ART_NET_HEADER, 12); // copy in the Art-Net header.
 
-    stackUnsigned32 channel = 0; 
-    size_t bufferOffset = 0;
+    AsyncUDP artnetudp;// AsyncUDP so we can just blast packets.
 
+    const uint_fast16_t ARTNET_CHANNELS_PER_PACKET = 510; // 512/4=128 RGBW LEDs, 510/3=170 RGB LEDs
+
+    uint_fast16_t bufferOffset = 0;
+    uint_fast16_t hardware_output_universe = 0;
+    
     sequenceNumber++;
 
-    WiFiUDP ddpUdp;
-
-    for (size_t currentPacket = 0; currentPacket < packetCount; currentPacket++) {
-
-      if (sequenceNumber > 255) sequenceNumber = 0;
-
-      if (!ddpUdp.beginPacket(targetIp, ARTNET_DEFAULT_PORT)) {
-        ppf("Art-Net WiFiUDP.beginPacket returned an error\n");
-        return; // borked
+    if (sequenceNumber == 0) sequenceNumber = 1; // just in case, as 0 is considered "Sequence not in use"
+    if (sequenceNumber > 255) sequenceNumber = 1;
+    
+    for (uint_fast16_t hardware_output = 0; hardware_output < hardware_outputs.size(); hardware_output++) { //loop over all outputs
+      
+      if (bufferOffset > eff->fixture.nrOfLeds * sizeof(CRGB)) {
+        // This stop is reached if we don't have enough pixels for the defined Art-Net output.
+        return; // stop when we hit end of LEDs
       }
 
-      size_t packetSize = ARTNET_CHANNELS_PER_PACKET;
+      hardware_output_universe = hardware_outputs_universe_start[hardware_output];
 
-      if (currentPacket == (packetCount - 1U)) {
-        // last packet
-        if (channelCount % ARTNET_CHANNELS_PER_PACKET) {
-          packetSize = channelCount % ARTNET_CHANNELS_PER_PACKET;
+      uint_fast16_t channels_remaining = hardware_outputs[hardware_output] * sizeof(CRGB);
+
+      while (channels_remaining > 0) {
+        
+        uint_fast16_t packetSize = ARTNET_CHANNELS_PER_PACKET;
+
+        if (channels_remaining < ARTNET_CHANNELS_PER_PACKET) {
+          packetSize = channels_remaining;
+          channels_remaining = 0;
+        } else {
+          channels_remaining -= packetSize;
         }
-      }
 
-      byte header_buffer[ART_NET_HEADER_SIZE];
-      memcpy_P(header_buffer, ART_NET_HEADER, ART_NET_HEADER_SIZE);
-      ddpUdp.write(header_buffer, ART_NET_HEADER_SIZE); // This doesn't change. Hard coded ID, OpCode, and protocol version.
-      ddpUdp.write(sequenceNumber & 0xFF); // sequence number. 1..255
-      ddpUdp.write(0x00); // physical - more an FYI, not really used for anything. 0..3
-      ddpUdp.write((currentPacket) & 0xFF); // Universe LSB. 1 full packet == 1 full universe, so just use current packet number.
-      ddpUdp.write(0x00); // Universe MSB, unused.
-      ddpUdp.write(0xFF & (packetSize >> 8)); // 16-bit length of channel data, MSB
-      ddpUdp.write(0xFF & (packetSize     )); // 16-bit length of channel data, LSB
+        // set the parts of the Art-Net packet header that change:
+        packet_buffer[12] = sequenceNumber;
+        packet_buffer[14] = hardware_output_universe;
+        packet_buffer[16] = packetSize >> 8;
+        packet_buffer[17] = packetSize;
 
-      for (size_t i = 0; i < eff->fixture.nrOfLeds; i++) {
-        CRGB pixel = eff->fixture.ledsP[i];
-        ddpUdp.write(scale8(pixel.r, fix->bri)); // R
-        ddpUdp.write(scale8(pixel.g, fix->bri)); // G
-        ddpUdp.write(scale8(pixel.b, fix->bri)); // B
-        // if (isRGBW) ddpUdp.write(scale8(buffer[bufferOffset++], fix->bri)); // W
-      }
+        // bulk copy the buffer range to the packet buffer after the header 
+        memcpy(packet_buffer+18, (&eff->fixture.ledsP[0].r)+bufferOffset, packetSize); //start from the first byte of ledsP[0]
 
-      if (!ddpUdp.endPacket()) {
-        ppf("Art-Net WiFiUDP.endPacket returned an error\n");
-        return; // borked
+        for (int i = 18; i < packetSize+18; i+=sizeof(CRGB)) {
+          // set brightness all at once - seems slightly faster than scale8()?
+          // for some reason, doing 3/4 at a time is 200 micros faster than 1 at a time.
+          packet_buffer[i] = (packet_buffer[i] * bri) >> 8;
+          packet_buffer[i+1] = (packet_buffer[i+1] * bri) >> 8;
+          packet_buffer[i+2] = (packet_buffer[i+2] * bri) >> 8; 
+        }
+
+        bufferOffset += packetSize;
+        
+        if (!artnetudp.writeTo(packet_buffer, packetSize+18, targetIp, ARTNET_DEFAULT_PORT)) {
+          ppf("🐛");
+          return; // borked
+        }
+        hardware_output_universe++;
       }
-      channel += packetSize;
     }
-
-  }
+  } //loop
 
   private:
     size_t sequenceNumber = 0;

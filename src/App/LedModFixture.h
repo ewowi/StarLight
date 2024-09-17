@@ -42,7 +42,7 @@ public:
         return true;
       case onChange: {
         //bri set by StarMod during onChange
-        stackUnsigned8 result = mdl->getValue("on").as<bool>()?Variable(var).linearToLogarithm(bri):0;
+        stackUnsigned8 result = mdl->getValue("on").as<bool>()?mdl->linearToLogarithm(bri):0;
 
         #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
           eff->driver.setBrightness(result * eff->fixture.setMaxPowerBrightness / 256);

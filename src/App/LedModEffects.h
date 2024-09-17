@@ -211,7 +211,7 @@ public:
 
         //create a new leds instance if a new row is created
         if (rowNr >= fixture.layers.size()) {
-          ppf("layers fx[%d] onChange %d %s\n", rowNr, fixture.layers.size(), Variable(mdl->findVar("fx")).valueString());
+          ppf("layers fx[%d] onChange %d %s\n", rowNr, fixture.layers.size(), Variable(mdl->findVar("fx")).valueString().c_str());
           ppf("fx creating new LedsLayer instance %d\n", rowNr);
           LedsLayer *leds = new LedsLayer(fixture);
           fixture.layers.push_back(leds);
@@ -833,7 +833,7 @@ public:
               driver.initled((uint8_t*) fixture.ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
               //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
             #endif
-            mdl->callVarOnChange(mdl->findVar("bri"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+            mdl->callVarOnChange(fix->bri, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
             // driver.setBrightness(fixture.setMaxPowerBrightness / 256); //not brighter then the set limit (WIP)
           }
         #endif
