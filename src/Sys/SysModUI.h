@@ -217,8 +217,8 @@ public:
       if (mdl->setValueRowNr == UINT8_MAX)
         var["p"] = pointer; //store pointer!
       else
-        var["p"][mdl->setValueRowNr] = pointer; //store pointer in array! Needed??? Check controls!!!!
-      ppf("initValue pointer to vector stored %s: %s\n", variable.id(), (void *)(var["p"].as<String>().c_str()));
+        var["p"][mdl->setValueRowNr] = pointer; //store pointer in array!
+      ppf("initValue pointer stored %s: %s\n", variable.id(), (void *)(var["p"].as<String>().c_str()));
     }
 
     if (min) var["min"] = min;
@@ -266,7 +266,7 @@ public:
         }
 
         if (onChangeExists)
-          ppf("initValue onChange init %s[x] <- %s\n", variable.id(), variable.valueString());
+          ppf("initValue onChange init %s[x] <- %s\n", variable.id(), variable.valueString().c_str());
       }
     }
     return false;
@@ -335,7 +335,7 @@ public:
             else {
               ppf(" (");
               if (funType == onChange) ppf("%s ->", var["oldValue"].as<String>().c_str());
-              ppf("%s)\n", variable.valueString());
+              ppf("%s)\n", variable.valueString().c_str());
             }
           }
         }

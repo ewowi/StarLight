@@ -261,22 +261,6 @@ class Variable {
 
   //extra methods
 
-  unsigned8 linearToLogarithm(unsigned8 value) {
-    if (value == 0) return 0;
-
-    float minp = var["min"].isNull()?var["min"]:0;
-    float maxp = var["max"].isNull()?var["max"]:255;
-
-    // The result should be between 100 an 10000000
-    float minv = minp?log(minp):0;
-    float maxv = log(maxp);
-
-    // calculate adjustment factor
-    float scale = (maxv-minv) / (maxp-minp);
-
-    return round(exp(minv + scale*((float)value-minp)));
-  }
-
   void preDetails() {
     for (JsonObject varChild: children()) { //for all controls
       if (Variable(varChild).order() >= 0) { //post init
@@ -419,7 +403,7 @@ public:
         else {
           //only print if ! read only
           if (!variable.readOnly())
-            ppf("setValue changed %s %s -> %s\n", variable.id(), var["oldValue"].as<String>().c_str(), variable.valueString());
+            ppf("setValue changed %s %s -> %s\n", variable.id(), var["oldValue"].as<String>().c_str(), variable.valueString().c_str());
           // else
           //   ppf("setValue changed %s %s\n", Variable(var).id(), var["value"].as<String>().c_str());
           web->addResponse(var["id"], "value", var["value"]);
@@ -509,7 +493,7 @@ public:
       else if (valueArray.size())
         return valueArray[0]; //return the first element
       else {
-        ppf("dev getValue no array or rownr wrong %s %s %d\n", variable.id(), variable.valueString(), rowNr);
+        ppf("dev getValue no array or rownr wrong %s %s %d\n", variable.id(), variable.valueString().c_str(), rowNr);
         return JsonVariant(); // return null
       }
     }
@@ -527,6 +511,22 @@ public:
 
   //sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
   bool callVarOnChange(JsonObject var, unsigned8 rowNr = UINT8_MAX, bool init = false);
+
+  unsigned8 linearToLogarithm(unsigned8 value, uint8_t minp = 0, uint8_t maxp = UINT8_MAX) {
+    if (value == 0) return 0;
+
+    // float minp = var["min"].isNull()?var["min"]:0;
+    // float maxp = var["max"].isNull()?var["max"]:255;
+
+    // The result should be between 100 an 10000000
+    float minv = minp?log(minp):0;
+    float maxv = log(maxp);
+
+    // calculate adjustment factor
+    float scale = (maxv-minv) / (maxp-minp);
+
+    return round(exp(minv + scale*((float)value-minp)));
+  }
 
 private:
   bool doShowObsolete = false;

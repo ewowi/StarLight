@@ -44,7 +44,7 @@ void SysModFiles::setup() {
     case onDelete:
       if (rowNr != UINT8_MAX && rowNr < fileList.size()) {
         const char * fileName = fileList[rowNr].name;
-        // ppf("fileTbl onDelete %s[%d] = %s %s\n", Variable(var).id(), rowNr, Variable(var).valueString(), fileName);
+        // ppf("fileTbl onDelete %s[%d] = %s %s\n", Variable(var).id(), rowNr, Variable(var).valueString().c_str(), fileName);
         this->removeFiles(fileName, false);
 
         #ifdef STARBASE_USERMOD_LIVE

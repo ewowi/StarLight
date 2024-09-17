@@ -27,7 +27,7 @@ void SysModules::setup() {
   for (JsonObject childVar: Variable(mdl->findVar("mdlTbl")).children()) {
     Variable childVariable = Variable(childVar);
     if (!childVar["value"].isNull() && childVariable.valArray().size() != modules.size()) {
-      ppf("mdlTbl clear (%s %s) %d %d\n", childVariable.id(), childVariable.valueString(), modules.size(), childVariable.valArray().size());
+      ppf("mdlTbl clear (%s %s) %d %d\n", childVariable.id(), childVariable.valueString().c_str(), modules.size(), childVariable.valArray().size());
       childVar.remove("value");
     }
   }

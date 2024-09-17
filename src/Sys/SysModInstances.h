@@ -256,7 +256,7 @@ public:
     //find dash variables and add them to the table
     mdl->findVars("dash", true, [tableVar, this](JsonObject var) { //findFun
 
-      ppf("dash %s %s found\n", Variable(var).id(), Variable(var).valueString());
+      ppf("dash %s %s found\n", Variable(var).id(), Variable(var).valueString().c_str());
 
       char columnVarID[32] = "ins";
       strcat(columnVarID, var["id"]);
@@ -561,8 +561,9 @@ public:
       for (JsonObject childVar: Variable(mdl->findVar("insTbl")).children())
         ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //no rowNr so all rows updated
 
+      //tbd: pubsub mechanism
       ui->callVarFun("ddpInst", UINT8_MAX, onUI); //rebuild options
-      ui->callVarFun("artInst", UINT8_MAX, onUI); //rebuild options
+      // ui->callVarFun("artInst", UINT8_MAX, onUI); //rebuild options
     }
   }
 
@@ -808,9 +809,10 @@ public:
 
     if (!instanceFound) {
       ppf("insTbl new instance %s\n", messageIP.toString().c_str());
-      
+
+      //tbd: pubsub mechanism
       ui->callVarFun("ddpInst", UINT8_MAX, onUI); //rebuild options
-      ui->callVarFun("artInst", UINT8_MAX, onUI); //rebuild options
+      // ui->callVarFun("artInst", UINT8_MAX, onUI); //rebuild options
 
       // ui->processOnUI("insTbl");
       //run though it sorted to find the right rowNr
