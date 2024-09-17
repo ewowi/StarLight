@@ -36,14 +36,14 @@ void SysModFiles::setup() {
       ui->setComment(var, "List of files");
       return true;
     case onAdd:
-      rowNr = fileList.size();
+      rowNr = fileNames.size();
       web->getResponseObject()["onAdd"]["rowNr"] = rowNr;
       //add a row with all defaults
       //tbd: File upload does not call onAdd (bug?)
       return true;
     case onDelete:
-      if (rowNr != UINT8_MAX && rowNr < fileList.size()) {
-        const char * fileName = fileList[rowNr].name;
+      if (rowNr != UINT8_MAX && rowNr < fileNames.size()) {
+        const char * fileName = fileNames[rowNr].s;
         // ppf("fileTbl onDelete %s[%d] = %s %s\n", Variable(var).id(), rowNr, Variable(var).valueString().c_str(), fileName);
         this->removeFiles(fileName, false);
 
@@ -63,22 +63,14 @@ void SysModFiles::setup() {
     default: return false;
   }});
 
-  ui->initText(tableVar, "flName", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case onSetValue:
-      for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++)
-        mdl->setValue(var, JsonString(fileList[rowNr].name, JsonString::Copied), rowNr);
-      return true;
+  ui->initTextVector(tableVar, "flName", &fileNames, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Name");
       return true;
     default: return false;
   }});
 
-  ui->initNumber(tableVar, "flSize", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case onSetValue:
-      for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++)
-        mdl->setValue(var, fileList[rowNr].size, rowNr);
-      return true;
+  ui->initNumber(tableVar, "flSize", &fileSizes, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Size (B)");
       return true;
@@ -99,22 +91,15 @@ void SysModFiles::setup() {
   //   default: return false;
   // }});
 
-  ui->initNumber(tableVar, "flTime", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case onSetValue:
-      for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++)
-        mdl->setValue(var, fileList[rowNr].time, rowNr);
-      return true;
+  ui->initNumber(tableVar, "flTime", &fileTimes, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Time");
       return true;
     default: return false;
   }});
 
-  ui->initFileEdit(tableVar, "flEdit", nullptr, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case onSetValue:
-      for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++)
-        mdl->setValue(var, JsonString(fileList[rowNr].name, JsonString::Copied), rowNr);
-      return true;
+  //readonly = true, but button must be pressable (done in index.js)
+  ui->initFileEditVector(tableVar, "flEdit", &fileNames, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Edit");
       return true;
@@ -149,22 +134,35 @@ void SysModFiles::loop20ms() {
     File file = root.openNextFile();
 
     //repopulate file list
-    fileList.clear();
+    fileNames.clear();
+    fileSizes.clear();
+    fileTimes.clear();
+    uint8_t rowNr = 0;
     while (file) {
-      FileDetails details;
-      strcpy(details.name, file.name());
-      details.size = file.size();
-      details.time = file.getLastWrite(); // - millis()/1000; if (details.time < 0) details.time = 0;
-      fileList.push_back(details);
+
+      while (rowNr >= fileNames.size()) fileNames.push_back(VectorString()); //create vector space if needed...
+      strcpy(fileNames[rowNr].s, file.name());
+      while (rowNr >= fileSizes.size()) fileSizes.push_back(UINT8_MAX); //create vector space if needed...
+      fileSizes[rowNr] = file.size(); 
+      while (rowNr >= fileTimes.size()) fileTimes.push_back(UINT8_MAX); //create vector space if needed...
+      fileTimes[rowNr] = file.getLastWrite(); // - millis()/1000; if (details.time < 0) details.time = 0;
+
       file.close();
       file = root.openNextFile();
+      rowNr++;
     }
     root.close();
 
     mdl->setValue("drsize", files->usedBytes());
 
-    for (JsonObject childVar: Variable(mdl->findVar("fileTbl")).children())
-      ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
+    uint8_t rowNrL = 0;
+    for (VectorString name: fileNames) {
+      mdl->setValue("flName", JsonString(name.s, JsonString::Copied), rowNrL);
+      mdl->setValue("flEdit", JsonString(name.s, JsonString::Copied), rowNrL);
+      rowNrL++;
+    }
+    rowNrL = 0; for (uint16_t size: fileSizes) mdl->setValue("flSize", size, rowNrL++);
+    rowNrL = 0; for (uint16_t time: fileTimes) mdl->setValue("flTime", time, rowNrL++);
   }
 }
 

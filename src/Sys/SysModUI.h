@@ -73,6 +73,11 @@ public:
     return initVarAndValue<const char *>(parent, id, "text", value, 0, max, readOnly, varFun);
   }
 
+  //vector of text
+  JsonObject initTextVector(JsonObject parent, const char * id, std::vector<VectorString> *values, unsigned16 max = 32, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndValueVector(parent, id, "text", values, 0, max, readOnly, varFun);
+  }
+
   JsonObject initFileUpload(JsonObject parent, const char * id, const char * value = nullptr, unsigned16 max = 32, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndValue<const char *>(parent, id, "fileUpload", value, 0, max, readOnly, varFun);
   }
@@ -157,6 +162,11 @@ public:
     return initVarAndValue<const char *>(parent, id, "fileEdit", value, 0, 0, readOnly, varFun);
   }
 
+  //vector of fileEdit
+  JsonObject initFileEditVector(JsonObject parent, const char * id, std::vector<VectorString> *values, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndValueVector(parent, id, "fileEdit", values, 0, 0, readOnly, varFun);
+  }
+
   JsonObject initURL(JsonObject parent, const char * id, const char * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndValue<const char *>(parent, id, "url", value, 0, 0, readOnly, varFun);
   }
@@ -197,8 +207,28 @@ public:
 
     if (initValue(var, min, max, (int)values)) {
       uint8_t rowNrL = 0;
-      for (uint16_t value: *values) { //loop over vector
+      for (Type value: *values) { //loop over vector
         mdl->setValue(var, value, rowNrL); //does onChange if needed, if var in table, update the table row
+        rowNrL++;
+      }
+    }
+
+    return var;
+  }
+
+  //initVarAndValue using vector of values .  WIP!!!
+  JsonObject initVarAndValueVector(JsonObject parent, const char * id, const char * type, std::vector<VectorString> *values, int min = 0, int max = 255, bool readOnly = true, VarFun varFun = nullptr) {
+    JsonObject var = initVar(parent, id, type, readOnly, varFun);
+
+    if (!var["value"].isNull()) {
+      print->printJson("Clearing the vector", var);
+      (*values).clear(); // if values already then rebuild the vector with it
+    }
+
+    if (initValue(var, min, max, (int)values)) {
+      uint8_t rowNrL = 0;
+      for (VectorString value: *values) { //loop over vector
+        mdl->setValue(var, JsonString(value.s, JsonString::Copied), rowNrL); //does onChange if needed, if var in table, update the table row
         rowNrL++;
       }
     }

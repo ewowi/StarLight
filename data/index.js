@@ -452,7 +452,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
 
       varNode = cE("input");
       varNode.type = "button";
-      varNode.disabled = variable.ro;
+      // varNode.disabled = variable.ro; //fileEdit should always be possible
       varNode.value = "🔍"; //initial label, button.value is the label shown on the button
       varNode.addEventListener('click', (event) => {
         let url = `http://${window.location.hostname}/file/`;

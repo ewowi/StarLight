@@ -54,6 +54,11 @@
 
 #include <vector>
 
+//used for init vars with vectors (vector<char[32]> not allowed)
+struct VectorString {
+  char s[32];
+};
+
 class SysModule {
 
 public:

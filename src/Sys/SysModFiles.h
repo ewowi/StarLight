@@ -14,18 +14,15 @@
 #include "SysModule.h"
 #include "LittleFS.h"
 
-struct FileDetails {
-  char name[32];
-  size_t size;
-  time_t time;
-};
-
 class SysModFiles: public SysModule {
 
 public:
 
-  std::vector<FileDetails> fileList;
   bool filesChanged = true; //init fileTbl;
+
+  std::vector<VectorString> fileNames;
+  std::vector<uint16_t> fileSizes;
+  std::vector<uint16_t> fileTimes;
 
   SysModFiles();
   void setup();

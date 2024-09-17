@@ -271,22 +271,22 @@ bool SysModModel::callVarOnChange(JsonObject var, unsigned8 rowNr, bool init) {
             std::vector<uint8_t> *valuePointer = (std::vector<uint8_t> *)pointer;
             while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT8_MAX); //create vector space if needed...
             ppf("%s[%d]:%s (%d - %d - %s)\n", variable.id(), rowNr, variable.valueString().c_str(), pointer, (*valuePointer).size(), var["p"].as<String>().c_str());
-            (*valuePointer)[rowNr] = value; //value should be an uint16_t
+            (*valuePointer)[rowNr] = value;
           }
           else if (var["type"] == "number") {
             std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
             while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT16_MAX); //create vector space if needed...
-            (*valuePointer)[rowNr] = value; //value should be an uint16_t
+            (*valuePointer)[rowNr] = value;
           }
           else if (var["type"] == "coord3D") {
             std::vector<Coord3D> *valuePointer = (std::vector<Coord3D> *)pointer;
             while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back({-1,-1,-1}); //create vector space if needed...
-            (*valuePointer)[rowNr] = var["value"][rowNr]; //value should be an uint16_t
+            (*valuePointer)[rowNr] = value;
           }
           else
             print->printJson("dev callVarOnChange type not supported yet", var);
 
-          ppf("callVarOnChange set pointer to vector %s[%d]: v:%s p:%d\n", variable.id(), rowNr, variable.valueString().c_str(), pointer);
+          ppf("callVarOnChange set pointer to vector %s[%d]: v:%s p:%d\n", variable.id(), rowNr, value.as<String>().c_str(), pointer);
         } else 
           print->printJson("dev value is array but no rowNr\n", var);
       } else {
