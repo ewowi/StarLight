@@ -38,7 +38,7 @@ public:
   void loop20ms();
 
   void allocatePin(unsigned8 pinNr, const char * owner, const char * details);
-  void deallocatePin(unsigned8 pinNr, const char * owner);
+  void deallocatePin(unsigned8 pinNr = UINT8_MAX, const char * owner = nullptr);
   bool isOwner(unsigned8 pinNr, const char * owner) {
     return strcmp(pinObjects[pinNr].owner, owner) == 0;
   }

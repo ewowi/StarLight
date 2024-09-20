@@ -23,6 +23,7 @@ public:
   void setup();
 
   void loop1s();
+  void loop10s();
 
   void handleConnection();
   void initConnection();
@@ -30,7 +31,8 @@ public:
   void handleAP();
   void initAP();
   void stopAP();
-  
+  bool initEthernet();
+
 private:
   bool apActive = false;
   unsigned32 lastReconnectAttempt = 0;
@@ -38,6 +40,9 @@ private:
   bool isConfirmedConnection = false;
   DNSServer dnsServer;
   byte stacO = 0; //stationCount
+
+  bool successfullyConfiguredEthernet = false; //currently only one call to ETH.begin is possible, wether successful or not: reboot needed for other attempt
+
 };
   
 extern SysModNetwork *net;

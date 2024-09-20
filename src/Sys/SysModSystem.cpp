@@ -238,10 +238,7 @@ void SysModSystem::loop10s() {
   }
 
   //heartbeat
-  if (millis() < 60000)
-    ppf("❤️ %s\n", WiFi.localIP().toString().c_str()); // show IP the first minute
-  else
-    ppf("❤️");
+  ppf("❤️");
 }
 
 //replace code by sentence as soon it occurs, so we know what will happen and what not

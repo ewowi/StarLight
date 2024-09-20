@@ -274,22 +274,20 @@ class Variable {
 
   void postDetails(uint8_t rowNr) {
 
-    if (rowNr != UINT8_MAX) 
-    {
+    ppf("varPostDetails pre ");
+    print->printVar(var);
+    ppf("\n");
 
-      ppf("varPostDetails pre ");
-      print->printVar(var);
-      ppf("\n");
-
-      //check if post init added: parent is already >=0
-      if (order() >= 0) {
-        for (JsonArray::iterator childVarIt=children().begin(); childVarIt!=children().end(); ++childVarIt) { //use iterator to make .remove work!!!
-        // for (JsonObject &childVarIt: children) { //use iterator to make .remove work!!!
-          JsonObject childVar = *childVarIt;
-          Variable childVariable = Variable(childVar);
-          JsonArray valArray = childVariable.valArray();
-          if (!valArray.isNull())
-          {
+    //check if post init added: parent is already >=0
+    if (order() >= 0) {
+      for (JsonArray::iterator childVarIt=children().begin(); childVarIt!=children().end(); ++childVarIt) { //use iterator to make .remove work!!!
+      // for (JsonObject &childVarIt: children) { //use iterator to make .remove work!!!
+        JsonObject childVar = *childVarIt;
+        Variable childVariable = Variable(childVar);
+        JsonArray valArray = childVariable.valArray();
+        if (!valArray.isNull())
+        {
+          if (rowNr != UINT8_MAX) {
             if (childVariable.order() < 0) { //if not updated
               valArray[rowNr] = (char*)0; // set element in valArray to 0
 
@@ -309,20 +307,27 @@ class Variable {
               ppf("remove allnulls %s\n", childVariable.id());
               children().remove(childVarIt);
             }
+            web->addResponse("details", "rowNr", rowNr);
           }
-          else {
-            print->printJson("remove non valArray", childVar);
+          else
+            print->printJson("dev array but not rowNr", var);
+        }
+        else {
+          if (childVariable.order() < 0) { //if not updated
+            // childVar["value"] = (char*)0;
+            ppf("varPostDetails %s.%s <- null\n", id(), childVariable.id());
+              // setValue(var, -99, rowNr); //set value -99
+            // childVariable.order(-childVariable.order());
+            print->printJson("remove", childVar);
             children().remove(childVarIt);
           }
-
         }
-      } //if new added
-      ppf("varPostDetails post ");
-      print->printVar(var);
-      ppf("\n");
 
-      web->addResponse("details", "rowNr", rowNr);
-    }
+      }
+    } //if new added
+    ppf("varPostDetails post ");
+    print->printVar(var);
+    ppf("\n");
 
     //post update details
     web->addResponse("details", "var", var);

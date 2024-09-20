@@ -16,6 +16,10 @@
 #include "SysModUI.h"
 #include "SysModModel.h"
 #include "User/UserModMDNS.h"
+#include "SysModPins.h"
+
+#include <ETH.h>
+
 
 SysModNetwork::SysModNetwork() :SysModule("Network") {};
 
@@ -51,6 +55,111 @@ void SysModNetwork::setup() {
     default: return false;
   }});
 
+  ui->initText(parentVar, "rssi", nullptr, 32, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    case onUI:
+      ui->setLabel(var, "Wifi signal");
+      return true;
+    default: return false;
+  }});
+
+  ui->initSelect(parentVar, "ethernet", 0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    case onUI: {
+      JsonArray options = ui->setOptions(var);
+      options.add("None");
+      options.add("Manual");
+      options.add("Olimex ESP32 Gateway");
+      options.add("Other");
+      options.add("Another");
+      options.add("tbd");
+      return true;
+    }
+    case onChange:
+      Variable(var).preDetails();
+      mdl->setValueRowNr = rowNr;
+
+      if (var["value"] == 1) {//manual
+        ui->initNumber(var, "ethaddr", (uint16_t)0, 0, 255, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          case onUI:
+            ui->setLabel(var, "Address");
+            return true;
+          case onChange:
+            successfullyConfiguredEthernet = false;
+            return true;
+          default: return false;
+        }});
+        ui->initPin(var, "ethpower", 14, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          case onUI:
+            ui->setLabel(var, "Power");
+            return true;
+          case onChange:
+            successfullyConfiguredEthernet = false;
+            return true;
+          default: return false;
+        }});
+        ui->initPin(var, "ethmdc", 23, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          case onUI:
+            ui->setLabel(var, "mdc");
+            return true;
+          case onChange:
+            successfullyConfiguredEthernet = false;
+            return true;
+          default: return false;
+        }});
+        ui->initPin(var, "ethmdio", 18, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          case onUI:
+            ui->setLabel(var, "mdio");
+            return true;
+          case onChange:
+            successfullyConfiguredEthernet = false;
+            return true;
+          default: return false;
+        }});
+        ui->initSelect(var, "ethtype", ETH_PHY_LAN8720, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          case onUI: {
+            ui->setLabel(var, "Type");
+            JsonArray options = ui->setOptions(var);
+            options.add("LAN8720");
+            options.add("TLK110");
+            options.add("RTL8201");
+            options.add("DP83848");
+            options.add("DM9051");
+            options.add("KSZ8041");
+            options.add("KSZ8081");
+            options.add("MAX");
+            return true;
+          }
+          case onChange:
+            successfullyConfiguredEthernet = false;
+            return true;
+          default: return false;
+        }});
+        ui->initSelect(var, "ethclkmode", ETH_CLOCK_GPIO17_OUT, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          case onUI: {
+            ui->setLabel(var, "Clock mode");
+            JsonArray options = ui->setOptions(var);
+            options.add("GPIO0_IN");
+            options.add("GPIO0_OUT");
+            options.add("GPIO16_OUT");
+            options.add("GPIO17_OUT");
+            return true;
+          }
+          case onChange:
+            successfullyConfiguredEthernet = false;
+            return true;
+          default: return false;
+        }});
+      }
+
+      Variable(var).postDetails(rowNr);
+      mdl->setValueRowNr = UINT8_MAX;
+
+      successfullyConfiguredEthernet = false;
+      // initEthernet(); //try to connect
+
+      return true;
+    default: return false;
+  }});
+
   ui->initText(parentVar, "nwstatus", nullptr, 32, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Status");
@@ -58,23 +167,24 @@ void SysModNetwork::setup() {
     default: return false;
   }});
 
-  ui->initText(parentVar, "rssi", nullptr, 32, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-    case onUI:
-      ui->setLabel(var, "Wifi signal");
-      return true;
-    default: return false;
-  }});
 }
 
 void SysModNetwork::loop1s() {
   handleConnection(); //once per second is enough
   mdl->setUIValueV("rssi", "%d dBm", WiFi.RSSI());
+  mdl->setUIValueV("nwstatus", "Connected %s (e:%s s:%s)", WiFi.localIP().toString().c_str(), ETH.localIP().toString().c_str(), WiFi.softAPIP().toString().c_str());
+  initEthernet();
+}
+
+void SysModNetwork::loop10s() {
+  if (millis() < 60000)
+    ppf("%s %s %s\n", WiFi.localIP().toString().c_str(), ETH.localIP().toString().c_str(), WiFi.softAPIP().toString().c_str()); // show IP the first minute
 }
 
 void SysModNetwork::handleConnection() {
   if (lastReconnectAttempt == 0) { // do this only once
     ppf("lastReconnectAttempt == 0\n");
-    initConnection();
+    initConnection(); //WiFi connection
     return;
   }
 
@@ -82,11 +192,11 @@ void SysModNetwork::handleConnection() {
     handleAP();
   }
 
-  //if not connected to Wifi
-  if (!(WiFi.localIP()[0] != 0 && WiFi.status() == WL_CONNECTED)) { //!Network.isConfirmedConnection()
+  //if not connected // || ETH.localIP()[0] != 0
+  if (!((WiFi.localIP()[0] != 0 && WiFi.status() == WL_CONNECTED))) { //!Network.isConfirmedConnection()
     if (isConfirmedConnection) { //should not be confirmed as not connected -> lost connection -> retry
       ppf("Disconnected!\n");
-      initConnection();
+      initConnection(); //WiFi connection
     }
 
     //if no connection for more then 6 seconds (was 12)
@@ -95,8 +205,8 @@ void SysModNetwork::handleConnection() {
       initAP();
     }
   } else if (!isConfirmedConnection) { //newly connected
-    mdl->setUIValueV("nwstatus", "Connected %d.%d.%d.%d", WiFi.localIP()[0], WiFi.localIP()[1], WiFi.localIP()[2], WiFi.localIP()[3]);
-    ppf("Connected %s\n", WiFi.localIP().toString().c_str());
+    mdl->setUIValueV("nwstatus", "Connected %s (e:%s s:%s)", WiFi.localIP().toString().c_str(), ETH.localIP().toString().c_str(), WiFi.softAPIP().toString().c_str());
+    ppf("Connected %s %s %s\n", WiFi.localIP().toString().c_str(), ETH.localIP().toString().c_str(), WiFi.softAPIP().toString().c_str());
 
     isConfirmedConnection = true;
 
@@ -184,4 +294,119 @@ void SysModNetwork::handleAP() {
     }
   }
   dnsServer.processNextRequest(); //for captiveportal
+}
+
+typedef struct EthernetSettings {
+  uint8_t        eth_address;
+  int            eth_power;
+  int            eth_mdc;
+  int            eth_mdio;
+  eth_phy_type_t eth_type;
+  #ifndef CONFIG_IDF_TARGET_ESP32S3
+  eth_clock_mode_t eth_clk_mode;
+  #endif
+} ethernet_settings;
+
+bool SysModNetwork::initEthernet() {
+
+  if (successfullyConfiguredEthernet) {
+    // DEBUG_PRINTLN(F("initE: ETH already successfully configured, ignoring"));
+    return false;
+  }
+
+  pinsM->deallocatePin(UINT8_MAX, "Eth");
+
+  uint8_t ethernet = mdl->getValue("ethernet");
+
+  ethernet_settings es;
+
+  bool result;
+
+  switch (ethernet) {
+    case 0: //none
+      return false;
+    case 1: //manual
+    {
+      es = {
+        mdl->getValue("ethaddr"),			              // eth_address,
+        mdl->getValue("ethpower"),			              // eth_power,
+        mdl->getValue("ethmdc"),			              // eth_mdc,
+        mdl->getValue("ethmdio"),			              // eth_mdio,
+        mdl->getValue("ethtype"),      // eth_type,
+        mdl->getValue("ethclkmode")	// eth_clk_mode
+      };
+
+    }
+    break;
+    case 2: //Olimex
+    {
+      //WLEDMM: Olimex-ESP32-Gateway (like QuinLed-ESP32-Ethernet
+      es = {
+        0,			              // eth_address,
+        5,			              // eth_power,
+        23,			              // eth_mdc,
+        18,			              // eth_mdio,
+        ETH_PHY_LAN8720,      // eth_type,
+        ETH_CLOCK_GPIO17_OUT	// eth_clk_mode
+      };
+    }
+    break;
+    default:
+      es = {
+        0,			              // eth_address,
+        5,			              // eth_power,
+        23,			              // eth_mdc,
+        18,			              // eth_mdio,
+        ETH_PHY_LAN8720,      // eth_type,
+        ETH_CLOCK_GPIO17_OUT	// eth_clk_mode
+      };
+  }
+
+  // looks like not needed until now (at least not for Olimex)
+  // if(es.eth_power>0 && es.eth_type==ETH_PHY_LAN8720) {
+  //   pinMode(es.eth_power, OUTPUT);
+  //   digitalWrite(es.eth_power, 0);
+  //   delayMicroseconds(150);
+  //   digitalWrite(es.eth_power, 1);
+  //   delayMicroseconds(10);
+  // }
+
+  pinsM->allocatePin(es.eth_power, "Eth", "power");
+  pinsM->allocatePin(es.eth_mdc, "Eth", "mdc");
+  pinsM->allocatePin(es.eth_mdio, "Eth", "mdio");
+
+  // update the clock pin....
+  if (es.eth_clk_mode == ETH_CLOCK_GPIO0_IN) {
+    pinsM->allocatePin(0, "Eth", "clock");
+  } else if (es.eth_clk_mode == ETH_CLOCK_GPIO0_OUT) {
+    pinsM->allocatePin(0, "Eth", "clock");
+  } else if (es.eth_clk_mode == ETH_CLOCK_GPIO16_OUT) {
+    pinsM->allocatePin(16, "Eth", "clock");
+  } else if (es.eth_clk_mode == ETH_CLOCK_GPIO17_OUT) {
+    pinsM->allocatePin(17, "Eth", "clock");
+  } else {
+    ppf("dev initE: Failing due to invalid eth_clk_mode (%d)\n", es.eth_clk_mode);
+    return false;
+  }
+
+  if (!ETH.begin(
+                (uint8_t) es.eth_address,
+                (int)     es.eth_power,
+                (int)     es.eth_mdc,
+                (int)     es.eth_mdio,
+                (eth_phy_type_t)   es.eth_type,
+                (eth_clock_mode_t) es.eth_clk_mode
+                )) {
+    ppf("initC: ETH.begin() failed\n");
+    // de-allocate the allocated pins
+    // for (managed_pin_type mpt : pinsToAllocate) {
+    //   pinManager.deallocatePin(mpt.pin, PinOwner::Ethernet);
+    // }
+    return false;
+  }
+
+  successfullyConfiguredEthernet = true;
+  ppf("initC: *** Ethernet successfully configured! %s ***\n", ETH.localIP().toString().c_str());  // WLEDMM
+  return true;
+
 }
