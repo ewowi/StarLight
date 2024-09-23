@@ -80,7 +80,6 @@ callVarOnChange fixSize unknown type for {"x":32,"y":32,"z":1}
 setValue changed fixCount ->1024
 StarJson destructing
 FastLED.addLeds new 16: 0-1024
-lastReconnectAttempt == 0
 Access point disabled (init).
 Connecting to WiFi ewtr / *********
 setValue var vlLoopps[0] value null not array, creating

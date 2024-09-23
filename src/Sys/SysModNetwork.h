@@ -25,24 +25,31 @@ public:
   void loop1s();
   void loop10s();
 
-  void handleConnection();
-  void initConnection();
+  // void handleConnections();
 
-  void handleAP();
+  #ifdef STARBASE_ETHERNET
+    bool initEthernet();
+    void stopEthernet();
+  #endif
+
+  void initWiFiConnection();
+  void stopWiFiConnection();
+
   void initAP();
+  void handleAP();
   void stopAP();
-  bool initEthernet();
 
 private:
+  #ifdef STARBASE_ETHERNET
+    bool ethActive = false; //currently only one call to ETH.begin is possible, wether successful or not: reboot needed for other attempt
+  #endif
   bool apActive = false;
-  unsigned32 lastReconnectAttempt = 0;
+  bool wfActive = false;
   byte apChannel = 1; // 2.4GHz WiFi AP channel (1-13)
-  bool isConfirmedConnection = false;
   DNSServer dnsServer;
-  byte stacO = 0; //stationCount
+  byte stationCount = 0;
 
-  bool successfullyConfiguredEthernet = false; //currently only one call to ETH.begin is possible, wether successful or not: reboot needed for other attempt
-
+  bool connected = false;
 };
   
 extern SysModNetwork *net;
