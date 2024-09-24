@@ -57,7 +57,7 @@ public:
         keyValueOption.add(0);
         keyValueOption.add("no sync");
         for (InstanceInfo &instance : instances->instances) {
-          if (instance.ip != WiFi.localIP()) {
+          if (instance.ip != net->localIP()) {
             char option[64] = { 0 };
             strncpy(option, instance.name, sizeof(option)-1);
             strncat(option, " ", sizeof(option)-1);
@@ -152,6 +152,10 @@ public:
         ppf("DDP WiFiUDP.endPacket returned an error\n");
         return; // problem
       }
+
+      web->sendUDPCounter++;
+      web->sendUDPBytes+=packetSize;
+
       channel += packetSize;
     }
   }
