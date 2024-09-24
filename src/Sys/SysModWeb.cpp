@@ -15,6 +15,7 @@
 #include "SysModFiles.h"
 #include "SysModules.h"
 #include "SysModPins.h"
+#include "SysModNetwork.h" //for localIP
 
 #include "User/UserModMDNS.h"
 // got multiple definition error here ??? see workaround below
@@ -569,7 +570,7 @@ void SysModWeb::serveUpdate(WebRequest *request, const String& fileName, size_t 
     char message[64];
     const char * name = mdl->getValue("name");
 
-    print->fFormat(message, sizeof(message)-1, "Update of %s (...%d) %s", name, WiFi.localIP()[3], success?"Successful":"Failed");
+    print->fFormat(message, sizeof(message)-1, "Update of %s (...%d) %s", name, net->localIP()[3], success?"Successful":"Failed");
 
     ppf("%s\n", message);
     request->send(200, "text/plain", message);
@@ -637,7 +638,7 @@ void SysModWeb::clientsToJson(JsonArray array, bool nameOnly, const char * filte
 
 bool SysModWeb::captivePortal(WebRequest *request)
 {
-  ppf("captivePortal %d %d\n", WiFi.localIP()[3], request->client()->localIP()[3]);
+  ppf("captivePortal %d %d\n", net->localIP()[3], request->client()->localIP()[3]);
 
   if (ON_STA_FILTER(request)) return false; //only serve captive in AP mode
   String hostH;
@@ -719,7 +720,7 @@ void SysModWeb::serializeInfo(JsonObject root) {
     // docInfo["wifi"]["rssi"] = WiFi.RSSI();// mdl->getValue("rssi"); (ro)
 
     root["mac"] = JsonString(mdns->escapedMac.c_str(), JsonString::Copied);
-    root["ip"] = JsonString(WiFi.localIP().toString().c_str(), JsonString::Copied);
+    root["ip"] = JsonString(net->localIP().toString().c_str(), JsonString::Copied);
     // print->printJson("serveJson", root);
 }
 

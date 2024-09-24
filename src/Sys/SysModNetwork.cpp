@@ -274,6 +274,19 @@ void SysModNetwork::loop10s() {
   }
 }
 
+IPAddress SysModNetwork::localIP() {
+  #ifdef STARBASE_ETHERNET
+    if (ETH.localIP()[0] != 0)
+      return ETH.localIP();
+  #endif
+  if (WiFi.localIP()[0] != 0)
+    return WiFi.localIP();
+  if (WiFi.softAPIP()[0] != 0)
+    return WiFi.softAPIP();
+    
+  return IPAddress();
+}
+
 void SysModNetwork::initWiFiConnection() {
 
   if (wfActive ) //allready success && WiFi.localIP()[0] != 0
