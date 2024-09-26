@@ -166,7 +166,7 @@ public:
         rowNr = fixture.layers.size();
         // ppf("layerTbl onAdd %s[%d]\n", Variable(var).id(), rowNr);
 
-        web->getResponseObject()["onAdd"]["rowNr"] = rowNr;
+        web->getResponseObject()["onAdd"]["rowNr"] = rowNr; //also done in callVarFun??
 
         if (rowNr >= fixture.layers.size()) {
           ppf("layerTbl creating new LedsLayer instance %d\n", rowNr);

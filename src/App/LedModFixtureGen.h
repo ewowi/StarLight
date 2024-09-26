@@ -683,7 +683,7 @@ public:
           ui->setComment(var, "Multiple parts");
           return true;
         case onAdd:
-          web->getResponseObject()["onAdd"]["rowNr"] = rowNr;
+          web->getResponseObject()["onAdd"]["rowNr"] = rowNr; //also done in callVarFun??
           return true;
         case onDelete:
           // web->getResponseObject()["onDelete"]["rowNr"] = rowNr;

@@ -49,7 +49,7 @@ public:
         ui->setLabel(var, "Outputs");
         return true;
       case onAdd:
-        web->getResponseObject()["onAdd"]["rowNr"] = rowNr;
+        web->getResponseObject()["onAdd"]["rowNr"] = rowNr; //also done in callVarFun??
         return true;
       case onDelete:
         // web->getResponseObject()["onDelete"]["rowNr"] = rowNr;
