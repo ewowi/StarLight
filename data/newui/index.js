@@ -83,7 +83,7 @@ class Controller {
       }
       else if (buffer[0] == 1) {
         //LEDs specific
-        let canvasNode = document.getElementById("pview");
+        let canvasNode = gId("Fixture.pview");
         if (canvasNode) {
           // console.log(buffer, canvasNode);
           let pviewVar = controller.modules.findVar("pview");

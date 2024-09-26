@@ -24,10 +24,11 @@ function userFunSetup() {
 
 function userFun(buffer) {
   if (buffer[0]==1) {
-    let canvasNode = gId("pview");
+    let canvasNode = gId("Fixture.pview");
+    if (!canvasNode) canvasNode = gId("pview"); //backwards compatibility (temp)
 
     if (canvasNode) {
-      let pviewVar = controller.modules.findVar("pview");
+      let pviewVar = controller.modules.findVar("pview"); //backwards compatibility (temp)
   
       //replace the canvas: in case we switch from 2D to 3D as they cannot be reused between them
       //not needed anymore as we do only three.js
@@ -161,7 +162,7 @@ function preview3D(canvasNode, buffer, pviewVar) {
       //init three - done once
       if (!renderer || (pviewVar.file && pviewVar.file.new)) { //init 3D
 
-        console.log("preview3D create new renderer");
+        console.log("preview3D create new renderer", pviewVar, canvasNode);
 
         renderer = new THREE.WebGLRenderer({canvas: canvasNode, antialias: true, alpha: true });
         // THREE.Object3D.DefaultUp = new THREE.Vector3(0,1,1);

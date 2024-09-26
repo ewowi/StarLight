@@ -421,9 +421,10 @@ class CanvasVariable extends Variable {
   }
 
   generateData() {
-    //tbd: this is StarLight, remove here...
-    // if (this.node && this.variable.file == null)
-    //   super.generateData(`"file":"F_panel2x2-16x16.json"`)
+    //LEDs specific
+    if (this.node && this.variable.file == null)
+      super.generateData(`"file":"F_panel2x2-16x16.json"`)
+    //end LEDs specific
 
     super.generateData(`"value":"n/a"`) //no value needed for canvas, but only comment update ...
   }

@@ -39,7 +39,7 @@ public:
   
     ui->initText(parentVar, "wledAudioStatus", nullptr, 16, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
-      ui->setLabel(var, "Status:");
+      ui->setLabel(var, "Status");
       return true;
     default: return false;
    }});
