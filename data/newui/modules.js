@@ -91,6 +91,10 @@ class Modules {
 
   //finds a var with id in the model, if found returns it
   findVar(id) {
+    //temp: of pid.id, then search for id
+    let ids = id.split(".")
+    if (ids[1])
+      id = ids[1]
     // console.log("findVar", id, parent, model);
     return this.walkThroughModel(function(variable){
       if (variable.id == id) //found variable
@@ -231,10 +235,10 @@ class Variable {
 
   constructor(variable) {
     this.variable = variable
-    this.node = document.getElementById(variable.id);
+    this.node = gId(this.variable.pid+"."+variable.id);
   }
 
-  createHTML(node = `<input id=${this.variable.id} type=${this.variable.type} class="${this.variable.type}" value="${this.variable.value}"></input>`) {
+  createHTML(node = `<input id="${this.variable.pid+"."+this.variable.id}" type="${this.variable.type}" class="${this.variable.type}" value="${this.variable.value}"></input>`) {
     let code = `<p>
             <label>${initCap(this.variable.id)}</label>
             ${node}
@@ -246,7 +250,7 @@ class Variable {
     controller.requestJson(command); // this can be done here because of the async nature of requestJson, better is to do it after innerHTML+=...
 
     if (this.variable.n) {
-      code += `<div id=${this.variable.id}_n class="ndiv">`
+      code += `<div id="${this.variable.pid+"."+this.variable.id}_n" class="ndiv">`
       for (let childVar of this.variable.n) {
         let childClass = varJsonToClass(childVar)
         code += childClass.createHTML();
@@ -316,7 +320,7 @@ class TextVariable extends Variable {
 class CheckboxVariable extends Variable {
 
   createHTML() {
-    return super.createHTML(`<input id=${this.variable.id} type=${this.variable.type} class="${this.variable.type}"></input><span class="checkmark"></span>`);
+    return super.createHTML(`<input id="${this.variable.pid+"."+this.variable.id}" type="${this.variable.type}" class="${this.variable.type}"></input><span class="checkmark"></span>`);
   }
 
   receiveData(properties) {
@@ -336,12 +340,12 @@ class CheckboxVariable extends Variable {
 class RangeVariable extends Variable {
 
   createHTML() {
-    return super.createHTML(`<input id=${this.variable.id} type=${this.variable.type} min="0" max="255" class="${this.variable.type}"></input><span id=${this.variable.id}_rv>${this.variable.value}</span>`)
+    return super.createHTML(`<input id="${this.variable.pid+"."+this.variable.id}" type="${this.variable.type}" min="0" max="255" class="${this.variable.type}"></input><span id="${this.variable.pid+"."+this.variable.id}_rv">${this.variable.value}</span>`)
   }
 
   receiveData(properties) {
     super.receiveData(properties)
-    let rvNode = gId(this.variable.id + "_rv")
+    let rvNode = gId(this.variable.pid+"."+this.variable.id + "_rv")
     if (rvNode && properties.value != null)
       rvNode.innerText = properties.value
   }
@@ -355,7 +359,7 @@ class RangeVariable extends Variable {
 class ButtonVariable extends Variable {
 
   createHTML() {
-    return super.createHTML(`<input id=${this.variable.id} type=${this.variable.type} class="${this.variable.type}" value="${initCap(this.variable.id)}"></input>`)
+    return super.createHTML(`<input id="${this.variable.pid+"."+this.variable.id}" type="${this.variable.type}" class="${this.variable.type}" value="${initCap(this.variable.id)}"></input>`)
   }
 
   generateData() {
@@ -367,7 +371,7 @@ class ButtonVariable extends Variable {
 class SelectVariable extends Variable {
 
   createHTML() {
-    return super.createHTML(`<select id="${this.variable.id}" class="select"></select>`)
+    return super.createHTML(`<select id="${this.variable.pid+"."+this.variable.id}" class="select"></select>`)
   }
 
   receiveData(properties) {
@@ -396,7 +400,7 @@ class SelectVariable extends Variable {
 class ProgressVariable extends Variable {
 
   createHTML() {
-    return super.createHTML(`<progress max="${this.variable.max}" id="${this.variable.id}" class="progress"></progress>`)
+    return super.createHTML(`<progress max="${this.variable.max}" id="${this.variable.pid+"."+this.variable.id}" class="progress"></progress>`)
   }
 
 } //class ProgressVariable
@@ -409,7 +413,7 @@ class CanvasVariable extends Variable {
       this.variable.file.new = true;
       // console.log("canvas createHTML", this.variable.file, this.variable.file.new);
     }
-    return super.createHTML(`<canvas id=${this.variable.id} class="${this.variable.type}"></canvas>`);
+    return super.createHTML(`<canvas id="${this.variable.pid+"."+this.variable.id}" class="${this.variable.type}"></canvas>`);
   }
 
   receiveData(properties) {
@@ -418,8 +422,8 @@ class CanvasVariable extends Variable {
 
   generateData() {
     //tbd: this is StarLight, remove here...
-    if (this.node && this.variable.file == null)
-      super.generateData(`"file":"F_panel2x2-16x16.json"`)
+    // if (this.node && this.variable.file == null)
+    //   super.generateData(`"file":"F_panel2x2-16x16.json"`)
 
     super.generateData(`"value":"n/a"`) //no value needed for canvas, but only comment update ...
   }
@@ -429,7 +433,7 @@ class CanvasVariable extends Variable {
 class TableVariable extends Variable {
 
   createHTML() {
-    return super.createHTML(`<table id=${this.variable.id} class="${this.variable.type}"></table>`);
+    return super.createHTML(`<table id="${this.variable.pid+"."+this.variable.id}" class="${this.variable.type}"></table>`);
   }
 
   generateData() {
@@ -441,7 +445,7 @@ class TableVariable extends Variable {
 class Coord3DVariable extends Variable {
 
   createHTML() {
-    return super.createHTML(`<span id=${this.variable.id} class="${this.variable.type}"><input type="number" placeholder="x"/><input type="number" placeholder="y"/><input type="number" placeholder="z"/></span>`);
+    return super.createHTML(`<span id="${this.variable.pid+"."+this.variable.id}" class="${this.variable.type}"><input type="number" placeholder="x"/><input type="number" placeholder="y"/><input type="number" placeholder="z"/></span>`);
   }
 
   receiveData(properties) {

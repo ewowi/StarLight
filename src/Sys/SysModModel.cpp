@@ -86,10 +86,13 @@ void SysModModel::loop20ms() {
     cleanUpModel(JsonObject(), false, true);//remove if var["o"] is negative (not cleanedUp) and remove ro values
 
     StarJson starJson("/model.json", "w"); //open fileName for deserialize
+    //comment exclusions out in case of generating model.json for github
     starJson.addExclusion("fun");
     starJson.addExclusion("dash");
     starJson.addExclusion("o"); //order
     starJson.addExclusion("p"); //pointers
+    starJson.addExclusion("pid"); //parent...
+    starJson.addExclusion("oldValue");
     starJson.writeJsonDocToFile(model);
 
     // print->printJson("Write model", *model); //this shows the model before exclusion

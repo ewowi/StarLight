@@ -110,6 +110,8 @@ JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * ty
 
     Variable variable = Variable(var);
 
+    if (parentId) var["pid"] = parentId; else var["pid"] = "m"; //module
+
     if (var["ro"].isNull() || variable.readOnly() != readOnly) variable.readOnly(readOnly);
 
     //set order. make order negative to check if not obsolete, see cleanUpModel
@@ -220,28 +222,30 @@ void SysModUI::processJson(JsonVariant json) {
           ppf("dev processJson value not array? %s %s\n", key, value.as<String>().c_str());
         json.remove(key); //key processed we don't need the key in the response
       } 
-      else if (!value.isNull()) { // {"varid": {"value":value}} or {"varid": value}
 
+     else if (!value.isNull()) { // {"varid": {"value":value}} or {"varid": value}
         JsonVariant newValue;
         if (value["value"].isNull()) // if no explicit value field (e.g. jsonHandler)
           newValue = value;
         else
           newValue = value["value"]; //use the value field
 
+        char varId[32];
+        strcpy(varId, key);
         //check if we deal with multiple rows (from table type)
-        char * rowNrC = strtok((char *)key, "#");
+        char * rowNrC = strtok(varId, "#");
         if (rowNrC != NULL ) {
-          key = rowNrC;
+          strcpy(varId, rowNrC); //copy the varId part
           rowNrC = strtok(NULL, " "); //#?
         }
         stackUnsigned8 rowNr = rowNrC?atoi(rowNrC):UINT8_MAX;
 
-        JsonObject var = mdl->findVar(key);
+        JsonObject var = mdl->findVar(varId);
 
         if (rowNr == UINT8_MAX)
-          ppf("processJson var %s %s -> %s\n", key, var["value"].as<String>().c_str(), newValue.as<String>().c_str());
+          ppf("processJson var %s %s -> %s\n", varId, var["value"].as<String>().c_str(), newValue.as<String>().c_str());
         else
-          ppf("processJson var %s[%d] %s -> %s\n", key, rowNr, var["value"][rowNr].as<String>().c_str(), newValue.as<String>().c_str());
+          ppf("processJson var %s[%d] %s -> %s\n", varId, rowNr, var["value"][rowNr].as<String>().c_str(), newValue.as<String>().c_str());
 
         if (!var.isNull())
         {
@@ -252,11 +256,12 @@ void SysModUI::processJson(JsonVariant json) {
           }
           else {
             mdl->setValueJV(Variable(var).id(), newValue, rowNr);
+            json.remove(key); //key / var["id"] processed we don't need the key in the response
+            print->printJson("setValueJV", web->getResponseObject());
           }
-          // json.remove(key); //key / var["id"] processed we don't need the key in the response
         }
         else
-          ppf("dev Object %s[%d] not found\n", key, rowNr);
+          ppf("dev Object %s[%d] not found\n", varId, rowNr);
       } 
       else {
         ppf("dev processJson command not recognized k:%s v:%s\n", key, value.as<String>().c_str());

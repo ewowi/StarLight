@@ -14,7 +14,7 @@
 class MainNav {
 
   createHTML() {
-    let body = document.getElementById("body");//gId("body");
+    let body = gId("body");
 
     body.classList += "d-flex flex-column";
 
@@ -105,7 +105,7 @@ class MainNav {
 
     // Update the page content
     if (this.#createHTMLFun) {
-        document.getElementById('page').innerHTML = 
+        gId('page').innerHTML = 
       `<div class="d-flex flex-column h-100 overflow-hidden">
         <div class="flex-shrink-0">
           <h1 class="title">${this.#activeModuleJson.id}</h1>
@@ -154,7 +154,7 @@ class MainNav {
         return `<div onclick="controller.mainNav.activeModuleType=this.dataset.type" class="menu-item selectable ${selected} pa-4" data-type="${type}">${type}</div>`
       })
       .join('')
-    document.getElementById('main-nav').innerHTML = html
+    gId('main-nav').innerHTML = html
   }
 
   // Update the secondary navigation menu
@@ -167,7 +167,7 @@ class MainNav {
       return `<div onclick="controller.mainNav.activeModuleId=this.dataset.id" class="menu-item selectable ${selected} text-truncate pa-3" data-id="${moduleJson.id}">${moduleJson.id}</div>`
     })
     .join('')
-    document.getElementById('second-nav').innerHTML = html
+    gId('second-nav').innerHTML = html
   }
 
   /**

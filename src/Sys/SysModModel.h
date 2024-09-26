@@ -411,7 +411,7 @@ public:
             ppf("setValue changed %s %s -> %s\n", variable.id(), var["oldValue"].as<String>().c_str(), variable.valueString().c_str());
           // else
           //   ppf("setValue changed %s %s\n", Variable(var).id(), var["value"].as<String>().c_str());
-          web->addResponse(var["id"], "value", var["value"]);
+          web->addResponse(variable.id(), "value", var["value"]);
           changed = true;
         }
       }
@@ -437,7 +437,7 @@ public:
           //   ppf("notSame %d %d\n", rowNr, valueArray.size());
           valueArray[rowNr] = value; //if valueArray[<rowNr] not exists it will be created
           // ppf("  assigned %d %d %s\n", rowNr, valueArray.size(), valueArray[rowNr].as<String>().c_str());
-          web->addResponse(var["id"], "value", var["value"]); //send the whole array to UI as response is in format value:<value> !!
+          web->addResponse(variable.id(), "value", var["value"]); //send the whole array to UI as response is in format value:<value> !!
           changed = true;
         }
       }

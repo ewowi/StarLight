@@ -11,7 +11,7 @@
 class Theme {
 
   createHTML() {
-    let body = document.getElementById("body");//gId("body");
+    let body = gId("body");
 
     body.innerHTML += `<p><label>Theme</label> 
     <select name="theme-select" id="theme-select" onchange="controller.theme.setTheme(this.value)">
@@ -33,15 +33,15 @@ class Theme {
     console.log("setTheme", value)
     localStorage.setItem('theme', value);
     document.documentElement.className = value;
-    // if (document.getElementById("theme-select").value != value)
-    //   document.getElementById("theme-select").value = value;
+    // if (gId("theme-select").value != value)
+    //   gId("theme-select").value = value;
   }
 
   getTheme() {
     let value = localStorage.getItem('theme');
-    // console.log("getTheme", value, document.getElementById("theme-select"))
+    // console.log("getTheme", value, gId("theme-select"))
     if (value && value != "null") 
-      document.getElementById("theme-select").value = value
+      gId("theme-select").value = value
   }
 
 }

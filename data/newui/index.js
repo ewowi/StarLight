@@ -73,7 +73,7 @@ class Controller {
       // console.log(buffer)
       // let buffer = new Uint8Array([0,1,2,3,4,5,6,7,8]);
       if (buffer[0] == 0) {
-        let canvasNode = document.getElementById("board");
+        let canvasNode = gId("Pins.board");
         if (canvasNode) {
           // console.log(buffer, pviewNode);
           for (let pinNr = 0; pinNr < controller.sysInfo.nrOfPins; pinNr++)
@@ -117,7 +117,7 @@ class Controller {
       if (e.data instanceof ArrayBuffer) { // binary packet - e.g. for preview
         let buffer = new Uint8Array(e.data);
         if (buffer[0]==0) {
-          let canvasNode = document.getElementById("board");
+          let canvasNode = gId("Pins.board");
           if (canvasNode) {
             // console.log(buffer, canvasNode);
             this.modules.previewBoard(canvasNode, buffer);
