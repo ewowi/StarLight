@@ -345,6 +345,7 @@ public:
           }
         }
       }
+      web->getResponseObject()[funType==onAdd?"onAdd":"onDelete"]["rowNr"] = rowNr;
     }
 
     //call varFun if exists

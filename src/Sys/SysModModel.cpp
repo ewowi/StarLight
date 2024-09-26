@@ -149,7 +149,7 @@ void SysModModel::cleanUpModel(JsonObject parent, bool oPos, bool ro) {
   }
 }
 
-JsonObject SysModModel::findVar(const char * id, JsonArray parent) {
+JsonObject SysModModel::findVar(const char * id, JsonObject parent) {
   JsonArray root;
   // print ->print("findVar %s %s\n", id, parent.isNull()?"root":"n");
   if (parent.isNull()) {
@@ -157,14 +157,39 @@ JsonObject SysModModel::findVar(const char * id, JsonArray parent) {
     modelParentVar = JsonObject();
   }
   else
-    root = parent;
+    root = parent["n"];
 
+  //temp: if pid.id, then search for id
+  size_t i = 0;
+  for (i=0; i<strlen(id); i++) {
+    if (id[i] == '.')
+      break;
+  }
+
+  char pid[32] = "";
+
+  //if . found
+  if (i != strlen(id)) {
+    strncpy(pid, id, 32); //id can be longer then 32 (after .)
+    ppf("findVar split %s -> ", id);
+    id+= i+1;
+    pid[i]='\0';
+    ppf("%s and %s\n", pid, id);
+    // strncpy(pid, id, i);
+    // ppf(" %s.%s", pid, id);
+  }
+  else {
+    //need to replace vars without pid. ...
+    // ppf("🐍%s", id);
+  }
+
+  
   for (JsonObject var : root) {
     // if (foundVar.isNull()) {
-      if (var["id"] == id)
+      if ((pid[0]=='\0' || var["pid"] == pid) && var["id"] == id)
         return var;
       else if (!var["n"].isNull()) {
-        JsonObject foundVar = findVar(id, var["n"]);
+        JsonObject foundVar = findVar(id, var);
         if (!foundVar.isNull()) {
           if (modelParentVar.isNull()) modelParentVar = var;  //only recursive lowest assigns parentVar
           // ppf("findvar parent of %s is %s\n", id, Variable(modelParentVar).id());
@@ -174,28 +199,6 @@ JsonObject SysModModel::findVar(const char * id, JsonArray parent) {
     // }
   }
   return JsonObject();
-}
-
-JsonObject SysModModel::findParentVar(const char * id, JsonObject parent) {
-  JsonArray varArray;
-  // print ->print("findParentVar %s %s\n", id, parent.isNull()?"root":"n");
-  if (parent.isNull()) {
-    varArray = model->as<JsonArray>();
-  }
-  else
-    varArray = parent["n"];
-
-  JsonObject foundVar = JsonObject();
-  for (JsonObject var : varArray) {
-    if (foundVar.isNull()) {
-      if (var["id"] == id)
-        foundVar = parent;
-      else if (!var["n"].isNull()) {
-        foundVar = findParentVar(id, var);
-      }
-    }
-  }
-  return foundVar;
 }
 
 void SysModModel::findVars(const char * property, bool value, FindFun fun, JsonArray parent) {
@@ -233,7 +236,7 @@ bool checkDash(JsonObject var) {
   if (var["dash"])
     return true;
   else {
-    JsonObject parentVar = mdl->findParentVar(var["id"]);
+    JsonObject parentVar = mdl->findVar(var["pid"]);
     if (!parentVar.isNull())
       return checkDash(parentVar);
   }

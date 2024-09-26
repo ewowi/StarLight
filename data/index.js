@@ -56,7 +56,11 @@ async function fetchModel() {
 class Modules {
   findVar(id, parent = model) {
     // console.log("findVar", id, parent, model);
-  
+    //temp: if pid.id, then search for id
+    let ids = id.split(".")
+    if (ids[1])
+      id = ids[1]
+
     let foundVar = null;
     for (var variable of parent) {
       if (foundVar == null) {
@@ -69,29 +73,6 @@ class Modules {
     return foundVar;
   }
   
-  findParentVar(id, parent = model) {
-    // console.log("findParentVar", id, parent, model);
-  
-    let varArray;
-    if (Array.isArray(parent))
-      varArray = parent;
-    else if (parent.n)
-      varArray = parent.n;
-  
-    let foundVar = null;
-  
-    if (varArray) {
-      for (var variable of varArray) {
-        if (foundVar == null) {
-          if (variable.id == id)
-            foundVar = parent;
-          else if (variable.n)
-            foundVar = this.findParentVar(id, variable); //recursive
-        }
-      }
-    }
-    return foundVar;
-  }
 }
 
 class Controller {
@@ -124,7 +105,7 @@ function onLoad() {
 }
 
 function ppf() {
-  let logNode = gId("log");
+  let logNode = gId("Print.log");
   let sep = "";
   if (logNode) {
     // console.log("logNode", logNode);
@@ -188,7 +169,7 @@ function makeWS() {
     if (e.data instanceof ArrayBuffer) { // preview packet
       let buffer = new Uint8Array(e.data);
       if (buffer[0]==0) {
-        let canvasNode = gId("board");
+        let canvasNode = gId("Pins.board");
         // console.log(buffer, canvasNode);
         previewBoard(canvasNode, buffer);
       }
@@ -316,7 +297,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
     let ndivNeeded = true; //for details ("n"), module and table do not need an extra div for details
        
     let labelNode = cE("label");
-    let parentVar = controller.modules.findParentVar(variable.id);
+    let parentVar = controller.modules.findVar(variable.pid);
     if (parentVar && variable.id != parentVar.id && parentVar.id && variable.id.substring(0, parentVar.id.length) == parentVar.id) { // if parent id is beginning of the name of the child id then remove that part
       labelNode.innerText = initCap(variable.id.substring(parentVar.id.length)); // the default when not overridden by onUI
     }
@@ -324,7 +305,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       labelNode.innerText = initCap(variable.id); // the default when not overridden by onUI
     
     divNode = cE("div");
-    divNode.id = variable.id + (rowNr != UINT8_MAX?"#" + rowNr:"") + "_d";
+    divNode.id = variable.pid + "." + variable.id + (rowNr != UINT8_MAX?"#" + rowNr:"") + "_d";
 
     //table cells and buttons don't get a label
     if (parentNodeType != "td" && variable.type != "checkbox") { //has its own label
@@ -335,7 +316,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       ndivNeeded = false;
 
       varNode = cE("div");
-      let mdlName = controller.modules.findVar("mdlName");
+      let mdlName = controller.modules.findVar("mdlTbl.mdlName");
       if (mdlName && mdlName.value) { //sometimes value not set yet
         // console.log("createModule", variable, mdlName);
         let index = mdlName.value.indexOf(variable.id); //find this module
@@ -394,7 +375,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
 
           var command = {};
           command.onAdd = {};
-          command.onAdd.id = variable.id;
+          command.onAdd.id = variable.pid + "." + variable.id;
           requestJson(command);
         });
         divNode.appendChild(buttonNode);
@@ -536,7 +517,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       varNode.max = variable.max?variable.max:255; //range slider default 0..255
       varNode.disabled = variable.ro;
       //numerical ui value changes while draging the slider (oninput)
-      let rvNode = variable.id + (rowNr != UINT8_MAX?"#" + rowNr:"") + "_rv";
+      let rvNode = variable.pid + "." + variable.id + (rowNr != UINT8_MAX?"#" + rowNr:"") + "_rv";
       varNode.addEventListener('input', (event) => {
         if (gId(rvNode)) {
           gId(rvNode).innerText = variable.log?linearToLogarithm(variable, event.target.value):event.target.value;
@@ -635,7 +616,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       divNode.appendChild(varNode);
       parentNode.appendChild(divNode);
     }
-    varNode.id = variable.id + (rowNr != UINT8_MAX?"#" + rowNr:"");
+    varNode.id = variable.pid + "." + variable.id + (rowNr != UINT8_MAX?"#" + rowNr:"");
     varNode.className = variable.type;
 
     if (rangeValueNode) divNode.appendChild(rangeValueNode); //_rv value of range / sliders
@@ -653,7 +634,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       //add a div with _n extension and details have this as parent
       if (ndivNeeded) {
         let ndivNode = cE("div");
-        ndivNode.id = variable.id + (rowNr != UINT8_MAX?"#" + rowNr:"") + "_n";
+        ndivNode.id = variable.pid + "." + variable.id + (rowNr != UINT8_MAX?"#" + rowNr:"") + "_n";
         ndivNode.className = "ndiv";
         divNode.appendChild(ndivNode); // add to the parent of the node
         createHTML(variable.n, ndivNode, rowNr);
@@ -683,7 +664,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
 
       //call ui Functionality, if defined (to set label, comment, select etc)
       if (variable.fun >= 0) { //>=0 as element in var
-        onUICommands.push(variable.id);
+        onUICommands.push(variable.pid + "." + variable.id);
         if (onUICommands.length > 4) { //every 4 vars (to respect responseDoc size) check WS_EVT_DATA info
           flushOnUICommands();
         }
@@ -712,7 +693,7 @@ function genTableRowHTML(json, parentNode = null, rowNr = UINT8_MAX) {
   if (!variable.ro) {
     let tdNode = cE("td");
     let buttonNode = cE("input");
-    buttonNode.id = variable.id + "#" + rowNr + "_del";
+    buttonNode.id = variable.pid + "." + variable.id + "#" + rowNr + "_del";
     buttonNode.type = "button";
     buttonNode.value = "-";
     buttonNode.addEventListener('click', (event) => {
@@ -720,7 +701,7 @@ function genTableRowHTML(json, parentNode = null, rowNr = UINT8_MAX) {
 
       var command = {};
       command.onDelete = {};
-      command.onDelete.id = variable.id;
+      command.onDelete.id = variable.pid + "." + variable.id;
       command.onDelete.rowNr = rowNr;
       requestJson(command);
 
@@ -771,12 +752,12 @@ function receiveData(json) {
       } else if (key == "details") {
         let variable = value.var;
         let rowNr = value.rowNr == null?UINT8_MAX:value.rowNr;
-        let nodeId = variable.id + ((rowNr != UINT8_MAX)?"#" + rowNr:"");
+        let nodeId = variable.pid + "." + variable.id + ((rowNr != UINT8_MAX)?"#" + rowNr:"");
         //if var object with .n, create .n (e.g. see fx.onChange (setEffect) and fixtureGenonChange, tbd: )
         ppf("receiveData details", key, variable.id, nodeId, rowNr);
         if (gId(nodeId + "_n")) gId(nodeId + "_n").remove(); //remove old ndiv
 
-        let modelVar = controller.modules.findVar(variable.id);
+        let modelVar = controller.modules.findVar(variable.pid + "." + variable.id);
         modelVar.n = variable.n;
 
         //create new ndiv
@@ -790,7 +771,7 @@ function receiveData(json) {
         flushOnUICommands(); //make sure onUIs of new elements are called
       }
       else if (key == "onAdd") { //update the row of a table
-        ppf("receiveData", key, value);
+        ppf("receiveData", key, value); //e.g. "onAdd" {"id":"ArtNet.anTbl","rowNr":255}
 
         if (value.id && value.rowNr != null) {
           let tableId = value.id;
@@ -800,7 +781,7 @@ function receiveData(json) {
           let tableNode = gId(tableId);
           let tbodyNode = tableNode.querySelector("tbody");
 
-          ppf("onAdd ", tableVar, tableNode, rowNr);
+          console.log("onAdd ", tableVar, tableNode, rowNr);
 
           let newRowNr = tbodyNode.querySelectorAll("tr").length;
 
@@ -810,8 +791,8 @@ function receiveData(json) {
           ppf("dev receiveData onAdd no id and/or rowNr specified", key, value);
 
       } else if (key == "onDelete") { //update the row of a table
+        ppf("receiveData", key, value); //e.g. "onDelete" {"id":"ArtNet.anTbl","rowNr":255}
 
-        ppf("receiveData", key, value);
         let tableId = value.id;
         let tableVar = controller.modules.findVar(tableId);
         let rowNr = value.rowNr;
@@ -824,7 +805,7 @@ function receiveData(json) {
 
         varRemoveValuesForRow(tableVar, rowNr);
 
-        ppf("onDelete ", tableVar, tableNode, rowNr);
+        console.log("onDelete ", tableVar, tableNode, rowNr);
 
       } else if (key == "updRow") { //update the row of a table
 
@@ -874,14 +855,14 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
 
   let node = null;
 
-  if (rowNr != UINT8_MAX) node = gId(variable.id + "#" + rowNr);
-  else node = gId(variable.id);
+  if (rowNr != UINT8_MAX) node = gId(variable.pid + "." + variable.id + "#" + rowNr);
+  else node = gId(variable.pid + "." + variable.id);
 
   if (!node) {
     //we should find all nodes
-    let rowNodes = document.querySelectorAll(`${variable.type}[id^="${variable.id}#"]`); //find nodes from variable.type class with id + #nr (^: starting with)
+    let rowNodes = document.querySelectorAll(`${variable.type}[id^="${variable.pid + "." + variable.id}#"]`); //find nodes from variable.type class with id + #nr (^: starting with)
     for (let subNode of rowNodes) {
-      let rowNr = parseInt(subNode.id.substring(variable.id.length + 1));
+      let rowNr = parseInt(subNode.id.substring((variable.pid + "." + variable.id).length + 1));
       // console.log("changeHTML found row nodes !", variable.id, subNode.id, commandJson, rowNr);
       changeHTML(variable, commandJson, rowNr); //recursive call of all nodes
     }
@@ -953,7 +934,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
     //check if there are also column select cells which also needs to be updated
     if (nodeType == "th") {
       let tableNode = node.parentNode.parentNode.parentNode;
-      selectNodes = tableNode.querySelector('tbody').querySelectorAll(`select[id*="${variable.id}"]`);
+      selectNodes = tableNode.querySelector('tbody').querySelectorAll(`select[id*="${variable.pid + "." + variable.id}"]`);
     }
     else if (nodeType == "select") { //span/ro will be set in .value
       selectNodes.push(node);
@@ -1076,8 +1057,8 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
           newValue = commandJson.value[newRowNr];
           //hide/show disabled/enabled modules
           if (variable.id == "mdlEnabled") {
-            let nameVar = controller.modules.findVar("mdlName");
-            let mdlNode = nameVar.value?gId(nameVar.value[newRowNr]):null; //Live Server Mode: no value
+            let nameVar = controller.modules.findVar("mdlTbl.mdlName");
+            let mdlNode = nameVar.value?gId("m."+nameVar.value[newRowNr]):null; //Live Server Mode: no value
             // console.log("mdlEnabled", variable, node, newValue, newRowNr, nameVar, mdlNode);
             if (mdlNode) {
               if (mdlNode.hidden && newValue) mdlNode.hidden = false;
@@ -1243,7 +1224,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
       }
 
       //'hack' show the instanceName on top of the page
-      if (variable.id == "name") {
+      if (variable.pid == "System" && variable.id == "name") {
         gId("serverName").innerText = commandJson.value;
         document.title = commandJson.value;
       }
@@ -1498,8 +1479,8 @@ function setupModule(item) {
   item.addEventListener('drop', handleDrop);
   // item.onclick = function() {
   //   console.log("click", this, lastPage);
-  //   if (lastPage) document.getElementById(lastPage.id+"-page").hidden = true;
-  //   document.getElementById(this.id+"-page").hidden = false;
+  //   if (lastPage) gId(lastPage.id+"-page").hidden = true;
+  //   gId(this.id+"-page").hidden = false;
   //   lastPage = this;
   // };
 }
@@ -1614,7 +1595,7 @@ function uploadFileWithText(name, text)
 
 function setInstanceTableColumns() {
 
-  let tbl = gId("insTbl");
+  let tbl = gId("Instances.insTbl");
   if (!tbl) return;
   let isDashView = gId("vDash").classList.contains("selected");
   let thead = tbl.querySelector("thead");

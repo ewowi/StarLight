@@ -507,8 +507,8 @@ public:
   }
 
   //returns the var defined by id (parent to recursively call findVar)
-  JsonObject findVar(const char * id, JsonArray parent = JsonArray());
-  JsonObject findParentVar(const char * id, JsonObject parent = JsonObject());
+  JsonObject findVar(const char * id, JsonObject parent = JsonObject());
+  // JsonObject findParentVar(const char * id, JsonObject parent = JsonObject());
   void findVars(const char * id, bool value, FindFun fun, JsonArray parent = JsonArray());
 
   //recursively add values in  a variant, currently not used
