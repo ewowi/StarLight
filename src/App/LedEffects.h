@@ -9,8 +9,8 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
-#ifdef STARLIGHT_USERMOD_WLEDAUDIO
-  #include "../User/UserModWLEDAudio.h"
+#ifdef STARLIGHT_USERMOD_AUDIOSYNC
+  #include "../User/UserModAudioSync.h"
 #endif
 #ifdef STARBASE_USERMOD_E131
   #include "../User/UserModE131.h"
@@ -696,22 +696,22 @@ class FreqMatrixEffect: public Effect {
 
       // Pixel brightness (value) based on volume * sensitivity * intensity
       // uint_fast8_t sensitivity10 = map(sensitivity, 0, 31, 10, 100); // reduced resolution slider // WLEDMM sensitivity * 10, to avoid losing precision
-      int pixVal = wledAudioMod->sync.volumeSmth * (float)fx * (float)sensitivity10 / 2560.0f; // WLEDMM 2560 due to sensitivity * 10
+      int pixVal = audioSync->sync.volumeSmth * (float)fx * (float)sensitivity10 / 2560.0f; // WLEDMM 2560 due to sensitivity * 10
       if (pixVal > 255) pixVal = 255;  // make a brightness from the last avg
 
       CRGB color = CRGB::Black;
 
-      if (wledAudioMod->sync.FFT_MajorPeak > MAX_FREQUENCY) wledAudioMod->sync.FFT_MajorPeak = 1;
+      if (audioSync->sync.FFT_MajorPeak > MAX_FREQUENCY) audioSync->sync.FFT_MajorPeak = 1;
       // MajorPeak holds the freq. value which is most abundant in the last sample.
       // With our sampling rate of 10240Hz we have a usable freq range from roughtly 80Hz to 10240/2 Hz
       // we will treat everything with less than 65Hz as 0
 
-      if ((wledAudioMod->sync.FFT_MajorPeak > 80.0f) && (wledAudioMod->sync.volumeSmth > 0.25f)) { // WLEDMM
+      if ((audioSync->sync.FFT_MajorPeak > 80.0f) && (audioSync->sync.volumeSmth > 0.25f)) { // WLEDMM
         // Pixel color (hue) based on major frequency
         int upperLimit = 80 + 42 * highBin;
         int lowerLimit = 80 + 3 * lowBin;
         //uint8_t i =  lowerLimit!=upperLimit ? map(FFT_MajorPeak, lowerLimit, upperLimit, 0, 255) : FFT_MajorPeak;  // (original formula) may under/overflow - so we enforce uint8_t
-        int freqMapped =  lowerLimit!=upperLimit ? map(wledAudioMod->sync.FFT_MajorPeak, lowerLimit, upperLimit, 0, 255) : wledAudioMod->sync.FFT_MajorPeak;  // WLEDMM preserve overflows
+        int freqMapped =  lowerLimit!=upperLimit ? map(audioSync->sync.FFT_MajorPeak, lowerLimit, upperLimit, 0, 255) : audioSync->sync.FFT_MajorPeak;  // WLEDMM preserve overflows
         uint8_t i = abs(freqMapped) & 0xFF;  // WLEDMM we embrace overflow ;-) by "modulo 256"
 
         color = CHSV(i, 240, (uint8_t)pixVal); // implicit conversion to RGB supplied by FastLED
@@ -744,7 +744,7 @@ class PopCornEffect: public Effect {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t numPopcorn = leds.effectData.read<uint8_t>();
-    #ifdef STARLIGHT_USERMOD_WLEDAUDIO
+    #ifdef STARLIGHT_USERMOD_AUDIOSYNC
       uint8_t useaudio = leds.effectData.read<uint8_t>();
     #endif
 
@@ -765,10 +765,10 @@ class PopCornEffect: public Effect {
       } else { // if kernel is inactive, randomly pop it
         bool doPopCorn = false;  // WLEDMM allows to inhibit new pops
         // WLEDMM begin
-        #ifdef STARLIGHT_USERMOD_WLEDAUDIO
+        #ifdef STARLIGHT_USERMOD_AUDIOSYNC
           if (useaudio) {
-            if (  (wledAudioMod->sync.volumeSmth > 1.0f)                      // no pops in silence
-                // &&((wledAudioMod->sync.samplePeak > 0) || (wledAudioMod->sync.volumeRaw > 128))  // try to pop at onsets (our peek detector still sucks)
+            if (  (audioSync->sync.volumeSmth > 1.0f)                      // no pops in silence
+                // &&((audioSync->sync.samplePeak > 0) || (audioSync->sync.volumeRaw > 128))  // try to pop at onsets (our peek detector still sucks)
                 &&(random8() < 4) )                        // stay somewhat random
               doPopCorn = true;
           } else {         
@@ -807,7 +807,7 @@ class PopCornEffect: public Effect {
     Effect::controls(leds, parentVar);
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128));
     ui->initSlider(parentVar, "corns", leds.effectData.write<uint8_t>(maxNumPopcorn/2), 1, maxNumPopcorn);
-    #ifdef STARLIGHT_USERMOD_WLEDAUDIO
+    #ifdef STARLIGHT_USERMOD_AUDIOSYNC
       ui->initCheckBox(parentVar, "useaudio", leds.effectData.write<bool>(false));
     #endif
   }
@@ -829,13 +829,13 @@ class NoiseMeterEffect: public Effect {
 
     leds.fadeToBlackBy(fadeRate);
 
-    float tmpSound2 = wledAudioMod->sync.volumeRaw * 2.0 * (float)width / 255.0;
+    float tmpSound2 = audioSync->sync.volumeRaw * 2.0 * (float)width / 255.0;
     int maxLen = map(tmpSound2, 0, 255, 0, leds.nrOfLeds); // map to pixels availeable in current segment              // Still a bit too sensitive.
     // if (maxLen <0) maxLen = 0;
     // if (maxLen >leds.nrOfLeds) maxLen = leds.nrOfLeds;
 
     for (int i=0; i<maxLen; i++) {                                    // The louder the sound, the wider the soundbar. By Andrew Tuline.
-      uint8_t index = inoise8(i*wledAudioMod->sync.volumeSmth+*aux0, *aux1+i*wledAudioMod->sync.volumeSmth);  // Get a value from the noise function. I'm using both x and y axis.
+      uint8_t index = inoise8(i*audioSync->sync.volumeSmth+*aux0, *aux1+i*audioSync->sync.volumeSmth);  // Get a value from the noise function. I'm using both x and y axis.
       leds.setPixelColor(i, ColorFromPalette(leds.palette, index));//, 255, PALETTE_SOLID_WRAP));
     }
 
@@ -866,10 +866,10 @@ class AudioRingsEffect: public RingEffect {
 
       byte val;
       if (inWards) {
-        val = wledAudioMod->fftResults[band];
+        val = audioSync->fftResults[band];
       }
       else {
-        val = wledAudioMod->fftResults[15 - band];
+        val = audioSync->fftResults[15 - band];
       }
   
       // Visualize leds to the beat
@@ -885,7 +885,7 @@ class AudioRingsEffect: public RingEffect {
 
   }
   void setRingFromFtt(LedsLayer &leds, int index, int ring) {
-    byte val = wledAudioMod->fftResults[index];
+    byte val = audioSync->fftResults[index];
     // Visualize leds to the beat
     CRGB color = ColorFromPalette(leds.palette, val);
     color.nscale8_video(val);
@@ -919,8 +919,8 @@ class DJLightEffect: public Effect {
 
     const int mid = leds.nrOfLeds / 2;
 
-    uint8_t *fftResult = wledAudioMod->fftResults;
-    float volumeSmth   = wledAudioMod->volumeSmth;
+    uint8_t *fftResult = audioSync->fftResults;
+    float volumeSmth   = audioSync->volumeSmth;
 
     uint8_t secondHand = (speed < 255) ? (micros()/(256-speed)/500 % 16) : 0;
     if((speed > 254) || (*aux0 != secondHand)) {   // WLEDMM allow run run at full speed
@@ -2361,7 +2361,7 @@ class BasicTemplate: public Effect { // add effects.push_back(new Name); to LedM
 
 
 
-#ifdef STARLIGHT_USERMOD_WLEDAUDIO
+#ifdef STARLIGHT_USERMOD_AUDIOSYNC
 
 class WaverlyEffect: public Effect {
   const char * name() {return "Waverly";}
@@ -2378,13 +2378,13 @@ class WaverlyEffect: public Effect {
 
     leds.fadeToBlackBy(amplification);
     // if (agcDebug && soundPressure) soundPressure = false;                 // only one of the two at any time
-    // if ((soundPressure) && (wledAudioMod->sync.volumeSmth > 0.5f)) wledAudioMod->sync.volumeSmth = wledAudioMod->sync.soundPressure;    // show sound pressure instead of volume
-    // if (agcDebug) wledAudioMod->sync.volumeSmth = 255.0 - wledAudioMod->sync.agcSensitivity;                    // show AGC level instead of volume
+    // if ((soundPressure) && (audioSync->sync.volumeSmth > 0.5f)) audioSync->sync.volumeSmth = audioSync->sync.soundPressure;    // show sound pressure instead of volume
+    // if (agcDebug) audioSync->sync.volumeSmth = 255.0 - audioSync->sync.agcSensitivity;                    // show AGC level instead of volume
 
     long t = sys->now / 2; 
     Coord3D pos;
     for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
-      uint16_t thisVal = wledAudioMod->sync.volumeSmth*sensitivity/64 * inoise8(pos.x * 45 , t , t)/64;      // WLEDMM back to SR code
+      uint16_t thisVal = audioSync->sync.volumeSmth*sensitivity/64 * inoise8(pos.x * 45 , t , t)/64;      // WLEDMM back to SR code
       uint16_t thisMax = min(map(thisVal, 0, 512, 0, leds.size.y), (long)leds.size.x);
 
       for (pos.y = 0; pos.y < thisMax; pos.y++) {
@@ -2460,7 +2460,7 @@ class GEQEffect: public Effect {
       uint8_t frBand = ((NUM_BANDS < 16) && (NUM_BANDS > 1)) ? map(band, 0, NUM_BANDS - 1, 0, 15):band; // always use full range. comment out this line to get the previous behaviour.
       // frBand = constrain(frBand, 0, 15); //WLEDMM can never be out of bounds (I think...)
       uint16_t colorIndex = frBand * 17; //WLEDMM 0.255
-      uint16_t bandHeight = wledAudioMod->fftResults[frBand];  // WLEDMM we use the original ffResult, to preserve accuracy
+      uint16_t bandHeight = audioSync->fftResults[frBand];  // WLEDMM we use the original ffResult, to preserve accuracy
 
       // WLEDMM begin - smooth out bars
       if ((pos.x > 0) && (pos.x < (leds.size.x-1)) && (smoothBars)) {
@@ -2468,7 +2468,7 @@ class GEQEffect: public Effect {
         uint8_t nextband = (remaining < 1)? band +1: band;
         nextband = constrain(nextband, 0, 15);  // just to be sure
         frBand = ((NUM_BANDS < 16) && (NUM_BANDS > 1)) ? map(nextband, 0, NUM_BANDS - 1, 0, 15):nextband; // always use full range. comment out this line to get the previous behaviour.
-        uint16_t nextBandHeight = wledAudioMod->fftResults[frBand];
+        uint16_t nextBandHeight = audioSync->fftResults[frBand];
         // smooth Band height
         bandHeight = (7*bandHeight + 3*lastBandHeight + 3*nextBandHeight) / 12;   // yeees, its 12 not 13 (10% amplification)
         bandHeight = constrain(bandHeight, 0, 255);   // remove potential over/underflows
@@ -2568,7 +2568,7 @@ class LaserGEQEffect: public Effect {
     for (int i=0; i<NUM_BANDS; i++) {
       unsigned band = i;
       if (NUM_BANDS < NUM_GEQ_CHANNELS) band = map(band, 0, NUM_BANDS - 1, 0, NUM_GEQ_CHANNELS-1); // always use full range.
-      heights[i] = map8(wledAudioMod->fftResults[band],0,maxHeight); // cache fftResult[] as data might be updated in parallel by the audioreactive core
+      heights[i] = map8(audioSync->fftResults[band],0,maxHeight); // cache fftResult[] as data might be updated in parallel by the audioreactive core
     }
 
 
@@ -2701,7 +2701,7 @@ class FunkyPlankEffect: public Effect {
         if (remaining < 1) {band++; remaining += bandwidth;} //increase remaining but keep the current remaining
         remaining--; //consume remaining
 
-        int hue = wledAudioMod->fftResults[map(band, 0, num_bands-1, 0, 15)];
+        int hue = audioSync->fftResults[map(band, 0, num_bands-1, 0, 15)];
         int v = map(hue, 0, 255, 10, 255);
         leds.setPixelColor(leds.XY(posx, 0), CHSV(hue, 255, v));
       }

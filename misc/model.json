@@ -1524,17 +1524,17 @@
     "o": 7100
   },
   {
-    "id": "WLED Audio Sync Receiver",
+    "id": "Audio Sync",
     "type": "usermod",
     "ro": true,
     "max": 255,
     "n": [
       {
-        "id": "wledAudioStatus",
+        "id": "audioStatus",
         "type": "text",
         "ro": true,
         "max": 16,
-        "pid": "WLED Audio Sync Receiver",
+        "pid": "Audio Sync",
         "o": 127,
         "fun": 99
       }

@@ -40,6 +40,7 @@ class LedModEffects:public SysModule {
 
 public:
   bool newFrame = false; //for other modules (DDP)
+  unsigned long frameCounter = 0;
 
   unsigned16 fps = 60;
   unsigned long lastMappingMillis = 0;
@@ -82,7 +83,7 @@ public:
     effects.push_back(new RainEffect);
     effects.push_back(new RainbowEffect);
 
-    #ifdef STARLIGHT_USERMOD_WLEDAUDIO
+    #ifdef STARLIGHT_USERMOD_AUDIOSYNC
       //1D Volume
       effects.push_back(new FreqMatrixEffect);
       effects.push_back(new NoiseMeterEffect);
@@ -105,7 +106,7 @@ public:
     effects.push_back(new Noise2DEffect);
     effects.push_back(new OctopusEffect);
     effects.push_back(new ScrollingTextEffect);
-    #ifdef STARLIGHT_USERMOD_WLEDAUDIO
+    #ifdef STARLIGHT_USERMOD_AUDIOSYNC
       //2D WLED
       effects.push_back(new FunkyPlankEffect);
       effects.push_back(new GEQEffect);
@@ -518,12 +519,12 @@ public:
         }
       }
 
-      #ifdef STARLIGHT_USERMOD_WLEDAUDIO
+      #ifdef STARLIGHT_USERMOD_AUDIOSYNC
 
         if (mdl->getValue("viewRot")  == 4) {
-          fixture.head.x = wledAudioMod->fftResults[3];
-          fixture.head.y = wledAudioMod->fftResults[8];
-          fixture.head.z = wledAudioMod->fftResults[13];
+          fixture.head.x = audioSync->fftResults[3];
+          fixture.head.y = audioSync->fftResults[8];
+          fixture.head.z = audioSync->fftResults[13];
         }
 
       #endif
@@ -842,20 +843,14 @@ public:
     }
   } //loop
 
-  void loop1s() {
-    mdl->setValue(mdl->findVar("realFps"), "%lu /s", frameCounter);
-    frameCounter = 0;
-  }
-
-  void loop10s() {
+  // void loop10s() {
     // ppf("caching %u %u\n", trigoCached, trigoUnCached); //not working for some reason!!
     // trigoCached = 0;
     // trigoUnCached = 0;
-  }
+  // }
 
 private:
   unsigned long frameMillis = 0;
-  unsigned long frameCounter = 0;
 
 };
 

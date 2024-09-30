@@ -1,6 +1,6 @@
 /*
    @title     StarLight
-   @file      UserModWLEDAudio.h
+   @file      UserModAudioSync.h
    @date      20240819
    @repo      https://github.com/MoonModules/StarLight
    @Authors   https://github.com/MoonModules/StarLight/commits/main
@@ -21,7 +21,7 @@ enum UM_SoundSimulations {
 };
 
 
-class UserModWLEDAudio:public SysModule {
+class UserModAudioSync:public SysModule {
 
 public:
 
@@ -29,7 +29,7 @@ public:
   byte fftResults[NUM_GEQ_CHANNELS]= {0};
   float volumeSmth;
 
-  UserModWLEDAudio() :SysModule("WLED Audio Sync Receiver") {
+  UserModAudioSync() :SysModule("Audio Sync") {
   };
 
   //setup filesystem
@@ -37,10 +37,29 @@ public:
     SysModule::setup();
     parentVar = ui->initUserMod(parentVar, name, 6300);
   
-    ui->initText(parentVar, "wledAudioStatus", nullptr, 16, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(parentVar, "audioStatus", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Status");
       return true;
+    case onLoop1s: {
+      String msg = "";
+      if((lastData != 0) && isTimeout()) {
+        msg = sync.sourceIP.toString() + " Timeout " + ((millis() - lastData) / 1000)  +"s";
+      }
+      else {
+        switch(sync.receivedFormat) {
+          case -1: msg = "Not connected";
+            break;
+          case 1: msg = "V1 from " + sync.sourceIP.toString();
+            break;
+          case 2: msg = "V2 from " + sync.sourceIP.toString();
+            break;
+          default: msg = "Unknown";
+            break;
+        }
+      }
+      mdl->setValue(var, msg.c_str());
+    } return true;
     default: return false;
    }});
 
@@ -58,7 +77,7 @@ public:
     return ((millis() - lastData) > 10000);
   }
 
-  void loop() {
+  void loop20ms() {
     // SysModule::loop();
     if (mdls->isConnected && sync.read()) {
       lastData = millis();
@@ -74,27 +93,6 @@ public:
     else if((lastData == 0) || isTimeout()) { // Could also check for non-silent
       simulateSound(UMS_BeatSin);
     }
-  }
-
-  void loop10s() {
-    // ppf("%d, %s, %d\n", sync.receivedFormat, sync.sourceIP.toString().c_str(), sync.lastPacketTime);
-    String msg = "";
-    if((lastData != 0) && isTimeout()) {
-      msg = sync.sourceIP.toString() + " Timeout " + ((millis() - lastData) / 1000)  +"s";
-    }
-    else {
-      switch(sync.receivedFormat) {
-        case -1: msg = "Not connected";
-          break;
-        case 1: msg = "V1 from " + sync.sourceIP.toString();
-          break;
-        case 2: msg = "V2 from " + sync.sourceIP.toString();
-          break;
-        default: msg = "Unknown";
-          break;
-      }
-    }
-    mdl->setValue(mdl->findVar("wledAudioStatus"), "%s", msg.c_str());
   }
 
   private:
@@ -168,4 +166,4 @@ public:
 
 };
 
-extern UserModWLEDAudio *wledAudioMod;
+extern UserModAudioSync *audioSync;

@@ -64,9 +64,9 @@ UserModMDNS *mdns;
   #include "User/UserModLive.h"
   UserModLive *liveM;
 #endif
-#ifdef STARLIGHT_USERMOD_WLEDAUDIO
-  #include "User/UserModWLEDAudio.h"
-  UserModWLEDAudio *wledAudioMod;
+#ifdef STARLIGHT_USERMOD_AUDIOSYNC
+  #include "User/UserModAudioSync.h"
+  UserModAudioSync *audioSync;
 #endif
 
 //setup all modules
@@ -106,8 +106,8 @@ void setup() {
   #ifdef STARBASE_USERMOD_LIVE
     liveM = new UserModLive();
   #endif
-  #ifdef STARLIGHT_USERMOD_WLEDAUDIO
-    wledAudioMod = new UserModWLEDAudio();
+  #ifdef STARLIGHT_USERMOD_AUDIOSYNC
+    audioSync = new UserModAudioSync();
   #endif
 
   //Reorder with care! this is the order in which setup and loop is executed
@@ -143,8 +143,8 @@ void setup() {
   #endif
   mdls->add(mdl);
   mdls->add(ui);
-  #ifdef STARLIGHT_USERMOD_WLEDAUDIO
-    mdls->add(wledAudioMod); //no ui
+  #ifdef STARLIGHT_USERMOD_AUDIOSYNC
+    mdls->add(audioSync); //no ui
   #endif
   mdls->add(mdns); //no ui
   mdls->add(instances);

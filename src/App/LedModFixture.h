@@ -126,7 +126,7 @@ public:
         options.add("Tilt");
         options.add("Pan");
         options.add("Roll");
-        #ifdef STARLIGHT_USERMOD_WLEDAUDIO
+        #ifdef STARLIGHT_USERMOD_AUDIOSYNC
           options.add("Moving heads GEQ");
         #endif
         return true; }
@@ -149,7 +149,7 @@ public:
         // ui needs to load the file also initially
         char fileName[32] = "";
         if (files->seqNrToName(fileName, var["value"])) {
-          web->addResponse(mdl->findVar("pview"), "file", JsonString(fileName, JsonString::Copied));
+          web->addResponse(mdl->findVar("Fixture.pview"), "file", JsonString(fileName, JsonString::Copied));
         }
         return true; }
       case onChange: {
@@ -164,7 +164,7 @@ public:
         char fileName[32] = "";
         if (files->seqNrToName(fileName, eff->fixture.fixtureNr)) {
           //send to pview a message to get file fileName
-          web->addResponse(mdl->findVar("pview"), "file", JsonString(fileName, JsonString::Copied));
+          web->addResponse(mdl->findVar("Fixture.pview"), "file", JsonString(fileName, JsonString::Copied));
         }
         return true; }
       default: return false; 
@@ -192,9 +192,13 @@ public:
       default: return false; 
     }});
 
-    ui->initText(parentVar, "realFps", nullptr, 10, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "realFps", uint16_t(0), 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         web->addResponse(var, "comment", "f(%d leds)", eff->fixture.nrOfLeds);
+        return true;
+      case onLoop1s:
+          mdl->setValue(var, eff->frameCounter);
+          eff->frameCounter = 0;
         return true;
       default: return false;
     }});
