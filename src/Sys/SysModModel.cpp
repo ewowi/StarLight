@@ -101,6 +101,13 @@ void SysModModel::loop20ms() {
   }
 }
 
+void SysModModel::loop1s() {
+  mdl->walkThroughModel([](JsonObject var) {
+    ui->callVarFun(var, UINT8_MAX, onLoop1s);
+    return false; //don't stop
+  });
+}
+
 void SysModModel::cleanUpModel(JsonObject parent, bool oPos, bool ro) {
 
   JsonArray vars;
@@ -149,13 +156,30 @@ void SysModModel::cleanUpModel(JsonObject parent, bool oPos, bool ro) {
   }
 }
 
+bool SysModModel::walkThroughModel(std::function<bool(JsonObject)> fun, JsonObject parent) {
+  JsonArray root;
+  if (parent.isNull())
+    root = model->as<JsonArray>();
+  else
+    root = parent["n"];
+
+  for (JsonObject var : root) {
+    // ppf(" %s", var["id"].as<String>());
+    if (fun(var)) return true;
+
+    if (!var["n"].isNull()) {
+      if (walkThroughModel(fun, var)) return true;
+    }
+  }
+  return false; //don't stop
+}
+
+
 JsonObject SysModModel::findVar(const char * id, JsonObject parent) {
   JsonArray root;
-  // print ->print("findVar %s %s\n", id, parent.isNull()?"root":"n");
-  if (parent.isNull()) {
+  // ppf("findVar %s %s\n", id, parent.isNull()?"root":"n");
+  if (parent.isNull())
     root = model->as<JsonArray>();
-    modelParentVar = JsonObject();
-  }
   else
     root = parent["n"];
 
@@ -183,7 +207,6 @@ JsonObject SysModModel::findVar(const char * id, JsonObject parent) {
     // ppf("🐍%s", id);
   }
 
-  
   for (JsonObject var : root) {
     // if (foundVar.isNull()) {
       if ((pid[0]=='\0' || var["pid"] == pid) && var["id"] == id)
@@ -191,8 +214,6 @@ JsonObject SysModModel::findVar(const char * id, JsonObject parent) {
       else if (!var["n"].isNull()) {
         JsonObject foundVar = findVar(id, var);
         if (!foundVar.isNull()) {
-          if (modelParentVar.isNull()) modelParentVar = var;  //only recursive lowest assigns parentVar
-          // ppf("findvar parent of %s is %s\n", id, Variable(modelParentVar).id());
           return foundVar;
         }
       }

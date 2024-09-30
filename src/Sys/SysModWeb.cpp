@@ -51,6 +51,9 @@ void SysModWeb::setup() {
     case onUI:
       ui->setLabel(var, "Clients");
       return true;
+    case onLoop1s:
+      for (JsonObject childVar: Variable(var).children())
+        ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
     default: return false;
   }});
 
@@ -118,33 +121,52 @@ void SysModWeb::setup() {
 
   ui->initNumber(parentVar, "maxQueue", WS_MAX_QUEUED_MESSAGES, 0, WS_MAX_QUEUED_MESSAGES, true);
 
-  ui->initText(parentVar, "wsSend", nullptr, 16, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "wsSend", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "WS Send");
       // ui->setComment(var, "web socket calls");
       return true;
+    case onLoop1s:
+      mdl->setValue(var, "#: %d /s T: %d B/s B:%d B/s", sendWsCounter, sendWsTBytes, sendWsBBytes);
+      sendWsCounter = 0;
+      sendWsTBytes = 0;
+      sendWsBBytes = 0;
     default: return false;
   }});
 
-  ui->initText(parentVar, "wsRecv", nullptr, 16, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "wsRecv", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "WS Recv");
       // ui->setComment(var, "web socket calls");
       return true;
+    case onLoop1s:
+      mdl->setValue(var, "#: %d /s %d B/s", recvWsCounter, recvWsBytes);
+      recvWsCounter = 0;
+      recvWsBytes = 0;
+      return true;
     default: return false;
   }});
 
-  ui->initText(parentVar, "udpSend", nullptr, 16, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "udpSend", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "UDP Send");
       return true;
+    case onLoop1s:
+      mdl->setValue(var, "#: %d /s %d B/s", sendUDPCounter, sendUDPBytes);
+      sendUDPCounter = 0;
+      sendUDPBytes = 0;
+      return true;
     default: return false;
   }});
 
-  ui->initText(parentVar, "udpRecv", nullptr, 16, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "udpRecv", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "UDP Recv");
       return true;
+    case onLoop1s:
+      mdl->setValue(var, "#: %d /s %d B/s", recvUDPCounter, recvUDPBytes);
+      recvUDPCounter = 0;
+      recvUDPBytes = 0;
     default: return false;
   }});
 
@@ -171,24 +193,6 @@ void SysModWeb::loop20ms() {
 }
 
 void SysModWeb::loop1s() {
-  for (JsonObject childVar: Variable(mdl->findVar("clTbl")).children())
-    ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
-
-  mdl->setUIValueV("wsSend", "#: %d /s T: %d B/s B:%d B/s", sendWsCounter, sendWsTBytes, sendWsBBytes);
-  sendWsCounter = 0;
-  sendWsTBytes = 0;
-  sendWsBBytes = 0;
-  mdl->setUIValueV("wsRecv", "#: %d /s %d B/s", recvWsCounter, recvWsBytes);
-  recvWsCounter = 0;
-  recvWsBytes = 0;
-
-  mdl->setUIValueV("udpSend", "#: %d /s %d B/s", sendUDPCounter, sendUDPBytes);
-  sendUDPCounter = 0;
-  sendUDPBytes = 0;
-  mdl->setUIValueV("udpRecv", "#: %d /s %d B/s", recvUDPCounter, recvUDPBytes);
-  recvUDPCounter = 0;
-  recvUDPBytes = 0;
-
   sendResponseObject(); //this sends all the loopTask responses once per second !!!
 }
 

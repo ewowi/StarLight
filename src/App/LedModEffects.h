@@ -843,7 +843,7 @@ public:
   } //loop
 
   void loop1s() {
-    mdl->setUIValueV("realFps", "%lu /s", frameCounter);
+    mdl->setValue(mdl->findVar("realFps"), "%lu /s", frameCounter);
     frameCounter = 0;
   }
 

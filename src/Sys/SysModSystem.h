@@ -28,7 +28,6 @@ public:
   SysModSystem();
   void setup();
   void loop();
-  void loop1s();
   void loop10s();
 
   //from esp32Tools

@@ -36,7 +36,7 @@ public:
 
   void printJson(const char * text, JsonVariantConst source);
 
-  size_t fFormat(char * buf, size_t size, const char * format, ...);
+  JsonString fFormat(char * buf, size_t size, const char * format, ...);
 
   void printJDocInfo(const char * text, JsonDocument source);
 

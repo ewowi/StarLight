@@ -140,7 +140,7 @@ public:
 
     parentVar = ui->initUserMod(parentVar, name, 6310);
 
-    ui->initSelect(parentVar, "script", UINT16_MAX, false , [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "script", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI: {
         // ui->setComment(var, "Fixture to display effect on");
         JsonArray options = ui->setOptions(var);
@@ -168,8 +168,19 @@ public:
       default: return false; 
     }}); //script
 
-    ui->initText(parentVar, "fps1", nullptr, 10, true);
-    ui->initText(parentVar, "fps2", nullptr, 10, true);
+    ui->initText(parentVar, "fps1", nullptr, 10, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onLoop1s:
+        mdl->setValue(var, "%.0f /s", fps);
+        return true;
+      default: return false; 
+    }});
+    ui->initText(parentVar, "fps2", nullptr, 10, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      case onLoop1s:
+        mdl->setValue(var, "%d /s", frameCounter);
+        frameCounter = 0;
+        return true;
+      default: return false; 
+    }});
 
     //Live scripts defaults
     addExternalFun("void", "show", "()", (void *)&show); //comment if setup/loop model works
@@ -280,12 +291,6 @@ public:
       }
       strcpy(web->lastFileUpdated, "");
     }
-  }
-
-  void loop1s() {
-    mdl->setUIValueV("fps1", "%.0f /s", fps);
-    mdl->setUIValueV("fps2", "%d /s", frameCounter);
-    frameCounter = 0;
   }
 
   void run(const char *fileName) {

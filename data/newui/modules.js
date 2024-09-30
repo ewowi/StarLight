@@ -102,6 +102,15 @@ class Modules {
     })
   }
 
+  //finds a var with id in the model, if found returns it
+  findVarP(pid, id) {
+    // console.log("findVar", id, parent, model);
+    return this.walkThroughModel(function(variable){
+      if (variable.pid == pid, variable.id == id) //found variable
+        return variable; //this stops the walkThrough
+    })
+  }
+
   previewBoard(canvasNode, buffer) {
     let boardColor;
     if (controller.sysInfo.board == "esp32s2") boardColor = "purple";
@@ -304,7 +313,7 @@ class Variable {
   //used by Live Server
   generateData(custom = `"value":${Math.random() * 256}`) {
     if (custom != "") custom += ", "
-    controller.receiveData(JSON.parse(`{"${this.variable.id}":{${custom}"comment":"${Math.random().toString(36).slice(2)}"}}`));
+    controller.receiveData(JSON.parse(`{"${this.variable.pid + "." + this.variable.id}":{${custom}"comment":"${Math.random().toString(36).slice(2)}"}}`));
   }
 
 } //class Variable

@@ -272,7 +272,7 @@ public:
             //do what setValue is doing except calling onChange
             // insVar["value"][rowNrL] = instances[rowNrL].jsonData[Variable(var).id()]; //only int values...
 
-            web->addResponse(insVar["id"], "value", instances[rowNrL].jsonData[Variable(var).id()], rowNrL);
+            web->addResponse(insVar, "value", instances[rowNrL].jsonData[Variable(var).id()], rowNrL);
 
             // mdl->setValue(insVar, instances[rowNrL].jsonData[Variable(var).id()], rowNr);
           //send to ws?

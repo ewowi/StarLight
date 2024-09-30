@@ -307,7 +307,8 @@ class Variable {
               ppf("remove allnulls %s\n", childVariable.id());
               children().remove(childVarIt);
             }
-            web->addResponse("details", "rowNr", rowNr);
+            web->getResponseObject()["details"]["rowNr"] = rowNr;
+
           }
           else
             print->printJson("dev array but not rowNr", var);
@@ -330,7 +331,7 @@ class Variable {
     ppf("\n");
 
     //post update details
-    web->addResponse("details", "var", var);
+    web->getResponseObject()["details"]["var"] = var;
   }
 
 }; //class Variable
@@ -343,8 +344,6 @@ public:
   RAM_Allocator allocator;
   JsonDocument *model = nullptr;
 
-  JsonObject modelParentVar;
-
   bool doWriteModel = false;
 
   unsigned8 setValueRowNr = UINT8_MAX;
@@ -354,6 +353,7 @@ public:
   SysModModel();
   void setup();
   void loop20ms();
+  void loop1s();
   
   //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
   void cleanUpModel(JsonObject parent = JsonObject(), bool oPos = true, bool ro = false);
@@ -411,7 +411,7 @@ public:
             ppf("setValue changed %s %s -> %s\n", variable.id(), var["oldValue"].as<String>().c_str(), variable.valueString().c_str());
           // else
           //   ppf("setValue changed %s %s\n", Variable(var).id(), var["value"].as<String>().c_str());
-          web->addResponse(variable.id(), "value", var["value"]);
+          web->addResponse(var, "value", var["value"]);
           changed = true;
         }
       }
@@ -437,7 +437,7 @@ public:
           //   ppf("notSame %d %d\n", rowNr, valueArray.size());
           valueArray[rowNr] = value; //if valueArray[<rowNr] not exists it will be created
           // ppf("  assigned %d %d %s\n", rowNr, valueArray.size(), valueArray[rowNr].as<String>().c_str());
-          web->addResponse(variable.id(), "value", var["value"]); //send the whole array to UI as response is in format value:<value> !!
+          web->addResponse(var, "value", var["value"]); //send the whole array to UI as response is in format value:<value> !!
           changed = true;
         }
       }
@@ -451,8 +451,8 @@ public:
     return var;
   }
 
-  //Set value with argument list with rowNr (rowNr cannot have a default)
-  JsonObject setValueV(const char * id, unsigned8 rowNr = UINT8_MAX, const char * format = nullptr, ...) {
+  //Set value with argument list
+  JsonObject setValue(JsonObject var, const char * format = nullptr, ...) {
     va_list args;
     va_start(args, format);
 
@@ -461,21 +461,7 @@ public:
 
     va_end(args);
 
-    ppf("setValueV %s[%d] = %s\n", id, rowNr, value);
-    return setValue(id, JsonString(value, JsonString::Copied), rowNr);
-  }
-
-  void setUIValueV(const char * id, const char * format, ...) {
-    va_list args;
-    va_start(args, format);
-
-    char value[128];
-    vsnprintf(value, sizeof(value)-1, format, args);
-
-    va_end(args);
-
-    //no print
-    web->addResponse(id, "value", JsonString(value, JsonString::Copied)); //setValue not necessary
+    return setValue(var, JsonString(value, JsonString::Copied));
   }
 
   JsonVariant getValue(const char * id, unsigned8 rowNr = UINT8_MAX) {
@@ -507,6 +493,7 @@ public:
   }
 
   //returns the var defined by id (parent to recursively call findVar)
+  bool walkThroughModel(std::function<bool(JsonObject)> fun, JsonObject parent = JsonObject());
   JsonObject findVar(const char * id, JsonObject parent = JsonObject());
   // JsonObject findParentVar(const char * id, JsonObject parent = JsonObject());
   void findVars(const char * id, bool value, FindFun fun, JsonArray parent = JsonArray());

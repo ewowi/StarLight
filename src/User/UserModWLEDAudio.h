@@ -94,7 +94,7 @@ public:
           break;
       }
     }
-    mdl->setUIValueV("wledAudioStatus", "%s", msg.c_str());
+    mdl->setValue(mdl->findVar("wledAudioStatus"), "%s", msg.c_str());
   }
 
   private:

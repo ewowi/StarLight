@@ -20,6 +20,7 @@ enum FunTypes
   onUI,
   onChange,
   onLoop,
+  onLoop1s,
   onAdd,
   onDelete,
   f_count
@@ -46,7 +47,6 @@ public:
   void setup();
 
   void loop20ms();
-  void loop1s();
 
   //order: order%4 determines the column (WIP)
   JsonObject initAppMod(JsonObject parent, const char * id, int order = 0) {
@@ -404,27 +404,36 @@ public:
   // void processOnUI(const char * id);
 
   void setLabel(JsonObject var, const char * text) {
-    web->addResponse(var["id"], "label", text);
+    web->addResponse(var, "label", text);
   }
   void setComment(JsonObject var, const char * text) {
-    web->addResponse(var["id"], "comment", text);
+    web->addResponse(var, "comment", text);
   }
   JsonArray setOptions(JsonObject var) {
-    return web->addResponseA(var["id"], "options");
+    JsonObject responseObject = web->getResponseObject();
+    char pidid[32];
+    print->fFormat(pidid, 32, "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    return responseObject[pidid]["options"].to<JsonArray>();
   }
   //return the options from onUI (don't forget to clear responseObject)
   JsonArray getOptions(JsonObject var) {
     callVarFun(var, UINT8_MAX, onUI); //rebuild options
-    return web->getResponseObject()[Variable(var).id()]["options"];
+    char pidid[32];
+    print->fFormat(pidid, 32, "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    return web->getResponseObject()[pidid]["options"];
   }
   void clearOptions(JsonObject var) {
-    web->getResponseObject()[Variable(var).id()].remove("options");
+    char pidid[32];
+    print->fFormat(pidid, 32, "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    web->getResponseObject()[pidid].remove("options");
   }
 
   //find options text in a hierarchy of options
   void findOptionsText(JsonObject var, uint8_t value, char * groupName, char * optionName) {
     uint8_t startValue = 0;
-    bool optionsExisted = !web->getResponseObject()[Variable(var).id()]["options"].isNull();
+    char pidid[32];
+    print->fFormat(pidid, 32, "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    bool optionsExisted = !web->getResponseObject()[pidid]["options"].isNull();
     JsonString groupNameJS;
     JsonString optionNameJS;
     JsonArray options = getOptions(var);

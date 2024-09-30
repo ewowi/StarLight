@@ -49,6 +49,11 @@ void SysModUI::setup() {
     case onUI:
       ui->setLabel(var, "Loops p s");
       return true;
+    case onLoop1s:
+      callVarFun(var, UINT8_MAX, onSetValue); //set the value (WIP)
+      for (VarLoop &varLoop : loopFunctions)
+        varLoop.counter = 0;
+      return true;
     default: return false;
   }});
 }
@@ -67,20 +72,12 @@ void SysModUI::loop20ms() { //never more then 50 times a second!
   }
 }
 
-void SysModUI::loop1s() {
-  //if something changed in vloops
-  callVarFun("vlLoopps", UINT8_MAX, onSetValue); //set the value (WIP)
-  for (VarLoop &varLoop : loopFunctions)
-    varLoop.counter = 0;
-}
-
 JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * type, bool readOnly, VarFun varFun) {
-  JsonObject var = mdl->findVar(id); //sets the existing modelParentVar
-  const char * modelParentId = mdl->modelParentVar["id"];
+  JsonObject var = mdl->findVar(id);
+  const char * modelParentId = var["pid"];
   const char * parentId = parent["id"];
 
   bool differentParents = modelParentId != nullptr && parentId != nullptr && strcmp(modelParentId, parentId) != 0;
-  //!mdl->modelParentVar.isNull() && !parent.isNull() && mdl->modelParentVar["id"] != parent["id"];
   if (differentParents) {
     ppf("initVar parents not equal %s: %s != %s\n", id, modelParentId, parentId);
   }

@@ -92,19 +92,19 @@ void SysModPrint::printf(const char * format, ...) {
   
   if (mdls->isConnected) {
     if (mdl->model)
-      pOut = mdl->getValue("pOut");
+      pOut = mdl->getValue("pOut"); //"Print", 
 
     if (pOut == 1) {
       toSerial = true;
     }
     else if (pOut == 2) {
       JsonObject responseObject = web->getResponseObject();
-      if (responseObject["log"]["value"].isNull())
-        responseObject["log"]["value"] = buffer;
+      if (responseObject["Print.log"]["value"].isNull())
+        responseObject["Print.log"]["value"] = buffer;
       else
-        responseObject["log"]["value"] = responseObject["log"]["value"].as<String>() + String(buffer);
-      // web->addResponse("log", "value", JsonString(buffer, JsonString::Copied)); //setValue not necessary
-      // mdl->setUIValueV("log", "%s", buffer);
+        responseObject["Print.log"]["value"] = responseObject["Print.log"]["value"].as<String>() + String(buffer);
+      // web->addResponse(var, "value", JsonString(buffer, JsonString::Copied)); //setValue not necessary
+      // mdl->setValue(var, "%s", buffer);
     }
     else if (pOut == 3) {
       //tbd
@@ -152,7 +152,7 @@ void SysModPrint::printJson(const char * text, JsonVariantConst source) {
   printf("%s %s\n", text, resStr);
 }
 
-size_t SysModPrint::fFormat(char * buf, size_t size, const char * format, ...) {
+JsonString SysModPrint::fFormat(char * buf, size_t size, const char * format, ...) {
   va_list args;
   va_start(args, format);
 
@@ -162,7 +162,7 @@ size_t SysModPrint::fFormat(char * buf, size_t size, const char * format, ...) {
 
   // Serial.printf("fFormat %s (%d)\n", buf, size);
 
-  return len;
+  return JsonString(buf, JsonString::Copied);
 }
 
 void SysModPrint::printJDocInfo(const char * text, JsonDocument source) {

@@ -116,38 +116,30 @@ public:
   bool captivePortal(WebRequest *request);
 
   template <typename Type>
-  void addResponse(const char * id, const char * key, Type value, unsigned8 rowNr = UINT8_MAX) {
+  void addResponse(JsonObject var, const char * key, Type value, unsigned8 rowNr = UINT8_MAX) {
     JsonObject responseObject = getResponseObject();
     // if (responseObject[id].isNull()) responseObject[id].to<JsonObject>();;
+    char pidid[32];
+    print->fFormat(pidid, 32, "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
     if (rowNr == UINT8_MAX)
-      responseObject[id][key] = value;
+      responseObject[pidid][key] = value;
     else {
-      if (!responseObject[id][key].is<JsonArray>())
-        responseObject[id][key].to<JsonArray>();
-      responseObject[id][key][rowNr] = value;
+      if (!responseObject[pidid][key].is<JsonArray>())
+        responseObject[pidid][key].to<JsonArray>();
+      responseObject[pidid][key][rowNr] = value;
     }
   }
 
-  JsonArray addResponseA(const char * id, const char * key) {
-    JsonObject responseObject = getResponseObject();
-    // if (responseObject[id].isNull()) responseObject[id].to<JsonObject>();;
-    return responseObject[id][key].to<JsonArray>();
-  }
-
-  void addResponseV(const char * id, const char * key, const char * format, ...) {
-    JsonObject responseObject = getResponseObject();
-    // if (responseObject[id].isNull()) responseObject[id].to<JsonObject>();;
-
+  void addResponse(JsonObject var, const char * key, const char * format = nullptr, ...) {
     va_list args;
     va_start(args, format);
 
-    // size_t len = vprintf(format, args);
     char value[128];
     vsnprintf(value, sizeof(value)-1, format, args);
 
     va_end(args);
 
-    responseObject[id][key] = JsonString(value, JsonString::Copied);
+    addResponse(var, key, JsonString(value, JsonString::Copied));
   }
 
   void clientsToJson(JsonArray array, bool nameOnly = false, const char * filter = nullptr);

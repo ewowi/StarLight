@@ -118,7 +118,7 @@ void SysModFiles::setup() {
       return true;
     case onChange:
       var["max"] = files->totalBytes(); //makes sense?
-      web->addResponseV(var["id"], "comment", "%d / %d B", files->usedBytes(), files->totalBytes());
+      web->addResponse(var, "comment", "%d / %d B", files->usedBytes(), files->totalBytes());
       return true;
     default: return false;
   }});

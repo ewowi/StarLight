@@ -375,7 +375,8 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
 
           var command = {};
           command.onAdd = {};
-          command.onAdd.id = variable.pid + "." + variable.id;
+          command.onAdd.pid = variable.pid;
+          command.onAdd.id = variable.id;
           requestJson(command);
         });
         divNode.appendChild(buttonNode);
@@ -701,7 +702,8 @@ function genTableRowHTML(json, parentNode = null, rowNr = UINT8_MAX) {
 
       var command = {};
       command.onDelete = {};
-      command.onDelete.id = variable.pid + "." + variable.id;
+      command.onDelete.pid = variable.pid;
+      command.onDelete.id = variable.id;
       command.onDelete.rowNr = rowNr;
       requestJson(command);
 
@@ -710,7 +712,7 @@ function genTableRowHTML(json, parentNode = null, rowNr = UINT8_MAX) {
     trNode.appendChild(tdNode);
   }
   flushOnUICommands();
-  if (variable.id == "insTbl")
+  if (variable.pid == "Instances" && variable.id == "insTbl")
     setInstanceTableColumns();
 }
 
@@ -810,7 +812,7 @@ function receiveData(json) {
       } else if (key == "updRow") { //update the row of a table
 
         let tableId = value.id;
-        let tableVar = controller.modules.findVar(tableId);
+        let tableVar = controller.modules.findVar(tableId); //TBD!!!
         let rowNr = value.rowNr;
         let tableRow = value.value;
 
@@ -1036,7 +1038,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
 
         flushOnUICommands(); //make sure onUIs of new elements are called
 
-        if (variable.id == "insTbl")
+        if (variable.pid == "Instances" && variable.id == "insTbl")
           setInstanceTableColumns();
       }
       else

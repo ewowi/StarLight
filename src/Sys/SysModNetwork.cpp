@@ -44,7 +44,10 @@ void SysModNetwork::setup() {
     case onUI:
       ui->setLabel(var, "Ethernet");
       return true;
-    //initEthernet not done in onChange as initEthernet needs a bit of a delay
+    case onLoop1s:
+      //initEthernet not done in onChange as initEthernet needs a bit of a delay
+      if (!ethActive && mdl->getValue(var).as<bool>())
+        initEthernet();
     default: return false;
     }});
 
@@ -143,9 +146,12 @@ void SysModNetwork::setup() {
       default: return false;
     }});
 
-    ui->initText(currentVar, "etStatus", nullptr, 32, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initText(currentVar, "etStatus", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "Status");
+        return true;
+      case onLoop1s:
+          mdl->setValue(var, "%s %s", ethActive?ETH.localIP()[0]?"🟢":"🟠":"🛑", ethActive?ETH.localIP().toString().c_str():"inactive");
         return true;
       default: return false;
     }});
@@ -192,12 +198,18 @@ void SysModNetwork::setup() {
     case onUI:
       ui->setLabel(var, "Signal");
       return true;
+    case onLoop1s:
+      mdl->setValue(var, "%d dBm", WiFi.RSSI());
+      return true;
     default: return false;
   }});
 
-  ui->initText(currentVar, "wfStatus", nullptr, 32, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(currentVar, "wfStatus", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Status");
+      return true;
+    case onLoop1s:
+      mdl->setValue(var, "%s %s (s:%d)",  wfActive?WiFi.localIP()[0]?"🟢":"🟠":"🛑", wfActive?WiFi.localIP().toString().c_str():"inactive", WiFi.status());
       return true;
     default: return false;
   }});
@@ -212,11 +224,20 @@ void SysModNetwork::setup() {
       else
         stopAP();
       return true;
+    // case onLoop1s:
+      // if (!apActive && mdl->getValue(var).as<bool>()) {
+      //   stopAP();
+      //   initAP();
+      // }
+      // return true;
     default: return false;
   }});
-  ui->initText(currentVar, "apStatus", nullptr, 32, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(currentVar, "apStatus", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Status");
+      return true;
+    case onLoop1s:
+      mdl->setValue(var, "%s %s",  apActive?WiFi.softAPIP()[0]?"🟢":"🟠":"🛑", apActive?WiFi.softAPIP().toString().c_str():"inactive");
       return true;
     default: return false;
   }});
@@ -224,24 +245,6 @@ void SysModNetwork::setup() {
 }
 
 void SysModNetwork::loop1s() {
-
-  #ifdef STARBASE_ETHERNET
-    mdl->setUIValueV("etStatus", "%s %s",  ethActive?ETH.localIP()[0]?"🟢":"🟠":"🛑", ethActive?ETH.localIP().toString().c_str():"inactive");
-  #endif
-  mdl->setUIValueV("wfStatus", "%s %s (s:%d)",  wfActive?WiFi.localIP()[0]?"🟢":"🟠":"🛑", wfActive?WiFi.localIP().toString().c_str():"inactive", WiFi.status());
-  mdl->setUIValueV("apStatus", "%s %s",  apActive?WiFi.softAPIP()[0]?"🟢":"🟠":"🛑", apActive?WiFi.softAPIP().toString().c_str():"inactive");
-  mdl->setUIValueV("rssi", "%d dBm", WiFi.RSSI());
-
-  #ifdef STARBASE_ETHERNET
-    //not done in onChange as initEthernet needs a bit of a delay
-    if (!ethActive && mdl->getValue("ethOn").as<bool>())
-      initEthernet();
-  #endif
-
-  // if (!apActive && mdl->getValue("apOn").as<bool>()) {
-  //   stopAP();
-  //   initAP();
-  // }
 
   if (apActive)
     handleAP();

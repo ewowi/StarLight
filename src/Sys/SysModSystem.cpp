@@ -60,6 +60,9 @@ void SysModSystem::setup() {
     case onUI:
       ui->setComment(var, "s. Uptime of board");
       return true;
+    case onLoop1s:
+      mdl->setValue(var, millis()/1000);
+      return true; 
     default: return false;
   }});
 
@@ -68,6 +71,9 @@ void SysModSystem::setup() {
       ui->setLabel(var, "now");
       ui->setComment(var, "s");
       return true;
+    case onLoop1s:
+      mdl->setValue(var, now/1000);
+      return true;
     default: return false;
   }});
 
@@ -75,6 +81,9 @@ void SysModSystem::setup() {
     case onUI:
       ui->setLabel(var, "TimeBase");
       ui->setComment(var, "s");
+      return true;
+    case onLoop1s:
+      mdl->setValue(var, (now<millis())? - (UINT32_MAX - timebase)/1000:timebase/1000);
       return true;
     default: return false;
   }});
@@ -94,7 +103,16 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  ui->initText(parentVar, "loops", nullptr, 16, true);
+  ui->initText(parentVar, "loops", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    case onUI:
+      ui->setComment(var, "Loops per second");
+      return true;
+    case onLoop1s:
+      mdl->setValue(var, loopCounter);
+      loopCounter = 0;
+      return true;
+    default: return false;
+  }});
 
   print->fFormat(chipInfo, sizeof(chipInfo)-1, "%s %s (%d.%d.%d) c#:%d %d mHz f:%d KB %d mHz %d", ESP.getChipModel(), ESP.getSdkVersion(), ESP_ARDUINO_VERSION_MAJOR, ESP_ARDUINO_VERSION_MINOR, ESP_ARDUINO_VERSION_PATCH, ESP.getChipCores(), ESP.getCpuFreqMHz(), ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed()/1000000, ESP.getFlashChipMode());
   ui->initText(parentVar, "chip", chipInfo, 16, true);
@@ -102,7 +120,7 @@ void SysModSystem::setup() {
   ui->initProgress(parentVar, "heap", (ESP.getHeapSize()-ESP.getFreeHeap()) / 1000, 0, ESP.getHeapSize()/1000, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onChange:
       var["max"] = ESP.getHeapSize()/1000; //makes sense?
-      web->addResponseV(var["id"], "comment", "f:%d / t:%d (l:%d) B [%d %d]", ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+      web->addResponse(var, "comment", "f:%d / t:%d (l:%d) B [%d %d]", ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
       //temporary add esp_get_free_heap_size(), esp_get_free_internal_heap_size() to see if/how it differs
       return true;
     default: return false;
@@ -112,7 +130,7 @@ void SysModSystem::setup() {
     ui->initProgress(parentVar, "psram", (ESP.getPsramSize()-ESP.getFreePsram()) / 1000, 0, ESP.getPsramSize()/1000, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
         var["max"] = ESP.getPsramSize()/1000; //makes sense?
-        web->addResponseV(var["id"], "comment", "%d / %d (%d) B", ESP.getFreePsram(), ESP.getPsramSize(), ESP.getMinFreePsram());
+        web->addResponse(var, "comment", "%d / %d (%d) B", ESP.getFreePsram(), ESP.getPsramSize(), ESP.getMinFreePsram());
         return true;
       default: return false;
     }});
@@ -124,7 +142,7 @@ void SysModSystem::setup() {
       return true;
     case onChange:
       var["max"] = getArduinoLoopTaskStackSize(); //makes sense?
-      web->addResponseV(var["id"], "comment", "%d of %d B", sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize());
+      web->addResponse(var, "comment", "%d of %d B", sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize());
       return true;
     default: return false;
   }});
@@ -134,7 +152,7 @@ void SysModSystem::setup() {
       ui->setLabel(var, "TCP stack");
       return true;
     case onChange:
-      web->addResponseV(var["id"], "comment", "%d of %d B", sysTools_get_webserver_maxStackUsage(), CONFIG_ASYNC_TCP_STACK_SIZE);
+      web->addResponse(var, "comment", "%d of %d B", sysTools_get_webserver_maxStackUsage(), CONFIG_ASYNC_TCP_STACK_SIZE);
       return true;
     default: return false;
   }});
@@ -218,16 +236,6 @@ void SysModSystem::loop() {
   now = millis() + timebase;
 }
 
-void SysModSystem::loop1s() {
-  mdl->setUIValueV("upTime", "%lu s", millis()/1000);
-  // mdl->setUIValueV("now", "%lu s", now/1000);
-  mdl->setValue(mdl->findVar("now"), now/1000);
-  // mdl->setUIValueV("timeBase", "%lu s", (now<millis())? - (UINT32_MAX - timebase)/1000:timebase/1000);
-  mdl->setValue(mdl->findVar("timeBase"), (now<millis())? - (UINT32_MAX - timebase)/1000:timebase/1000);
-  mdl->setUIValueV("loops", "%lu /s", loopCounter);
-
-  loopCounter = 0;
-}
 void SysModSystem::loop10s() {
   mdl->setValue("heap", (ESP.getHeapSize()-ESP.getFreeHeap()) / 1000);
   mdl->setValue("mainStack", sysTools_get_arduino_maxStackUsage());

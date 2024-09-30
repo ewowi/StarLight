@@ -43,16 +43,22 @@ public:
       default: return false;
     }}); 
 
-    ui->initCoord3D(parentVar, "gyro", &gyro, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "gyro", &gyro, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setComment(var, "in degrees");
+        return true;
+      case onLoop1s:
+        mdl->setValue(var, gyro); //automatic as var is referenced???
         return true;
       default: return false;
     }});
 
-    ui->initCoord3D(parentVar, "accell", &accell, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "accell", &accell, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setComment(var, "in m/s²");
+        return true;
+      case onLoop1s:
+        mdl->setValue(var, accell); //automatic as var is referenced???
         return true;
       default: return false;
     }}); 
@@ -122,14 +128,6 @@ public:
       accell.y = aaReal.y;
       accell.z = aaReal.z;
     }
-  }
-
-  void loop1s() {
-    //for debugging
-    // ppf("mpu6050 ptr:%d,%d,%d ar:%d,%d,%d\n", gyro.x, gyro.y, gyro.z, accell.x, accell.y, accell.z);
-
-    mdl->setValue("gyro", gyro);
-    mdl->setValue("accell", accell);
   }
 
   private:

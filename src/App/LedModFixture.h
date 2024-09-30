@@ -149,7 +149,7 @@ public:
         // ui needs to load the file also initially
         char fileName[32] = "";
         if (files->seqNrToName(fileName, var["value"])) {
-          web->addResponse("pview", "file", JsonString(fileName, JsonString::Copied));
+          web->addResponse(mdl->findVar("pview"), "file", JsonString(fileName, JsonString::Copied));
         }
         return true; }
       case onChange: {
@@ -164,7 +164,7 @@ public:
         char fileName[32] = "";
         if (files->seqNrToName(fileName, eff->fixture.fixtureNr)) {
           //send to pview a message to get file fileName
-          web->addResponse("pview", "file", JsonString(fileName, JsonString::Copied));
+          web->addResponse(mdl->findVar("pview"), "file", JsonString(fileName, JsonString::Copied));
         }
         return true; }
       default: return false; 
@@ -180,7 +180,7 @@ public:
     ui->initNumber(currentVar, "fixCount", &eff->fixture.nrOfLeds, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "Count");
-        web->addResponseV(var["id"], "comment", "Max %d", NUM_LEDS_Max);
+        web->addResponse(var, "comment", "Max %d", NUM_LEDS_Max);
         return true;
       default: return false;
     }});
@@ -194,7 +194,7 @@ public:
 
     ui->initText(parentVar, "realFps", nullptr, 10, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
-        web->addResponseV(var["id"], "comment", "f(%d leds)", eff->fixture.nrOfLeds);
+        web->addResponse(var, "comment", "f(%d leds)", eff->fixture.nrOfLeds);
         return true;
       default: return false;
     }});
