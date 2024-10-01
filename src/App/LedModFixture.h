@@ -15,7 +15,7 @@ public:
 
   uint8_t viewRotation = 0;
   uint8_t bri = 10;
-  bool rgb1B = true;
+  bool rgb1B = false;
 
   LedModFixture() :SysModule("Fixture") {};
 
@@ -29,7 +29,7 @@ public:
         ui->setLabel(var, "On");
         return true;
       case onChange:
-        mdl->callVarOnChange(mdl->findVar("bri"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+        mdl->callVarOnChange(mdl->findVar("Fixture", "bri"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
         return true;
       default: return false;
     }});
@@ -42,7 +42,7 @@ public:
         return true;
       case onChange: {
         //bri set by StarMod during onChange
-        stackUnsigned8 result = mdl->getValue("on").as<bool>()?mdl->linearToLogarithm(bri):0;
+        stackUnsigned8 result = mdl->getValue("Fixture", "on").as<bool>()?mdl->linearToLogarithm(bri):0;
 
         #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
           eff->driver.setBrightness(result * eff->fixture.setMaxPowerBrightness / 256);
@@ -149,7 +149,7 @@ public:
         // ui needs to load the file also initially
         char fileName[32] = "";
         if (files->seqNrToName(fileName, var["value"])) {
-          web->addResponse(mdl->findVar("Fixture.pview"), "file", JsonString(fileName, JsonString::Copied));
+          web->addResponse(mdl->findVar("Fixture", "pview"), "file", JsonString(fileName, JsonString::Copied));
         }
         return true; }
       case onChange: {
@@ -164,7 +164,7 @@ public:
         char fileName[32] = "";
         if (files->seqNrToName(fileName, eff->fixture.fixtureNr)) {
           //send to pview a message to get file fileName
-          web->addResponse(mdl->findVar("Fixture.pview"), "file", JsonString(fileName, JsonString::Copied));
+          web->addResponse(mdl->findVar("Fixture", "pview"), "file", JsonString(fileName, JsonString::Copied));
         }
         return true; }
       default: return false; 
@@ -180,7 +180,7 @@ public:
     ui->initNumber(currentVar, "fixCount", &eff->fixture.nrOfLeds, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "Count");
-        web->addResponse(var, "comment", "Max %d", NUM_LEDS_Max);
+        web->addResponse(var, "comment", "Max %d", NUM_LEDS_Max, 0); //0 is to force format overload used
         return true;
       default: return false;
     }});
@@ -194,7 +194,7 @@ public:
 
     ui->initNumber(parentVar, "realFps", uint16_t(0), 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
-        web->addResponse(var, "comment", "f(%d leds)", eff->fixture.nrOfLeds);
+        web->addResponse(var, "comment", "f(%d leds)", eff->fixture.nrOfLeds, 0); //0 is to force format overload used
         return true;
       case onLoop1s:
           mdl->setValue(var, eff->frameCounter);

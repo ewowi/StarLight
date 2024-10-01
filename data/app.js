@@ -28,7 +28,7 @@ function userFun(buffer) {
     if (!canvasNode) canvasNode = gId("pview"); //backwards compatibility (temp)
 
     if (canvasNode) {
-      let pviewVar = controller.modules.findVar("pview"); //backwards compatibility (temp)
+      let pviewVar = controller.modules.findVar("Fixture", "pview");
   
       //replace the canvas: in case we switch from 2D to 3D as they cannot be reused between them
       //not needed anymore as we do only three.js

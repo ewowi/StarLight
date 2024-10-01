@@ -1337,7 +1337,7 @@ class ScrollingTextEffect: public Effect {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t font = leds.effectData.read<uint8_t>();
-    const char * text = mdl->getValue("text"); //effectData to be implemented!
+    const char * text = mdl->getValue("fx", "text"); //effectData to be implemented!
 
     // text might be nullified by selecting other effects and if effect is selected, controls are run afterwards  
     // tbd: this should be removed and fx.onChange (setEffect) must make sure this cannot happen!!
@@ -1570,7 +1570,7 @@ class GameOfLifeEffect: public Effect {
     if (*ruleChanged) {
       *ruleChanged = false;
       String ruleString = "";
-      if      (ruleset == 0) ruleString = mdl->getValue("Custom Rule String").as<String>(); //Custom
+      if      (ruleset == 0) ruleString = mdl->getValue("fx", "Custom Rule String").as<String>(); //Custom
       else if (ruleset == 1) ruleString = "B3/S23";         //Conway's Game of Life
       else if (ruleset == 2) ruleString = "B36/S23";        //HighLife
       else if (ruleset == 3) ruleString = "B0123478/S34678";//InverseLife
@@ -1993,7 +1993,7 @@ class RubiksCubeEffect: public Effect {
       default: return false;
     }});
     ui->initCheckBox(parentVar, "Random Turning", leds.effectData.write<bool>(false), false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
-      case onChange: {if (!mdl->getValue("Random Turning")) *setup = true; return true;}
+      case onChange: {if (!mdl->getValue("fx", "Random Turning")) *setup = true; return true;}
       default: return false;
     }});
   }

@@ -212,7 +212,7 @@ public:
 
         //create a new leds instance if a new row is created
         if (rowNr >= fixture.layers.size()) {
-          ppf("layers fx[%d] onChange %d %s\n", rowNr, fixture.layers.size(), Variable(mdl->findVar("fx")).valueString().c_str());
+          ppf("layers fx[%d] onChange %d %s\n", rowNr, fixture.layers.size(), Variable(mdl->findVar("layerTbl", "fx")).valueString().c_str());
           ppf("fx creating new LedsLayer instance %d\n", rowNr);
           LedsLayer *leds = new LedsLayer(fixture);
           fixture.layers.push_back(leds);
@@ -448,16 +448,16 @@ public:
 
     #ifdef STARBASE_USERMOD_E131
       // if (e131mod->isEnabled) {
-          e131mod->patchChannel(0, "bri", 255); //should be 256??
-          e131mod->patchChannel(1, "fx", effects.size());
-          e131mod->patchChannel(2, "pal", 8); //tbd: calculate nr of palettes (from select)
+          e131mod->patchChannel(0, "Fixture", "bri", 255); //should be 256??
+          e131mod->patchChannel(1, "layerTbl", "fx", effects.size());
+          e131mod->patchChannel(2, "fx", "pal", 8); //tbd: calculate nr of palettes (from select)
           // //add these temporary to test remote changing of this values do not crash the system
           // e131mod->patchChannel(3, "pro", Projections::count);
           // e131mod->patchChannel(4, "fixture", 5); //assuming 5!!!
 
           // ui->dashVarChanged = true;
           // //rebuild the table
-          for (JsonObject childVar: Variable(mdl->findVar("e131Tbl")).children())
+          for (JsonObject childVar: Variable(mdl->findVar("E131", "e131Tbl")).children())
             ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
 
       // }
@@ -470,8 +470,13 @@ public:
     #else
       FastLED.setMaxPowerInMilliWatts(10000); // 5v, 2000mA
     #endif
+
+    //for use in loop
+    varSystem = mdl->findVar("m", "System");
+    viewRot = mdl->getValue("pview", "viewRot");
   }
 
+  //this loop is run as often as possible so coding should also be as efficient as possible (no findVars etc)
   void loop() {
     // SysModule::loop();
 
@@ -521,7 +526,7 @@ public:
 
       #ifdef STARLIGHT_USERMOD_AUDIOSYNC
 
-        if (mdl->getValue("viewRot")  == 4) {
+        if (viewRot == 4) {
           fixture.head.x = audioSync->fftResults[3];
           fixture.head.y = audioSync->fftResults[8];
           fixture.head.z = audioSync->fftResults[13];
@@ -549,8 +554,8 @@ public:
       newFrame = false;
     }
 
-    JsonObject varSystem = mdl->findVar("System");
-    if (!varSystem["canvasData"].isNull()) {
+    // JsonObject varSystem = mdl->findVar("m", "System");
+    if (!varSystem["canvasData"].isNull()) { //tbd: pubsub system
       const char * canvasData = varSystem["canvasData"]; //0 - 494 - 140,150,0
       ppf("LedModEffects loop canvasData %s\n", canvasData);
 
@@ -574,7 +579,7 @@ public:
           token = strtok(NULL, ",");
           if (token != NULL) newCoord->z = atoi(token) / 10; else newCoord->z = 0;
 
-          mdl->setValue(isStart?"ledsStart":isEnd?"ledsEnd":"ledsMid", *newCoord, 0); //assuming row 0 for the moment
+          mdl->setValue("layerTbl", isStart?"ledsStart":isEnd?"ledsEnd":"ledsMid", *newCoord, 0); //assuming row 0 for the moment
 
           fixture.layers[rowNr]->triggerMapping();
         }
@@ -851,6 +856,8 @@ public:
 
 private:
   unsigned long frameMillis = 0;
+  JsonObject varSystem = JsonObject();
+  uint8_t viewRot = UINT8_MAX;
 
 };
 

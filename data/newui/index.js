@@ -86,7 +86,7 @@ class Controller {
         let canvasNode = gId("Fixture.pview");
         if (canvasNode) {
           // console.log(buffer, canvasNode);
-          let pviewVar = controller.modules.findVarP("Fixture", "pview");
+          let pviewVar = controller.modules.findVar("Fixture", "pview");
           if (pviewVar.file) {
             buffer[1] = 0
             buffer[2] = 0

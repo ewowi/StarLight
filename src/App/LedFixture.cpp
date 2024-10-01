@@ -168,7 +168,7 @@ void Fixture::projectAndMap() {
             if (after != NULL ) {
               char * before;
               before = after;
-              after = strtok(NULL, " ");
+              after = strtok(NULL, "-");
               uint16_t startLed = atoi(before);
               uint16_t nrOfLeds = atoi(after) - atoi(before) + 1;
               print->fFormat(details, sizeof(details)-1, "%d-%d", min(prevIndexP, startLed), max((uint16_t)(indexP - 1), nrOfLeds)); //careful: LedModEffects:loop uses this to assign to FastLed
@@ -252,7 +252,7 @@ void Fixture::projectAndMap() {
 
           char buf[32];
           print->fFormat(buf, sizeof(buf)-1, "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
-          mdl->setValue("ledsSize", JsonString(buf, JsonString::Copied), rowNr);
+          mdl->setValue("layerTbl", "ledsSize", JsonString(buf, JsonString::Copied), rowNr);
 
           ppf("projectAndMap leds[%d].size = %d + m:(%d * %d) + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), leds->mappingTable.size(), sizeof(PhysMap), leds->effectData.bytesAllocated, leds->projectionData.bytesAllocated); //44 -> 164
 
@@ -264,8 +264,8 @@ void Fixture::projectAndMap() {
       ppf("projectAndMap fixture P:%dx%dx%d -> %d\n", fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
       ppf("projectAndMap fixture.size = %d + l:(%d * %d) B\n", sizeof(Fixture) - NUM_LEDS_Max * sizeof(CRGB), NUM_LEDS_Max, sizeof(CRGB)); //56
 
-      mdl->setValue("fixSize", fixSize);
-      mdl->setValue("fixCount", nrOfLeds);
+      mdl->setValue("Fixture", "fixSize", fixSize);
+      mdl->setValue("Fixture", "fixCount", nrOfLeds);
 
       //init pixelsToBlend
       for (uint16_t i=0; i<nrOfLeds; i++) {
