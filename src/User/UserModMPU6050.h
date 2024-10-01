@@ -95,7 +95,7 @@ public:
         ppf("Testing device connections MPU6050 connection failed\n");
     }
 
-    mdl->setValue("mtReady", motionTrackingReady);
+    mdl->setValue("Motion Tracking", "mtReady", motionTrackingReady);
   }
 
   void loop20ms() { // loop(): 700/s, loop20ms: 3000/s, loop1s(): 5500/s, disabled: 6000/s

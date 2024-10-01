@@ -289,7 +289,7 @@ public:
             if (instances[rowNr].ip == net->localIP()) {
               mdl->setValue(var, mdl->getValue(insVar, rowNr).as<unsigned8>()); //this will call sendDataWS (tbd...), do not set for rowNr
             } else {
-              sendMessageUDP(instances[rowNr].ip, Variable(var).id(), mdl->getValue(insVar, rowNr));
+              sendMessageUDP(instances[rowNr].ip, var, mdl->getValue(insVar, rowNr));
             }
           }
           // print->printJson(" ", var);
@@ -343,7 +343,7 @@ public:
 
     while (changedVarsQueue.size()) {
       JsonObject var = changedVarsQueue.front();
-      sendMessageUDP(IPAddress(255, 255, 255, 255), var["id"], var["value"]); //broadcast
+      sendMessageUDP(IPAddress(255, 255, 255, 255), var, var["value"]); //broadcast
       changedVarsQueue.erase(changedVarsQueue.begin());
     }
 
@@ -465,7 +465,7 @@ public:
           // Serial.println();
 
           ppf("insTbl handleNotifications %d\n", notifierUdp.remoteIP()[3]);
-          for (JsonObject childVar: Variable(mdl->findVar("insTbl")).children())
+          for (JsonObject childVar: Variable(mdl->findVar("Instances", "insTbl")).children())
             ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP) ); //rowNr //instance - instances.begin()
 
           web->recvUDPCounter++;
@@ -526,11 +526,11 @@ public:
               InstanceInfo *instance = findInstance(instanceUDP.remoteIP()); //if not exist, created
               char group1[32];
               char group2[32];
-              if (groupOfName(instance->name, group1) && groupOfName(mdl->getValue("name"), group2) && strcmp(group1, group2) == 0) {
+              if (groupOfName(instance->name, group1) && groupOfName(mdl->getValue("System", "name"), group2) && strcmp(group1, group2) == 0) {
                   if (!message["id"].isNull() && !message["value"].isNull()) {
                     ppf("handleNotifications i:%d json message %.*s l:%d\n", instanceUDP.remoteIP()[3], packetSize, buffer, packetSize);
 
-                    mdl->setValueJV(message["id"].as<const char *>(), message["value"]);
+                    mdl->setValueJV(mdl->findVar(message["pid"].as<const char *>(), message["id"].as<const char *>()), message["value"]);
                   }
                 }
               }
@@ -559,12 +559,12 @@ public:
     }
     if (erased) {
       ppf("insTbl remove inactive instances\n");
-      for (JsonObject childVar: Variable(mdl->findVar("insTbl")).children())
+      for (JsonObject childVar: Variable(mdl->findVar("Instances", "insTbl")).children())
         ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //no rowNr so all rows updated
 
       //tbd: pubsub mechanism
-      ui->callVarFun("ddpInst", UINT8_MAX, onUI); //rebuild options
-      // ui->callVarFun("artInst", UINT8_MAX, onUI); //rebuild options
+      ui->callVarFun("DDP", "ddpInst", UINT8_MAX, onUI); //rebuild options
+      // ui->callVarFun("Artnet", "artInst", UINT8_MAX, onUI); //rebuild options
     }
   }
 
@@ -583,7 +583,7 @@ public:
     starMessage.header.ip1 = localIP[1];
     starMessage.header.ip2 = localIP[2];
     starMessage.header.ip3 = localIP[3];
-    const char * name = mdl->getValue("name");
+    const char * name = mdl->getValue("System", "name");
     strncpy(starMessage.header.name, name?name:_INIT(TOSTRING(APP)), sizeof(starMessage.header.name)-1);
     #if defined(CONFIG_IDF_TARGET_ESP32S2)
       starMessage.header.type = 33;
@@ -610,8 +610,8 @@ public:
     starMessage.sysData.dmx.count = 0;
     #ifdef STARBASE_USERMOD_E131
       if (e131mod->isEnabled) {
-        starMessage.sysData.dmx.universe = mdl->getValue("dun");
-        starMessage.sysData.dmx.start = mdl->getValue("dch");
+        starMessage.sysData.dmx.universe = mdl->getValue("E131", "dun");
+        starMessage.sysData.dmx.start = mdl->getValue("E131", "dch");
         starMessage.sysData.dmx.count = 3;//e131->varsToWatch.size();
       }
     #endif
@@ -659,11 +659,12 @@ public:
   }
 
   //sends an UDP message to a specific ip. Broadcast?
-  void sendMessageUDP(IPAddress ip, const char * id, JsonVariant value) {
+  void sendMessageUDP(IPAddress ip, JsonObject var, JsonVariant value) {
     if (0 != instanceUDP.beginPacket(ip, instanceUDPPort)) {
 
       JsonDocument message;
-      message["id"] = id;
+      message["pid"] = var["pid"];
+      message["id"] = var["id"];
       message["value"] = value;
 
       size_t len = measureJson(message);
@@ -730,7 +731,7 @@ public:
           if (instance.ip != net->localIP()) { //send from localIP will be done after updateInstance
             char group1[32];
             char group2[32];
-            if (groupOfName(instance.name, group1) && groupOfName(mdl->getValue("name"), group2) && strcmp(group1, group2) == 0) {
+            if (groupOfName(instance.name, group1) && groupOfName(mdl->getValue("System", "name"), group2) && strcmp(group1, group2) == 0) {
 
               uint32_t t = instance.sysData.now;
               t += PRESUMED_NETWORK_DELAY; //adjust trivially for network delay
@@ -771,7 +772,15 @@ public:
                 for (JsonPair pair: newData.as<JsonObject>()) {
                   // ppf("updateInstance sync from i:%s k:%s v:%s\n", instance.name, pair.key().c_str(), pair.value().as<String>().c_str());
 
-                  mdl->setValueJV(pair.key().c_str(), pair.value());
+                  char pid[32];
+                  strcpy(pid, pair.key().c_str());
+                  char * id = strtok(pid, ".");
+                  if (id != NULL ) {
+                    strcpy(pid, id); //copy the id part
+                    id = strtok(NULL, "."); //the rest after .
+                  }
+
+                  mdl->setValueJV(mdl->findVar(pid, id), pair.value());
                 }
                 instance.jsonData = newData; // deepcopy: https://github.com/bblanchon/ArduinoJson/issues/1023
                 // ppf("updateInstance json ip:%d", instance.ip[3]);
@@ -798,7 +807,7 @@ public:
 
           // ppf("updateInstance updRow\n");
 
-          for (JsonObject childVar: Variable(mdl->findVar("insTbl")).children())
+          for (JsonObject childVar: Variable(mdl->findVar("Instances", "insTbl")).children())
             ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //rowNr instance - instances.begin()
 
           //tbd: now done for all rows, should be done only for updated rows!
@@ -812,14 +821,14 @@ public:
       ppf("insTbl new instance %s\n", messageIP.toString().c_str());
 
       //tbd: pubsub mechanism
-      ui->callVarFun("ddpInst", UINT8_MAX, onUI); //rebuild options
-      // ui->callVarFun("artInst", UINT8_MAX, onUI); //rebuild options
+      ui->callVarFun("DDP", "ddpInst", UINT8_MAX, onUI); //rebuild options
+      // ui->callVarFun("Artnet", "artInst", UINT8_MAX, onUI); //rebuild options
 
       // ui->processOnUI("insTbl");
       //run though it sorted to find the right rowNr
       // for (std::vector<InstanceInfo>::iterator instance=instances.begin(); instance!=instances.end(); ++instance) {
       //   if (instance->ip == messageIP) {
-          for (JsonObject childVar: Variable(mdl->findVar("insTbl")).children()) {
+          for (JsonObject childVar: Variable(mdl->findVar("Instances", "insTbl")).children()) {
             ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //no rowNr, update all
           }
       //   }

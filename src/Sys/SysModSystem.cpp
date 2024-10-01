@@ -50,7 +50,7 @@ void SysModSystem::setup() {
       char name[24];
       removeInvalidCharacters(name, var["value"]);
       ppf("instance name stripped %s\n", name);
-      mdl->setValue(Variable(var).id(), JsonString(name, JsonString::Copied)); //update with stripped name
+      mdl->setValue(var, JsonString(name, JsonString::Copied)); //update with stripped name
       mdns->resetMDNS(); // set the new name for mdns
       return true;
     default: return false;
@@ -123,6 +123,9 @@ void SysModSystem::setup() {
       web->addResponse(var, "comment", "f:%d / t:%d (l:%d) B [%d %d]", ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
       //temporary add esp_get_free_heap_size(), esp_get_free_internal_heap_size() to see if/how it differs
       return true;
+    case onLoop1s:
+      mdl->setValue(var, (ESP.getHeapSize()-ESP.getFreeHeap()) / 1000);
+      return true;
     default: return false;
   }});
 
@@ -132,6 +135,9 @@ void SysModSystem::setup() {
         var["max"] = ESP.getPsramSize()/1000; //makes sense?
         web->addResponse(var, "comment", "%d / %d (%d) B", ESP.getFreePsram(), ESP.getPsramSize(), ESP.getMinFreePsram());
         return true;
+    case onLoop1s:
+      mdl->setValue(var, (ESP.getPsramSize()-ESP.getFreePsram()) / 1000);
+      return true;
       default: return false;
     }});
   }
@@ -144,6 +150,9 @@ void SysModSystem::setup() {
       var["max"] = getArduinoLoopTaskStackSize(); //makes sense?
       web->addResponse(var, "comment", "%d of %d B", sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize());
       return true;
+    case onLoop1s:
+      mdl->setValue(var, sysTools_get_arduino_maxStackUsage());
+      return true;
     default: return false;
   }});
 
@@ -153,6 +162,9 @@ void SysModSystem::setup() {
       return true;
     case onChange:
       web->addResponse(var, "comment", "%d of %d B", sysTools_get_webserver_maxStackUsage(), CONFIG_ASYNC_TCP_STACK_SIZE);
+      return true;
+    case onLoop1s:
+      mdl->setValue(var, sysTools_get_webserver_maxStackUsage());
       return true;
     default: return false;
   }});
@@ -237,14 +249,6 @@ void SysModSystem::loop() {
 }
 
 void SysModSystem::loop10s() {
-  mdl->setValue("heap", (ESP.getHeapSize()-ESP.getFreeHeap()) / 1000);
-  mdl->setValue("mainStack", sysTools_get_arduino_maxStackUsage());
-  mdl->setValue("tcpStack", sysTools_get_webserver_maxStackUsage());
-
-  if (psramFound()) {
-    mdl->setValue("psram", (ESP.getPsramSize()-ESP.getFreePsram()) / 1000);
-  }
-
   //heartbeat
   ppf("❤️");
 }

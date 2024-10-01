@@ -13,9 +13,9 @@ import shutil
 import gzip
 
 print("")
-print("********************************************************************************************************************************")
-print("* STARBASE IS LICENSED UNDER GPL-V3. BY INSTALLING STARBASE OR ONE IF ITS FORKS YOU IMPLICITLY ACCEPT THE TERMS AND CONDITIONS *")
-print("********************************************************************************************************************************")
+print("********************************************************************************************************************************************")
+print("* STARBASE & STARLIGHT IS LICENSED UNDER GPL-V3. BY INSTALLING STARBASE OR ONE IF ITS FORKS YOU IMPLICITLY ACCEPT THE TERMS AND CONDITIONS *")
+print("********************************************************************************************************************************************")
 print("")
 
 isGitHub = "runner" in os.path.expanduser("~") #do not copy in github PlatformIO CI (/home/runner/ is output dir in github)

@@ -186,7 +186,7 @@ void SysModWeb::loop20ms() {
     clientsChanged = false;
 
     // ppf("SysModWeb clientsChanged\n");
-    for (JsonObject childVar: Variable(mdl->findVar("clTbl")).children())
+    for (JsonObject childVar: Variable(mdl->findVar("Web", "clTbl")).children())
       ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
   }
 
@@ -297,7 +297,7 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
     if (info->final && info->index == 0 && info->len == len) { //not multipart
       recvWsCounter++;
       recvWsBytes+=len;
-      printClient("WS event data", client);
+      // printClient("WS event data", client);
       // the whole message is in a single frame and we got all of its data (max. 1450 bytes)
       if (info->opcode == WS_TEXT)
       {
@@ -501,7 +501,7 @@ void SysModWeb::serveUpload(WebRequest *request, const String& fileName, size_t 
   // curl -F 'data=@fixture1.json' 192.168.8.213/upload
   ppf("serveUpload r:%s f:%s i:%d l:%d f:%d\n", request->url().c_str(), fileName.c_str(), index, len, final);
 
-  mdl->setValue("upload", index/10000);
+  mdl->setValue("Files", "upload", index/10000);
   sendResponseObject(); //otherwise not send in asyn_tcp thread
 
   if (!index) {
@@ -521,7 +521,7 @@ void SysModWeb::serveUpload(WebRequest *request, const String& fileName, size_t 
   if (final) {
     request->_tempFile.close();
 
-    mdl->setValue("upload", UINT16_MAX - 10); //success
+    mdl->setValue("Files", "upload", UINT16_MAX - 10); //success
     sendResponseObject(); //otherwise not send in asyn_tcp thread
 
     request->send(200, "text/plain", F("File Uploaded!"));
@@ -548,7 +548,7 @@ void SysModWeb::serveUpdate(WebRequest *request, const String& fileName, size_t 
   // curl -F 'data=@fixture1.json' 192.168.8.213/upload
   // ppf("serveUpdate r:%s f:%s i:%d l:%d f:%d\n", request->url().c_str(), fileName.c_str(), index, len, final);
   
-  mdl->setValue("update", index/10000);
+  mdl->setValue("System", "update", index/10000);
   sendResponseObject(); //otherwise not send in asyn_tcp thread
 
   if (!index) {
@@ -562,17 +562,17 @@ void SysModWeb::serveUpdate(WebRequest *request, const String& fileName, size_t 
   if (!Update.hasError()) 
     Update.write(data, len);
   else {
-    mdl->setValue("update", UINT16_MAX - 20); //fail
+    mdl->setValue("System", "update", UINT16_MAX - 20); //fail
     sendResponseObject(); //otherwise not send in asyn_tcp thread
   }
 
   if (final) {
     bool success = Update.end(true);
-    mdl->setValue("update", success?UINT16_MAX - 10:UINT16_MAX - 20);
+    mdl->setValue("System", "update", success?UINT16_MAX - 10:UINT16_MAX - 20);
     sendResponseObject(); //otherwise not send in asyn_tcp thread
 
     char message[64];
-    const char * name = mdl->getValue("name");
+    const char * name = mdl->getValue("System", "name");
 
     print->fFormat(message, sizeof(message)-1, "Update of %s (...%d) %s", name, net->localIP()[3], success?"Successful":"Failed");
 
@@ -702,8 +702,8 @@ void SysModWeb::serializeState(JsonObject root) {
     deserializeJson(root, jsonState);
 
     //tbd:  //StarBase has no idea about leds so this should be led independent
-    root["bri"] = mdl->getValue("bri");
-    root["on"] = mdl->getValue("on").as<bool>();
+    root["bri"] = mdl->getValue("Fixture", "bri");
+    root["on"] = mdl->getValue("Fixture", "on").as<bool>();
 
 }
 void SysModWeb::serializeInfo(JsonObject root) {
@@ -712,7 +712,7 @@ void SysModWeb::serializeInfo(JsonObject root) {
 
     deserializeJson(root, jsonInfo);
 
-    root["name"] = mdl->getValue("name");
+    root["name"] = mdl->getValue("System", "name");
     // docInfo["arch"] = "esp32"; //platformName
 
     // docInfo["rel"] = _INIT(TOSTRING(APP));

@@ -44,7 +44,8 @@ public:
     if (!mdls->isConnected) return;
     
     //reset cmDNS
-    const char * name = mdl->getValue("name");
+    const char * name = mdl->getValue("System", "name");
+    ppf("resetMDNS name %s\n", name);
     if (strcmp(name, _INIT(TOSTRING(APP))) == 0 )
       sprintf(cmDNS, "star-%*s", 6, escapedMac.c_str() + 6);
     else

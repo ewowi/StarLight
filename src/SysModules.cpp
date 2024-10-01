@@ -24,7 +24,7 @@ void SysModules::setup() {
   }
 
   //delete mdlTbl values if nr of modules has changed (new values created using module defaults)
-  for (JsonObject childVar: Variable(mdl->findVar("mdlTbl")).children()) {
+  for (JsonObject childVar: Variable(mdl->findVar("Modules", "mdlTbl")).children()) {
     Variable childVariable = Variable(childVar);
     if (!childVar["value"].isNull() && childVariable.valArray().size() != modules.size()) {
       ppf("mdlTbl clear (%s %s) %d %d\n", childVariable.id(), childVariable.valueString().c_str(), modules.size(), childVariable.valArray().size());

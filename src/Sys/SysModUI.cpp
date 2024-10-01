@@ -73,18 +73,13 @@ void SysModUI::loop20ms() { //never more then 50 times a second!
 }
 
 JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * type, bool readOnly, VarFun varFun) {
-  JsonObject var = mdl->findVar(id);
-  const char * modelParentId = var["pid"];
   const char * parentId = parent["id"];
-
-  bool differentParents = modelParentId != nullptr && parentId != nullptr && strcmp(modelParentId, parentId) != 0;
-  if (differentParents) {
-    ppf("initVar parents not equal %s: %s != %s\n", id, modelParentId, parentId);
-  }
+  if (!parentId) parentId = "m"; //m=module
+  JsonObject var = mdl->findVar(parentId, id);
 
   //create new var
-  if (differentParents || var.isNull()) {
-    // ppf("initVar new %s var: %s->%s\n", type, parentId?parentId:"", id); //parentId not null otherwise crash
+  if (var.isNull()) {
+    ppf("initVar new %s: %s.%s\n", type, parentId, id); //parentId not null otherwise crash
     if (parent.isNull()) {
       JsonArray vars = mdl->model->as<JsonArray>();
       var = vars.add<JsonObject>();
@@ -107,7 +102,7 @@ JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * ty
 
     Variable variable = Variable(var);
 
-    if (parentId) var["pid"] = parentId; else var["pid"] = "m"; //module
+    var["pid"] = parentId;
 
     if (var["ro"].isNull() || variable.readOnly() != readOnly) variable.readOnly(readOnly);
 
@@ -172,7 +167,7 @@ void SysModUI::processJson(JsonVariant json) {
         ppf("processJson v type %s\n", pair.value().as<String>().c_str());
       }
       else if (pair.key() == "view" || pair.key() == "canvasData" || pair.key() == "theme") { //save the chosen view in System (see index.js)
-        JsonObject var = mdl->findVar("System");
+        JsonObject var = mdl->findVar("m", "System");
         ppf("processJson %s v:%s n: %d s:%s\n", pair.key().c_str(), pair.value().as<String>().c_str(), var.isNull(), Variable(var).id());
         var[JsonString(key, JsonString::Copied)] = JsonString(value, JsonString::Copied); //this is needed as key can become a dangling pointer
         // json.remove(key); //key should stay as all clients use this to perform the changeHTML action
@@ -180,7 +175,7 @@ void SysModUI::processJson(JsonVariant json) {
       else if (pair.key() == "onAdd" || pair.key() == "onDelete") {
         if (value.is<JsonObject>()) {
           JsonObject command = value;
-          JsonObject var = mdl->findVar(command["id"]);
+          JsonObject var = mdl->findVar(command["pid"], command["id"]);
           stackUnsigned8 rowNr = command["rowNr"].isNull()?UINT8_MAX:command["rowNr"];
           ppf("processJson %s - %s[%d]\n", key, Variable(var).id(), rowNr);
 
@@ -207,7 +202,15 @@ void SysModUI::processJson(JsonVariant json) {
         //find the select var and collect it's options...
         if (value.is<JsonArray>()) { //should be
           for (JsonVariant varInArray: value.as<JsonArray>()) {
-            JsonObject var = mdl->findVar(varInArray); //value is the id
+            char pid[32];
+            strcpy(pid, varInArray);
+            char * id = strtok(pid, ".");
+            if (id != NULL ) {
+              strcpy(pid, id); //copy the id part
+              id = strtok(NULL, "."); //the rest after .
+            }
+
+            JsonObject var = mdl->findVar(pid, id); //value is the id
             if (!var.isNull()) {
               callVarFun(var, UINT8_MAX, onUI);
               //sendDataWs done in caller of processJson
@@ -227,38 +230,49 @@ void SysModUI::processJson(JsonVariant json) {
         else
           newValue = value["value"]; //use the value field
 
-        char varId[32];
-        strcpy(varId, key);
+        char pidid[32];
+        strcpy(pidid, key);
         //check if we deal with multiple rows (from table type)
-        char * rowNrC = strtok(varId, "#");
+        char * rowNrC = strtok(pidid, "#");
         if (rowNrC != NULL ) {
-          strcpy(varId, rowNrC); //copy the varId part
-          rowNrC = strtok(NULL, " "); //#?
+          strcpy(pidid, rowNrC); //copy the pidid part
+          rowNrC = strtok(NULL, "#"); //the rest after #
         }
         stackUnsigned8 rowNr = rowNrC?atoi(rowNrC):UINT8_MAX;
 
-        JsonObject var = mdl->findVar(varId);
+        char pid[32];
+        strcpy(pid, pidid);
+        char * id = strtok(pid, ".");
+        if (id != NULL ) {
+          strcpy(pid, id); //copy the id part
+          id = strtok(NULL, "."); //the rest after .
+        }
 
-        if (rowNr == UINT8_MAX)
-          ppf("processJson var %s %s -> %s\n", varId, var["value"].as<String>().c_str(), newValue.as<String>().c_str());
-        else
-          ppf("processJson var %s[%d] %s -> %s\n", varId, rowNr, var["value"][rowNr].as<String>().c_str(), newValue.as<String>().c_str());
+        if (pid && id) {
+          JsonObject var = mdl->findVar(pid, id);
 
-        if (!var.isNull())
-        {
-          //a button never sets the value
-          if (var["type"] == "button") { //button always
-            mdl->callVarOnChange(var, rowNr);
-            if (rowNr != UINT8_MAX) web->getResponseObject()[Variable(var).id()]["rowNr"] = rowNr;
+          ppf("processJson var %s.%s", pid, id);
+          if (rowNr != UINT8_MAX) ppf("[%d]", rowNr);
+          ppf(" %s -> %s\n", var["value"].as<String>().c_str(), newValue.as<String>().c_str());
+
+          if (!var.isNull())
+          {
+            //a button never sets the value
+            if (var["type"] == "button") { //button always
+              mdl->callVarOnChange(var, rowNr);
+              if (rowNr != UINT8_MAX) web->getResponseObject()[pidid]["rowNr"] = rowNr;
+            }
+            else {
+              mdl->setValueJV(var, newValue, rowNr);
+              json.remove(key); //key / var["id"] processed we don't need the key in the response
+              print->printJson("setValueJV", web->getResponseObject());
+            }
           }
-          else {
-            mdl->setValueJV(Variable(var).id(), newValue, rowNr);
-            json.remove(key); //key / var["id"] processed we don't need the key in the response
-            print->printJson("setValueJV", web->getResponseObject());
-          }
+          else
+            ppf("dev Object %s[%d] not found\n", pidid, rowNr);
         }
         else
-          ppf("dev Object %s[%d] not found\n", varId, rowNr);
+          ppf("dev processJson no pid.id found k:%s v:%s\n", key, value.as<String>().c_str());
       } 
       else {
         ppf("dev processJson command not recognized k:%s v:%s\n", key, value.as<String>().c_str());

@@ -128,7 +128,7 @@ void SysModPins::loop20ms() {
   if (pinsChanged) {
     pinsChanged = false;
 
-    for (JsonObject childVar: Variable(mdl->findVar("pinTbl")).children())
+    for (JsonObject childVar: Variable(mdl->findVar("Pins", "pinTbl")).children())
       ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
   }
 }

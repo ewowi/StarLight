@@ -90,20 +90,7 @@ class Modules {
   }
 
   //finds a var with id in the model, if found returns it
-  findVar(id) {
-    //temp: if pid.id, then search for id
-    let ids = id.split(".")
-    if (ids[1])
-      id = ids[1]
-    // console.log("findVar", id, parent, model);
-    return this.walkThroughModel(function(variable){
-      if (variable.id == id) //found variable
-        return variable; //this stops the walkThrough
-    })
-  }
-
-  //finds a var with id in the model, if found returns it
-  findVarP(pid, id) {
+  findVar(pid, id) {
     // console.log("findVar", id, parent, model);
     return this.walkThroughModel(function(variable){
       if (variable.pid == pid, variable.id == id) //found variable
@@ -255,7 +242,7 @@ class Variable {
 
     //ask server for onUI
     let command = {};
-    command.onUI = [this.variable.id];
+    command.onUI = [this.variable.pid + "." + this.variable.id];
     controller.requestJson(command); // this can be done here because of the async nature of requestJson, better is to do it after innerHTML+=...
 
     if (this.variable.n) {
@@ -300,8 +287,7 @@ class Variable {
         else 
           url = `http://${window.location.hostname}/file/`
 
-        fetchAndExecute(url, properties.file, this.node.id, function(id, text) { //send node.id as parameter
-          let variable = controller.modules.findVar(id)
+        fetchAndExecute(url, properties.file, this.variable, function(variable, text) {
           variable.file = JSON.parse(text); //assuming it is json, should we call this file?
           variable.file.new = true;
           console.log("receiveData file fetched", variable.id, variable.file);

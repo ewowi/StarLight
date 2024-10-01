@@ -153,21 +153,21 @@ void SysModFiles::loop20ms() {
     }
     root.close();
 
-    mdl->setValue("drsize", files->usedBytes());
+    mdl->setValue("Files", "drsize", files->usedBytes());
 
     uint8_t rowNrL = 0;
     for (VectorString name: fileNames) {
-      mdl->setValue("flName", JsonString(name.s, JsonString::Copied), rowNrL);
-      mdl->setValue("flEdit", JsonString(name.s, JsonString::Copied), rowNrL);
+      mdl->setValue("fileTbl", "flName", JsonString(name.s, JsonString::Copied), rowNrL);
+      mdl->setValue("fileTbl", "flEdit", JsonString(name.s, JsonString::Copied), rowNrL);
       rowNrL++;
     }
-    rowNrL = 0; for (uint16_t size: fileSizes) mdl->setValue("flSize", size, rowNrL++);
-    rowNrL = 0; for (uint16_t time: fileTimes) mdl->setValue("flTime", time, rowNrL++);
+    rowNrL = 0; for (uint16_t size: fileSizes) mdl->setValue("fileTbl", "flSize", size, rowNrL++);
+    rowNrL = 0; for (uint16_t time: fileTimes) mdl->setValue("fileTbl", "flTime", time, rowNrL++);
   }
 }
 
 void SysModFiles::loop10s() {
-  mdl->setValue("drsize", files->usedBytes());
+  mdl->setValue("Files", "drsize", files->usedBytes());
 }
 
 bool SysModFiles::remove(const char * path) {

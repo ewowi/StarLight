@@ -190,12 +190,12 @@ class Controller {
   }
 
   receiveData(json) {
-    console.log("receiveData", json)
+    // console.log("receiveData", json)
     if (isObject(json)) {
       for (let key of Object.keys(json)) {
         let value = json[key] //contains pid.id
-        
-        let variable = this.modules.findVar(key);       
+        let pidid = key.split(".")
+        let variable = this.modules.findVar(pidid[0], pidid[1]);       
         if (variable) {
           let variableClass = varJsonToClass(variable);
           variableClass.receiveData(value)

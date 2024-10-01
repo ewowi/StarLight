@@ -40,7 +40,7 @@ public:
         ui->setComment(var, "First channel");
         return true;
       case onChange:
-        for (JsonObject childVar: Variable(mdl->findVar("e131Tbl")).children())
+        for (JsonObject childVar: Variable(mdl->findVar("E131", "e131Tbl")).children())
           ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
         return true;
       default: return false;
@@ -160,8 +160,8 @@ public:
               varToWatch.savedValue = packet.property_values[i];
 
               if (varToWatch.id != nullptr && varToWatch.max != 0) {
-                ppf(" varsToWatch: %s\n", varToWatch.id);
-                mdl->setValue(varToWatch.id, varToWatch.savedValue%(varToWatch.max+1)); // TODO: ugly to have magic string 
+                ppf(" varsToWatch: %s.%s\n", varToWatch.pid, varToWatch.id);
+                mdl->setValue(varToWatch.pid, varToWatch.id, varToWatch.savedValue%(varToWatch.max+1)); // TODO: ugly to have magic string 
               }
               else
                 ppf("\n");
@@ -172,9 +172,10 @@ public:
     } //!e131.isEmpty()
   } //loop
 
-  void patchChannel(unsigned8 channelOffset, const char * id, unsigned8 max = 255) {
+  void patchChannel(unsigned8 channelOffset, const char * pid, const char * id, unsigned8 max = 255) {
     VarToWatch varToWatch;
     varToWatch.channelOffset = channelOffset;
+    varToWatch.pid = pid;
     varToWatch.id = id;
     varToWatch.savedValue = 0; // Always reset when (re)patching so variable gets set to DMX value even if unchanged
     varToWatch.max = max;
@@ -194,6 +195,7 @@ public:
   private:
     struct VarToWatch {
       unsigned16 channelOffset;
+      const char * pid = nullptr;
       const char * id = nullptr;
       unsigned16 max = -1;
       unsigned8 savedValue = -1;

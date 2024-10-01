@@ -92,7 +92,7 @@ void SysModPrint::printf(const char * format, ...) {
   
   if (mdls->isConnected) {
     if (mdl->model)
-      pOut = mdl->getValue("pOut"); //"Print", 
+      pOut = mdl->getValue("Print", "pOut"); //"Print", 
 
     if (pOut == 1) {
       toSerial = true;

@@ -200,6 +200,10 @@ class Variable {
   }
 
   //core methods 
+  const char * pid() {
+    return var["pid"];
+  }
+
   const char * id() {
     return var["id"];
   }
@@ -359,33 +363,33 @@ public:
   void cleanUpModel(JsonObject parent = JsonObject(), bool oPos = true, bool ro = false);
 
   //setValue for JsonVariants (extract the StarMod supported types)
-  JsonObject setValueJV(const char * id, JsonVariant value, unsigned8 rowNr = UINT8_MAX) {
+  JsonObject setValueJV(JsonObject var, JsonVariant value, unsigned8 rowNr = UINT8_MAX) {
     if (value.is<JsonArray>()) {
       uint8_t rowNr = 0;
       // ppf("   %s is Array\n", value.as<String>().c_str);
       JsonObject var;
       for (JsonVariant el: value.as<JsonArray>()) {
-        var = setValueJV(id, el, rowNr++);
+        var = setValueJV(var, el, rowNr++);
       }
       return var;
     }
     else if (value.is<const char *>())
-      return setValue(id, JsonString(value, JsonString::Copied), rowNr);
+      return setValue(var, JsonString(value, JsonString::Copied), rowNr);
     else if (value.is<Coord3D>()) //otherwise it will be treated as JsonObject and toJson / fromJson will not be triggered!!!
-      return setValue(id, value.as<Coord3D>(), rowNr);
+      return setValue(var, value.as<Coord3D>(), rowNr);
     else
-      return setValue(id, value, rowNr);
+      return setValue(var, value, rowNr);
   }
 
   //sets the value of var with id
   template <typename Type>
-  JsonObject setValue(const char * id, Type value, unsigned8 rowNr = UINT8_MAX) {
-    JsonObject var = findVar(id);
+  JsonObject setValue(const char * pid, const char * id, Type value, unsigned8 rowNr = UINT8_MAX) {
+    JsonObject var = findVar(pid, id);
     if (!var.isNull()) {
       return setValue(var, value, rowNr);
     }
     else {
-      ppf("setValue Var %s not found\n", id);
+      ppf("setValue var %s.%s not found\n", pid, id);
       return JsonObject();
     }
   }
@@ -408,7 +412,7 @@ public:
         else {
           //only print if ! read only
           if (!variable.readOnly())
-            ppf("setValue changed %s %s -> %s\n", variable.id(), var["oldValue"].as<String>().c_str(), variable.valueString().c_str());
+            ppf("setValue changed %s.%s %s -> %s\n", variable.pid(), variable.id(), var["oldValue"].as<String>().c_str(), variable.valueString().c_str());
           // else
           //   ppf("setValue changed %s %s\n", Variable(var).id(), var["value"].as<String>().c_str());
           web->addResponse(var, "value", var["value"]);
@@ -442,7 +446,7 @@ public:
         }
       }
       else {
-        ppf("setValue %s could not create value array\n", variable.id());
+        ppf("setValue %s.%s could not create value array\n", variable.pid(), variable.id());
       }
     }
 
@@ -464,8 +468,8 @@ public:
     return setValue(var, JsonString(value, JsonString::Copied));
   }
 
-  JsonVariant getValue(const char * id, unsigned8 rowNr = UINT8_MAX) {
-    JsonObject var = findVar(id);
+  JsonVariant getValue(const char * pid, const char * id, unsigned8 rowNr = UINT8_MAX) {
+    JsonObject var = findVar(pid, id);
     if (!var.isNull()) {
       return getValue(var, rowNr);
     }
@@ -494,8 +498,7 @@ public:
 
   //returns the var defined by id (parent to recursively call findVar)
   bool walkThroughModel(std::function<bool(JsonObject)> fun, JsonObject parent = JsonObject());
-  JsonObject findVar(const char * id, JsonObject parent = JsonObject());
-  // JsonObject findParentVar(const char * id, JsonObject parent = JsonObject());
+  JsonObject findVar(const char * pid, const char * id, JsonObject parent = JsonObject());
   void findVars(const char * id, bool value, FindFun fun, JsonArray parent = JsonArray());
 
   //recursively add values in  a variant, currently not used

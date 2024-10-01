@@ -89,9 +89,8 @@ void SysModModel::loop20ms() {
     //comment exclusions out in case of generating model.json for github
     starJson.addExclusion("fun");
     starJson.addExclusion("dash");
-    starJson.addExclusion("o"); //order
-    starJson.addExclusion("p"); //pointers
-    starJson.addExclusion("pid"); //parent...
+    starJson.addExclusion("o"); //order: this must be deleted as it will be used to check on reboot 
+    starJson.addExclusion("p"); //pointer
     starJson.addExclusion("oldValue");
     starJson.writeJsonDocToFile(model);
 
@@ -174,51 +173,27 @@ bool SysModModel::walkThroughModel(std::function<bool(JsonObject)> fun, JsonObje
   return false; //don't stop
 }
 
-
-JsonObject SysModModel::findVar(const char * id, JsonObject parent) {
+JsonObject SysModModel::findVar(const char * pid, const char * id, JsonObject parent) {
   JsonArray root;
-  // ppf("findVar %s %s\n", id, parent.isNull()?"root":"n");
   if (parent.isNull())
     root = model->as<JsonArray>();
   else
     root = parent["n"];
 
-  //temp: if pid.id, then search for id
-  size_t i = 0;
-  for (i=0; i<strlen(id); i++) {
-    if (id[i] == '.')
-      break;
-  }
-
-  char pid[32] = "";
-
-  //if . found
-  if (i != strlen(id)) {
-    strncpy(pid, id, 32); //id can be longer then 32 (after .)
-    ppf("findVar split %s -> ", id);
-    id+= i+1;
-    pid[i]='\0';
-    ppf("%s and %s\n", pid, id);
-    // strncpy(pid, id, i);
-    // ppf(" %s.%s", pid, id);
-  }
-  else {
-    //need to replace vars without pid. ...
-    // ppf("🐍%s", id);
-  }
-
   for (JsonObject var : root) {
-    // if (foundVar.isNull()) {
-      if ((pid[0]=='\0' || var["pid"] == pid) && var["id"] == id)
-        return var;
-      else if (!var["n"].isNull()) {
-        JsonObject foundVar = findVar(id, var);
-        if (!foundVar.isNull()) {
-          return foundVar;
-        }
+    if (var["pid"] == pid && var["id"] == id) { //(!pid && var["pid"] == pid) && 
+      // Serial.printf("findVar found %s.%s!!\n", pid, id);
+      return var;
+    }
+    else if (!var["n"].isNull()) {
+      JsonObject foundVar = findVar(pid, id, var);
+      if (!foundVar.isNull()) {
+        return foundVar;
       }
-    // }
+    }
   }
+  if (parent.isNull())
+    Serial.printf("dev findVar not found %s.%s!!\n", pid?pid:"x", id?id:"y");
   return JsonObject();
 }
 
@@ -256,11 +231,13 @@ void SysModModel::findVars(const char * property, bool value, FindFun fun, JsonA
 bool checkDash(JsonObject var) {
   if (var["dash"])
     return true;
-  else {
-    JsonObject parentVar = mdl->findVar(var["pid"]);
-    if (!parentVar.isNull())
-      return checkDash(parentVar);
-  }
+  else 
+  //disable temporary
+  // {
+  //   JsonObject parentVar = mdl->findVar("dash...", var["pid"]); //tbd: find the parent as this is not finding it...
+  //   if (!parentVar.isNull())
+  //     return checkDash(parentVar);
+  // }
   return false;
 }
 
@@ -318,7 +295,7 @@ bool SysModModel::callVarOnChange(JsonObject var, unsigned8 rowNr, bool init) {
           else
             print->printJson("dev callVarOnChange type not supported yet", var);
 
-          ppf("callVarOnChange set pointer to vector %s[%d]: v:%s p:%d\n", variable.id(), rowNr, value.as<String>().c_str(), pointer);
+          // ppf("callVarOnChange set pointer to vector %s[%d]: v:%s p:%d\n", variable.id(), rowNr, value.as<String>().c_str(), pointer);
         } else 
           print->printJson("dev value is array but no rowNr\n", var);
       } else {

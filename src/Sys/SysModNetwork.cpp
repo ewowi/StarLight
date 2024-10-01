@@ -40,7 +40,7 @@ void SysModNetwork::setup() {
 
   #ifdef STARBASE_ETHERNET
 
-    currentVar = ui->initCheckBox(parentVar, "ethOn", true, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    currentVar = ui->initCheckBox(parentVar, "ethOn", false, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Ethernet");
       return true;
@@ -51,7 +51,8 @@ void SysModNetwork::setup() {
     default: return false;
     }});
 
-    ui->initSelect(currentVar, "ethConfig", 0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    //set olimex default as details hidden then
+    ui->initSelect(currentVar, "ethConfig", 1, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         ui->setLabel(var, "Config");
         JsonArray options = ui->setOptions(var);
@@ -173,7 +174,7 @@ void SysModNetwork::setup() {
 
   ui->initText(currentVar, "ssid", "", 31, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onChange:
-      if (mdl->getValue("wifiOn").as<bool>()) {
+      if (mdl->getValue("Network", "wifiOn").as<bool>()) {
         stopWiFiConnection();
         initWiFiConnection();
       }
@@ -186,7 +187,7 @@ void SysModNetwork::setup() {
       ui->setLabel(var, "Password");
       return true;
     case onChange:
-      if (mdl->getValue("wifiOn").as<bool>()) {
+      if (mdl->getValue("Network", "wifiOn").as<bool>()) {
         stopWiFiConnection();
         initWiFiConnection();
       }
@@ -199,7 +200,7 @@ void SysModNetwork::setup() {
       ui->setLabel(var, "Signal");
       return true;
     case onLoop1s:
-      mdl->setValue(var, "%d dBm", WiFi.RSSI());
+      mdl->setValue(var, "%d dBm", WiFi.RSSI(), 0); //0 is to force format overload used
       return true;
     default: return false;
   }});
@@ -270,7 +271,7 @@ void SysModNetwork::loop10s() {
       initAP();
     }
   } else {
-    if (apActive && !mdl->getValue("apOn").as<bool>()) {
+    if (apActive && !mdl->getValue("Network", "apOn").as<bool>()) {
       ppf("IP's found -> stopAP (%s %s)\n", ETH.localIP().toString().c_str(), WiFi.localIP().toString().c_str());
       stopAP();
     }
@@ -303,8 +304,8 @@ void SysModNetwork::initWiFiConnection() {
   //   WiFi.mode(WIFI_STA);
   // }
 
-  const char * ssid = mdl->getValue("ssid");
-  const char * password = mdl->getValue("pw");
+  const char * ssid = mdl->getValue("wifiOn", "ssid");
+  const char * password = mdl->getValue("wifiOn", "pw");
   if (ssid && strlen(ssid)>0 && password) {
     char passXXX [64] = "";
     for (int i = 0; i < strlen(password); i++) strncat(passXXX, "*", sizeof(passXXX)-1);
@@ -340,7 +341,7 @@ void SysModNetwork::initAP() {
   if (apActive) // && WiFi.softAPIP()[0] != 0
     return;
 
-  const char * apSSID = mdl->getValue("name");
+  const char * apSSID = mdl->getValue("System", "name");
   if (WiFi.softAPConfig(IPAddress(4, 3, 2, 1), IPAddress(4, 3, 2, 1), IPAddress(255, 255, 255, 0))
       && WiFi.softAP(apSSID, NULL, apChannel, false)) { //no password!!!
     ppf("AP success %s %s s:%d\n", apSSID, WiFi.softAPIP().toString().c_str(), WiFi.status()); //6 is disconnected
@@ -406,7 +407,7 @@ bool SysModNetwork::initEthernet() {
 
   pinsM->deallocatePin(UINT8_MAX, "Eth");
 
-  uint8_t ethernet = mdl->getValue("ethConfig");
+  uint8_t ethernet = mdl->getValue("ethOn", "ethConfig");
 
   ethernet_settings es;
 
@@ -416,12 +417,12 @@ bool SysModNetwork::initEthernet() {
     case 0: //manual
     {
       es = {
-        mdl->getValue("ethaddr"),			              // eth_address,
-        mdl->getValue("ethpower"),			              // eth_power,
-        mdl->getValue("ethmdc"),			              // eth_mdc,
-        mdl->getValue("ethmdio"),			              // eth_mdio,
-        mdl->getValue("ethtype"),      // eth_type,
-        mdl->getValue("ethclkmode")	// eth_clk_mode
+        mdl->getValue("ethOn", "ethaddr"),			              // eth_address,
+        mdl->getValue("ethOn", "ethpower"),			              // eth_power,
+        mdl->getValue("ethOn", "ethmdc"),			              // eth_mdc,
+        mdl->getValue("ethOn", "ethmdio"),			              // eth_mdio,
+        mdl->getValue("ethOn", "ethtype"),      // eth_type,
+        mdl->getValue("ethOn", "ethclkmode")	// eth_clk_mode
       };
 
     }

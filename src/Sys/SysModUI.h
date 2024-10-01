@@ -303,8 +303,8 @@ public:
   }
 
   //checks if var has fun of type funType implemented by calling it and checking result (for onUI on RO var, also onSetValue is called)
-  bool callVarFun(const char * varID, unsigned8 rowNr = UINT8_MAX, unsigned8 funType = onSetValue) {
-    JsonObject var = mdl->findVar(varID);
+  bool callVarFun(const char * pid, const char * id, unsigned8 rowNr = UINT8_MAX, unsigned8 funType = onSetValue) {
+    JsonObject var = mdl->findVar(pid, id);
     return callVarFun(var, rowNr, funType);
   }
 
@@ -326,12 +326,15 @@ public:
           else
             pointer = childVar["p"];
 
-          ppf("  delete vector [%d] %d\n", rowNr, pointer);
+          ppf("  delete vector %s[%d] %d\n", Variable(childVar).id(), rowNr, pointer);
 
           if (pointer != 0) {
 
             if (childVar["type"] == "select" || childVar["type"] == "checkbox" || childVar["type"] == "range") {
               std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
+              (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            } else if (childVar["type"] == "text" || childVar["type"] == "fileEdit") {
+              std::vector<VectorString> *valuePointer = (std::vector<VectorString> *)pointer;
               (*valuePointer).erase((*valuePointer).begin() + rowNr);
             } else if (childVar["type"] == "number") {
               std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
@@ -341,7 +344,7 @@ public:
               (*valuePointer).erase((*valuePointer).begin() + rowNr);
             }
             else
-              print->printJson("dev callVarFun onDelete type not supported yet", var);
+              print->printJson("dev callVarFun onDelete type not supported yet", childVar);
           }
         }
       }
@@ -372,7 +375,7 @@ public:
         }
       }
       else    
-        ppf("dev callVarFun function nr %s outside bounds %d >= %d\n", variable.id(), funNr, varFunctions.size());
+        ppf("dev callVarFun function nr %s.%s outside bounds %d >= %d\n", variable.pid(), variable.id(), funNr, varFunctions.size());
     }
 
     //for ro variables, call onSetValue to add also the value in responseDoc (as it is not stored in the model)
