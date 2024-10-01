@@ -59,8 +59,8 @@ void SysModWeb::setup() {
 
   ui->initNumber(tableVar, "clNr", UINT16_MAX, 0, 999, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto client:ws.getClients())
-        mdl->setValue(var, client->id(), rowNr++);
+      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+        mdl->setValue(var, client.id(), rowNr++);
       return true; }
     case onUI:
       ui->setLabel(var, "Nr");
@@ -70,8 +70,8 @@ void SysModWeb::setup() {
 
   ui->initText(tableVar, "clIp", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto client:ws.getClients())
-        mdl->setValue(var, JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
+      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+        mdl->setValue(var, JsonString(client.remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
       return true; }
     case onUI:
       ui->setLabel(var, "IP");
@@ -81,8 +81,8 @@ void SysModWeb::setup() {
 
   ui->initCheckBox(tableVar, "clIsFull", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto client:ws.getClients())
-        mdl->setValue(var, client->queueIsFull(), rowNr++);
+      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+        mdl->setValue(var, client.queueIsFull(), rowNr++);
       return true; }
     case onUI:
       ui->setLabel(var, "Is full");
@@ -92,8 +92,8 @@ void SysModWeb::setup() {
 
   ui->initSelect(tableVar, "clStatus", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto client:ws.getClients())
-        mdl->setValue(var, client->status(), rowNr++);
+      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+        mdl->setValue(var, client.status(), rowNr++);
       return true; }
     case onUI:
     {
@@ -110,8 +110,8 @@ void SysModWeb::setup() {
 
   ui->initNumber(tableVar, "clLength", UINT16_MAX, 0, WS_MAX_QUEUED_MESSAGES, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto client:ws.getClients())
-        mdl->setValue(var, client->queueLength(), rowNr++);
+      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+        mdl->setValue(var, client.queueLen(), rowNr++);
       return true; }
     case onUI:
       ui->setLabel(var, "Length");
@@ -422,17 +422,16 @@ void SysModWeb::sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fi
     if (len > 8192)
       ppf("program error: sendDataWs BufferLen too high !!!%d\n", len);
     AsyncWebSocketMessageBuffer * wsBuf = ws.makeBuffer(len); //assert failed: block_trim_free heap_tlsf.c:371 (block_is_free(block) && "block must be free"), AsyncWebSocket::makeBuffer(unsigned int)
-
     if (wsBuf) {
-      wsBuf->lock();
+      // wsBuf->lock();
 
       fill(wsBuf); //function parameter
 
-      for (auto loopClient:ws.getClients()) {
-        if (!client || client == loopClient) {
-          if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
-            if (!isBinary || loopClient->queueLength() <= 3) {
-              isBinary?loopClient->binary(wsBuf): loopClient->text(wsBuf);
+      for (auto &loopClient:ws.getClients()) {
+        if (!client || client == &loopClient) {
+          if (loopClient.status() == WS_CONNECTED && !loopClient.queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
+            if (!isBinary || loopClient.queueLen() <= 3) {
+              isBinary?loopClient.binary(wsBuf): loopClient.text(wsBuf);
               sendWsCounter++;
               if (isBinary)
                 sendWsBBytes+=len;
@@ -441,21 +440,21 @@ void SysModWeb::sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fi
             }
           }
           else {
-            printClient("sendDataWs client full or not connected", loopClient);
+            printClient("sendDataWs client full or not connected", (AsyncWebSocketClient *)&loopClient);
             // ppf("sendDataWs client full or not connected\n");
             ws.cleanupClients(); //only if above threshold
-            ws._cleanBuffers();
+            // ws._cleanBuffers();
           }
         }
       }
-      wsBuf->unlock();
-      ws._cleanBuffers();
+      // wsBuf->unlock();
+      // ws._cleanBuffers();
     }
     else {
       ppf("sendDataWs WS buffer allocation failed\n");
       ws.closeAll(1013); //code 1013 = temporary overload, try again later
       ws.cleanupClients(0); //disconnect ALL clients to release memory
-      ws._cleanBuffers();
+      // ws._cleanBuffers();
     }
   }
 
@@ -625,17 +624,17 @@ void SysModWeb::jsonHandler(WebRequest *request, JsonVariant json) {
 }
 
 void SysModWeb::clientsToJson(JsonArray array, bool nameOnly, const char * filter) {
-  for (auto client:ws.getClients()) {
+  for (auto &client:ws.getClients()) {
     if (nameOnly) {
-      array.add(JsonString(client->remoteIP().toString().c_str(), JsonString::Copied));
+      array.add(JsonString(client.remoteIP().toString().c_str(), JsonString::Copied));
     } else {
-      // ppf("Client %d %d ...%d\n", client->id(), client->queueIsFull(), client->remoteIP()[3]);
+      // ppf("Client %d %d ...%d\n", client.id(), client.queueIsFull(), client.remoteIP()[3]);
       JsonArray row = array.add<JsonArray>();
-      row.add(client->id());
-      array.add(JsonString(client->remoteIP().toString().c_str(), JsonString::Copied));
-      row.add(client->queueIsFull());
-      row.add(client->status());
-      row.add(client->queueLength());
+      row.add(client.id());
+      array.add(JsonString(client.remoteIP().toString().c_str(), JsonString::Copied));
+      row.add(client.queueIsFull());
+      row.add(client.status());
+      row.add(client.queueLen());
     }
   }
 }

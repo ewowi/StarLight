@@ -90,7 +90,7 @@ void SysModSystem::setup() {
 
   ui->initButton(parentVar, "reboot", false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onChange:
-      web->ws.closeAll(1012);
+      ws.closeAll(1012);
 
       // mdls->reboot(); //not working yet
       // long dly = millis();
