@@ -96,7 +96,7 @@ public:
   //try this !!!: curl -X POST "http://192.168.121.196/json" -d '{"pin2":false}' -H "Content-Type: application/json"
   //curl -X POST "http://4.3.2.1/json" -d '{"pin2":false}' -H "Content-Type: application/json"
   //curl -X POST "http://4.3.2.1/json" -d '{"bri":20, "v":true}' -H "Content-Type: application/json"
-  //curl -X POST "http://192.168.8.125/json" -d '{"fx":2}' -H "Content-Type: application/json"
+  //curl -X POST "http://192.168.8.125/json" -d '{"effect":2}' -H "Content-Type: application/json"
   //curl -X POST "http://192.168.8.152/json" -d '{"nrOfLeds":2000}' -H "Content-Type: application/json"
 
   //handle "v" and processJson (on /json)

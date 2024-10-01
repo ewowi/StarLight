@@ -455,7 +455,7 @@ public:
               // }
           
           instance->jsonData["bri"] = wledSyncMessage.bri;
-          instance->jsonData["fx"] = wledSyncMessage.mainsegMode; //tbd: rowNr
+          instance->jsonData["effect"] = wledSyncMessage.mainsegMode; //tbd: rowNr
           instance->jsonData["pal"] = wledSyncMessage.palette; //tbd: rowNr
 
           // for (size_t x = 0; x < packetSize; x++) {

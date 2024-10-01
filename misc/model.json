@@ -1168,12 +1168,12 @@
     "max": 255,
     "n": [
       {
-        "id": "layerTbl",
+        "id": "layers",
         "type": "table",
         "ro": false,
         "n": [
           {
-            "id": "fx",
+            "id": "effect",
             "type": "select",
             "ro": false,
             "value": [
@@ -1188,7 +1188,7 @@
                   4
                 ],
                 "o": 16,
-                "pid": "fx",
+                "pid": "effect",
                 "fun": 13
               },
               {
@@ -1200,7 +1200,7 @@
                   64
                 ],
                 "o": 17,
-                "pid": "fx",
+                "pid": "effect",
                 "p": [
                   1073466624
                 ]
@@ -1214,7 +1214,7 @@
                   128
                 ],
                 "o": 18,
-                "pid": "fx",
+                "pid": "effect",
                 "p": [
                   1073466625
                 ]
@@ -1228,7 +1228,7 @@
                   128
                 ],
                 "o": 19,
-                "pid": "fx",
+                "pid": "effect",
                 "p": [
                   1073466626
                 ]
@@ -1241,35 +1241,35 @@
                   false
                 ],
                 "o": 20,
-                "pid": "fx",
+                "pid": "effect",
                 "p": [
                   1073466627
                 ]
               }
             ],
-            "pid": "layerTbl",
+            "pid": "layers",
             "o": 15,
             "fun": 12,
             "dash": true
           },
           {
-            "id": "pro",
+            "id": "projection",
             "type": "select",
             "ro": false,
             "value": [
               1
             ],
-            "pid": "layerTbl",
+            "pid": "layers",
             "o": 21,
             "fun": 14,
             "dash": true
           },
           {
-            "id": "ledsStart",
+            "id": "start",
             "type": "coord3D",
             "ro": false,
             "max": 8192,
-            "pid": "layerTbl",
+            "pid": "layers",
             "o": 22,
             "fun": 15,
             "value": [
@@ -1281,11 +1281,11 @@
             ]
           },
           {
-            "id": "ledsMid",
+            "id": "middle",
             "type": "coord3D",
             "ro": false,
             "max": 8192,
-            "pid": "layerTbl",
+            "pid": "layers",
             "o": 23,
             "fun": 16,
             "value": [
@@ -1297,11 +1297,11 @@
             ]
           },
           {
-            "id": "ledsEnd",
+            "id": "end",
             "type": "coord3D",
             "ro": false,
             "max": 8192,
-            "pid": "layerTbl",
+            "pid": "layers",
             "o": 24,
             "fun": 17,
             "value": [
@@ -1313,11 +1313,11 @@
             ]
           },
           {
-            "id": "ledsSize",
+            "id": "size",
             "type": "text",
             "ro": true,
             "max": 32,
-            "pid": "layerTbl",
+            "pid": "layers",
             "o": 25,
             "fun": 18
           }

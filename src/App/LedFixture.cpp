@@ -88,8 +88,8 @@ void Fixture::projectAndMap() {
               Coord3D endPosAdjusted = (leds->endPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
               Coord3D midPosAdjusted = (leds->midPos).minimum(fixSize - Coord3D{1,1,1}); //not * 10
 
-              // mdl->setValue("ledsStart", startPosAdjusted/10, rowNr); //rowNr
-              // mdl->setValue("ledsEnd", endPosAdjusted/10, rowNr); //rowNr
+              // mdl->setValue("start", startPosAdjusted/10, rowNr); //rowNr
+              // mdl->setValue("end", endPosAdjusted/10, rowNr); //rowNr
 
               if (pixel >= startPosAdjusted && pixel <= endPosAdjusted ) { //if pixel between start and end pos
 
@@ -252,7 +252,7 @@ void Fixture::projectAndMap() {
 
           char buf[32];
           print->fFormat(buf, sizeof(buf)-1, "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
-          mdl->setValue("layerTbl", "ledsSize", JsonString(buf, JsonString::Copied), rowNr);
+          mdl->setValue("layers", "size", JsonString(buf, JsonString::Copied), rowNr);
 
           ppf("projectAndMap leds[%d].size = %d + m:(%d * %d) + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), leds->mappingTable.size(), sizeof(PhysMap), leds->effectData.bytesAllocated, leds->projectionData.bytesAllocated); //44 -> 164
 

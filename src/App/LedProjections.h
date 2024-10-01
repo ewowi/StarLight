@@ -901,7 +901,7 @@ class RotateProjection: public Projection {
     leds.projectionData.begin();
     RotateData *data = leds.projectionData.readWrite<RotateData>();
     if (leds.size == Coord3D{0, 0, 0}) {
-      data->expand = mdl->getValue("pro", "Expand");
+      data->expand = mdl->getValue("projection", "Expand");
     }
     if (data->expand) {
       uint8_t size = max(sizeAdjusted.x, max(sizeAdjusted.y, sizeAdjusted.z));
