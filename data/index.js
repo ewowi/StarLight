@@ -827,8 +827,6 @@ function receiveData(json) {
 
         if (variable) {
           let rowNr = value.rowNr == null?UINT8_MAX:value.rowNr;
-          // if (variable.id == "ledsEnd" || variable.id == "ledsSize" || variable.id == "point")
-          //   ppf("receiveData ", variable, value);
           variable.fun = -2; // request processed
 
           value.chk = "onUI";
