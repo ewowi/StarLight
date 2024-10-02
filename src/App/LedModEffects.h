@@ -97,6 +97,8 @@ public:
     effects.push_back(new LinesEffect);
     effects.push_back(new ParticleTestEffect); //2D & 3D
     effects.push_back(new StarFieldEffect);
+    effects.push_back(new PraxisEffect);
+    
     //2D WLED
     effects.push_back(new BlackHoleEffect);
     effects.push_back(new DNAEffect);
