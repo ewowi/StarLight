@@ -79,7 +79,7 @@ JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * ty
 
   //create new var
   if (var.isNull()) {
-    ppf("initVar new %s: %s.%s\n", type, parentId, id); //parentId not null otherwise crash
+    // ppf("initVar new %s: %s.%s\n", type, parentId, id); //parentId not null otherwise crash
     if (parent.isNull()) {
       JsonArray vars = mdl->model->as<JsonArray>();
       var = vars.add<JsonObject>();
@@ -265,7 +265,7 @@ void SysModUI::processJson(JsonVariant json) {
             else {
               mdl->setValueJV(var, newValue, rowNr);
               json.remove(key); //key / var["id"] processed we don't need the key in the response
-              print->printJson("setValueJV", web->getResponseObject());
+              // print->printJson("setValueJV", web->getResponseObject());
             }
           }
           else

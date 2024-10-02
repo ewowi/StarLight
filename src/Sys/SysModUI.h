@@ -248,7 +248,7 @@ public:
         var["p"] = pointer; //store pointer!
       else
         var["p"][mdl->setValueRowNr] = pointer; //store pointer in array!
-      ppf("initValue pointer stored %s: %s\n", variable.id(), (void *)(var["p"].as<String>().c_str()));
+      // ppf("initValue pointer stored %s: %s\n", variable.id(), (void *)(var["p"].as<String>().c_str()));
     }
 
     if (min) var["min"] = min;

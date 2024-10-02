@@ -306,14 +306,14 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       ndivNeeded = false;
 
       varNode = cE("div");
-      let mdlName = controller.modules.findVar("mdlTbl", "mdlName");
-      if (mdlName && mdlName.value) { //sometimes value not set yet
-        // console.log("createModule", variable, mdlName);
-        let index = mdlName.value.indexOf(variable.id); //find this module
+      let name = controller.modules.findVar("Modules", "name");
+      if (name && name.value) { //sometimes value not set yet
+        // console.log("createModule", variable, name);
+        let index = name.value.indexOf(variable.id); //find this module
         if (index != -1) {
-          let mdlEnabled = controller.modules.findVar("mdlTbl", "mdlEnabled");
-          if (mdlEnabled)
-            varNode.hidden = !mdlEnabled.value[index]; //hidden if not enabled
+          let enabled = controller.modules.findVar("Modules", "enabled");
+          if (enabled)
+            varNode.hidden = !enabled.value[index]; //hidden if not enabled
         }
       }
 
@@ -1003,7 +1003,6 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
   if (commandJson.hasOwnProperty("value")) { 
     //hasOwnProperty needed to catch also boolean commandJson.value when it is false !!!!
     
-    // if (node.id=="insName#0" || node.id=="fx")// || node.id=="mdlEnabled" || node.id=="clIsFull" || node.id=="pin2")
     if (nodeType == "table") {
       if (Array.isArray(commandJson.value)) {
         console.log("changeHTML value table", variable, node, commandJson, rowNr);
@@ -1050,10 +1049,10 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
         if (Array.isArray(commandJson.value)) {
           newValue = commandJson.value[newRowNr];
           //hide/show disabled/enabled modules
-          if (variable.id == "mdlEnabled") {
-            let nameVar = controller.modules.findVar("mdlTbl", "mdlName");
+          if (variable.pid == "Modules" && variable.id == "enabled") {
+            let nameVar = controller.modules.findVar("Modules", "name");
             let mdlNode = nameVar.value?gId("m."+nameVar.value[newRowNr]):null; //Live Server Mode: no value
-            // console.log("mdlEnabled", variable, node, newValue, newRowNr, nameVar, mdlNode);
+            // console.log("enabled", variable, node, newValue, newRowNr, nameVar, mdlNode);
             if (mdlNode) {
               if (mdlNode.hidden && newValue) mdlNode.hidden = false;
               if (!mdlNode.hidden && !newValue) mdlNode.hidden = true;

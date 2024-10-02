@@ -192,8 +192,8 @@ JsonObject SysModModel::findVar(const char * pid, const char * id, JsonObject pa
       }
     }
   }
-  if (parent.isNull())
-    Serial.printf("dev findVar not found %s.%s!!\n", pid?pid:"x", id?id:"y");
+  // if (parent.isNull())
+  //   Serial.printf("dev findVar not found %s.%s!!\n", pid?pid:"x", id?id:"y");
   return JsonObject();
 }
 
@@ -312,7 +312,7 @@ bool SysModModel::callVarOnChange(JsonObject var, unsigned8 rowNr, bool init) {
           *valuePointer = value;
         }
 
-        ppf("callVarOnChange set pointer %s[%d]: v:%s p:%d\n", variable.id(), rowNr, variable.valueString().c_str(), pointer);
+        // ppf("callVarOnChange set pointer %s[%d]: v:%s p:%d\n", variable.id(), rowNr, variable.valueString().c_str(), pointer);
       }
 
       // else if (var["type"] == "text") {

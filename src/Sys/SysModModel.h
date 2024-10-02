@@ -411,8 +411,8 @@ public:
         }
         else {
           //only print if ! read only
-          if (!variable.readOnly())
-            ppf("setValue changed %s.%s %s -> %s\n", variable.pid(), variable.id(), var["oldValue"].as<String>().c_str(), variable.valueString().c_str());
+          // if (!variable.readOnly())
+          //   ppf("setValue changed %s.%s %s -> %s\n", variable.pid(), variable.id(), var["oldValue"].as<String>().c_str(), variable.valueString().c_str());
           // else
           //   ppf("setValue changed %s %s\n", Variable(var).id(), var["value"].as<String>().c_str());
           web->addResponse(var, "value", var["value"]);

@@ -23,11 +23,11 @@ void SysModules::setup() {
     module->setup();
   }
 
-  //delete mdlTbl values if nr of modules has changed (new values created using module defaults)
-  for (JsonObject childVar: Variable(mdl->findVar("Modules", "mdlTbl")).children()) {
+  //delete Modules values if nr of modules has changed (new values created using module defaults)
+  for (JsonObject childVar: Variable(mdl->findVar("Modules", "Modules")).children()) {
     Variable childVariable = Variable(childVar);
     if (!childVar["value"].isNull() && childVariable.valArray().size() != modules.size()) {
-      ppf("mdlTbl clear (%s %s) %d %d\n", childVariable.id(), childVariable.valueString().c_str(), modules.size(), childVariable.valArray().size());
+      ppf("Modules clear (%s %s) %d %d\n", childVariable.id(), childVariable.valueString().c_str(), modules.size(), childVariable.valArray().size());
       childVar.remove("value");
     }
   }
@@ -35,47 +35,36 @@ void SysModules::setup() {
   //do its own setup: will be shown as last module
   JsonObject parentVar = ui->initSysMod(parentVar, "Modules", 4203);
 
-  JsonObject tableVar = ui->initTable(parentVar, "mdlTbl", nullptr, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  JsonObject tableVar = ui->initTable(parentVar, "Modules", nullptr, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onUI:
-      ui->setLabel(var, "Modules");
       ui->setComment(var, "List of modules");
       return true;
     default: return false;
   }});
 
-  ui->initText(tableVar, "mdlName", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(tableVar, "name", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue:
       for (forUnsigned8 rowNr = 0; rowNr < modules.size(); rowNr++)
         mdl->setValue(var, JsonString(modules[rowNr]->name, JsonString::Copied), rowNr);
-      return true;
-    case onUI:
-      ui->setLabel(var, "Name");
       return true;
     default: return false;
   }});
 
   //UINT16_MAX: no value set
-  ui->initCheckBox(tableVar, "mdlSuccess", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initCheckBox(tableVar, "success", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue:
       for (forUnsigned8 rowNr = 0; rowNr < modules.size(); rowNr++)
         mdl->setValue(var, modules[rowNr]->success, rowNr);
       return true;
-    case onUI:
-      ui->setLabel(var, "Success");
-      return true;
     default: return false;
   }});
 
-  ui->initCheckBox(tableVar, "mdlEnabled", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun not readonly! (tbd)
+  ui->initCheckBox(tableVar, "enabled", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun not readonly! (tbd)
     case onSetValue:
       //never a rowNr as parameter, set all
       //execute only if var has not been set
       for (forUnsigned8 rowNr = 0; rowNr < modules.size(); rowNr++)
         mdl->setValue(var, modules[rowNr]->isEnabled, rowNr);
-      return true;
-    case onUI:
-      //initially set to true, but as enabled are table cells, will be updated to an array
-      ui->setLabel(var, "Enabled");
       return true;
     case onChange:
       if (rowNr != UINT8_MAX && rowNr < modules.size()) {
