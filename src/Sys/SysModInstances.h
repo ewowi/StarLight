@@ -132,7 +132,7 @@ public:
         return true;
       // comment this out for the time being as causes corrupted instance names
       // case onChange:
-      //   strcpy(instances[rowNr].name, mdl->getValue(var, rowNr));
+      //   strlcpy(instances[rowNr].name, mdl->getValue(var, rowNr), sizeof(instances[rowNr].name));
       //   sendMessageUDP(instances[rowNr].ip, "name", mdl->getValue(var, rowNr));
       //   return true;
       default: return false;
@@ -142,7 +142,7 @@ public:
       case onSetValue:
         for (forUnsigned8 rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++) {
           char urlString[32] = "http://";
-          strncat(urlString, instances[rowNrL].ip.toString().c_str(), sizeof(urlString)-1);
+          strlcat(urlString, instances[rowNrL].ip.toString().c_str(), sizeof(urlString));
           mdl->setValue(var, JsonString(urlString, JsonString::Copied), rowNrL);
         }
         return true;
@@ -260,7 +260,7 @@ public:
       ppf("dash %s %s found\n", Variable(var).id(), Variable(var).valueString().c_str());
 
       char columnVarID[32] = "ins";
-      strcat(columnVarID, var["id"]);
+      strlcat(columnVarID, var["id"], sizeof(columnVarID));
       JsonObject insVar; // = ui->cloneVar(var, columnVarID, [this, var](JsonObject insVar){});
 
       //create a var of the same type. InitVar is not calling onChange which is good in this situation!
@@ -356,17 +356,17 @@ public:
   //distract the groupName of an instance name
   bool groupOfName(const char *name, char *group = nullptr) {
     char copy[32];
-    strcpy(copy, name);
+    strlcpy(copy, name, sizeof(copy));
 
     char * token = strtok(copy, "-"); //before minus
 
     //check if group
     if (token != NULL) {
-      // ppf("groupOfName 1:%s 2:%s 3:%s 4:%s 5:%s\n",name, strstr(name, "-"), name, strtok(name, "-"), name?name:"X"); 
+      // ppf("groupOfName 1:%s 2:%s 3:%s 4:%s 5:%s\n",name, strnstr(name, "-", 32), name, strtok(name, "-"), name?name:"X"); 
       token = strtok(NULL, "-"); //after -
       if (token != NULL) {
         // ppf("groupOfName g:%s i:%s\n", copy, token); 
-        if (group) strcpy(group, copy);
+        if (group) strlcpy(group, copy, sizeof(copy)); //group has same size!
         return true;
       }
     }
@@ -380,7 +380,7 @@ public:
     for (InstanceInfo &instance: instances) {
       char group1[32];
       char group2[32];
-      if (groupOfName(instance.name, group1) && groupOfName(insName, group2) && strcmp(group1, group2) == 0)
+      if (groupOfName(instance.name, group1) && groupOfName(insName, group2) && strncmp(group1, group2, sizeof(group1)) == 0)
         calc++;
     }
     return calc++;
@@ -519,14 +519,14 @@ public:
           JsonDocument message;
           DeserializationError error = deserializeJson(message, buffer);
           if (error)
-            ppf("handleNotifications i:%d no json l: %d e:%s\n", instanceUDP.remoteIP()[3], strlen(buffer), error.c_str());
+            ppf("handleNotifications i:%d no json l: %d e:%s\n", instanceUDP.remoteIP()[3], strnlen(buffer, packetSize), error.c_str());
           else {
             if (instanceUDP.remoteIP()[3] != net->localIP()[3]) { //only others
 
               InstanceInfo *instance = findInstance(instanceUDP.remoteIP()); //if not exist, created
               char group1[32];
               char group2[32];
-              if (groupOfName(instance->name, group1) && groupOfName(mdl->getValue("System", "name"), group2) && strcmp(group1, group2) == 0) {
+              if (groupOfName(instance->name, group1) && groupOfName(mdl->getValue("System", "name"), group2) && strncmp(group1, group2, sizeof(group1)) == 0) {
                   if (!message["id"].isNull() && !message["value"].isNull()) {
                     ppf("handleNotifications i:%d json message %.*s l:%d\n", instanceUDP.remoteIP()[3], packetSize, buffer, packetSize);
 
@@ -584,7 +584,7 @@ public:
     starMessage.header.ip2 = localIP[2];
     starMessage.header.ip3 = localIP[3];
     const char * name = mdl->getValue("System", "name");
-    strncpy(starMessage.header.name, name?name:_INIT(TOSTRING(APP)), sizeof(starMessage.header.name)-1);
+    strlcpy(starMessage.header.name, name?name:_INIT(TOSTRING(APP)), sizeof(starMessage.header.name));
     #if defined(CONFIG_IDF_TARGET_ESP32S2)
       starMessage.header.type = 33;
     #elif defined(CONFIG_IDF_TARGET_ESP32S3)
@@ -599,7 +599,7 @@ public:
     #endif
     starMessage.header.insId = localIP[3]; //WLED: used in map of instances as index!
     starMessage.header.version = VERSION;
-    starMessage.sysData.type = (strcmp(_INIT(TOSTRING(APP)), "StarBase")==0)?1:(strcmp(_INIT(TOSTRING(APP)), "StarLight")==0)?2:(strcmp(_INIT(TOSTRING(APP)), "StarLedsLive")==0)?3:99; //0=WLED, 1=StarBase, 2=StarLight, 3=StarLedsLive, else=StarFork
+    starMessage.sysData.type = (strncmp(_INIT(TOSTRING(APP)), "StarBase", 9)==0)?1:(strncmp(_INIT(TOSTRING(APP)), "StarLight", 10)==0)?2:(strncmp(_INIT(TOSTRING(APP)), "StarLedsLive", 13)==0)?3:99; //0=WLED, 1=StarBase, 2=StarLight, 3=StarLedsLive, else=StarFork
     starMessage.sysData.upTime = millis()/1000;
     starMessage.sysData.now = millis() + sys->timebase; //similar to now
     starMessage.sysData.timeSource = sys->toki.getTimeSource();
@@ -707,7 +707,7 @@ public:
       }
 
       instances.push_back(instance);
-      std::sort(instances.begin(),instances.end(), [](InstanceInfo &a, InstanceInfo &b){ return strcmp(a.name,b.name)<0; });
+      std::sort(instances.begin(),instances.end(), [](InstanceInfo &a, InstanceInfo &b){ return strncmp(a.name,b.name, sizeof(a.name))<0; });
     }
 
     //update the instance in the instances array with the message data
@@ -717,7 +717,7 @@ public:
       if (instance.ip == messageIP) {
         //update instance from StarMessage
         instance.timeStamp = millis(); //update timestamp (when was the package received)
-        strncpy(instance.name, udpStarMessage.header.name, sizeof(instance.name)-1);
+        strlcpy(instance.name, udpStarMessage.header.name, sizeof(instance.name));
         instance.version = udpStarMessage.header.version;
 
         if (instance.ip == net->localIP()) {
@@ -731,7 +731,7 @@ public:
           if (instance.ip != net->localIP()) { //send from localIP will be done after updateInstance
             char group1[32];
             char group2[32];
-            if (groupOfName(instance.name, group1) && groupOfName(mdl->getValue("System", "name"), group2) && strcmp(group1, group2) == 0) {
+            if (groupOfName(instance.name, group1) && groupOfName(mdl->getValue("System", "name"), group2) && strncmp(group1, group2, sizeof(group1)) == 0) {
 
               uint32_t t = instance.sysData.now;
               t += PRESUMED_NETWORK_DELAY; //adjust trivially for network delay
@@ -773,10 +773,10 @@ public:
                   // ppf("updateInstance sync from i:%s k:%s v:%s\n", instance.name, pair.key().c_str(), pair.value().as<String>().c_str());
 
                   char pid[32];
-                  strcpy(pid, pair.key().c_str());
+                  strlcpy(pid, pair.key().c_str(), sizeof(pid));
                   char * id = strtok(pid, ".");
                   if (id != NULL ) {
-                    strcpy(pid, id); //copy the id part
+                    strlcpy(pid, id, sizeof(pid)); //copy the id part
                     id = strtok(NULL, "."); //the rest after .
                   }
 
@@ -848,7 +848,7 @@ public:
       InstanceInfo instance;
       instance.ip = ip;
       instances.push_back(instance);
-      std::sort(instances.begin(),instances.end(), [](InstanceInfo &a, InstanceInfo &b){ return strcmp(a.name,b.name)<0; });
+      std::sort(instances.begin(),instances.end(), [](InstanceInfo &a, InstanceInfo &b){ return strncmp(a.name,b.name, sizeof(a.name))<0; });
     }
 
     // InstanceInfo foundInstance;

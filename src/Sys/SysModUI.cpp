@@ -203,10 +203,10 @@ void SysModUI::processJson(JsonVariant json) {
         if (value.is<JsonArray>()) { //should be
           for (JsonVariant varInArray: value.as<JsonArray>()) {
             char pid[32];
-            strcpy(pid, varInArray);
+            strlcpy(pid, varInArray, sizeof(pid));
             char * id = strtok(pid, ".");
             if (id != NULL ) {
-              strcpy(pid, id); //copy the id part
+              strlcpy(pid, id, sizeof(pid)); //copy the id part
               id = strtok(NULL, "."); //the rest after .
             }
 
@@ -231,20 +231,20 @@ void SysModUI::processJson(JsonVariant json) {
           newValue = value["value"]; //use the value field
 
         char pidid[32];
-        strcpy(pidid, key);
+        strlcpy(pidid, key, sizeof(pidid));
         //check if we deal with multiple rows (from table type)
         char * rowNrC = strtok(pidid, "#");
         if (rowNrC != NULL ) {
-          strcpy(pidid, rowNrC); //copy the pidid part
+          strlcpy(pidid, rowNrC, sizeof(pidid)); //copy the pidid part
           rowNrC = strtok(NULL, "#"); //the rest after #
         }
         stackUnsigned8 rowNr = rowNrC?atoi(rowNrC):UINT8_MAX;
 
         char pid[32];
-        strcpy(pid, pidid);
+        strlcpy(pid, pidid, sizeof(pid));
         char * id = strtok(pid, ".");
         if (id != NULL ) {
-          strcpy(pid, id); //copy the id part
+          strlcpy(pid, id, sizeof(pid)); //copy the id part
           id = strtok(NULL, "."); //the rest after .
         }
 

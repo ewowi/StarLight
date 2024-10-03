@@ -48,11 +48,11 @@ void SysModFiles::setup() {
         this->removeFiles(fileName, false);
 
         #ifdef STARBASE_USERMOD_LIVE
-          if (strstr(fileName, ".sc") != nullptr) {
+          if (strnstr(fileName, ".sc", 32) != nullptr) {
             char name[32]="del:/"; //del:/ is recognized by LiveM->loop20ms
-            strcat(name, fileName);
+            strlcat(name, fileName, sizeof(name));
             ppf("sc file removed %s\n", name);
-            strcpy(web->lastFileUpdated, name);
+            strlcpy(web->lastFileUpdated, name, sizeof(web->lastFileUpdated));
           }
         #endif
 
@@ -81,7 +81,7 @@ void SysModFiles::setup() {
   //   case onSetValue:
   //     for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++) {
   //       char urlString[32] = "file/";
-  //       strncat(urlString, fileList[rowNr].name, sizeof(urlString)-1);
+  //       strlcat(urlString, fileList[rowNr].name, sizeof(urlString));
   //       mdl->setValue(var, JsonString(urlString, JsonString::Copied), rowNr);
   //     }
   //     return true;
@@ -141,7 +141,7 @@ void SysModFiles::loop20ms() {
     while (file) {
 
       while (rowNr >= fileNames.size()) fileNames.push_back(VectorString()); //create vector space if needed...
-      strcpy(fileNames[rowNr].s, file.name());
+      strlcpy(fileNames[rowNr].s, file.name(), sizeof(fileNames[rowNr].s));
       while (rowNr >= fileSizes.size()) fileSizes.push_back(UINT8_MAX); //create vector space if needed...
       fileSizes[rowNr] = file.size(); 
       while (rowNr >= fileTimes.size()) fileTimes.push_back(UINT8_MAX); //create vector space if needed...
@@ -195,7 +195,7 @@ void SysModFiles::dirToJson(JsonArray array, bool nameOnly, const char * filter)
 
   while (file) {
 
-    if (filter == nullptr || strstr(file.name(), filter) != nullptr) {
+    if (filter == nullptr || strnstr(file.name(), filter, 32) != nullptr) {
       if (nameOnly) {
         array.add(JsonString(file.name(), JsonString::Copied));
       }
@@ -204,7 +204,7 @@ void SysModFiles::dirToJson(JsonArray array, bool nameOnly, const char * filter)
         row.add(JsonString(file.name(), JsonString::Copied));
         row.add(file.size());
         char urlString[32] = "file/";
-        strncat(urlString, file.name(), sizeof(urlString)-1);
+        strlcat(urlString, file.name(), sizeof(urlString));
         row.add(JsonString(urlString, JsonString::Copied));
       }
       // ppf("FILE: %s %d\n", file.name(), file.size());
@@ -224,12 +224,12 @@ bool SysModFiles::seqNrToName(char * fileName, size_t seqNr, const char * filter
 
   size_t counter = 0;
   while (file) {
-    if (filter == nullptr || strstr(file.name(), filter) != nullptr) {
+    if (filter == nullptr || strnstr(file.name(), filter, 32) != nullptr) {
       if (counter == seqNr) {
         // ppf("seqNrToName: %d %s %d\n", seqNr, file.name(), file.size());
         root.close();
-        strncat(fileName, "/", 31); //add root prefix, fileName is 32 bytes but sizeof doesn't know so cheating
-        strncat(fileName, file.name(), 31);
+        strlcat(fileName, "/", 32); //add root prefix
+        strlcat(fileName, file.name(), 32);
         file.close();
         return true;
       }
@@ -285,9 +285,9 @@ void SysModFiles::removeFiles(const char * filter, bool reverse) {
   File file = root.openNextFile();
 
   while (file) {
-    if (filter == nullptr || reverse?strstr(file.name(), filter) == nullptr: strstr(file.name(), filter) != nullptr) {
+    if (filter == nullptr || reverse?strnstr(file.name(), filter, 32) == nullptr: strnstr(file.name(), filter, 32) != nullptr) {
       char fileName[32] = "/";
-      strncat(fileName, file.name(), sizeof(fileName)-1);
+      strlcat(fileName, file.name(), sizeof(fileName));
       file.close(); //close otherwise not removeable
       remove(fileName);
     }

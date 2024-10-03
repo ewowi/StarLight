@@ -16,8 +16,8 @@
 SysModPins::SysModPins() :SysModule("Pins") {
   //start with no pins allocated
   for (int pinNr=0; pinNr<NUM_DIGITAL_PINS; pinNr++) {
-    strcpy(pinObjects[pinNr].owner, "");  
-    strcpy(pinObjects[pinNr].details, "");  
+    strlcpy(pinObjects[pinNr].owner, "", sizeof(PinObject::owner));  
+    strlcpy(pinObjects[pinNr].details, "", sizeof(PinObject::details));  
   }
 };
 
@@ -136,11 +136,11 @@ void SysModPins::loop20ms() {
 void SysModPins::allocatePin(unsigned8 pinNr, const char * owner, const char * details) {
   ppf("allocatePin %d %s %s\n", pinNr, owner, details);
   if ((pinNr < NUM_DIGITAL_PINS) && (digitalPinIsValid(pinNr))) {
-    if (strcmp(pinObjects[pinNr].owner, "") != 0 && strcmp(pinObjects[pinNr].owner, owner) != 0)
+    if (strnlen(pinObjects[pinNr].owner, sizeof(PinObject::owner)) > 0 && strncmp(pinObjects[pinNr].owner, owner, sizeof(PinObject::owner)) != 0)
       ppf("allocatePin %d: not owner %s!=%s", pinNr, owner, pinObjects[pinNr].owner);
     else {
-      strncpy(pinObjects[pinNr].owner, owner, sizeof(PinObject::owner)-1);  
-      strncpy(pinObjects[pinNr].details, details, sizeof(PinObject::details)-1);  
+      strlcpy(pinObjects[pinNr].owner, owner, sizeof(PinObject::owner));
+      strlcpy(pinObjects[pinNr].details, details, sizeof(PinObject::details));
       pinsChanged = true;
     }
   }
@@ -149,13 +149,13 @@ void SysModPins::allocatePin(unsigned8 pinNr, const char * owner, const char * d
 void SysModPins::deallocatePin(unsigned8 pinNr, const char * owner) {
   for (int p = 0; p<NUM_DIGITAL_PINS; p++) {
     if (pinNr == UINT8_MAX || pinNr == p) {
-      if (strcmp(pinObjects[p].owner, owner) != 0) {
+      if (strncmp(pinObjects[p].owner, owner, sizeof(PinObject::owner)) != 0) {
         if (pinNr != UINT8_MAX)
           ppf("deallocatePin %d: not owner %s!=%s\n", p, owner, pinObjects[p].owner);
       } else {
         ppf("deallocatePin %d %s %s\n", p, owner, pinObjects[p].details);
-        strcpy(pinObjects[p].owner, "");
-        strcpy(pinObjects[p].details, "");
+        strlcpy(pinObjects[p].owner, "", sizeof(PinObject::owner));
+        strlcpy(pinObjects[p].details, "", sizeof(PinObject::owner));
         pinsChanged = true;
       }
     }

@@ -393,7 +393,7 @@ public:
     uint8_t value = 0;
     for (JsonVariant option: options) {
       // ppf("selectOptionToValue fileName2 %s %s\n", label, option.as<String>().c_str());
-      if (strstr(option, label) != nullptr) //if label part of value
+      if (strnstr(option, label, 32) != nullptr) //if label part of value
         return value;
       value++;
     }
@@ -442,8 +442,8 @@ public:
     JsonArray options = getOptions(var);
     if (!findOptionsTextRec(options, &startValue, value, &groupNameJS, &optionNameJS))
       ppf("findOptions select option not found %d %s %s\n", value, groupNameJS.isNull()?"X":groupNameJS.c_str(), optionNameJS.isNull()?"X":optionNameJS.c_str());
-    strcpy(groupName, groupNameJS.c_str());
-    strcpy(optionName, optionNameJS.c_str());
+    strlcpy(groupName, groupNameJS.c_str(), 32); //groupName is char[32]
+    strlcpy(optionName, optionNameJS.c_str(), 32); //optionName is char[32]
     if (!optionsExisted)
       clearOptions(var); //if created here then also remove 
   }

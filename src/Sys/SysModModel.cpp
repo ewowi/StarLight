@@ -285,7 +285,7 @@ bool SysModModel::callVarOnChange(JsonObject var, unsigned8 rowNr, bool init) {
           else if (var["type"] == "text" || var["type"] == "fileEdit") {
             std::vector<VectorString> *valuePointer = (std::vector<VectorString> *)pointer;
             while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(VectorString()); //create vector space if needed...
-            strcpy((*valuePointer)[rowNr].s, value.as<const char *>());
+            strlcpy((*valuePointer)[rowNr].s, value.as<const char *>(), sizeof(VectorString().s));
           }
           else if (var["type"] == "coord3D") {
             std::vector<Coord3D> *valuePointer = (std::vector<Coord3D> *)pointer;

@@ -46,10 +46,10 @@ public:
     //reset cmDNS
     const char * name = mdl->getValue("System", "name");
     ppf("resetMDNS name %s\n", name);
-    if (strcmp(name, _INIT(TOSTRING(APP))) == 0 )
-      sprintf(cmDNS, "star-%*s", 6, escapedMac.c_str() + 6);
+    if (strncmp(name, _INIT(TOSTRING(APP)), 32) == 0 )
+      snprintf(cmDNS, sizeof(cmDNS), "star-%*s", 6, escapedMac.c_str() + 6);
     else
-      strcpy(cmDNS, name);
+      strlcpy(cmDNS, name, sizeof(cmDNS));
 
     MDNS.end();
     MDNS.begin(cmDNS);

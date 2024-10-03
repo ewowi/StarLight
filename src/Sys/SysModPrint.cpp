@@ -112,7 +112,7 @@ void SysModPrint::printf(const char * format, ...) {
     toSerial = true;
 
   if (toSerial) {
-    Serial.print(strncmp(pcTaskGetTaskName(NULL), "loopTask", 8) == 0?"":"α"); //looptask λ/ asyncTCP task α
+    Serial.print(strncmp(pcTaskGetTaskName(NULL), "loopTask", 9) == 0?"":"α"); //looptask λ/ asyncTCP task α
     Serial.print(buffer);
   }
 
@@ -128,7 +128,7 @@ void SysModPrint::printVar(JsonObject var) {
   for (JsonPair pair: var) {
     if (pair.key() == "id") {
       printf("%s%s", sep, pair.value().as<String>().c_str());
-      strcpy(sep, ", ");
+      strlcpy(sep, ", ", sizeof(sep));
     }
     else if (pair.key() == "value") {
       printf(":%s", pair.value().as<String>().c_str());

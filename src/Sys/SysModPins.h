@@ -40,14 +40,14 @@ public:
   void allocatePin(unsigned8 pinNr, const char * owner, const char * details);
   void deallocatePin(unsigned8 pinNr = UINT8_MAX, const char * owner = nullptr);
   bool isOwner(unsigned8 pinNr, const char * owner) {
-    return strcmp(pinObjects[pinNr].owner, owner) == 0;
+    return strncmp(pinObjects[pinNr].owner, owner, sizeof(PinObject::owner)) == 0;
   }
 
   //temporary functions until we refactored the PinObject
   PinObject getNthAllocatedPinObject(unsigned8 rowNr) {
     stackUnsigned8 n = 0;
     for (PinObject &pinObject:pinObjects) {
-      if (strcmp(pinObject.owner, "") != 0) {
+      if (strnlen(pinObject.owner, 32) > 0) {
         if (n == rowNr)
           return pinObject;
         n++;
@@ -58,7 +58,7 @@ public:
   unsigned8 getNrOfAllocatedPins() {
     stackUnsigned8 n = 0;
     for (PinObject &pinObject:pinObjects) {
-      if (strcmp(pinObject.owner, "") != 0) {
+      if (strncmp(pinObject.owner, "", sizeof(PinObject::owner)) != 0) {
         n++;
       }
     }
@@ -68,7 +68,7 @@ public:
     stackUnsigned8 pinNr = 0;
     stackUnsigned8 n = 0;
     for (PinObject &pinObject:pinObjects) {
-      if (strcmp(pinObject.owner, "") != 0) {
+      if (strncmp(pinObject.owner, "", sizeof(PinObject::owner)) != 0) {
         if (n == rowNr)
           return pinNr;
         n++;

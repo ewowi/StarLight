@@ -202,17 +202,17 @@ void SysModSystem::setup() {
   // int month, day, year, hour, minute, second;
   // const char month_names[] = "JanFebMarAprMayJunJulAugSepOctNovDec";
   // sscanf(__DATE__, "%s %d %d", version, &day, &year); // Mon dd yyyy
-  // month = (strstr(month_names, version)-month_names)/3+1;
+  // month = (strnstr(month_names, version, 32)-month_names)/3+1;
   // sscanf(__TIME__, "%d:%d:%d", &hour, &minute, &second); //hh:mm:ss
   // print->fFormat(version, sizeof(version)-1, "%02d%02d%02d%02d", year-2000, month, day, hour);
 
   // ppf("version %s %s %s %d:%d:%d\n", version, __DATE__, __TIME__, hour, minute, second);
 
-  strcat(build, _INIT(TOSTRING(APP)));
-  strcat(build, "_");
-  strcat(build, _INIT(TOSTRING(VERSION)));
-  strcat(build, "_");
-  strcat(build, _INIT(TOSTRING(PIOENV)));
+  strlcat(build, _INIT(TOSTRING(APP)), sizeof(build));
+  strlcat(build, "_", sizeof(build));
+  strlcat(build, _INIT(TOSTRING(VERSION)), sizeof(build));
+  strlcat(build, "_", sizeof(build));
+  strlcat(build, _INIT(TOSTRING(PIOENV)), sizeof(build));
 
   ui->initText(parentVar, "build", build, 32, true);
   // ui->initText(parentVar, "date", __DATE__, 16, true);
@@ -338,7 +338,7 @@ String SysModSystem::sysTools_reset2String(int resetCode) {
 int SysModSystem::sysTools_get_arduino_maxStackUsage(void) {
   char * loop_taskname = pcTaskGetTaskName(loop_taskHandle);    // ask for name of the known task (to make sure we are still looking at the right one)
 
-  if ((loop_taskHandle == NULL) || (loop_taskname == NULL) || (strncmp(loop_taskname, "loopTask", 8) != 0)) {
+  if ((loop_taskHandle == NULL) || (loop_taskname == NULL) || (strncmp(loop_taskname, "loopTask", 9) != 0)) {
     loop_taskHandle = xTaskGetHandle("loopTask");              // need to look for the task by name. FreeRTOS docs say this is very slow, so we store the result for next time
   }
 
@@ -349,7 +349,7 @@ int SysModSystem::sysTools_get_arduino_maxStackUsage(void) {
 int SysModSystem::sysTools_get_webserver_maxStackUsage(void) {
   char * tcp_taskname = pcTaskGetTaskName(tcp_taskHandle);     // ask for name of the known task (to make sure we are still looking at the right one)
 
-  if ((tcp_taskHandle == NULL) || (tcp_taskname == NULL) || (strncmp(tcp_taskname, "async_tcp", 9) != 0)) {
+  if ((tcp_taskHandle == NULL) || (tcp_taskname == NULL) || (strncmp(tcp_taskname, "async_tcp", 10) != 0)) {
     tcp_taskHandle = xTaskGetHandle("async_tcp");              // need to look for the task by name. FreeRTOS docs say this is very slow, so we store the result for next time
   }
 

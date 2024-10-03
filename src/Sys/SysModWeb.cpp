@@ -350,7 +350,7 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
       // else {
       //   char buff[3];
       //   for (size_t i=0; i < len; i++) {
-      //     sprintf(buff, "%02x ", (unsigned8) data[i]);
+      //     snprintf(buff, sizeof(buf), "%02x ", (unsigned8) data[i]);
       //     msg += buff ;
       //   }
       // }
@@ -533,7 +533,7 @@ void SysModWeb::serveUpload(WebRequest *request, const String& fileName, size_t 
 
       if (fileName.indexOf(".sc") > 0) {
         ppf("sc file added %s\n", fileName.c_str());
-        strcpy(lastFileUpdated, ("/"+fileName).c_str()); //workaround 
+        strlcpy(lastFileUpdated, ("/"+fileName).c_str(), sizeof(lastFileUpdated)); //workaround 
       }
 
       // got multiple definition error here ???
@@ -587,7 +587,7 @@ void SysModWeb::serveUpdate(WebRequest *request, const String& fileName, size_t 
 void SysModWeb::serveFiles(WebRequest *request) {
 
   const char * urlString = request->url().c_str();
-  const char * path = urlString + strlen("/file"); //remove the uri from the path (skip their positions)
+  const char * path = urlString + 6; //strnlen("/file", 6); //remove the uri from the path (skip their positions)
   ppf("fileServer request %s\n", path);
   if(LittleFS.exists(path)) {
     request->send(LittleFS, path, "text/plain");//"application/json");
@@ -662,7 +662,7 @@ bool SysModWeb::captivePortal(WebRequest *request)
 JsonDocument * SysModWeb::getResponseDoc() {
   // ppf("response wsevent core %d %s\n", xPortGetCoreID(), pcTaskGetTaskName(NULL));
 
-  return strncmp(pcTaskGetTaskName(NULL), "loopTask", 8) == 0?responseDocLoopTask:responseDocAsyncTCP;
+  return strncmp(pcTaskGetTaskName(NULL), "loopTask", 9) == 0?responseDocLoopTask:responseDocAsyncTCP;
 }
 
 JsonObject SysModWeb::getResponseObject() {
@@ -672,18 +672,18 @@ JsonObject SysModWeb::getResponseObject() {
 void SysModWeb::sendResponseObject(WebClient * client) {
   JsonObject responseObject = getResponseObject();
   if (responseObject.size()) {
-    // if (strncmp(pcTaskGetTaskName(NULL), "loopTask", 8) != 0) {
+    // if (strncmp(pcTaskGetTaskName(NULL), "loopTask", 9) != 0) {
     //   ppf("send ");
     //   char sep[3] = "";
     //   for (JsonPair pair: responseObject) {
     //     ppf("%s%s", sep, pair.key().c_str());
-    //     strcpy(sep, ", ");
+    //     strlcpy(sep, ", ", sizeof(sep));
     //     if (pair.value().is<JsonObject>()) {
     //       char sep[3] = "";
     //       ppf("{");
     //       for (JsonPair pair: pair.value().as<JsonObject>()) {
     //         ppf("%s%s", sep, pair.key().c_str());
-    //         strcpy(sep, ", ");
+    //         strlcpy(sep, ", ", sizeof(sep));
     //       }
     //       ppf("}");
     //     }

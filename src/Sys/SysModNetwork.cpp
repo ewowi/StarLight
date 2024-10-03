@@ -247,6 +247,20 @@ void SysModNetwork::setup() {
 
 void SysModNetwork::loop1s() {
 
+  //string tests
+  // char test1[] = "Hello";
+  // ppf("test1=%s s:%d l:%d\n", test1, sizeof(test1), strlen(test1));
+
+  // const char * test2 = mdl->getValue("wifiOn", "ssid");
+  // ppf("test2=%s  s:%d l:%d\n", test2, sizeof(test2), strlen(test2)); //test2 may not be nullptr, size is size of ptr
+
+  // char test3[32] = "";
+  // ppf("test3=%s  s:%d l:%d\n", test3, sizeof(test3), strlen(test3));
+
+  // // const char *test4;
+  // // ppf("test4=null l:%d\n", sizeof(test4), strlen(test4)); //this crashes
+
+
   if (apActive)
     handleAP();
 }
@@ -306,9 +320,9 @@ void SysModNetwork::initWiFiConnection() {
 
   const char * ssid = mdl->getValue("wifiOn", "ssid");
   const char * password = mdl->getValue("wifiOn", "pw");
-  if (ssid && strlen(ssid)>0 && password) {
+  if (ssid && strnlen(ssid, 128) > 0 && password) {
     char passXXX [64] = "";
-    for (int i = 0; i < strlen(password); i++) strncat(passXXX, "*", sizeof(passXXX)-1);
+    for (int i = 0; i < strnlen(password, 128); i++) strlcat(passXXX, "*", sizeof(passXXX));
     WiFi.begin(ssid, password);
     ppf("initWiFiConnection success %s / %s s:%d\n", ssid, passXXX, WiFi.status()); //6 is disconnected
     #if defined(STARBASE_LOLIN_WIFI_FIX )

@@ -114,11 +114,11 @@ private:
       // ppf("Object %c\n", character);
       varStack.push_back(lastVarId); //copy!!
       // ppf("Object push %s %d\n", lastVarId, varStack.size());
-      strcpy(lastVarId, "");
+      strlcpy(lastVarId, "", sizeof(lastVarId));
       f.read(&character, sizeof(byte));
     }
     else if (character=='}') { //object end
-      strncpy(lastVarId, varStack[varStack.size()-1].c_str(), sizeof(lastVarId)-1);
+      strlcpy(lastVarId, varStack[varStack.size()-1].c_str(), sizeof(lastVarId));
       // ppf("Object pop %s %d\n", lastVarId, varStack.size());
       check(lastVarId);
       varStack.pop_back();
@@ -128,7 +128,7 @@ private:
       // ppf("Array %c\n", character);
       varStack.push_back(lastVarId); //copy!!
       // ppf("Array push %s %d\n", lastVarId, varStack.size());
-      strcpy(lastVarId, "");
+      strlcpy(lastVarId, "", sizeof(lastVarId));
       f.read(&character, sizeof(byte));
 
       //now we want to collect the array elements
@@ -137,14 +137,14 @@ private:
     }
     else if (character==']') { //array end
       //assign back the popped var id from [
-      strncpy(lastVarId, varStack[varStack.size()-1].c_str(), sizeof(lastVarId)-1);
+      strlcpy(lastVarId, varStack[varStack.size()-1].c_str(), sizeof(lastVarId));
       // ppf("Array pop %s %d %d\n", lastVarId, varStack.size(), uint16CollectList.size());
       check(lastVarId);
 
       //check the parent array, if exists
       if (varStack.size()-2 >=0) {
         // ppf("  Parent check %s\n", varStack[varStack.size()-2].c_str());
-        strncpy(beforeLastVarId, varStack[varStack.size()-2].c_str(), sizeof(beforeLastVarId)-1);
+        strlcpy(beforeLastVarId, varStack[varStack.size()-2].c_str(), sizeof(beforeLastVarId));
         check(beforeLastVarId);
       }
       varStack.pop_back(); //remove var id of this array
@@ -157,14 +157,14 @@ private:
       f.readBytesUntil('"', value, sizeof(value)-1);
     
       //if no lastVar then var found
-      if (strcmp(lastVarId, "") == 0) {
+      if (strncmp(lastVarId, "", sizeof(lastVarId)) == 0) {
         // ppf("Element [%s]\n", value);
-        strncpy(lastVarId, value, sizeof(lastVarId)-1);
+        strlcpy(lastVarId, value, sizeof(lastVarId));
       }
       else { // if lastvar then string value found
         // ppf("String var %s: [%s]\n", lastVarId, value);
         check(lastVarId, value);
-        strcpy(lastVarId, "");
+        strlcpy(lastVarId, "", sizeof(lastVarId));
       }
 
       f.read(&character, sizeof(byte));
@@ -188,7 +188,7 @@ private:
 
       check(lastVarId, value);
   
-      strcpy(lastVarId, "");
+      strlcpy(lastVarId, "", sizeof(lastVarId));
     }
     else if (character==':') {
       // ppf("semicolon %c\n", character);
@@ -220,12 +220,12 @@ private:
     //check if var is in lookFor list
     for (std::vector<VarDetails>::iterator vd=varDetails.begin(); vd!=varDetails.end(); ++vd) {
       // ppf("check %s %s %s\n", vd->id, varId, value);
-      if (strcmp(vd->id, varId)==0) {
+      if (strncmp(vd->id, varId, 32)==0) {
         // ppf("StarJson found %s:%s %d %s %d %d\n", varId, vd->type, vd->index, value?value:"", uint16CollectList.size(), funList.size());
-        // if (strcmp(vd->type, "uint8") ==0 && value) *uint8List[vd->index] = atoi(value);
-        if (strcmp(vd->type, "uint16") ==0 && value) *uint16List[vd->index] = atoi(value);
-        if (strcmp(vd->type, "char") ==0 && value) strncpy(charList[vd->index], value, 31); //assuming size 32-1 here
-        if (strcmp(vd->type, "fun") ==0) funList[vd->index](uint16CollectList); //call for every found item (no value check)
+        // if (strncmp(vd->type, "uint8") ==0 && value) *uint8List[vd->index] = atoi(value);
+        if (strncmp(vd->type, "uint16", 7) ==0 && value) *uint16List[vd->index] = atoi(value);
+        if (strncmp(vd->type, "char", 5) ==0 && value) strlcpy(charList[vd->index], value, 32); //assuming size 32 here
+        if (strncmp(vd->type, "fun", 4) ==0) funList[vd->index](uint16CollectList); //call for every found item (no value check)
         foundCounter++;
       }
     }
@@ -241,7 +241,7 @@ private:
       for (JsonPair pair: variant.as<JsonObject>()) {
         bool found = false;
         for (char *el:charList) {
-          if (strcmp(el, pair.key().c_str())==0) {
+          if (strncmp(el, pair.key().c_str(), 32)==0) {
             found = true;
             break;
           }
@@ -249,7 +249,7 @@ private:
         // std::vector<char *>::iterator itr = find(charList.begin(), charList.end(), pair.key().c_str());
         if (!found) { //not found
           f.printf("%s\"%s\":", sep, pair.key().c_str());
-          strcpy(sep, ",");
+          strlcpy(sep, ",", sizeof(sep));
           writeJsonVariantToFile(pair.value());
         }
       }
@@ -260,7 +260,7 @@ private:
       char sep[2] = "";
       for (JsonVariant variant2: variant.as<JsonArray>()) {
         f.print(sep);
-        strcpy(sep, ",");
+        strlcpy(sep, ",", sizeof(sep));
         writeJsonVariantToFile(variant2);
       }      
       f.printf("]");

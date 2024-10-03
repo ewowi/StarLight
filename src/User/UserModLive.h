@@ -275,9 +275,9 @@ public:
 
   void loop20ms() {
     //workaround
-    if (strstr(web->lastFileUpdated, ".sc") != nullptr) {
-      if (strstr(web->lastFileUpdated, "del:/") != nullptr) {
-        if (strcmp(this->fileName, web->lastFileUpdated+4) == 0) { //+4 remove del:
+    if (strnstr(web->lastFileUpdated, ".sc", sizeof(web->lastFileUpdated)) != nullptr) {
+      if (strnstr(web->lastFileUpdated, "del:/", sizeof(web->lastFileUpdated)) != nullptr) {
+        if (strncmp(this->fileName, web->lastFileUpdated+4, sizeof(this->fileName)) == 0) { //+4 remove del:
           ppf("loop20ms kill %s\n", web->lastFileUpdated);
           kill();
           // ui->callVarFun("script2", UINT8_MAX, onUI); //rebuild options
@@ -289,7 +289,7 @@ public:
         run(web->lastFileUpdated);
         // ui->callVarFun("script2", UINT8_MAX, onUI); //rebuild options
       }
-      strcpy(web->lastFileUpdated, "");
+      strlcpy(web->lastFileUpdated, "", sizeof(web->lastFileUpdated));
     }
   }
 
@@ -298,7 +298,7 @@ public:
 
     kill(); //kill any old script
 
-    if (strcmp(fileName, "") != 0) {
+    if (fileName && strnlen(fileName, 32) > 0) {
 
       File f = files->open(fileName, "r");
       if (!f)
@@ -341,7 +341,7 @@ public:
 
           SCExecutable.executeAsTask("main"); //"setup" not working
           // ppf("setup done\n");
-          strcpy(this->fileName, fileName);
+          strlcpy(this->fileName, fileName, sizeof(this->fileName));
         }
         f.close();
       }
@@ -355,7 +355,7 @@ public:
       ppf("kill %s\n", fileName);
       SCExecutable._kill(); //kill any old tasks
       fps = 0;
-      strcpy(fileName, "");
+      strlcpy(fileName, "", sizeof(fileName));
       if (gLeds) gLeds->fadeToBlackBy(255); // LEDs specific
     }
   }
