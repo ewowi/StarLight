@@ -25,9 +25,6 @@ public:
     parentVar = ui->initAppMod(parentVar, name, 1100);
 
     JsonObject currentVar = ui->initCheckBox(parentVar, "on", true, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case onUI:
-        ui->setLabel(var, "On");
-        return true;
       case onChange:
         mdl->callVarOnChange(mdl->findVar("Fixture", "bri"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
         return true;
@@ -170,16 +167,12 @@ public:
       default: return false; 
     }}); //fixture
 
-    ui->initCoord3D(currentVar, "fixSize", &eff->fixture.fixSize, 0, NUM_LEDS_Max, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case onUI:
-        ui->setLabel(var, "Size");
-        return true;
+    ui->initCoord3D(currentVar, "size", &eff->fixture.fixSize, 0, NUM_LEDS_Max, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       default: return false;
     }});
 
-    ui->initNumber(currentVar, "fixCount", &eff->fixture.nrOfLeds, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(currentVar, "count", &eff->fixture.nrOfLeds, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "Count");
         web->addResponse(var, "comment", "Max %d", NUM_LEDS_Max, 0); //0 is to force format overload used
         return true;
       default: return false;

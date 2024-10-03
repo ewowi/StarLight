@@ -46,7 +46,7 @@ void Fixture::projectAndMap() {
     if (doAllocPins) {
       stackUnsigned8 pinNr = 0;
       for (PinObject &pinObject: pinsM->pinObjects) {
-        if (strcmp(pinObject.owner, "Leds") == 0)
+        if (strncmp(pinObject.owner, "Leds", 5) == 0)
           pinsM->deallocatePin(pinNr, "Leds");
         pinNr++;
       }
@@ -175,7 +175,7 @@ void Fixture::projectAndMap() {
               ppf("pins extend leds %d: %s\n", currPin, details);
               //tbd: more check
 
-              strncpy(pinsM->pinObjects[currPin].details, details, sizeof(PinObject::details)-1);  
+              strlcpy(pinsM->pinObjects[currPin].details, details, sizeof(PinObject::details));  
               pinsM->pinsChanged = true;
             }
           }
@@ -264,8 +264,8 @@ void Fixture::projectAndMap() {
       ppf("projectAndMap fixture P:%dx%dx%d -> %d\n", fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
       ppf("projectAndMap fixture.size = %d + l:(%d * %d) B\n", sizeof(Fixture) - NUM_LEDS_Max * sizeof(CRGB), NUM_LEDS_Max, sizeof(CRGB)); //56
 
-      mdl->setValue("Fixture", "fixSize", fixSize);
-      mdl->setValue("Fixture", "fixCount", nrOfLeds);
+      mdl->setValue("fixture", "size", fixSize);
+      mdl->setValue("fixture", "count", nrOfLeds);
 
       //init pixelsToBlend
       for (uint16_t i=0; i<nrOfLeds; i++) {

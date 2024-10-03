@@ -59,9 +59,9 @@ public:
         for (InstanceInfo &instance : instances->instances) {
           if (instance.ip != net->localIP()) {
             char option[64] = { 0 };
-            strncpy(option, instance.name, sizeof(option)-1);
-            strncat(option, " ", sizeof(option)-1);
-            strncat(option, instance.ip.toString().c_str(), sizeof(option)-1);
+            strlcpy(option, instance.name, sizeof(option));
+            strlcat(option, " ", sizeof(option));
+            strlcat(option, instance.ip.toString().c_str(), sizeof(option));
             keyValueOption = options.add<JsonArray>();
             keyValueOption.add(instance.ip[3]);
             keyValueOption.add(option);

@@ -544,7 +544,7 @@ public:
   }
 
   void drawText(const char * text, int x = 0, int16_t y = 0, unsigned8 font = 0, CRGB col = CRGB::Red, unsigned16 shiftPixel = 0) {
-    const int numberOfChr = strlen(text); //Core  1 panic'ed (LoadProhibited). Exception was unhandled. - /builds/idf/crosstool-NG/.build/HOST-x86_64-apple-darwin12/xtensa-esp32-elf/src/newlib/newlib/libc/machine/xtensa/strlen.S:82
+    const int numberOfChr = text?strnlen(text, 256):0; //max 256 charcters
     for (int shiftChr = 0; shiftChr < numberOfChr; shiftChr++) {
       drawCharacter(text[shiftChr], x, y, font, col, shiftPixel, shiftChr);
     }

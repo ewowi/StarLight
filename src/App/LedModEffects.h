@@ -197,10 +197,10 @@ public:
         JsonArray options = ui->setOptions(var);
         for (Effect *effect:effects) {
           char buf[32] = "";
-          strcat(buf, effect->name());
-          strcat(buf, effect->dim()==_1D?" ┊":effect->dim()==_2D?" ▦":" 🧊");
-          strcat(buf, " ");
-          strcat(buf, effect->tags());
+          strlcat(buf, effect->name(), sizeof(buf));
+          strlcat(buf, effect->dim()==_1D?" ┊":effect->dim()==_2D?" ▦":" 🧊", sizeof(buf));
+          strlcat(buf, " ", sizeof(buf));
+          strlcat(buf, effect->tags(), sizeof(buf));
           options.add(JsonString(buf, JsonString::Copied)); //copy!
         }
         return true; }
@@ -225,7 +225,7 @@ public:
             //kill live script of moving to other effect
             if (leds->fx < effects.size()) {
               Effect* effect = effects[leds->fx];
-              if (strcmp(effect->name(), "Live Script") == 0) {
+              if (strncmp(effect->name(), "Live Script", 12) == 0) {
                 liveM->kill();
               }
             }
@@ -278,10 +278,10 @@ public:
         JsonArray options = ui->setOptions(var);
         for (Projection *projection:fixture.projections) {
           char buf[32] = "";
-          strcat(buf, projection->name());
-          // strcat(buf, projection->dim()==_1D?" ┊":projection->dim()==_2D?" ▦":" 🧊");
-          strcat(buf, " ");
-          strcat(buf, projection->tags());
+          strlcat(buf, projection->name(), sizeof(buf));
+          // strlcat(buf, projection->dim()==_1D?" ┊":projection->dim()==_2D?" ▦":" 🧊");
+          strlcat(buf, " ", sizeof(buf));
+          strlcat(buf, projection->tags(), sizeof(buf));
           options.add(JsonString(buf, JsonString::Copied)); //copy!
         }
         return true; }
@@ -554,8 +554,8 @@ public:
         fixture.layers[rowNr]->fadeToBlackBy();
 
         char * token = strtok((char *)canvasData, ":");
-        bool isStart = strcmp(token, "start") == 0;
-        bool isEnd = strcmp(token, "end") == 0;
+        bool isStart = strncmp(token, "start", 6) == 0;
+        bool isEnd = strncmp(token, "end", 4) == 0;
 
         Coord3D midCoord; //placeHolder for mid
 
@@ -600,7 +600,7 @@ public:
           if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in projectAndMap)
             //dirty trick to decode nrOfLedsPerPin
             char details[32];
-            strcpy(details, pinObject.details); //copy as strtok messes with the string
+            strlcpy(details, pinObject.details, sizeof(details)); //copy as strtok messes with the string
             char * after = strtok((char *)details, "-");
             if (after != NULL ) {
               char * before;
