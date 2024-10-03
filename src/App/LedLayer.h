@@ -140,13 +140,17 @@ class SharedData {
   }
   ~SharedData() {
     ppf("SharedData destructor WIP %d %d\n", index, bytesAllocated);
-    if (data)
+    if (data) {
       free(data);
+      data = nullptr;
+    }
   }
 
   void clear() {
-    if (data)
+    if (data) {
       free(data);
+      data = nullptr;
+    }
     bytesAllocated = 0;
     alertIfChanged = false;
     begin();
