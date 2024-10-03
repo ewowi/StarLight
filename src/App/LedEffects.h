@@ -2320,6 +2320,49 @@ class StarFieldEffect: public Effect {  // Inspired by Daniel Shiffman's Coding 
 
 }; //StarField
 
+class PraxisEffect: public Effect { // BY MONSOONO
+public:
+  const char * name() {return "Praxis";}
+  uint8_t dim() {return _2D;}
+  const char * tags() {return "💫";}
+
+  void loop(LedsLayer &leds) {
+    //uint8_t huespeed = leds.effectData.read<uint8_t>();
+    //uint8_t saturation = leds.effectData.read<uint8_t>(); I will revisit this when I have a display
+    uint8_t macro_mutator_freq = leds.effectData.read<uint8_t>();
+    uint8_t macro_mutator_min = leds.effectData.read<uint8_t>();
+    uint8_t macro_mutator_max = leds.effectData.read<uint8_t>();
+    uint8_t micro_mutator_freq = leds.effectData.read<uint8_t>();
+    uint8_t micro_mutator_min = leds.effectData.read<uint8_t>();
+    uint8_t micro_mutator_max = leds.effectData.read<uint8_t>();
+    uint16_t macro_mutator = beatsin16(macro_mutator_freq, macro_mutator_min << 8, macro_mutator_max << 8); // beatsin16(14, 65350, 65530);
+    uint16_t micro_mutator = beatsin16(micro_mutator_freq, micro_mutator_min, micro_mutator_max); // beatsin16(2, 550, 900);
+    
+    Coord3D pos = {0,0,0};
+    uint8_t huebase = sys->now / 40; // 1 + ~huespeed
+
+    for (pos.x = 0; pos.x < leds.size.x; pos.x++){
+      for(pos.y = 0; pos.y < leds.size.y; pos.y++){
+        uint8_t hue = huebase + ((pos.x+pos.y)*(250-macro_mutator)/5) + ((pos.x+pos.y*macro_mutator*pos.x)/(micro_mutator+1));
+        CRGB colour = ColorFromPalette(leds.palette, hue, 255, LINEARBLEND);
+        leds[pos] = colour;// blend(leds.getPixelColor(pos), colour, 155);
+      }
+    }
+  }
+
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    //ui->initSlider(parentVar, "Hue Speed", leds.effectData.write<uint8_t>(20), 1, 100); // (14), 1, 255)
+    //ui->initSlider(parentVar, "Saturation", leds.effectData.write<uint8_t>(255), 0, 255);
+    ui->initSlider(parentVar, "Macro Mutator Freq", leds.effectData.write<uint8_t>(8), 0, 255); // (14), 1, 255)
+    ui->initSlider(parentVar, "Macro Mutator Min", leds.effectData.write<uint8_t>(250), 0, 255); // (125), 1, 2500)
+    ui->initSlider(parentVar, "Macro Mutator Max", leds.effectData.write<uint8_t>(255), 0, 255); // (1), 1, 2500)
+    ui->initSlider(parentVar, "Micro Mutator Freq", leds.effectData.write<uint8_t>(2), 0, 255); // (128), 1, 255)
+    ui->initSlider(parentVar, "Micro Mutator Min", leds.effectData.write<uint8_t>(125), 0, 255); // (550), 0, 2500)
+    ui->initSlider(parentVar, "Micro Mutator Max", leds.effectData.write<uint8_t>(255), 0, 255); // (900), 0, 2500)
+  }
+}; // Praxis
+
 class BasicTemplate: public Effect { // add effects.push_back(new Name); to LedModEffects.h
   const char * name() {return "Template";}
   unsigned8     dim() {return _3D;} // _1D, _2D, or _3D
