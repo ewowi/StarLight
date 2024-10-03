@@ -61,7 +61,11 @@ public:
         // ui->setComment(var, "Click to enlarge");
         return true;
       case onLoop: {
-        var["interval"] =  max(eff->fixture.nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
+        #ifdef STARBASE_USE_MC_AWS
+          var["interval"] = 25;// max(eff->fixture.nrOfLeds * ws.count()/200, 16U)*10; // error: reference to 'ws' is ambiguous !!!
+        #else
+          var["interval"] =  max(eff->fixture.nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
+        #endif
 
         web->sendDataWs([this](AsyncWebSocketMessageBuffer * wsBuf) {
           byte* buffer;

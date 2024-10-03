@@ -34,6 +34,12 @@
   #define WebResponse AsyncWebServerResponse
 #endif
 
+#ifdef STARBASE_USE_MC_AWS
+  static WebSocket ws("/ws");
+  static WebServer server(80);
+  //static otherwise multiple definition of `server';
+#endif
+
 class SysModWeb:public SysModule {
 
 public:
@@ -41,8 +47,10 @@ public:
     WebSocket ws = WebSocket();
     WebServer server = WebServer();
   #else
-    WebSocket ws = WebSocket("/ws");
-    WebServer server = WebServer(80);
+    #ifndef STARBASE_USE_MC_AWS
+      WebSocket ws = WebSocket("/ws");
+      WebServer server = WebServer(80);
+    #endif
   #endif
 
   SemaphoreHandle_t wsMutex = xSemaphoreCreateMutex();

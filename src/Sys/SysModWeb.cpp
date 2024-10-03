@@ -59,8 +59,15 @@ void SysModWeb::setup() {
 
   ui->initNumber(tableVar, "clNr", UINT16_MAX, 0, 999, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+      unsigned8 rowNr = 0; 
+      for (auto &clientx:ws.getClients()) {
+        #ifdef STARBASE_USE_MC_AWS
+          AsyncWebSocketClient *client = &clientx;
+        #else
+          AsyncWebSocketClient *client = clientx;
+        #endif
         mdl->setValue(var, client->id(), rowNr++);
+      }
       return true; }
     case onUI:
       ui->setLabel(var, "Nr");
@@ -70,8 +77,15 @@ void SysModWeb::setup() {
 
   ui->initText(tableVar, "clIp", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+      unsigned8 rowNr = 0; for (auto &clientx:ws.getClients()) {
+        #ifdef STARBASE_USE_MC_AWS
+          AsyncWebSocketClient *client = &clientx;
+        #else
+          AsyncWebSocketClient *client = clientx;
+        #endif
+
         mdl->setValue(var, JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
+      }
       return true; }
     case onUI:
       ui->setLabel(var, "IP");
@@ -81,8 +95,14 @@ void SysModWeb::setup() {
 
   ui->initCheckBox(tableVar, "clIsFull", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+      unsigned8 rowNr = 0; for (auto &clientx:ws.getClients()) {
+        #ifdef STARBASE_USE_MC_AWS
+          AsyncWebSocketClient *client = &clientx;
+        #else
+          AsyncWebSocketClient *client = clientx;
+        #endif
         mdl->setValue(var, client->queueIsFull(), rowNr++);
+      }
       return true; }
     case onUI:
       ui->setLabel(var, "Is full");
@@ -92,8 +112,15 @@ void SysModWeb::setup() {
 
   ui->initSelect(tableVar, "clStatus", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+      unsigned8 rowNr = 0; for (auto &clientx:ws.getClients()) {
+        #ifdef STARBASE_USE_MC_AWS
+          AsyncWebSocketClient *client = &clientx;
+        #else
+          AsyncWebSocketClient *client = clientx;
+        #endif
+
         mdl->setValue(var, client->status(), rowNr++);
+      }
       return true; }
     case onUI:
     {
@@ -110,8 +137,14 @@ void SysModWeb::setup() {
 
   ui->initNumber(tableVar, "clLength", UINT16_MAX, 0, WS_MAX_QUEUED_MESSAGES, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+      unsigned8 rowNr = 0; for (auto &clientx:ws.getClients()) {
+        #ifdef STARBASE_USE_MC_AWS
+          AsyncWebSocketClient *client = &clientx;
+        #else
+          AsyncWebSocketClient *client = clientx;
+        #endif
         mdl->setValue(var, client->queueLen(), rowNr++);
+      }
       return true; }
     case onUI:
       ui->setLabel(var, "Length");
@@ -424,11 +457,18 @@ void SysModWeb::sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fi
     AsyncWebSocketMessageBuffer * wsBuf = ws.makeBuffer(len); //assert failed: block_trim_free heap_tlsf.c:371 (block_is_free(block) && "block must be free"), AsyncWebSocket::makeBuffer(unsigned int)
 
     if (wsBuf) {
-      wsBuf->lock();
+      #ifndef STARBASE_USE_MC_AWS
+        wsBuf->lock();
+      #endif
 
       fill(wsBuf); //function parameter
 
-      for (auto &loopClient:ws.getClients()) {
+      for (auto &loopClientx:ws.getClients()) {
+        #ifdef STARBASE_USE_MC_AWS
+          AsyncWebSocketClient *loopClient = &loopClientx;
+        #else
+          AsyncWebSocketClient *loopClient = loopClientx;
+        #endif
         if (!client || client == loopClient) {
           if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
             if (!isBinary || loopClient->queueLen() <= 3) {
@@ -441,21 +481,27 @@ void SysModWeb::sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fi
             }
           }
           else {
-            printClient("sendDataWs client full or not connected", loopClient);
+            printClient("sendDataWs client full or not connected", (AsyncWebSocketClient *)&loopClient);
             // ppf("sendDataWs client full or not connected\n");
             ws.cleanupClients(); //only if above threshold
-            ws._cleanBuffers();
+            #ifndef STARBASE_USE_MC_AWS
+              ws._cleanBuffers();
+            #endif
           }
         }
       }
-      wsBuf->unlock();
-      ws._cleanBuffers();
+      #ifndef STARBASE_USE_MC_AWS
+        wsBuf->unlock();
+        ws._cleanBuffers();
+      #endif
     }
     else {
       ppf("sendDataWs WS buffer allocation failed\n");
       ws.closeAll(1013); //code 1013 = temporary overload, try again later
       ws.cleanupClients(0); //disconnect ALL clients to release memory
-      ws._cleanBuffers();
+      #ifndef STARBASE_USE_MC_AWS
+        ws._cleanBuffers();
+      #endif
     }
   }
 
@@ -472,7 +518,11 @@ void SysModWeb::serveIndex(WebRequest *request) {
   // if (handleIfNoneMatchCacheHeader(request)) return;
 
   WebResponse *response;
-  response = request->beginResponse_P(200, "text/html", PAGE_index, PAGE_index_L);
+  #ifdef STARBASE_USE_MC_AWS
+    response = request->beginResponse(200, "text/html", PAGE_index, PAGE_index_L);
+  #else
+    response = request->beginResponse_P(200, "text/html", PAGE_index, PAGE_index_L);
+  #endif
   response->addHeader("Content-Encoding","gzip");
   // setStaticContentCacheHeaders(response);
   request->send(response);
@@ -488,7 +538,12 @@ void SysModWeb::serveNewUI(WebRequest *request) {
   // if (handleIfNoneMatchCacheHeader(request)) return;
 
   WebResponse *response;
-  response = request->beginResponse_P(200, "text/html", PAGE_newui, PAGE_newui_L);
+  #ifdef STARBASE_USE_MC_AWS
+    response = request->beginResponse(200, "text/html", PAGE_newui, PAGE_newui_L);
+  #else
+    response = request->beginResponse_P(200, "text/html", PAGE_newui, PAGE_newui_L);
+  #endif
+
   response->addHeader("Content-Encoding","gzip");
   // setStaticContentCacheHeaders(response);
   request->send(response);
@@ -625,7 +680,16 @@ void SysModWeb::jsonHandler(WebRequest *request, JsonVariant json) {
 }
 
 void SysModWeb::clientsToJson(JsonArray array, bool nameOnly, const char * filter) {
-  for (auto &client:ws.getClients()) {
+  for (auto &clientx:ws.getClients()) {
+    // NM: typedef LinkedList<AsyncWebSocketClient *> AsyncWebSocketClientLinkedList; LinkedList is a class
+    // MC: std::list<AsyncWebSocketClient>& getClients() { return _clients; }
+
+    #ifdef STARBASE_USE_MC_AWS
+      AsyncWebSocketClient *client = &clientx;
+    #else
+      AsyncWebSocketClient *client = clientx;
+    #endif
+
     if (nameOnly) {
       array.add(JsonString(client->remoteIP().toString().c_str(), JsonString::Copied));
     } else {
