@@ -59,7 +59,7 @@ void SysModWeb::setup() {
 
   ui->initNumber(tableVar, "clNr", UINT16_MAX, 0, 999, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto client:ws.getClients())
+      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, client->id(), rowNr++);
       return true; }
     case onUI:
@@ -70,7 +70,7 @@ void SysModWeb::setup() {
 
   ui->initText(tableVar, "clIp", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto client:ws.getClients())
+      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
       return true; }
     case onUI:
@@ -81,7 +81,7 @@ void SysModWeb::setup() {
 
   ui->initCheckBox(tableVar, "clIsFull", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto client:ws.getClients())
+      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, client->queueIsFull(), rowNr++);
       return true; }
     case onUI:
@@ -92,7 +92,7 @@ void SysModWeb::setup() {
 
   ui->initSelect(tableVar, "clStatus", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto client:ws.getClients())
+      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, client->status(), rowNr++);
       return true; }
     case onUI:
@@ -110,8 +110,8 @@ void SysModWeb::setup() {
 
   ui->initNumber(tableVar, "clLength", UINT16_MAX, 0, WS_MAX_QUEUED_MESSAGES, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto client:ws.getClients())
-        mdl->setValue(var, client->queueLength(), rowNr++);
+      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+        mdl->setValue(var, client->queueLen(), rowNr++);
       return true; }
     case onUI:
       ui->setLabel(var, "Length");
@@ -428,10 +428,10 @@ void SysModWeb::sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fi
 
       fill(wsBuf); //function parameter
 
-      for (auto loopClient:ws.getClients()) {
+      for (auto &loopClient:ws.getClients()) {
         if (!client || client == loopClient) {
           if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
-            if (!isBinary || loopClient->queueLength() <= 3) {
+            if (!isBinary || loopClient->queueLen() <= 3) {
               isBinary?loopClient->binary(wsBuf): loopClient->text(wsBuf);
               sendWsCounter++;
               if (isBinary)
@@ -625,7 +625,7 @@ void SysModWeb::jsonHandler(WebRequest *request, JsonVariant json) {
 }
 
 void SysModWeb::clientsToJson(JsonArray array, bool nameOnly, const char * filter) {
-  for (auto client:ws.getClients()) {
+  for (auto &client:ws.getClients()) {
     if (nameOnly) {
       array.add(JsonString(client->remoteIP().toString().c_str(), JsonString::Copied));
     } else {
@@ -635,7 +635,7 @@ void SysModWeb::clientsToJson(JsonArray array, bool nameOnly, const char * filte
       array.add(JsonString(client->remoteIP().toString().c_str(), JsonString::Copied));
       row.add(client->queueIsFull());
       row.add(client->status());
-      row.add(client->queueLength());
+      row.add(client->queueLen());
     }
   }
 }
