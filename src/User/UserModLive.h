@@ -126,6 +126,7 @@ class UserModLive:public SysModule {
 public:
 
   Parser p = Parser();
+  Executable myexec;
   char fileName[32] = ""; //running sc file
   string scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
 
