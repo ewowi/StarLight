@@ -2924,7 +2924,7 @@ class LiveScriptEffect: public Effect {
   
   void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
-    ui->initSelect(parentVar, "script2", UINT16_MAX, false , [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "script", UINT16_MAX, false , [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI: {
         // ui->setComment(var, "Fixture to display effect on");
         JsonArray options = ui->setOptions(var);
@@ -2941,7 +2941,7 @@ class LiveScriptEffect: public Effect {
 
           fileNr--;  //-1 as none is no file
           files->seqNrToName(web->lastFileUpdated, fileNr, ".sc");
-          ppf("script2.onChange f:%d s:%s\n", fileNr, web->lastFileUpdated);
+          ppf("script.onChange f:%d s:%s\n", fileNr, web->lastFileUpdated);
 
           // in LedLayer.h: void setPixelColorLive(unsigned16 indexV, uint32_t color) {setPixelColor(indexV, CRGB::Black);}
           // void (LedsLayer::*sPCCached)(unsigned16, uint32_t) = &LedsLayer::setPixelColorLive;
@@ -2950,7 +2950,7 @@ class LiveScriptEffect: public Effect {
         }
         else {
           liveM->kill();
-          ppf("script2.onChange set to None:%d\n", fileNr);
+          ppf("script.onChange set to None:%d\n", fileNr);
         }
 
         return true; }

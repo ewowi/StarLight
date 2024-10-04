@@ -108,14 +108,18 @@ static uint8_t _inoise8(uint16_t a1, uint16_t a2, uint16_t a3) {return inoise8(a
 static uint8_t _random8() {return random8();}
 static LedsLayer *gLeds = nullptr;
 static void _fadeToBlackBy(uint8_t a1) {gLeds->fadeToBlackBy(a1);}
-static void sPCLive(uint16_t pixel, CRGB color) { // int t needed - otherwise wrong colors, very strange
+
+//setPixelColor with color
+static void sPCLive(uint16_t pixel, CRGB color) {
   if (gLeds) 
   {
     // ppf(" %d,%d,%d", color.r, color.g, color.b);
     gLeds->setPixelColor(pixel, color);
   }
 }
-static void sCFPLive(uint16_t pixel, uint8_t index, uint8_t brightness) { // int t needed - otherwise wrong colors, very strange
+
+//setPixelColor within palette
+static void sCFPLive(uint16_t pixel, uint8_t index, uint8_t brightness) {
   if (gLeds) 
     gLeds->setPixelColor(pixel, ColorFromPalette(gLeds->palette, index, brightness));
 }
