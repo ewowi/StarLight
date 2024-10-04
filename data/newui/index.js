@@ -75,7 +75,7 @@ class Controller {
       if (buffer[0] == 0) {
         let canvasNode = gId("Pins.board");
         if (canvasNode) {
-          // console.log(buffer, pviewNode);
+          // console.log(buffer, previewNode);
           for (let pinNr = 0; pinNr < controller.sysInfo.nrOfPins; pinNr++)
             buffer[pinNr+5] = Math.round(Math.random() * 256)
           controller.modules.previewBoard(canvasNode, buffer);
@@ -83,15 +83,15 @@ class Controller {
       }
       else if (buffer[0] == 1) {
         //LEDs specific
-        let canvasNode = gId("Fixture.pview");
+        let canvasNode = gId("Fixture.preview");
         if (canvasNode) {
           // console.log(buffer, canvasNode);
-          let pviewVar = controller.modules.findVar("Fixture", "pview");
-          if (pviewVar.file) {
+          let previewVar = controller.modules.findVar("Fixture", "preview");
+          if (previewVar.file) {
             buffer[1] = 0
             buffer[2] = 0
             buffer[3] = 0
-            for (let i = 0; i < pviewVar.file.nrOfLeds; i++) {
+            for (let i = 0; i < previewVar.file.nrOfLeds; i++) {
               buffer[4+i*3] = Math.random() * 256
               buffer[4+i*3+1] = Math.random() * 256
               buffer[4+i*3+2] = Math.random() * 256

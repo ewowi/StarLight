@@ -43,13 +43,12 @@ public:
   unsigned long frameCounter = 0;
 
   unsigned16 fps = 60;
-  unsigned long lastMappingMillis = 0;
 
   std::vector<Effect *> effects;
 
   Fixture fixture = Fixture();
 
-  bool fShow = true;
+  bool driverShow = true;
 
   #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
     #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
@@ -192,7 +191,7 @@ public:
     currentVar = ui->initSelect(tableVar, "effect", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onSetValue:
         for (forUnsigned8 rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
-          mdl->setValue(var, fixture.layers[rowNr]->fx, rowNr);
+          mdl->setValue(var, fixture.layers[rowNr]->effectNr, rowNr);
         return true;
       case onUI: {
         ui->setComment(var, "Effect to show");
@@ -208,12 +207,12 @@ public:
         return true; }
       case onChange:
 
-        if (rowNr == UINT8_MAX) rowNr = 0; // in case fx without a rowNr
+        if (rowNr == UINT8_MAX) rowNr = 0; // in case effect without a rowNr
 
         //create a new leds instance if a new row is created
         if (rowNr >= fixture.layers.size()) {
-          ppf("layers fx[%d] onChange %d %s\n", rowNr, fixture.layers.size(), Variable(mdl->findVar("layers", "effect")).valueString().c_str());
-          ppf("fx creating new LedsLayer instance %d\n", rowNr);
+          ppf("layers effect[%d] onChange %d %s\n", rowNr, fixture.layers.size(), Variable(mdl->findVar("layers", "effect")).valueString().c_str());
+          ppf("effect creating new LedsLayer instance %d\n", rowNr);
           LedsLayer *leds = new LedsLayer(fixture);
           fixture.layers.push_back(leds);
         }
@@ -225,42 +224,30 @@ public:
 
           #ifdef STARBASE_USERMOD_LIVE
             //kill live script of moving to other effect
-            if (leds->fx < effects.size()) {
-              Effect* effect = effects[leds->fx];
+            if (leds->effectNr < effects.size()) {
+              Effect* effect = effects[leds->effectNr];
               if (strncmp(effect->name(), "Live Script", 12) == 0) {
                 liveM->kill();
               }
             }
           #endif
 
-          leds->fx = mdl->getValue(var, rowNr);
+          leds->effectNr = mdl->getValue(var, rowNr);
 
-          if (leds->fx < effects.size()) {
-            ppf("setEffect fx[%d]: %d\n", rowNr, leds->fx);
+          if (leds->effectNr < effects.size()) {
+            ppf("setEffect effect[%d]: %d\n", rowNr, leds->effectNr);
 
-            Effect* effect = effects[leds->fx];
+            Effect* effect = effects[leds->effectNr];
 
             if (effect->dim() != leds->effectDimension) {
               leds->effectDimension = effect->dim();
               leds->triggerMapping();
+              //initEffect is called after mapping done to make sure dimensions are right before controls are done...
             }
-
-            ppf("initEffect leds[%d] fx:%d a:%d\n", rowNr, leds->fx, leds->effectData.bytesAllocated);
-
-            leds->effectData.clear(); //delete effectData memory so it can be rebuild
-            effect->loop(*leds); leds->effectData.begin(); //do a loop to set effectData right
-
-            Variable(var).preDetails();
-            mdl->setValueRowNr = rowNr;
-            effect->controls(*leds, var); //set all defaults in effectData
-            Variable(var).postDetails(rowNr);
-            mdl->setValueRowNr = UINT8_MAX;
-
-            leds->effectData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
-
-            effect->setup(*leds); //if changed then run setup once (like call==0 in WLED)
-
-          } // fx < size
+            else {
+              initEffect(*leds, rowNr);
+            }
+          } // effectNr < size
 
         }
         return true;
@@ -275,7 +262,7 @@ public:
           mdl->setValue(var, fixture.layers[rowNr]->projectionNr, rowNr);
         return true;
       case onUI: {
-        ui->setComment(var, "How to project fx");
+        ui->setComment(var, "How to project effect");
 
         JsonArray options = ui->setOptions(var);
         for (Projection *projection:fixture.projections) {
@@ -289,7 +276,7 @@ public:
         return true; }
       case onChange:
 
-        if (rowNr == UINT8_MAX) rowNr = 0; // in case fx without a rowNr
+        if (rowNr == UINT8_MAX) rowNr = 0; // in case effect without a rowNr
 
         if (rowNr < fixture.layers.size()) {
           LedsLayer *leds = fixture.layers[rowNr];
@@ -309,7 +296,7 @@ public:
 
             //initProjection
 
-            ppf("initProjection leds[%d] fx:%d a:%d\n", rowNr, leds->fx, leds->projectionData.bytesAllocated);
+            ppf("initProjection leds[%d] effect:%d a:%d\n", rowNr, leds->effectNr, leds->projectionData.bytesAllocated);
 
             leds->projectionData.clear(); //delete effectData memory so it can be rebuild
 
@@ -434,13 +421,13 @@ public:
     //     return true;
     //   }
     //   default: return false;
-    // }}); //fxLayout
+    // }}); //effect Layout
 
     ui->initSlider(parentVar, "Blending", &fixture.globalBlend);
 
     #ifdef STARBASE_USERMOD_E131
       // if (e131mod->isEnabled) {
-          e131mod->patchChannel(0, "Fixture", "bri", 255); //should be 256??
+          e131mod->patchChannel(0, "Fixture", "brightness", 255); //should be 256??
           e131mod->patchChannel(1, "layers", "effect", effects.size());
           e131mod->patchChannel(2, "effect", "pal", 8); //tbd: calculate nr of palettes (from select)
           // //add these temporary to test remote changing of this values do not crash the system
@@ -465,7 +452,7 @@ public:
 
     //for use in loop
     varSystem = mdl->findVar("m", "System");
-    viewRot = mdl->getValue("pview", "viewRot");
+    viewRot = mdl->getValue("preview", "rotation");
   }
 
   //this loop is run as often as possible so coding should also be as efficient as possible (no findVars etc)
@@ -491,12 +478,12 @@ public:
       //  run the next frame of the effect
       stackUnsigned8 rowNr = 0;
       for (LedsLayer *leds: fixture.layers) {
-        if (leds->fx < effects.size()) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
-          // ppf(" %d %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->fx, leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
+        if (leds->effectNr < effects.size()) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
+          // ppf(" %d %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->effectNr, leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
           mdl->getValueRowNr = rowNr++;
 
           leds->effectData.begin(); //sets the effectData pointer back to 0 so loop effect can go through it
-          effects[leds->fx]->loop(*leds);
+          effects[leds->effectNr]->loop(*leds);
 
           mdl->getValueRowNr = UINT8_MAX;
           // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
@@ -526,7 +513,7 @@ public:
 
       #endif
 
-      if (fShow) {
+      if (driverShow) {
         #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
           #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
             if (driver.ledsbuff != NULL)
@@ -580,10 +567,21 @@ public:
       }
     }
 
+  } //loop
+
+  void loop1s() {
     //run projectAndMap
-    if (sys->now - lastMappingMillis >= 1000 && fixture.doMap) { //not more then once per second (for E131)
-      lastMappingMillis = sys->now;
+    if (fixture.doMap) { //not more then once per second (for E131)
       fixture.projectAndMap();
+
+      //reinit the effect after a mapping change
+
+      stackUnsigned8 rowNr = 0;
+      for (LedsLayer *leds: fixture.layers) {
+        initEffect(*leds, rowNr);
+        rowNr++;
+      }
+
 
       //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
 
@@ -838,7 +836,29 @@ public:
         fixture.doAllocPins = false;
       }
     }
-  } //loop
+  } //loop1s
+
+  void initEffect(LedsLayer &leds, uint8_t rowNr) {
+      ppf("initEffect leds[%d] effect:%d a:%d (%d,%d,%d)\n", rowNr, leds.effectNr, leds.effectData.bytesAllocated, leds.size.x, leds.size.y, leds.size.z);
+
+      leds.effectData.clear(); //delete effectData memory so it can be rebuild
+
+      Effect* effect = effects[leds.effectNr];
+
+      effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right
+
+      JsonObject var = mdl->findVar("layers", "effect");
+      Variable(var).preDetails();
+      mdl->setValueRowNr = rowNr;
+      effect->controls(leds, var); //set all defaults in effectData
+      Variable(var).postDetails(rowNr);
+      mdl->setValueRowNr = UINT8_MAX;
+
+      leds.effectData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
+
+      effect->setup(leds); //if changed then run setup once (like call==0 in WLED)
+
+  }
 
   // void loop10s() {
     // ppf("caching %u %u\n", trigoCached, trigoUnCached); //not working for some reason!!

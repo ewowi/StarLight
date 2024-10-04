@@ -224,7 +224,7 @@ public:
     addExternalFun("uint8_t", "random8", "()", (void *)_random8);
     addExternalFun("uint8_t", "sin8","(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
     addExternalFun("uint8_t", "cos8","(uint8_t a1)",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
-    addExternalFun("void", "sPC", "(uint16_t a1, CRGB a2)", (void *)sPCLive); // int t needed - otherwise wrong colors, very strange
+    addExternalFun("void", "sPC", "(uint16_t a1, CRGB a2)", (void *)sPCLive);
     addExternalFun("void", "sCFP", "(uint16_t a1, uint8_t a2, uint8_t a3)", (void *)sCFPLive);
     addExternalFun("void", "fadeToBlackBy", "(uint8_t a1)", (void *)_fadeToBlackBy);
     //address of overloaded function with no contextual type information: setPixelColorLive

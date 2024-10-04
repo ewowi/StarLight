@@ -30,7 +30,7 @@ void Fixture::projectAndMap() {
       if (leds->doMap) {
         leds->fill_solid(CRGB::Black);
 
-        ppf("projectAndMap clear leds[%d] fx:%d pro:%d\n", rowNr, leds->fx, leds->projectionNr);
+        ppf("projectAndMap clear leds[%d] effect:%d pro:%d\n", rowNr, leds->effectNr, leds->projectionNr);
         leds->size = Coord3D{0,0,0};
         //vectors really gone now?
         for (std::vector<uint16_t> mappingTableIndex: leds->mappingTableIndexes) {
@@ -198,7 +198,7 @@ void Fixture::projectAndMap() {
 
       for (LedsLayer *leds: layers) {
         if (leds->doMap) {
-          ppf("projectAndMap post leds[%d] fx:%d pro:%d\n", rowNr, leds->fx, leds->projectionNr);
+          ppf("projectAndMap post leds[%d] effect:%d pro:%d\n", rowNr, leds->effectNr, leds->projectionNr);
 
           uint16_t nrOfLogical = 0;
           uint16_t nrOfPhysical = 0;

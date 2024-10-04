@@ -26,17 +26,14 @@ public:
 
     JsonObject currentVar = ui->initCheckBox(parentVar, "on", true, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
-        mdl->callVarOnChange(mdl->findVar("Fixture", "bri"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+        mdl->callVarOnChange(mdl->findVar("Fixture", "brightness"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
         return true;
       default: return false;
     }});
     currentVar["dash"] = true;
 
     //logarithmic slider (10)
-    currentVar = ui->initSlider(parentVar, "bri", &bri, 0, 255, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case onUI:
-        ui->setLabel(var, "Brightness");
-        return true;
+    currentVar = ui->initSlider(parentVar, "brightness", &bri, 0, 255, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange: {
         //bri set by StarMod during onChange
         stackUnsigned8 result = mdl->getValue("Fixture", "on").as<bool>()?mdl->linearToLogarithm(bri):0;
@@ -54,12 +51,7 @@ public:
     currentVar["log"] = true; //logarithmic
     currentVar["dash"] = true; //these values override model.json???
 
-    currentVar = ui->initCanvas(parentVar, "pview", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case onUI:
-        ui->setLabel(var, "Preview");
-        // ui->setComment(var, "Shows the fixture");
-        // ui->setComment(var, "Click to enlarge");
-        return true;
+    currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onLoop: {
         var["interval"] =  max(eff->fixture.nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
 
@@ -114,10 +106,8 @@ public:
       default: return false;
     }});
 
-    ui->initSelect(currentVar, "viewRot", &viewRotation, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSelect(currentVar, "rotation", &viewRotation, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI: {
-        ui->setLabel(var, "Rotation");
-        // ui->setComment(var, "View rotation");
         JsonArray options = ui->setOptions(var);
         options.add("None");
         options.add("Tilt");
@@ -130,12 +120,7 @@ public:
       default: return false; 
     }});
 
-    ui->initCheckBox(currentVar, "rgb1B", &rgb1B, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
-      case onUI:
-        ui->setLabel(var, "1-byte RGB");
-        return true;
-      default: return false;
-    }});
+    ui->initCheckBox(currentVar, "1-byte RGB", &rgb1B, false);
 
     currentVar = ui->initSelect(parentVar, "fixture", &eff->fixture.fixtureNr, false ,[](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI: {
@@ -146,7 +131,7 @@ public:
         // ui needs to load the file also initially
         char fileName[32] = "";
         if (files->seqNrToName(fileName, var["value"])) {
-          web->addResponse(mdl->findVar("Fixture", "pview"), "file", JsonString(fileName, JsonString::Copied));
+          web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName, JsonString::Copied));
         }
         return true; }
       case onChange: {
@@ -160,8 +145,8 @@ public:
 
         char fileName[32] = "";
         if (files->seqNrToName(fileName, eff->fixture.fixtureNr)) {
-          //send to pview a message to get file fileName
-          web->addResponse(mdl->findVar("Fixture", "pview"), "file", JsonString(fileName, JsonString::Copied));
+          //send to preview a message to get file fileName
+          web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName, JsonString::Copied));
         }
         return true; }
       default: return false; 
@@ -196,7 +181,7 @@ public:
       default: return false;
     }});
 
-    ui->initCheckBox(parentVar, "fShow", &eff->fShow, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "driverShow", &eff->driverShow, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onUI:
         #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
           ui->setLabel(var, "CLD Show");

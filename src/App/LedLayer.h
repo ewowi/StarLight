@@ -140,13 +140,11 @@ class SharedData {
   }
   ~SharedData() {
     ppf("SharedData destructor WIP %d %d\n", index, bytesAllocated);
-    if (data) {
-      free(data);
-      data = nullptr;
-    }
+    clear();
   }
 
   void clear() {
+    ppf("SharedData clearing data %d %d %p\n", index, bytesAllocated, data);
     if (data) {
       free(data);
       data = nullptr;
@@ -241,7 +239,7 @@ public:
 
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
 
-  uint16_t fx = UINT16_MAX;
+  uint16_t effectNr = UINT16_MAX;
   unsigned8 projectionNr = UINT8_MAX;
 
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed

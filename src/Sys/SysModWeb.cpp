@@ -702,7 +702,7 @@ void SysModWeb::serializeState(JsonObject root) {
     deserializeJson(root, jsonState);
 
     //tbd:  //StarBase has no idea about leds so this should be led independent
-    root["bri"] = mdl->getValue("Fixture", "bri");
+    root["bri"] = mdl->getValue("Fixture", "brightness");
     root["on"] = mdl->getValue("Fixture", "on").as<bool>();
 
 }

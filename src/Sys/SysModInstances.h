@@ -75,7 +75,7 @@ struct UDPStarMessage {
 struct UDPWLEDSyncMessage { //see notify( in WLED
   byte protocol; //0
   byte callMode; //1
-  byte bri; //2
+  byte bri; //2 LEDs specific
   byte rCol0; //3
   byte gCol0; //4
   byte bCol0; //5
@@ -415,7 +415,7 @@ public:
           //   Serial.printf("%d: %d\n", i, udpIn[i]);
           // }
 
-          ppf("   %d %d p:%d\n", wledSyncMessage.bri, wledSyncMessage.mainsegMode, packetSize);
+          ppf("   %d %d p:%d\n", wledSyncMessage.bri, wledSyncMessage.mainsegMode, packetSize); //LEDs specific
 
           InstanceInfo *instance = findInstance(notifierUdp.remoteIP()); //if not exist, created
 
@@ -454,7 +454,7 @@ public:
               //   }
               // }
           
-          instance->jsonData["bri"] = wledSyncMessage.bri;
+          instance->jsonData["brightness"] = wledSyncMessage.bri; //LEDs specific
           instance->jsonData["effect"] = wledSyncMessage.mainsegMode; //tbd: rowNr
           instance->jsonData["pal"] = wledSyncMessage.palette; //tbd: rowNr
 

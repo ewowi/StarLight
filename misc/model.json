@@ -890,7 +890,7 @@
             "fun": 113
           },
           {
-            "id": "insbri",
+            "id": "insbrightness",
             "type": "range",
             "ro": false,
             "max": 255,
@@ -1051,7 +1051,7 @@
         "dash": true
       },
       {
-        "id": "bri",
+        "id": "brightness",
         "type": "range",
         "ro": false,
         "max": 255,
@@ -1064,28 +1064,28 @@
         "dash": true
       },
       {
-        "id": "pview",
+        "id": "preview",
         "type": "canvas",
         "ro": false,
         "interval": 160,
         "loopFun": 0,
         "n": [
           {
-            "id": "viewRot",
+            "id": "rotation",
             "type": "select",
             "ro": false,
             "value": 0,
-            "pid": "pview",
+            "pid": "preview",
             "o": 5,
             "fun": 3,
             "p": 1073462992
           },
           {
-            "id": "rgb1B",
+            "id": "1-byte RGB",
             "type": "checkbox",
             "ro": false,
             "value": true,
-            "pid": "pview",
+            "pid": "preview",
             "o": 6,
             "fun": 4,
             "p": 1073462994
@@ -1148,7 +1148,7 @@
         "fun": 9
       },
       {
-        "id": "fShow",
+        "id": "driverShow",
         "type": "checkbox",
         "ro": false,
         "value": false,
