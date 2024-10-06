@@ -71,7 +71,7 @@ public:
     File g;
 
     char fileName[32] = "/";
-    print->fFormat(fileName, sizeof(fileName)-1, "/%s.json", name);
+    print->fFormat(fileName, sizeof(fileName), "/%s.json", name);
 
     //create g by merging in f (better solution?)
     g = files->open(fileName, "w");
@@ -888,7 +888,7 @@ public:
     GenFix genFix;
 
     char fileName[32];
-    print->fFormat(fileName, sizeof(fileName)-1, "F_%s", fixtureName);
+    print->fFormat(fileName, sizeof(fileName), "F_%s", fixtureName);
     removeSpaces(fileName);
 
     if (strnstr(fixtureName, "Sized", 32)!=nullptr) genFix.ledSize = 2; //hack to make the hcs leds smaller
@@ -925,9 +925,9 @@ public:
     if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0) {
 
       if (strncmp(fgGroup, "Matrices", 9) == 0)
-        print->fFormat(fileName, 31, "%s-%dx%d", fgText, mdl->getValue("fixtureVar", "width").as<unsigned8>(), mdl->getValue("fixtureVar", "height").as<unsigned8>());
+        print->fFormat(fileName, 32, "%s-%dx%d", fgText, mdl->getValue("fixtureVar", "width").as<unsigned8>(), mdl->getValue("fixtureVar", "height").as<unsigned8>());
       else //Cubes
-        print->fFormat(fileName, 31, "%s-%d", fgText, mdl->getValue("fixtureVar", "length").as<unsigned8>());
+        print->fFormat(fileName, 32, "%s-%d", fgText, mdl->getValue("fixtureVar", "length").as<unsigned8>());
 
       getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         Coord3D fixRotate = mdl->getValue("fixTbl", "fixRotate", rowNr);
@@ -938,7 +938,7 @@ public:
 
     } else if (strncmp(fgGroup, "Rings", 6) == 0) {
 
-      print->fFormat(fileName, 31, "%s%d", fgText, mdl->getValue("fixTbl", "fixLeds").as<unsigned16>());
+      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "fixLeds").as<unsigned16>());
 
       getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint16_t ledCount = mdl->getValue("fixTbl", "fixLeds", rowNr);
@@ -953,7 +953,7 @@ public:
 
     } else if (strnstr(fgText, "Rings241", 32) != nullptr) {
 
-      print->fFormat(fileName, 31, "%s-%d", fgText, mdl->getValue("fixTbl", "nrOfRings").as<unsigned8>());
+      print->fFormat(fileName, 32, "%s-%d", fgText, mdl->getValue("fixTbl", "nrOfRings").as<unsigned8>());
 
       getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint16_t nrOfLeds = mdl->getValue("fixTbl", "fixLeds", rowNr);
@@ -968,7 +968,7 @@ public:
 
     } else if (strnstr(fgText, "Spiral", 32) != nullptr) {
 
-      print->fFormat(fileName, 31, "%s%d", fgText, mdl->getValue("fixTbl", "fixLeds").as<unsigned16>());
+      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "fixLeds").as<unsigned16>());
 
       getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint16_t fixLeds = mdl->getValue("fixTbl", "fixLeds", rowNr);
@@ -984,7 +984,7 @@ public:
 
     } else if (strnstr(fgText, "Helix", 32) != nullptr) {
 
-      print->fFormat(fileName, 31, "%s%d", fgText, mdl->getValue("fixTbl", "fixLeds").as<unsigned16>());
+      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "fixLeds").as<unsigned16>());
 
       getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         Coord3D fixRotate = mdl->getValue("fixTbl", "fixRotate", rowNr);
@@ -1004,7 +1004,7 @@ public:
 
     } else if (strnstr(fgText, "Wheel", 32) != nullptr) {
 
-      print->fFormat(fileName, 31, "%s%d%d", fgText, mdl->getValue("fixTbl", "nrOfSpokes").as<unsigned8>(), mdl->getValue("fixTbl", "ledsPerSpoke").as<unsigned8>());
+      print->fFormat(fileName, 32, "%s%d%d", fgText, mdl->getValue("fixTbl", "nrOfSpokes").as<unsigned8>(), mdl->getValue("fixTbl", "ledsPerSpoke").as<unsigned8>());
       
       getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint8_t ledsPerSpoke = mdl->getValue("fixTbl", "ledsPerSpoke", rowNr);
@@ -1030,7 +1030,7 @@ public:
 
     } else if (strnstr(fgText, "Cone", 32) != nullptr) {
 
-      print->fFormat(fileName, 31, "%s%d", fgText, mdl->getValue("fixTbl", "nrOfRings").as<unsigned8>());
+      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "nrOfRings").as<unsigned8>());
 
       getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint8_t nrOfRings = mdl->getValue("fixTbl", "nrOfRings", rowNr);
@@ -1140,7 +1140,7 @@ public:
 
     } else if (strnstr(fgText, "Globe", 32) != nullptr) {
 
-      print->fFormat(fileName, 31, "%s%d", fgText, mdl->getValue("fixtureVar", "width").as<unsigned16>());
+      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixtureVar", "width").as<unsigned16>());
 
       getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         uint16_t width = mdl->getValue("fixtureVar", "width", rowNr);
@@ -1179,7 +1179,7 @@ public:
 
     } else if (strnstr(fgText, "GeodesicDome", 32) != nullptr) {
 
-      print->fFormat(fileName, 31, "%s%d", fgText, mdl->getValue("fixTbl", "radius").as<unsigned16>());
+      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "radius").as<unsigned16>());
 
       getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         genFix->geodesicDome(fixFirst, mdl->getValue("fixTbl", "radius", rowNr), fixIP, fixPin);
@@ -1189,7 +1189,7 @@ public:
 
       uint16_t width = mdl->getValue("fixtureVar", "width");
       uint16_t height = mdl->getValue("fixtureVar", "height");
-      print->fFormat(fileName, 31, "%s%dx%d", fgText, width, height);
+      print->fFormat(fileName, 32, "%s%dx%d", fgText, width, height);
 
       getFixtures(fileName, [width, height](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
         genFix->openPin(fixPin);

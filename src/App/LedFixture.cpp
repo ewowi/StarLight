@@ -171,7 +171,7 @@ void Fixture::projectAndMap() {
               after = strtok(NULL, "-");
               uint16_t startLed = atoi(before);
               uint16_t nrOfLeds = atoi(after) - atoi(before) + 1;
-              print->fFormat(details, sizeof(details)-1, "%d-%d", min(prevIndexP, startLed), max((uint16_t)(indexP - 1), nrOfLeds)); //careful: LedModEffects:loop uses this to assign to FastLed
+              print->fFormat(details, sizeof(details), "%d-%d", min(prevIndexP, startLed), max((uint16_t)(indexP - 1), nrOfLeds)); //careful: LedModEffects:loop uses this to assign to FastLed
               ppf("pins extend leds %d: %s\n", currPin, details);
               //tbd: more check
 
@@ -181,7 +181,7 @@ void Fixture::projectAndMap() {
           }
           else {//allocate new pin
             //tbd: check if free
-            print->fFormat(details, sizeof(details)-1, "%d-%d", prevIndexP, indexP - 1); //careful: LedModEffects:loop uses this to assign to FastLed
+            print->fFormat(details, sizeof(details), "%d-%d", prevIndexP, indexP - 1); //careful: LedModEffects:loop uses this to assign to FastLed
             // ppf("allocatePin %d: %s\n", currPin, details);
             pinsM->allocatePin(currPin, "Leds", details);
           }
@@ -251,7 +251,7 @@ void Fixture::projectAndMap() {
           ppf("projectAndMap leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d c:%d)\n", rowNr, leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, nrOfColor);
 
           char buf[32];
-          print->fFormat(buf, sizeof(buf)-1, "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
+          print->fFormat(buf, sizeof(buf), "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           mdl->setValue("layers", "size", JsonString(buf, JsonString::Copied), rowNr);
 
           ppf("projectAndMap leds[%d].size = %d + m:(%d * %d) + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), leds->mappingTable.size(), sizeof(PhysMap), leds->effectData.bytesAllocated, leds->projectionData.bytesAllocated); //44 -> 164

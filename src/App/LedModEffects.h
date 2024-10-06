@@ -43,6 +43,7 @@ public:
   unsigned long frameCounter = 0;
 
   unsigned16 fps = 60;
+  unsigned long lastMappingMillis = 0;
 
   std::vector<Effect *> effects;
 
@@ -401,7 +402,7 @@ public:
         stackUnsigned8 rowNr = 0;
         for (LedsLayer *leds:fixture.layers) {
           char message[32];
-          print->fFormat(message, sizeof(message)-1, "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
+          print->fFormat(message, sizeof(message), "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           ppf("onSetValue ledsSize[%d] = %s\n", rowNr, message);
           mdl->setValue(var, JsonString(message, JsonString::Copied), rowNr); //rowNr
           rowNr++;
@@ -567,275 +568,278 @@ public:
       }
     }
 
+    //use lastMappingMillis and not loop1s as doMap needs to start asap, not wait for next second
+    if (fixture.doMap && sys->now - lastMappingMillis >= 1000) { //not more then once per second (for E131)
+      lastMappingMillis = sys->now;
+      mapInitAlloc();
+    }
+
   } //loop
 
-  void loop1s() {
-    //run projectAndMap
-    if (fixture.doMap) { //not more then once per second (for E131)
-      fixture.projectAndMap();
+  void mapInitAlloc() {
+    fixture.projectAndMap();
 
-      //reinit the effect after a mapping change
+    //reinit the effect after a mapping change
 
-      stackUnsigned8 rowNr = 0;
-      for (LedsLayer *leds: fixture.layers) {
-        initEffect(*leds, rowNr);
-        rowNr++;
-      }
-
-
-      //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
-
-      //connect allocated Pins to gpio
-
-      if (fixture.doAllocPins) {
-        unsigned pinNr = 0;
-
-        #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-          int pinAssignment[16]; //max 16 pins
-          int lengths[16]; //max 16 pins
-          int nb_pins=0;
-        #endif
-        for (PinObject &pinObject: pinsM->pinObjects) {
-
-          if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in projectAndMap)
-            //dirty trick to decode nrOfLedsPerPin
-            char details[32];
-            strlcpy(details, pinObject.details, sizeof(details)); //copy as strtok messes with the string
-            char * after = strtok((char *)details, "-");
-            if (after != NULL ) {
-              char * before;
-              before = after;
-              after = strtok(NULL, " ");
-
-              stackUnsigned16 startLed = atoi(before);
-              stackUnsigned16 nrOfLeds = atoi(after) - atoi(before) + 1;
-              ppf("addLeds new %d: %d-%d\n", pinNr, startLed, nrOfLeds-1);
-
-              #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-                pinAssignment[nb_pins] = pinNr;
-                lengths[nb_pins] = nrOfLeds;
-                nb_pins++;
-              #else
-              //commented pins: error: static assertion failed: Invalid pin specified
-              switch (pinNr) {
-                #if CONFIG_IDF_TARGET_ESP32
-                  case 0: FastLED.addLeds<STARLIGHT_CHIPSET, 0>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 1: FastLED.addLeds<STARLIGHT_CHIPSET, 1>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 2: FastLED.addLeds<STARLIGHT_CHIPSET, 2>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 3: FastLED.addLeds<STARLIGHT_CHIPSET, 3>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 4: FastLED.addLeds<STARLIGHT_CHIPSET, 4>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 5: FastLED.addLeds<STARLIGHT_CHIPSET, 5>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 6: FastLED.addLeds<STARLIGHT_CHIPSET, 6>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 7: FastLED.addLeds<STARLIGHT_CHIPSET, 7>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 8: FastLED.addLeds<STARLIGHT_CHIPSET, 8>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 9: FastLED.addLeds<STARLIGHT_CHIPSET, 9>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 10: FastLED.addLeds<STARLIGHT_CHIPSET, 10>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 11: FastLED.addLeds<STARLIGHT_CHIPSET, 11>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 12: FastLED.addLeds<STARLIGHT_CHIPSET, 12>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 13: FastLED.addLeds<STARLIGHT_CHIPSET, 13>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 14: FastLED.addLeds<STARLIGHT_CHIPSET, 14>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 15: FastLED.addLeds<STARLIGHT_CHIPSET, 15>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-              #if !defined(BOARD_HAS_PSRAM) && !defined(ARDUINO_ESP32_PICO)
-                  // 16+17 = reserved for PSRAM, or reserved for FLASH on pico-D4
-                  case 16: FastLED.addLeds<STARLIGHT_CHIPSET, 16>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 17: FastLED.addLeds<STARLIGHT_CHIPSET, 17>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-              #endif
-                  case 18: FastLED.addLeds<STARLIGHT_CHIPSET, 18>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 19: FastLED.addLeds<STARLIGHT_CHIPSET, 19>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 20: FastLED.addLeds<STARLIGHT_CHIPSET, 20>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 21: FastLED.addLeds<STARLIGHT_CHIPSET, 21>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 22: FastLED.addLeds<STARLIGHT_CHIPSET, 22>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 23: FastLED.addLeds<STARLIGHT_CHIPSET, 23>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 24: FastLED.addLeds<STARLIGHT_CHIPSET, 24>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 25: FastLED.addLeds<STARLIGHT_CHIPSET, 25>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 26: FastLED.addLeds<STARLIGHT_CHIPSET, 26>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 27: FastLED.addLeds<STARLIGHT_CHIPSET, 27>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 28: FastLED.addLeds<STARLIGHT_CHIPSET, 28>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 29: FastLED.addLeds<STARLIGHT_CHIPSET, 29>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 30: FastLED.addLeds<STARLIGHT_CHIPSET, 30>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 31: FastLED.addLeds<STARLIGHT_CHIPSET, 31>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 32: FastLED.addLeds<STARLIGHT_CHIPSET, 32>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 33: FastLED.addLeds<STARLIGHT_CHIPSET, 33>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // 34-39 input-only
-                  // case 34: FastLED.addLeds<STARLIGHT_CHIPSET, 34>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 35: FastLED.addLeds<STARLIGHT_CHIPSET, 35>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 36: FastLED.addLeds<STARLIGHT_CHIPSET, 36>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 37: FastLED.addLeds<STARLIGHT_CHIPSET, 37>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 38: FastLED.addLeds<STARLIGHT_CHIPSET, 38>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 39: FastLED.addLeds<STARLIGHT_CHIPSET, 39>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                #endif //CONFIG_IDF_TARGET_ESP32
-
-                #if CONFIG_IDF_TARGET_ESP32S2
-                  case 0: FastLED.addLeds<STARLIGHT_CHIPSET, 0>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 1: FastLED.addLeds<STARLIGHT_CHIPSET, 1>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 2: FastLED.addLeds<STARLIGHT_CHIPSET, 2>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 3: FastLED.addLeds<STARLIGHT_CHIPSET, 3>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 4: FastLED.addLeds<STARLIGHT_CHIPSET, 4>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 5: FastLED.addLeds<STARLIGHT_CHIPSET, 5>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 6: FastLED.addLeds<STARLIGHT_CHIPSET, 6>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 7: FastLED.addLeds<STARLIGHT_CHIPSET, 7>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 8: FastLED.addLeds<STARLIGHT_CHIPSET, 8>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 9: FastLED.addLeds<STARLIGHT_CHIPSET, 9>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 10: FastLED.addLeds<STARLIGHT_CHIPSET, 10>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 11: FastLED.addLeds<STARLIGHT_CHIPSET, 11>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 12: FastLED.addLeds<STARLIGHT_CHIPSET, 12>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 13: FastLED.addLeds<STARLIGHT_CHIPSET, 13>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 14: FastLED.addLeds<STARLIGHT_CHIPSET, 14>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 15: FastLED.addLeds<STARLIGHT_CHIPSET, 15>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 16: FastLED.addLeds<STARLIGHT_CHIPSET, 16>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 17: FastLED.addLeds<STARLIGHT_CHIPSET, 17>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 18: FastLED.addLeds<STARLIGHT_CHIPSET, 18>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-              #if !ARDUINO_USB_CDC_ON_BOOT
-                  // 19 + 20 = USB HWCDC. reserved for USB port when ARDUINO_USB_CDC_ON_BOOT=1
-                  case 19: FastLED.addLeds<STARLIGHT_CHIPSET, 19>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 20: FastLED.addLeds<STARLIGHT_CHIPSET, 20>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-              #endif
-                  case 21: FastLED.addLeds<STARLIGHT_CHIPSET, 21>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // 22 to 32: not connected, or reserved for SPI FLASH
-                  // case 22: FastLED.addLeds<STARLIGHT_CHIPSET, 22>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 23: FastLED.addLeds<STARLIGHT_CHIPSET, 23>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 24: FastLED.addLeds<STARLIGHT_CHIPSET, 24>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 25: FastLED.addLeds<STARLIGHT_CHIPSET, 25>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-              #if !defined(BOARD_HAS_PSRAM)
-                  // 26-32 = reserved for PSRAM
-                  case 26: FastLED.addLeds<STARLIGHT_CHIPSET, 26>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 27: FastLED.addLeds<STARLIGHT_CHIPSET, 27>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 28: FastLED.addLeds<STARLIGHT_CHIPSET, 28>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 29: FastLED.addLeds<STARLIGHT_CHIPSET, 29>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 30: FastLED.addLeds<STARLIGHT_CHIPSET, 30>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 31: FastLED.addLeds<STARLIGHT_CHIPSET, 31>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 32: FastLED.addLeds<STARLIGHT_CHIPSET, 32>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-              #endif
-                  case 33: FastLED.addLeds<STARLIGHT_CHIPSET, 33>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 34: FastLED.addLeds<STARLIGHT_CHIPSET, 34>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 35: FastLED.addLeds<STARLIGHT_CHIPSET, 35>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 36: FastLED.addLeds<STARLIGHT_CHIPSET, 36>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 37: FastLED.addLeds<STARLIGHT_CHIPSET, 37>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 38: FastLED.addLeds<STARLIGHT_CHIPSET, 38>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 39: FastLED.addLeds<STARLIGHT_CHIPSET, 39>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 40: FastLED.addLeds<STARLIGHT_CHIPSET, 40>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 41: FastLED.addLeds<STARLIGHT_CHIPSET, 41>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 42: FastLED.addLeds<STARLIGHT_CHIPSET, 42>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 43: FastLED.addLeds<STARLIGHT_CHIPSET, 43>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 44: FastLED.addLeds<STARLIGHT_CHIPSET, 44>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 45: FastLED.addLeds<STARLIGHT_CHIPSET, 45>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // 46 input-only
-                  // case 46: FastLED.addLeds<STARLIGHT_CHIPSET, 46>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                #endif //CONFIG_IDF_TARGET_ESP32S2
-
-                #if CONFIG_IDF_TARGET_ESP32C3
-                  case 0: FastLED.addLeds<STARLIGHT_CHIPSET, 0>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 1: FastLED.addLeds<STARLIGHT_CHIPSET, 1>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 2: FastLED.addLeds<STARLIGHT_CHIPSET, 2>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 3: FastLED.addLeds<STARLIGHT_CHIPSET, 3>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 4: FastLED.addLeds<STARLIGHT_CHIPSET, 4>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 5: FastLED.addLeds<STARLIGHT_CHIPSET, 5>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 6: FastLED.addLeds<STARLIGHT_CHIPSET, 6>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 7: FastLED.addLeds<STARLIGHT_CHIPSET, 7>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 8: FastLED.addLeds<STARLIGHT_CHIPSET, 8>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 9: FastLED.addLeds<STARLIGHT_CHIPSET, 9>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 10: FastLED.addLeds<STARLIGHT_CHIPSET, 10>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // 11-17 reserved for SPI FLASH
-                  //case 11: FastLED.addLeds<STARLIGHT_CHIPSET, 11>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  //case 12: FastLED.addLeds<STARLIGHT_CHIPSET, 12>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  //case 13: FastLED.addLeds<STARLIGHT_CHIPSET, 13>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  //case 14: FastLED.addLeds<STARLIGHT_CHIPSET, 14>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  //case 15: FastLED.addLeds<STARLIGHT_CHIPSET, 15>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  //case 16: FastLED.addLeds<STARLIGHT_CHIPSET, 16>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  //case 17: FastLED.addLeds<STARLIGHT_CHIPSET, 17>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-              #if !ARDUINO_USB_CDC_ON_BOOT
-                  // 18 + 19 = USB HWCDC. reserved for USB port when ARDUINO_USB_CDC_ON_BOOT=1
-                  case 18: FastLED.addLeds<STARLIGHT_CHIPSET, 18>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 19: FastLED.addLeds<STARLIGHT_CHIPSET, 19>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-              #endif
-                  // 20+21 = Serial RX+TX --> don't use for LEDS when serial-to-USB is needed
-                  case 20: FastLED.addLeds<STARLIGHT_CHIPSET, 20>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 21: FastLED.addLeds<STARLIGHT_CHIPSET, 21>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                #endif //CONFIG_IDF_TARGET_ESP32S2
-
-                #if CONFIG_IDF_TARGET_ESP32S3
-                  case 0: FastLED.addLeds<STARLIGHT_CHIPSET, 0>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 1: FastLED.addLeds<STARLIGHT_CHIPSET, 1>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 2: FastLED.addLeds<STARLIGHT_CHIPSET, 2>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 3: FastLED.addLeds<STARLIGHT_CHIPSET, 3>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 4: FastLED.addLeds<STARLIGHT_CHIPSET, 4>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 5: FastLED.addLeds<STARLIGHT_CHIPSET, 5>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 6: FastLED.addLeds<STARLIGHT_CHIPSET, 6>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 7: FastLED.addLeds<STARLIGHT_CHIPSET, 7>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 8: FastLED.addLeds<STARLIGHT_CHIPSET, 8>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 9: FastLED.addLeds<STARLIGHT_CHIPSET, 9>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 10: FastLED.addLeds<STARLIGHT_CHIPSET, 10>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 11: FastLED.addLeds<STARLIGHT_CHIPSET, 11>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 12: FastLED.addLeds<STARLIGHT_CHIPSET, 12>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 13: FastLED.addLeds<STARLIGHT_CHIPSET, 13>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 14: FastLED.addLeds<STARLIGHT_CHIPSET, 14>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 15: FastLED.addLeds<STARLIGHT_CHIPSET, 15>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 16: FastLED.addLeds<STARLIGHT_CHIPSET, 16>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 17: FastLED.addLeds<STARLIGHT_CHIPSET, 17>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 18: FastLED.addLeds<STARLIGHT_CHIPSET, 18>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-              #if !ARDUINO_USB_CDC_ON_BOOT
-                  // 19 + 20 = USB-JTAG. Not recommended for other uses.
-                  case 19: FastLED.addLeds<STARLIGHT_CHIPSET, 19>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 20: FastLED.addLeds<STARLIGHT_CHIPSET, 20>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-              #endif
-                  case 21: FastLED.addLeds<STARLIGHT_CHIPSET, 21>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // // 22 to 32: not connected, or SPI FLASH
-                  // case 22: FastLED.addLeds<STARLIGHT_CHIPSET, 22>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 23: FastLED.addLeds<STARLIGHT_CHIPSET, 23>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 24: FastLED.addLeds<STARLIGHT_CHIPSET, 24>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 25: FastLED.addLeds<STARLIGHT_CHIPSET, 25>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 26: FastLED.addLeds<STARLIGHT_CHIPSET, 26>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 27: FastLED.addLeds<STARLIGHT_CHIPSET, 27>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 28: FastLED.addLeds<STARLIGHT_CHIPSET, 28>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 29: FastLED.addLeds<STARLIGHT_CHIPSET, 29>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 30: FastLED.addLeds<STARLIGHT_CHIPSET, 30>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 31: FastLED.addLeds<STARLIGHT_CHIPSET, 31>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // case 32: FastLED.addLeds<STARLIGHT_CHIPSET, 32>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-              #if !defined(BOARD_HAS_PSRAM)
-                  // 33 to 37: reserved if using _octal_ SPI Flash or _octal_ PSRAM
-                  case 33: FastLED.addLeds<STARLIGHT_CHIPSET, 33>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 34: FastLED.addLeds<STARLIGHT_CHIPSET, 34>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 35: FastLED.addLeds<STARLIGHT_CHIPSET, 35>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 36: FastLED.addLeds<STARLIGHT_CHIPSET, 36>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 37: FastLED.addLeds<STARLIGHT_CHIPSET, 37>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-              #endif
-                  case 38: FastLED.addLeds<STARLIGHT_CHIPSET, 38>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 39: FastLED.addLeds<STARLIGHT_CHIPSET, 39>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 40: FastLED.addLeds<STARLIGHT_CHIPSET, 40>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 41: FastLED.addLeds<STARLIGHT_CHIPSET, 41>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 42: FastLED.addLeds<STARLIGHT_CHIPSET, 42>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  // 43+44 = Serial RX+TX --> don't use for LEDS when serial-to-USB is needed
-                  case 43: FastLED.addLeds<STARLIGHT_CHIPSET, 43>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 44: FastLED.addLeds<STARLIGHT_CHIPSET, 44>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 45: FastLED.addLeds<STARLIGHT_CHIPSET, 45>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 46: FastLED.addLeds<STARLIGHT_CHIPSET, 46>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 47: FastLED.addLeds<STARLIGHT_CHIPSET, 47>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                  case 48: FastLED.addLeds<STARLIGHT_CHIPSET, 48>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
-                #endif //CONFIG_IDF_TARGET_ESP32S3
-
-                default: ppf("FastLedPin assignment: pin not supported %d\n", pinNr);
-              } //switch pinNr
-              #endif //STARLIGHT_CLOCKLESS_LED_DRIVER
-            } //if led range in details (- in details e.g. 0-1023)
-          } //if pin owned by leds
-          pinNr++;
-        } // for pins
-        #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-          if (nb_pins>0) {
-            #if CONFIG_IDF_TARGET_ESP32S3 | CONFIG_IDF_TARGET_ESP32S2
-              driver.initled((uint8_t*) fixture.ledsP, pinAssignment, nb_pins, lengths[0]); //s3 doesn't support lengths so we pick the first
-              //void initled( uint8_t * leds, int * pins, int numstrip, int NUM_LED_PER_STRIP)
-            #else
-              driver.initled((uint8_t*) fixture.ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
-              //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
-            #endif
-            mdl->callVarOnChange(fix->bri, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
-            // driver.setBrightness(fixture.setMaxPowerBrightness / 256); //not brighter then the set limit (WIP)
-          }
-        #endif
-        fixture.doAllocPins = false;
-      }
+    stackUnsigned8 rowNr = 0;
+    for (LedsLayer *leds: fixture.layers) {
+      initEffect(*leds, rowNr);
+      rowNr++;
     }
+
+
+    //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
+
+    //connect allocated Pins to gpio
+
+    if (fixture.doAllocPins) {
+      unsigned pinNr = 0;
+
+      #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+        int pinAssignment[16]; //max 16 pins
+        int lengths[16]; //max 16 pins
+        int nb_pins=0;
+      #endif
+      for (PinObject &pinObject: pinsM->pinObjects) {
+
+        if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in projectAndMap)
+          //dirty trick to decode nrOfLedsPerPin
+          char details[32];
+          strlcpy(details, pinObject.details, sizeof(details)); //copy as strtok messes with the string
+          char * after = strtok((char *)details, "-");
+          if (after != NULL ) {
+            char * before;
+            before = after;
+            after = strtok(NULL, " ");
+
+            stackUnsigned16 startLed = atoi(before);
+            stackUnsigned16 nrOfLeds = atoi(after) - atoi(before) + 1;
+            ppf("addLeds new %d: %d-%d\n", pinNr, startLed, nrOfLeds-1);
+
+            #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+              pinAssignment[nb_pins] = pinNr;
+              lengths[nb_pins] = nrOfLeds;
+              nb_pins++;
+            #else
+            //commented pins: error: static assertion failed: Invalid pin specified
+            switch (pinNr) {
+              #if CONFIG_IDF_TARGET_ESP32
+                case 0: FastLED.addLeds<STARLIGHT_CHIPSET, 0>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 1: FastLED.addLeds<STARLIGHT_CHIPSET, 1>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 2: FastLED.addLeds<STARLIGHT_CHIPSET, 2>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 3: FastLED.addLeds<STARLIGHT_CHIPSET, 3>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 4: FastLED.addLeds<STARLIGHT_CHIPSET, 4>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 5: FastLED.addLeds<STARLIGHT_CHIPSET, 5>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 6: FastLED.addLeds<STARLIGHT_CHIPSET, 6>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 7: FastLED.addLeds<STARLIGHT_CHIPSET, 7>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 8: FastLED.addLeds<STARLIGHT_CHIPSET, 8>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 9: FastLED.addLeds<STARLIGHT_CHIPSET, 9>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 10: FastLED.addLeds<STARLIGHT_CHIPSET, 10>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 11: FastLED.addLeds<STARLIGHT_CHIPSET, 11>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 12: FastLED.addLeds<STARLIGHT_CHIPSET, 12>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 13: FastLED.addLeds<STARLIGHT_CHIPSET, 13>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 14: FastLED.addLeds<STARLIGHT_CHIPSET, 14>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 15: FastLED.addLeds<STARLIGHT_CHIPSET, 15>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+            #if !defined(BOARD_HAS_PSRAM) && !defined(ARDUINO_ESP32_PICO)
+                // 16+17 = reserved for PSRAM, or reserved for FLASH on pico-D4
+                case 16: FastLED.addLeds<STARLIGHT_CHIPSET, 16>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 17: FastLED.addLeds<STARLIGHT_CHIPSET, 17>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+            #endif
+                case 18: FastLED.addLeds<STARLIGHT_CHIPSET, 18>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 19: FastLED.addLeds<STARLIGHT_CHIPSET, 19>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 20: FastLED.addLeds<STARLIGHT_CHIPSET, 20>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 21: FastLED.addLeds<STARLIGHT_CHIPSET, 21>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 22: FastLED.addLeds<STARLIGHT_CHIPSET, 22>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 23: FastLED.addLeds<STARLIGHT_CHIPSET, 23>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 24: FastLED.addLeds<STARLIGHT_CHIPSET, 24>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 25: FastLED.addLeds<STARLIGHT_CHIPSET, 25>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 26: FastLED.addLeds<STARLIGHT_CHIPSET, 26>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 27: FastLED.addLeds<STARLIGHT_CHIPSET, 27>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 28: FastLED.addLeds<STARLIGHT_CHIPSET, 28>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 29: FastLED.addLeds<STARLIGHT_CHIPSET, 29>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 30: FastLED.addLeds<STARLIGHT_CHIPSET, 30>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 31: FastLED.addLeds<STARLIGHT_CHIPSET, 31>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 32: FastLED.addLeds<STARLIGHT_CHIPSET, 32>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 33: FastLED.addLeds<STARLIGHT_CHIPSET, 33>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // 34-39 input-only
+                // case 34: FastLED.addLeds<STARLIGHT_CHIPSET, 34>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 35: FastLED.addLeds<STARLIGHT_CHIPSET, 35>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 36: FastLED.addLeds<STARLIGHT_CHIPSET, 36>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 37: FastLED.addLeds<STARLIGHT_CHIPSET, 37>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 38: FastLED.addLeds<STARLIGHT_CHIPSET, 38>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 39: FastLED.addLeds<STARLIGHT_CHIPSET, 39>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+              #endif //CONFIG_IDF_TARGET_ESP32
+
+              #if CONFIG_IDF_TARGET_ESP32S2
+                case 0: FastLED.addLeds<STARLIGHT_CHIPSET, 0>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 1: FastLED.addLeds<STARLIGHT_CHIPSET, 1>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 2: FastLED.addLeds<STARLIGHT_CHIPSET, 2>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 3: FastLED.addLeds<STARLIGHT_CHIPSET, 3>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 4: FastLED.addLeds<STARLIGHT_CHIPSET, 4>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 5: FastLED.addLeds<STARLIGHT_CHIPSET, 5>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 6: FastLED.addLeds<STARLIGHT_CHIPSET, 6>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 7: FastLED.addLeds<STARLIGHT_CHIPSET, 7>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 8: FastLED.addLeds<STARLIGHT_CHIPSET, 8>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 9: FastLED.addLeds<STARLIGHT_CHIPSET, 9>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 10: FastLED.addLeds<STARLIGHT_CHIPSET, 10>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 11: FastLED.addLeds<STARLIGHT_CHIPSET, 11>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 12: FastLED.addLeds<STARLIGHT_CHIPSET, 12>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 13: FastLED.addLeds<STARLIGHT_CHIPSET, 13>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 14: FastLED.addLeds<STARLIGHT_CHIPSET, 14>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 15: FastLED.addLeds<STARLIGHT_CHIPSET, 15>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 16: FastLED.addLeds<STARLIGHT_CHIPSET, 16>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 17: FastLED.addLeds<STARLIGHT_CHIPSET, 17>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 18: FastLED.addLeds<STARLIGHT_CHIPSET, 18>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+            #if !ARDUINO_USB_CDC_ON_BOOT
+                // 19 + 20 = USB HWCDC. reserved for USB port when ARDUINO_USB_CDC_ON_BOOT=1
+                case 19: FastLED.addLeds<STARLIGHT_CHIPSET, 19>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 20: FastLED.addLeds<STARLIGHT_CHIPSET, 20>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+            #endif
+                case 21: FastLED.addLeds<STARLIGHT_CHIPSET, 21>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // 22 to 32: not connected, or reserved for SPI FLASH
+                // case 22: FastLED.addLeds<STARLIGHT_CHIPSET, 22>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 23: FastLED.addLeds<STARLIGHT_CHIPSET, 23>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 24: FastLED.addLeds<STARLIGHT_CHIPSET, 24>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 25: FastLED.addLeds<STARLIGHT_CHIPSET, 25>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+            #if !defined(BOARD_HAS_PSRAM)
+                // 26-32 = reserved for PSRAM
+                case 26: FastLED.addLeds<STARLIGHT_CHIPSET, 26>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 27: FastLED.addLeds<STARLIGHT_CHIPSET, 27>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 28: FastLED.addLeds<STARLIGHT_CHIPSET, 28>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 29: FastLED.addLeds<STARLIGHT_CHIPSET, 29>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 30: FastLED.addLeds<STARLIGHT_CHIPSET, 30>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 31: FastLED.addLeds<STARLIGHT_CHIPSET, 31>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 32: FastLED.addLeds<STARLIGHT_CHIPSET, 32>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+            #endif
+                case 33: FastLED.addLeds<STARLIGHT_CHIPSET, 33>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 34: FastLED.addLeds<STARLIGHT_CHIPSET, 34>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 35: FastLED.addLeds<STARLIGHT_CHIPSET, 35>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 36: FastLED.addLeds<STARLIGHT_CHIPSET, 36>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 37: FastLED.addLeds<STARLIGHT_CHIPSET, 37>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 38: FastLED.addLeds<STARLIGHT_CHIPSET, 38>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 39: FastLED.addLeds<STARLIGHT_CHIPSET, 39>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 40: FastLED.addLeds<STARLIGHT_CHIPSET, 40>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 41: FastLED.addLeds<STARLIGHT_CHIPSET, 41>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 42: FastLED.addLeds<STARLIGHT_CHIPSET, 42>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 43: FastLED.addLeds<STARLIGHT_CHIPSET, 43>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 44: FastLED.addLeds<STARLIGHT_CHIPSET, 44>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 45: FastLED.addLeds<STARLIGHT_CHIPSET, 45>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // 46 input-only
+                // case 46: FastLED.addLeds<STARLIGHT_CHIPSET, 46>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+              #endif //CONFIG_IDF_TARGET_ESP32S2
+
+              #if CONFIG_IDF_TARGET_ESP32C3
+                case 0: FastLED.addLeds<STARLIGHT_CHIPSET, 0>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 1: FastLED.addLeds<STARLIGHT_CHIPSET, 1>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 2: FastLED.addLeds<STARLIGHT_CHIPSET, 2>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 3: FastLED.addLeds<STARLIGHT_CHIPSET, 3>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 4: FastLED.addLeds<STARLIGHT_CHIPSET, 4>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 5: FastLED.addLeds<STARLIGHT_CHIPSET, 5>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 6: FastLED.addLeds<STARLIGHT_CHIPSET, 6>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 7: FastLED.addLeds<STARLIGHT_CHIPSET, 7>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 8: FastLED.addLeds<STARLIGHT_CHIPSET, 8>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 9: FastLED.addLeds<STARLIGHT_CHIPSET, 9>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 10: FastLED.addLeds<STARLIGHT_CHIPSET, 10>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // 11-17 reserved for SPI FLASH
+                //case 11: FastLED.addLeds<STARLIGHT_CHIPSET, 11>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                //case 12: FastLED.addLeds<STARLIGHT_CHIPSET, 12>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                //case 13: FastLED.addLeds<STARLIGHT_CHIPSET, 13>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                //case 14: FastLED.addLeds<STARLIGHT_CHIPSET, 14>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                //case 15: FastLED.addLeds<STARLIGHT_CHIPSET, 15>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                //case 16: FastLED.addLeds<STARLIGHT_CHIPSET, 16>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                //case 17: FastLED.addLeds<STARLIGHT_CHIPSET, 17>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+            #if !ARDUINO_USB_CDC_ON_BOOT
+                // 18 + 19 = USB HWCDC. reserved for USB port when ARDUINO_USB_CDC_ON_BOOT=1
+                case 18: FastLED.addLeds<STARLIGHT_CHIPSET, 18>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 19: FastLED.addLeds<STARLIGHT_CHIPSET, 19>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+            #endif
+                // 20+21 = Serial RX+TX --> don't use for LEDS when serial-to-USB is needed
+                case 20: FastLED.addLeds<STARLIGHT_CHIPSET, 20>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 21: FastLED.addLeds<STARLIGHT_CHIPSET, 21>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+              #endif //CONFIG_IDF_TARGET_ESP32S2
+
+              #if CONFIG_IDF_TARGET_ESP32S3
+                case 0: FastLED.addLeds<STARLIGHT_CHIPSET, 0>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 1: FastLED.addLeds<STARLIGHT_CHIPSET, 1>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 2: FastLED.addLeds<STARLIGHT_CHIPSET, 2>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 3: FastLED.addLeds<STARLIGHT_CHIPSET, 3>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 4: FastLED.addLeds<STARLIGHT_CHIPSET, 4>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 5: FastLED.addLeds<STARLIGHT_CHIPSET, 5>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 6: FastLED.addLeds<STARLIGHT_CHIPSET, 6>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 7: FastLED.addLeds<STARLIGHT_CHIPSET, 7>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 8: FastLED.addLeds<STARLIGHT_CHIPSET, 8>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 9: FastLED.addLeds<STARLIGHT_CHIPSET, 9>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 10: FastLED.addLeds<STARLIGHT_CHIPSET, 10>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 11: FastLED.addLeds<STARLIGHT_CHIPSET, 11>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 12: FastLED.addLeds<STARLIGHT_CHIPSET, 12>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 13: FastLED.addLeds<STARLIGHT_CHIPSET, 13>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 14: FastLED.addLeds<STARLIGHT_CHIPSET, 14>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 15: FastLED.addLeds<STARLIGHT_CHIPSET, 15>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 16: FastLED.addLeds<STARLIGHT_CHIPSET, 16>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 17: FastLED.addLeds<STARLIGHT_CHIPSET, 17>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 18: FastLED.addLeds<STARLIGHT_CHIPSET, 18>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+            #if !ARDUINO_USB_CDC_ON_BOOT
+                // 19 + 20 = USB-JTAG. Not recommended for other uses.
+                case 19: FastLED.addLeds<STARLIGHT_CHIPSET, 19>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 20: FastLED.addLeds<STARLIGHT_CHIPSET, 20>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+            #endif
+                case 21: FastLED.addLeds<STARLIGHT_CHIPSET, 21>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // // 22 to 32: not connected, or SPI FLASH
+                // case 22: FastLED.addLeds<STARLIGHT_CHIPSET, 22>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 23: FastLED.addLeds<STARLIGHT_CHIPSET, 23>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 24: FastLED.addLeds<STARLIGHT_CHIPSET, 24>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 25: FastLED.addLeds<STARLIGHT_CHIPSET, 25>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 26: FastLED.addLeds<STARLIGHT_CHIPSET, 26>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 27: FastLED.addLeds<STARLIGHT_CHIPSET, 27>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 28: FastLED.addLeds<STARLIGHT_CHIPSET, 28>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 29: FastLED.addLeds<STARLIGHT_CHIPSET, 29>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 30: FastLED.addLeds<STARLIGHT_CHIPSET, 30>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 31: FastLED.addLeds<STARLIGHT_CHIPSET, 31>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // case 32: FastLED.addLeds<STARLIGHT_CHIPSET, 32>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+            #if !defined(BOARD_HAS_PSRAM)
+                // 33 to 37: reserved if using _octal_ SPI Flash or _octal_ PSRAM
+                case 33: FastLED.addLeds<STARLIGHT_CHIPSET, 33>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 34: FastLED.addLeds<STARLIGHT_CHIPSET, 34>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 35: FastLED.addLeds<STARLIGHT_CHIPSET, 35>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 36: FastLED.addLeds<STARLIGHT_CHIPSET, 36>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 37: FastLED.addLeds<STARLIGHT_CHIPSET, 37>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+            #endif
+                case 38: FastLED.addLeds<STARLIGHT_CHIPSET, 38>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 39: FastLED.addLeds<STARLIGHT_CHIPSET, 39>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 40: FastLED.addLeds<STARLIGHT_CHIPSET, 40>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 41: FastLED.addLeds<STARLIGHT_CHIPSET, 41>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 42: FastLED.addLeds<STARLIGHT_CHIPSET, 42>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                // 43+44 = Serial RX+TX --> don't use for LEDS when serial-to-USB is needed
+                case 43: FastLED.addLeds<STARLIGHT_CHIPSET, 43>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 44: FastLED.addLeds<STARLIGHT_CHIPSET, 44>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 45: FastLED.addLeds<STARLIGHT_CHIPSET, 45>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 46: FastLED.addLeds<STARLIGHT_CHIPSET, 46>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 47: FastLED.addLeds<STARLIGHT_CHIPSET, 47>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+                case 48: FastLED.addLeds<STARLIGHT_CHIPSET, 48>(fixture.ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
+              #endif //CONFIG_IDF_TARGET_ESP32S3
+
+              default: ppf("FastLedPin assignment: pin not supported %d\n", pinNr);
+            } //switch pinNr
+            #endif //STARLIGHT_CLOCKLESS_LED_DRIVER
+          } //if led range in details (- in details e.g. 0-1023)
+        } //if pin owned by leds
+        pinNr++;
+      } // for pins
+      #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+        if (nb_pins>0) {
+          #if CONFIG_IDF_TARGET_ESP32S3 | CONFIG_IDF_TARGET_ESP32S2
+            driver.initled((uint8_t*) fixture.ledsP, pinAssignment, nb_pins, lengths[0]); //s3 doesn't support lengths so we pick the first
+            //void initled( uint8_t * leds, int * pins, int numstrip, int NUM_LED_PER_STRIP)
+          #else
+            driver.initled((uint8_t*) fixture.ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
+            //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
+          #endif
+          mdl->callVarOnChange(fix->bri, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+          // driver.setBrightness(fixture.setMaxPowerBrightness / 256); //not brighter then the set limit (WIP)
+        }
+      #endif
+      fixture.doAllocPins = false;
+    } //fixture.doAllocPins
   } //loop1s
 
   void initEffect(LedsLayer &leds, uint8_t rowNr) {

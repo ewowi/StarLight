@@ -207,12 +207,14 @@ class PinwheelProjection: public Projection {
 
     ui->initSlider(parentVar, "Swirl", swirlVal, 0, 60, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
+      if (rowNr < leds.fixture->layers.size())
         leds.fixture->layers[rowNr]->triggerMapping();
         return true;
       default: return false;
     }});
     ui->initCheckBox(parentVar, "Reverse", reverse, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
+      if (rowNr < leds.fixture->layers.size())
         leds.fixture->layers[rowNr]->triggerMapping();
         return true;
       default: return false;
@@ -221,6 +223,7 @@ class PinwheelProjection: public Projection {
     if (leds.projectionDimension == _3D) {
       ui->initSlider(parentVar, "Z Twist", zTwist, 0, 42, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
         case onChange:
+        if (rowNr < leds.fixture->layers.size())
           leds.fixture->layers[rowNr]->triggerMapping();
           return true;
         default: return false;
@@ -229,6 +232,7 @@ class PinwheelProjection: public Projection {
     // Rotation symmetry. Uses factors of 360.
     ui->initSlider(parentVar, "Rotational Symmetry", symmetry, 1, 23, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
+      if (rowNr < leds.fixture->layers.size())
         leds.fixture->layers[rowNr]->triggerMapping();
         return true;
       default: return false;
@@ -236,6 +240,7 @@ class PinwheelProjection: public Projection {
     // Naming petals, arms, blades, rays? Controls virtual strip length.
     ui->initSlider(parentVar, "Petals", petals, 1, 60, false, [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
       case onChange:
+      if (rowNr < leds.fixture->layers.size())
         leds.fixture->layers[rowNr]->triggerMapping();
         return true;
       default: return false;
