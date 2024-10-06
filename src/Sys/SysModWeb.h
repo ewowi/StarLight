@@ -47,15 +47,15 @@ public:
 
   SemaphoreHandle_t wsMutex = xSemaphoreCreateMutex();
 
-  unsigned8 sendWsCounter = 0;
-  unsigned16 sendWsTBytes = 0;
-  unsigned16 sendWsBBytes = 0;
-  unsigned8 recvWsCounter = 0;
-  unsigned16 recvWsBytes = 0;
-  unsigned8 sendUDPCounter = 0;
-  unsigned16 sendUDPBytes = 0;
-  unsigned8 recvUDPCounter = 0;
-  unsigned16 recvUDPBytes = 0;
+  uint8_t sendWsCounter = 0;
+  uint16_t sendWsTBytes = 0;
+  uint16_t sendWsBBytes = 0;
+  uint8_t recvWsCounter = 0;
+  uint16_t recvWsBytes = 0;
+  uint8_t sendUDPCounter = 0;
+  uint16_t sendUDPBytes = 0;
+  uint8_t recvUDPCounter = 0;
+  uint16_t recvUDPBytes = 0;
 
   #ifdef STARBASE_USERMOD_LIVE
     char lastFileUpdated[30] = ""; //workaround!
@@ -116,7 +116,7 @@ public:
   bool captivePortal(WebRequest *request);
 
   template <typename Type>
-  void addResponse(JsonObject var, const char * key, Type value, unsigned8 rowNr = UINT8_MAX) {
+  void addResponse(JsonObject var, const char * key, Type value, uint8_t rowNr = UINT8_MAX) {
     JsonObject responseObject = getResponseObject();
     // if (responseObject[id].isNull()) responseObject[id].to<JsonObject>();;
     char pidid[64];

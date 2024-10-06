@@ -30,7 +30,7 @@ void SysModFiles::setup() {
   SysModule::setup();
   parentVar = ui->initSysMod(parentVar, name, 2101);
 
-  JsonObject tableVar = ui->initTable(parentVar, "fileTbl", nullptr, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  JsonObject tableVar = ui->initTable(parentVar, "fileTbl", nullptr, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Files");
       ui->setComment(var, "List of files");
@@ -63,25 +63,25 @@ void SysModFiles::setup() {
     default: return false;
   }});
 
-  ui->initTextVector(tableVar, "flName", &fileNames, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initTextVector(tableVar, "flName", &fileNames, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Name");
       return true;
     default: return false;
   }});
 
-  ui->initNumber(tableVar, "flSize", &fileSizes, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initNumber(tableVar, "flSize", &fileSizes, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Size (B)");
       return true;
     default: return false;
   }});
 
-  // ui->initURL(tableVar, "flLink", nullptr, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  // ui->initURL(tableVar, "flLink", nullptr, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
   //   case onSetValue:
-  //     for (forUnsigned8 rowNr = 0; rowNr < fileList.size(); rowNr++) {
+  //     for (size_t rowNr = 0; rowNr < fileList.size(); rowNr++) {
   //       char urlString[32] = "file/";
-  //       strlcat(urlString, fileList[rowNr].name, sizeof(urlString));
+  //       strncat(urlString, fileList[rowNr].name, sizeof(urlString)-1);
   //       mdl->setValue(var, JsonString(urlString, JsonString::Copied), rowNr);
   //     }
   //     return true;
@@ -91,7 +91,7 @@ void SysModFiles::setup() {
   //   default: return false;
   // }});
 
-  ui->initNumber(tableVar, "flTime", &fileTimes, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initNumber(tableVar, "flTime", &fileTimes, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Time");
       return true;
@@ -99,20 +99,20 @@ void SysModFiles::setup() {
   }});
 
   //readonly = true, but button must be pressable (done in index.js)
-  ui->initFileEditVector(tableVar, "flEdit", &fileNames, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initFileEditVector(tableVar, "flEdit", &fileNames, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Edit");
       return true;
     default: return false;
   }});
 
-  ui->initFileUpload(parentVar, "upload", nullptr, UINT16_MAX, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initFileUpload(parentVar, "upload", nullptr, UINT16_MAX, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Upload File");
     default: return false;
   }});
 
-  ui->initProgress(parentVar, "drsize", files->usedBytes(), 0, files->totalBytes(), true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initProgress(parentVar, "drsize", files->usedBytes(), 0, files->totalBytes(), true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "FS Size");
       return true;

@@ -41,7 +41,7 @@ void SysModSystem::setup() {
   parentVar = ui->initSysMod(parentVar, name, 2000);
   parentVar["s"] = true; //setup
 
-  ui->initText(parentVar, "name", _INIT(TOSTRING(APP)), 24, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "name", _INIT(TOSTRING(APP)), 24, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       // ui->setLabel(var, "Name");
       ui->setComment(var, "Instance name");
@@ -56,7 +56,7 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  ui->initText(parentVar, "upTime", nullptr, 16, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "upTime", nullptr, 16, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setComment(var, "s. Uptime of board");
       return true;
@@ -66,7 +66,7 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  ui->initNumber(parentVar, "now", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initNumber(parentVar, "now", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "now");
       ui->setComment(var, "s");
@@ -77,7 +77,7 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  ui->initNumber(parentVar, "timeBase", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initNumber(parentVar, "timeBase", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "TimeBase");
       ui->setComment(var, "s");
@@ -88,7 +88,7 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  ui->initButton(parentVar, "reboot", false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initButton(parentVar, "reboot", false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onChange:
       web->ws.closeAll(1012);
 
@@ -103,7 +103,7 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  ui->initText(parentVar, "loops", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "loops", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setComment(var, "Loops per second");
       return true;
@@ -117,7 +117,7 @@ void SysModSystem::setup() {
   print->fFormat(chipInfo, sizeof(chipInfo), "%s %s (%d.%d.%d) c#:%d %d mHz f:%d KB %d mHz %d", ESP.getChipModel(), ESP.getSdkVersion(), ESP_ARDUINO_VERSION_MAJOR, ESP_ARDUINO_VERSION_MINOR, ESP_ARDUINO_VERSION_PATCH, ESP.getChipCores(), ESP.getCpuFreqMHz(), ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed()/1000000, ESP.getFlashChipMode());
   ui->initText(parentVar, "chip", chipInfo, 16, true);
 
-  ui->initProgress(parentVar, "heap", (ESP.getHeapSize()-ESP.getFreeHeap()) / 1000, 0, ESP.getHeapSize()/1000, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initProgress(parentVar, "heap", (ESP.getHeapSize()-ESP.getFreeHeap()) / 1000, 0, ESP.getHeapSize()/1000, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onChange:
       var["max"] = ESP.getHeapSize()/1000; //makes sense?
       web->addResponse(var, "comment", "f:%d / t:%d (l:%d) B [%d %d]", ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
@@ -130,7 +130,7 @@ void SysModSystem::setup() {
   }});
 
   if (psramFound()) {
-    ui->initProgress(parentVar, "psram", (ESP.getPsramSize()-ESP.getFreePsram()) / 1000, 0, ESP.getPsramSize()/1000, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initProgress(parentVar, "psram", (ESP.getPsramSize()-ESP.getFreePsram()) / 1000, 0, ESP.getPsramSize()/1000, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
         var["max"] = ESP.getPsramSize()/1000; //makes sense?
         web->addResponse(var, "comment", "%d / %d (%d) B", ESP.getFreePsram(), ESP.getPsramSize(), ESP.getMinFreePsram());
@@ -142,7 +142,7 @@ void SysModSystem::setup() {
     }});
   }
 
-  ui->initProgress(parentVar, "mainStack", sysTools_get_arduino_maxStackUsage(), 0, getArduinoLoopTaskStackSize(), true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initProgress(parentVar, "mainStack", sysTools_get_arduino_maxStackUsage(), 0, getArduinoLoopTaskStackSize(), true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Main stack");
       return true;
@@ -156,7 +156,7 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  ui->initProgress(parentVar, "tcpStack", sysTools_get_webserver_maxStackUsage(), 0, CONFIG_ASYNC_TCP_STACK_SIZE, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initProgress(parentVar, "tcpStack", sysTools_get_webserver_maxStackUsage(), 0, CONFIG_ASYNC_TCP_STACK_SIZE, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "TCP stack");
       return true;
@@ -169,7 +169,7 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  ui->initSelect(parentVar, "reset0", (int)rtc_get_reset_reason(0), true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initSelect(parentVar, "reset0", (int)rtc_get_reset_reason(0), true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Reset 0");
       ui->setComment(var, "Reason Core 0");
@@ -179,7 +179,7 @@ void SysModSystem::setup() {
   }});
 
   if (ESP.getChipCores() > 1)
-    ui->initSelect(parentVar, "reset1", (int)rtc_get_reset_reason(1), true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "reset1", (int)rtc_get_reset_reason(1), true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "Reset 1");
         ui->setComment(var, "Reason Core 1");
@@ -188,7 +188,7 @@ void SysModSystem::setup() {
       default: return false;
     }});
 
-  ui->initSelect(parentVar, "restartReason", (int)esp_reset_reason(), true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initSelect(parentVar, "restartReason", (int)esp_reset_reason(), true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Restart");
       ui->setComment(var, "Reason restart");
@@ -218,7 +218,7 @@ void SysModSystem::setup() {
   // ui->initText(parentVar, "date", __DATE__, 16, true);
   // ui->initText(parentVar, "time", __TIME__, 16, true);
 
-  ui->initFileUpload(parentVar, "update", nullptr, UINT16_MAX, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initFileUpload(parentVar, "update", nullptr, UINT16_MAX, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "OTA Update");
       return true;

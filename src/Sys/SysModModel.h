@@ -27,7 +27,7 @@ struct Coord3D {
   //   y = 0;
   //   z = 0;
   // }
-  // Coord3D(unsigned16 x, unsigned16 y, unsigned16 z) {
+  // Coord3D(uint16_t x, uint16_t y, uint16_t z) {
   //   this->x = x;
   //   this->y = y;
   //   this->z = y;
@@ -116,10 +116,10 @@ struct Coord3D {
   Coord3D maximum(Coord3D rhs) {
     return Coord3D{max(x, rhs.x), max(y, rhs.y), max(z, rhs.z)};
   }
-  Coord3D operator*(unsigned8 rhs) {
+  Coord3D operator*(uint8_t rhs) {
     return Coord3D{x * rhs, y * rhs, z * rhs};
   }
-  Coord3D operator/(unsigned8 rhs) {
+  Coord3D operator/(uint8_t rhs) {
     return Coord3D{x / rhs, y / rhs, z / rhs};
   }
   //move the coordinate one step closer to the goal, if difference in coordinates (used in GenFix)
@@ -145,7 +145,7 @@ struct Coord3D {
 //used to sort keys of jsonobjects
 struct ArrayIndexSortValue {
   size_t index;
-  unsigned32 value;
+  uint32_t value;
 };
 
 //https://arduinojson.org/news/2021/05/04/version-6-18-0/
@@ -167,7 +167,7 @@ namespace ArduinoJson {
     }
 
     static bool checkJson(JsonVariantConst src) {
-      return src["x"].is<unsigned16>() && src["y"].is<unsigned16>() && src["z"].is<unsigned16>();
+      return src["x"].is<uint16_t>() && src["y"].is<uint16_t>() && src["z"].is<uint16_t>();
     }
   };
 }
@@ -226,7 +226,7 @@ class Variable {
   void defaultOrder(int value) {if (order() > -1000) order(- value); } //set default order (in range >=1000). Don't use auto generated order as order can be changed in the ui (WIP)
 
   //recursively remove all value[rowNr] from children of var
-  void removeValuesForRow(unsigned8 rowNr) {
+  void removeValuesForRow(uint8_t rowNr) {
     for (JsonObject childVar: children()) {
       Variable childVariable = Variable(childVar);
       JsonArray valArray = childVariable.valArray();
@@ -350,8 +350,8 @@ public:
 
   bool doWriteModel = false;
 
-  unsigned8 setValueRowNr = UINT8_MAX;
-  unsigned8 getValueRowNr = UINT8_MAX;
+  uint8_t setValueRowNr = UINT8_MAX;
+  uint8_t getValueRowNr = UINT8_MAX;
   int varCounter = 1; //start with 1 so it can be negative, see var["o"]
 
   SysModModel();
@@ -363,7 +363,7 @@ public:
   void cleanUpModel(JsonObject parent = JsonObject(), bool oPos = true, bool ro = false);
 
   //setValue for JsonVariants (extract the StarMod supported types)
-  JsonObject setValueJV(JsonObject var, JsonVariant value, unsigned8 rowNr = UINT8_MAX) {
+  JsonObject setValueJV(JsonObject var, JsonVariant value, uint8_t rowNr = UINT8_MAX) {
     if (value.is<JsonArray>()) {
       uint8_t rowNr = 0;
       // ppf("   %s is Array\n", value.as<String>().c_str);
@@ -383,7 +383,7 @@ public:
 
   //sets the value of var with id
   template <typename Type>
-  JsonObject setValue(const char * pid, const char * id, Type value, unsigned8 rowNr = UINT8_MAX) {
+  JsonObject setValue(const char * pid, const char * id, Type value, uint8_t rowNr = UINT8_MAX) {
     JsonObject var = findVar(pid, id);
     if (!var.isNull()) {
       return setValue(var, value, rowNr);
@@ -395,7 +395,7 @@ public:
   }
 
   template <typename Type>
-  JsonObject setValue(JsonObject var, Type value, unsigned8 rowNr = UINT8_MAX) {
+  JsonObject setValue(JsonObject var, Type value, uint8_t rowNr = UINT8_MAX) {
     Variable variable = Variable(var);
 
     bool changed = false;
@@ -405,7 +405,7 @@ public:
         if (!var["value"].isNull() && !variable.readOnly()) var["oldValue"] = var["value"];
         var["value"] = value;
         //trick to remove null values
-        if (var["value"].isNull() || var["value"].as<unsigned16>() == UINT16_MAX) {
+        if (var["value"].isNull() || var["value"].as<uint16_t>() == UINT16_MAX) {
           var.remove("value");
           // ppf("dev setValue value removed %s %s\n", Variable(var).id(), var["oldValue"].as<String>().c_str());
         }
@@ -468,7 +468,7 @@ public:
     return setValue(var, JsonString(value, JsonString::Copied));
   }
 
-  JsonVariant getValue(const char * pid, const char * id, unsigned8 rowNr = UINT8_MAX) {
+  JsonVariant getValue(const char * pid, const char * id, uint8_t rowNr = UINT8_MAX) {
     JsonObject var = findVar(pid, id);
     if (!var.isNull()) {
       return getValue(var, rowNr);
@@ -478,7 +478,7 @@ public:
       return JsonVariant();
     }
   }
-  JsonVariant getValue(JsonObject var, unsigned8 rowNr = UINT8_MAX) {
+  JsonVariant getValue(JsonObject var, uint8_t rowNr = UINT8_MAX) {
     Variable variable = Variable(var);
     if (var["value"].is<JsonArray>()) {
       JsonArray valueArray = variable.valArray();
@@ -505,9 +505,9 @@ public:
   // void varToValues(JsonObject var, JsonArray values);
 
   //sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
-  bool callVarOnChange(JsonObject var, unsigned8 rowNr = UINT8_MAX, bool init = false);
+  bool callVarOnChange(JsonObject var, uint8_t rowNr = UINT8_MAX, bool init = false);
 
-  unsigned8 linearToLogarithm(unsigned8 value, uint8_t minp = 0, uint8_t maxp = UINT8_MAX) {
+  uint8_t linearToLogarithm(uint8_t value, uint8_t minp = 0, uint8_t maxp = UINT8_MAX) {
     if (value == 0) return 0;
 
     // float minp = var["min"].isNull()?var["min"]:0;

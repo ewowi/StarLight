@@ -47,7 +47,7 @@ void SysModWeb::setup() {
   SysModule::setup();
   parentVar = ui->initSysMod(parentVar, name, 3101);
 
-  JsonObject tableVar = ui->initTable(parentVar, "clTbl", nullptr, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  JsonObject tableVar = ui->initTable(parentVar, "clTbl", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Clients");
       return true;
@@ -57,9 +57,9 @@ void SysModWeb::setup() {
     default: return false;
   }});
 
-  ui->initNumber(tableVar, "clNr", UINT16_MAX, 0, 999, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initNumber(tableVar, "clNr", UINT16_MAX, 0, 999, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+      uint8_t rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, client->id(), rowNr++);
       return true; }
     case onUI:
@@ -68,9 +68,9 @@ void SysModWeb::setup() {
     default: return false;
   }});
 
-  ui->initText(tableVar, "clIp", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(tableVar, "clIp", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+      uint8_t rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
       return true; }
     case onUI:
@@ -79,9 +79,9 @@ void SysModWeb::setup() {
     default: return false;
   }});
 
-  ui->initCheckBox(tableVar, "clIsFull", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initCheckBox(tableVar, "clIsFull", UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+      uint8_t rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, client->queueIsFull(), rowNr++);
       return true; }
     case onUI:
@@ -90,9 +90,9 @@ void SysModWeb::setup() {
     default: return false;
   }});
 
-  ui->initSelect(tableVar, "clStatus", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initSelect(tableVar, "clStatus", UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+      uint8_t rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, client->status(), rowNr++);
       return true; }
     case onUI:
@@ -108,9 +108,9 @@ void SysModWeb::setup() {
     default: return false;
   }});
 
-  ui->initNumber(tableVar, "clLength", UINT16_MAX, 0, WS_MAX_QUEUED_MESSAGES, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initNumber(tableVar, "clLength", UINT16_MAX, 0, WS_MAX_QUEUED_MESSAGES, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue: {
-      unsigned8 rowNr = 0; for (auto &client:ws.getClients())
+      uint8_t rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, client->queueLen(), rowNr++);
       return true; }
     case onUI:
@@ -121,7 +121,7 @@ void SysModWeb::setup() {
 
   ui->initNumber(parentVar, "maxQueue", WS_MAX_QUEUED_MESSAGES, 0, WS_MAX_QUEUED_MESSAGES, true);
 
-  ui->initText(parentVar, "wsSend", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "wsSend", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "WS Send");
       // ui->setComment(var, "web socket calls");
@@ -134,7 +134,7 @@ void SysModWeb::setup() {
     default: return false;
   }});
 
-  ui->initText(parentVar, "wsRecv", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "wsRecv", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "WS Recv");
       // ui->setComment(var, "web socket calls");
@@ -147,7 +147,7 @@ void SysModWeb::setup() {
     default: return false;
   }});
 
-  ui->initText(parentVar, "udpSend", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "udpSend", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "UDP Send");
       return true;
@@ -159,7 +159,7 @@ void SysModWeb::setup() {
     default: return false;
   }});
 
-  ui->initText(parentVar, "udpRecv", nullptr, 16, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "udpRecv", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "UDP Recv");
       return true;
@@ -350,7 +350,7 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
       // else {
       //   char buff[3];
       //   for (size_t i=0; i < len; i++) {
-      //     snprintf(buff, sizeof(buf), "%02x ", (unsigned8) data[i]);
+      //     snprintf(buff, sizeof(buf), "%02x ", (uint8_t) data[i]);
       //     msg += buff ;
       //   }
       // }
@@ -371,7 +371,7 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
 
       //message is comprised of multiple frames or the frame is split into multiple packets
       //if(info->index == 0){
-        //if (!wsFrameBuffer && len < 4096) wsFrameBuffer = new unsigned8[4096];
+        //if (!wsFrameBuffer && len < 4096) wsFrameBuffer = new uint8_t[4096];
       //}
 
       //if (wsFrameBuffer && len < 4096 && info->index + info->)
@@ -393,7 +393,7 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
     //error was received from the other end
     // printClient("WS error", client); //crashes
     // ppf("WS error\n");
-    ppf("ws[%s][%u] error(): \n", ws->url(), client->id());//, *((unsigned16*)arg));//, (char*)data);
+    ppf("ws[%s][%u] error(): \n", ws->url(), client->id());//, *((uint16_t*)arg));//, (char*)data);
   } else if (type == WS_EVT_PONG){
     //pong message was received (in response to a ping request maybe)
     // printClient("WS pong", client); //crashes!

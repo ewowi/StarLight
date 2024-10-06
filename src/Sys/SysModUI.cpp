@@ -22,7 +22,7 @@ void SysModUI::setup() {
 
   parentVar = initSysMod(parentVar, name, 4101);
 
-  JsonObject tableVar = initTable(parentVar, "vlTbl", nullptr, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  JsonObject tableVar = initTable(parentVar, "vlTbl", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Variable loops");
       ui->setComment(var, "Loops initiated by a variable");
@@ -30,9 +30,9 @@ void SysModUI::setup() {
     default: return false;
   }});
 
-  initText(tableVar, "vlVar", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  initText(tableVar, "vlVar", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue:
-      for (forUnsigned8 rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
+      for (size_t rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
         mdl->setValue(var, JsonString(loopFunctions[rowNr].var["id"], JsonString::Copied), rowNr);
       return true;
     case onUI:
@@ -41,9 +41,9 @@ void SysModUI::setup() {
     default: return false;
   }});
 
-  initNumber(tableVar, "vlLoopps", UINT16_MAX, 0, 999, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  initNumber(tableVar, "vlLoopps", UINT16_MAX, 0, 999, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue:
-      for (forUnsigned8 rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
+      for (size_t rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
         mdl->setValue(var, loopFunctions[rowNr].counter, rowNr);
       return true;
     case onUI:
@@ -176,7 +176,7 @@ void SysModUI::processJson(JsonVariant json) {
         if (value.is<JsonObject>()) {
           JsonObject command = value;
           JsonObject var = mdl->findVar(command["pid"], command["id"]);
-          stackUnsigned8 rowNr = command["rowNr"].isNull()?UINT8_MAX:command["rowNr"];
+          uint8_t rowNr = command["rowNr"].isNull()?UINT8_MAX:command["rowNr"];
           ppf("processJson %s - %s[%d]\n", key, Variable(var).id(), rowNr);
 
           bool doWS = false;
@@ -238,7 +238,7 @@ void SysModUI::processJson(JsonVariant json) {
           strlcpy(pidid, rowNrC, sizeof(pidid)); //copy the pidid part
           rowNrC = strtok(NULL, "#"); //the rest after #
         }
-        stackUnsigned8 rowNr = rowNrC?atoi(rowNrC):UINT8_MAX;
+        uint8_t rowNr = rowNrC?atoi(rowNrC):UINT8_MAX;
 
         char pid[64];
         strlcpy(pid, pidid, sizeof(pid));

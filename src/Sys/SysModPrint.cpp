@@ -57,7 +57,7 @@ void SysModPrint::setup() {
   parentVar = ui->initSysMod(parentVar, name, 2302);
 
   //default to Serial
-  ui->initSelect(parentVar, "output", 1, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initSelect(parentVar, "output", 1, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
     {
       JsonArray options = ui->setOptions(var);
@@ -83,7 +83,7 @@ void SysModPrint::printf(const char * format, ...) {
 
   va_start(args, format);
 
-  unsigned8 output = 1; //default serial
+  uint8_t output = 1; //default serial
   char buffer[512]; //this is a lot for the stack - move to heap?
   vsnprintf(buffer, sizeof(buffer)-1, format, args);
   bool toSerial = false;

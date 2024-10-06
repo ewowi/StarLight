@@ -27,14 +27,14 @@ public:
 
     parentVar = ui->initUserMod(parentVar, name, 6201);
 
-    ui->initNumber(parentVar, "dun", &universe, 0, 7, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "dun", &universe, 0, 7, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "DMX Universe");
         return true;
       default: return false;
     }});
 
-    JsonObject currentVar = ui->initNumber(parentVar, "dch", &channel, 1, 512, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    JsonObject currentVar = ui->initNumber(parentVar, "dch", &channel, 1, 512, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "DMX Channel");
         ui->setComment(var, "First channel");
@@ -47,16 +47,16 @@ public:
     }});
     currentVar["dash"] = true;
 
-    JsonObject tableVar = ui->initTable(parentVar, "e131Tbl", nullptr, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    JsonObject tableVar = ui->initTable(parentVar, "e131Tbl", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "Vars to watch");
         return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "e131Channel", UINT16_MAX, 1, 512, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "e131Channel", UINT16_MAX, 1, 512, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
+        for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
           mdl->setValue(var, channel + varsToWatch[rowNr].channelOffset, rowNr);
         return true;
       case onUI:
@@ -65,9 +65,9 @@ public:
       default: return false;
     }});
 
-    ui->initText(tableVar, "e131Name", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initText(tableVar, "e131Name", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
+        for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
           mdl->setValue(var, varsToWatch[rowNr].id, rowNr);
         return true;
       case onUI:
@@ -76,9 +76,9 @@ public:
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "e131Max", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "e131Max", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
+        for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
           mdl->setValue(var, varsToWatch[rowNr].max, rowNr);
         return true;
       case onUI:
@@ -87,9 +87,9 @@ public:
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "e131Value", UINT16_MAX, 0, 255, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "e131Value", UINT16_MAX, 0, 255, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
+        for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
           mdl->setValue(var, varsToWatch[rowNr].savedValue, rowNr);
         return true;
       case onUI:
@@ -172,7 +172,7 @@ public:
     } //!e131.isEmpty()
   } //loop
 
-  void patchChannel(unsigned8 channelOffset, const char * pid, const char * id, unsigned8 max = 255) {
+  void patchChannel(uint8_t channelOffset, const char * pid, const char * id, uint8_t max = 255) {
     VarToWatch varToWatch;
     varToWatch.channelOffset = channelOffset;
     varToWatch.pid = pid;
@@ -182,7 +182,7 @@ public:
     varsToWatch.push_back(varToWatch);
   }
 
-  // unsigned8 getValue(const char * id) {
+  // uint8_t getValue(const char * id) {
   //   for (int i=0; i < maxChannels; i++) {
   //       if(varsToWatch[i].id == id) {
   //         return varsToWatch[i].savedValue;
@@ -194,20 +194,20 @@ public:
 
   private:
     struct VarToWatch {
-      unsigned16 channelOffset;
+      uint16_t channelOffset;
       const char * pid = nullptr;
       const char * id = nullptr;
-      unsigned16 max = -1;
-      unsigned8 savedValue = -1;
+      uint16_t max = -1;
+      uint8_t savedValue = -1;
     };
 
     std::vector<VarToWatch> varsToWatch;
 
     ESPAsyncE131 e131;
     boolean e131Created = false;
-    unsigned16 channel = 1;
-    unsigned16 universe = 1;
-    unsigned8 universeCount = 1;
+    uint16_t channel = 1;
+    uint16_t universe = 1;
+    uint8_t universeCount = 1;
 
 };
 

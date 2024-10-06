@@ -31,7 +31,7 @@ void SysModNetwork::setup() {
   parentVar = ui->initSysMod(parentVar, name, 3502);
   parentVar["s"] = true; //setup
 
-  // JsonObject tableVar = ui->initTable(parentVar, "wfTbl", nullptr, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { //varFun ro false: create and delete row possible
+  // JsonObject tableVar = ui->initTable(parentVar, "wfTbl", nullptr, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { //varFun ro false: create and delete row possible
   //   ui->setLabel(var, "Wifi");
   //   ui->setComment(var, "List of defined and available Wifi APs");
   // });
@@ -40,7 +40,7 @@ void SysModNetwork::setup() {
 
   #ifdef STARBASE_ETHERNET
 
-    currentVar = ui->initCheckBox(parentVar, "ethOn", false, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    currentVar = ui->initCheckBox(parentVar, "ethOn", false, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Ethernet");
       return true;
@@ -147,7 +147,7 @@ void SysModNetwork::setup() {
       default: return false;
     }});
 
-    ui->initText(currentVar, "etStatus", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initText(currentVar, "etStatus", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "Status");
         return true;
@@ -159,7 +159,7 @@ void SysModNetwork::setup() {
 
   #endif
 
-  currentVar = ui->initCheckBox(parentVar, "wifiOn", true, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  currentVar = ui->initCheckBox(parentVar, "wifiOn", true, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "WiFi");
       return true;
@@ -172,7 +172,7 @@ void SysModNetwork::setup() {
     default: return false;
   }});
 
-  ui->initText(currentVar, "ssid", "", 31, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(currentVar, "ssid", "", 31, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onChange:
       if (mdl->getValue("Network", "wifiOn").as<bool>()) {
         stopWiFiConnection();
@@ -182,7 +182,7 @@ void SysModNetwork::setup() {
     default: return false;
   }});
 
-  ui->initPassword(currentVar, "pw", "", 63, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initPassword(currentVar, "pw", "", 63, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Password");
       return true;
@@ -195,7 +195,7 @@ void SysModNetwork::setup() {
     default: return false;
   }});
 
-  ui->initText(currentVar, "rssi", nullptr, 32, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(currentVar, "rssi", nullptr, 32, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Signal");
       return true;
@@ -205,7 +205,7 @@ void SysModNetwork::setup() {
     default: return false;
   }});
 
-  ui->initText(currentVar, "wfStatus", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(currentVar, "wfStatus", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Status");
       return true;
@@ -215,7 +215,7 @@ void SysModNetwork::setup() {
     default: return false;
   }});
 
-  currentVar = ui->initCheckBox(parentVar, "apOn", false, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  currentVar = ui->initCheckBox(parentVar, "apOn", false, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "AP");
       return true;
@@ -233,7 +233,7 @@ void SysModNetwork::setup() {
       // return true;
     default: return false;
   }});
-  ui->initText(currentVar, "apStatus", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(currentVar, "apStatus", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Status");
       return true;

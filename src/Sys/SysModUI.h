@@ -27,7 +27,7 @@ enum FunTypes
 };
 
 // https://stackoverflow.com/questions/59111610/how-do-you-declare-a-lambda-function-using-typedef-and-then-use-it-by-passing-to
-typedef std::function<unsigned8(JsonObject, unsigned8, unsigned8)> VarFun;
+typedef std::function<uint8_t(JsonObject, uint8_t, uint8_t)> VarFun;
 
 struct VarLoop {
   JsonObject var;
@@ -69,19 +69,19 @@ public:
     return initVarAndValue<const char *>(parent, id, "table", value, 0, 0, readOnly, varFun);
   }
 
-  JsonObject initText(JsonObject parent, const char * id, const char * value = nullptr, unsigned16 max = 32, bool readOnly = false, VarFun varFun = nullptr) {
+  JsonObject initText(JsonObject parent, const char * id, const char * value = nullptr, uint16_t max = 32, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndValue<const char *>(parent, id, "text", value, 0, max, readOnly, varFun);
   }
 
   //vector of text
-  JsonObject initTextVector(JsonObject parent, const char * id, std::vector<VectorString> *values, unsigned16 max = 32, bool readOnly = false, VarFun varFun = nullptr) {
+  JsonObject initTextVector(JsonObject parent, const char * id, std::vector<VectorString> *values, uint16_t max = 32, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndValueVector(parent, id, "text", values, 0, max, readOnly, varFun);
   }
 
-  JsonObject initFileUpload(JsonObject parent, const char * id, const char * value = nullptr, unsigned16 max = 32, bool readOnly = false, VarFun varFun = nullptr) {
+  JsonObject initFileUpload(JsonObject parent, const char * id, const char * value = nullptr, uint16_t max = 32, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndValue<const char *>(parent, id, "fileUpload", value, 0, max, readOnly, varFun);
   }
-  JsonObject initPassword(JsonObject parent, const char * id, const char * value = nullptr, unsigned8 max = 32, bool readOnly = false, VarFun varFun = nullptr) {
+  JsonObject initPassword(JsonObject parent, const char * id, const char * value = nullptr, uint8_t max = 32, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndValue<const char *>(parent, id, "password", value, 0, max, readOnly, varFun);
   }
 
@@ -119,8 +119,8 @@ public:
     return initVarAndValue<int>(parent, id, "range", value, min, max, readOnly, varFun);
   }
   //init a range slider using referenced value
-  JsonObject initSlider(JsonObject parent, const char * id, unsigned8 * value = nullptr, int min = 0, int max = 255, bool readOnly = false, VarFun varFun = nullptr) {
-    return initVarAndValue<unsigned8>(parent, id, "range", value, min, max, readOnly, varFun);
+  JsonObject initSlider(JsonObject parent, const char * id, uint8_t * value = nullptr, int min = 0, int max = 255, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndValue<uint8_t>(parent, id, "range", value, min, max, readOnly, varFun);
   }
 
   JsonObject initCanvas(JsonObject parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
@@ -146,8 +146,8 @@ public:
     return initVarAndValue<int>(parent, id, "select", value, 0, 0, readOnly, varFun);
   }
   //init a select using referenced value
-  JsonObject initSelect(JsonObject parent, const char * id, unsigned8 * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
-    return initVarAndValue<unsigned8>(parent, id, "select", value, 0, 0, readOnly, varFun);
+  JsonObject initSelect(JsonObject parent, const char * id, uint8_t * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndValue<uint8_t>(parent, id, "select", value, 0, 0, readOnly, varFun);
   }
 
   JsonObject initIP(JsonObject parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
@@ -303,13 +303,13 @@ public:
   }
 
   //checks if var has fun of type funType implemented by calling it and checking result (for onUI on RO var, also onSetValue is called)
-  bool callVarFun(const char * pid, const char * id, unsigned8 rowNr = UINT8_MAX, unsigned8 funType = onSetValue) {
+  bool callVarFun(const char * pid, const char * id, uint8_t rowNr = UINT8_MAX, uint8_t funType = onSetValue) {
     JsonObject var = mdl->findVar(pid, id);
     return callVarFun(var, rowNr, funType);
   }
 
   //checks if var has fun of type funType implemented by calling it and checking result (for onUI on RO var, also onSetValue is called)
-  bool callVarFun(JsonObject var, unsigned8 rowNr = UINT8_MAX, unsigned8 funType = onSetValue) {
+  bool callVarFun(JsonObject var, uint8_t rowNr = UINT8_MAX, uint8_t funType = onSetValue) {
     Variable variable = Variable(var);
     bool result = false;
 

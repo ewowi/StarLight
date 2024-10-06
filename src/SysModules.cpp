@@ -35,35 +35,35 @@ void SysModules::setup() {
   //do its own setup: will be shown as last module
   JsonObject parentVar = ui->initSysMod(parentVar, "Modules", 4203);
 
-  JsonObject tableVar = ui->initTable(parentVar, "Modules", nullptr, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  JsonObject tableVar = ui->initTable(parentVar, "Modules", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setComment(var, "List of modules");
       return true;
     default: return false;
   }});
 
-  ui->initText(tableVar, "name", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initText(tableVar, "name", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue:
-      for (forUnsigned8 rowNr = 0; rowNr < modules.size(); rowNr++)
+      for (size_t rowNr = 0; rowNr < modules.size(); rowNr++)
         mdl->setValue(var, JsonString(modules[rowNr]->name, JsonString::Copied), rowNr);
       return true;
     default: return false;
   }});
 
   //UINT16_MAX: no value set
-  ui->initCheckBox(tableVar, "success", UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initCheckBox(tableVar, "success", UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue:
-      for (forUnsigned8 rowNr = 0; rowNr < modules.size(); rowNr++)
+      for (size_t rowNr = 0; rowNr < modules.size(); rowNr++)
         mdl->setValue(var, modules[rowNr]->success, rowNr);
       return true;
     default: return false;
   }});
 
-  ui->initCheckBox(tableVar, "enabled", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun not readonly! (tbd)
+  ui->initCheckBox(tableVar, "enabled", UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun not readonly! (tbd)
     case onSetValue:
       //never a rowNr as parameter, set all
       //execute only if var has not been set
-      for (forUnsigned8 rowNr = 0; rowNr < modules.size(); rowNr++)
+      for (size_t rowNr = 0; rowNr < modules.size(); rowNr++)
         mdl->setValue(var, modules[rowNr]->isEnabled, rowNr);
       return true;
     case onChange:

@@ -40,14 +40,14 @@ class StarJson {
   }
 
   //look for uint8 var
-  // void lookFor(const char * id, unsigned8 * value) {
+  // void lookFor(const char * id, uint8_t * value) {
   //   // const char *p = (const char*)&value; //pointer trick
   //   uint8List.push_back(value);
   //   addToVars(id, "uint8", uint8List.size()-1);
   // }
 
   //look for uint16 var
-  void lookFor(const char * id, unsigned16 * value) {
+  void lookFor(const char * id, uint16_t * value) {
     uint16List.push_back(value);
     addToVars(id, "uint16", uint16List.size()-1);
   }
@@ -59,7 +59,7 @@ class StarJson {
   }
 
   //look for array of integers
-  void lookFor(const char * id, std::function<void(std::vector<unsigned16>)> fun) {
+  void lookFor(const char * id, std::function<void(std::vector<uint16_t>)> fun) {
     funList.push_back(fun);
     addToVars(id, "fun", funList.size()-1);
   }
@@ -88,13 +88,13 @@ private:
   File f;
   byte character; //the last character parsed
   std::vector<VarDetails> varDetails; //details of vars looking for
-  // std::vector<unsigned8 *> uint8List; //pointer of uint8 to assign found values to (index of list stored in varDetails)
-  std::vector<unsigned16 *> uint16List; //same for uint16
+  // std::vector<uint8_t *> uint8List; //pointer of uint8 to assign found values to (index of list stored in varDetails)
+  std::vector<uint16_t *> uint16List; //same for uint16
   std::vector<char *> charList; //same for char
-  std::vector<std::function<void(std::vector<unsigned16>)>> funList; //same for function calls
+  std::vector<std::function<void(std::vector<uint16_t>)>> funList; //same for function calls
   std::vector<String> varStack; //objects and arrays store their names in a stack
   bool collectNumbers = false; //array can ask to store all numbers found in array (now used for x,y,z coordinates)
-  std::vector<unsigned16> uint16CollectList; //collected numbers
+  std::vector<uint16_t> uint16CollectList; //collected numbers
   char lastVarId[128] = ""; //last found var id in json
   char beforeLastVarId[128] = ""; //last found var id in json
   size_t foundCounter = 0; //count how many of the id's to lookFor have been actually found

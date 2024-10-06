@@ -36,7 +36,7 @@ void SysModModel::setup() {
   parentVar = ui->initSysMod(parentVar, name, 4303);
   parentVar["s"] = true; //setup
 
-  ui->initButton(parentVar, "saveModel", false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initButton(parentVar, "saveModel", false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setComment(var, "Write to model.json");
       return true;
@@ -48,14 +48,14 @@ void SysModModel::setup() {
 
   #ifdef STARBASE_DEVMODE
 
-  ui->initCheckBox(parentVar, "showObsolete", &doShowObsolete, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initCheckBox(parentVar, "showObsolete", &doShowObsolete, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setComment(var, "Show in UI (refresh)");
       return true;
     default: return false;
   }});
 
-  ui->initButton(parentVar, "deleteObsolete", false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+  ui->initButton(parentVar, "deleteObsolete", false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setLabel(var, "Delete obsolete variables");
       ui->setComment(var, "🚧");
@@ -241,7 +241,7 @@ bool checkDash(JsonObject var) {
   return false;
 }
 
-bool SysModModel::callVarOnChange(JsonObject var, unsigned8 rowNr, bool init) {
+bool SysModModel::callVarOnChange(JsonObject var, uint8_t rowNr, bool init) {
   Variable variable = Variable(var);
   //not in SysModModel.h as ui->callVarFun cannot be used in SysModModel.h
 

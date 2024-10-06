@@ -36,14 +36,14 @@ public:
     SysModule::setup();
     parentVar = ui->initUserMod(parentVar, name, 6305);
 
-    ui->initCheckBox(parentVar, "mtReady", &motionTrackingReady, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "mtReady", &motionTrackingReady, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "tracking ready");
         return true;
       default: return false;
     }}); 
 
-    ui->initCoord3D(parentVar, "gyro", &gyro, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "gyro", &gyro, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setComment(var, "in degrees");
         return true;
@@ -53,7 +53,7 @@ public:
       default: return false;
     }});
 
-    ui->initCoord3D(parentVar, "accell", &accell, 0, UINT16_MAX, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "accell", &accell, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setComment(var, "in m/s²");
         return true;
