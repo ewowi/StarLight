@@ -414,28 +414,28 @@ public:
   }
   JsonArray setOptions(JsonObject var) {
     JsonObject responseObject = web->getResponseObject();
-    char pidid[32];
-    print->fFormat(pidid, 32, "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    char pidid[64];
+    print->fFormat(pidid, sizeof(pidid), "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
     return responseObject[pidid]["options"].to<JsonArray>();
   }
   //return the options from onUI (don't forget to clear responseObject)
   JsonArray getOptions(JsonObject var) {
     callVarFun(var, UINT8_MAX, onUI); //rebuild options
-    char pidid[32];
-    print->fFormat(pidid, 32, "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    char pidid[64];
+    print->fFormat(pidid, sizeof(pidid), "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
     return web->getResponseObject()[pidid]["options"];
   }
   void clearOptions(JsonObject var) {
-    char pidid[32];
-    print->fFormat(pidid, 32, "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    char pidid[64];
+    print->fFormat(pidid, sizeof(pidid), "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
     web->getResponseObject()[pidid].remove("options");
   }
 
   //find options text in a hierarchy of options
   void findOptionsText(JsonObject var, uint8_t value, char * groupName, char * optionName) {
     uint8_t startValue = 0;
-    char pidid[32];
-    print->fFormat(pidid, 32, "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    char pidid[64];
+    print->fFormat(pidid, sizeof(pidid), "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
     bool optionsExisted = !web->getResponseObject()[pidid]["options"].isNull();
     JsonString groupNameJS;
     JsonString optionNameJS;

@@ -230,7 +230,7 @@ void SysModUI::processJson(JsonVariant json) {
         else
           newValue = value["value"]; //use the value field
 
-        char pidid[32];
+        char pidid[64];
         strlcpy(pidid, key, sizeof(pidid));
         //check if we deal with multiple rows (from table type)
         char * rowNrC = strtok(pidid, "#");
@@ -240,7 +240,7 @@ void SysModUI::processJson(JsonVariant json) {
         }
         stackUnsigned8 rowNr = rowNrC?atoi(rowNrC):UINT8_MAX;
 
-        char pid[32];
+        char pid[64];
         strlcpy(pid, pidid, sizeof(pid));
         char * id = strtok(pid, ".");
         if (id != NULL ) {

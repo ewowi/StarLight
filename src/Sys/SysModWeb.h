@@ -119,8 +119,8 @@ public:
   void addResponse(JsonObject var, const char * key, Type value, unsigned8 rowNr = UINT8_MAX) {
     JsonObject responseObject = getResponseObject();
     // if (responseObject[id].isNull()) responseObject[id].to<JsonObject>();;
-    char pidid[32];
-    print->fFormat(pidid, 32, "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    char pidid[64];
+    print->fFormat(pidid, sizeof(pidid), "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
     if (rowNr == UINT8_MAX)
       responseObject[pidid][key] = value;
     else {

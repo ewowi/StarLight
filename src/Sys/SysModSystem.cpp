@@ -114,7 +114,7 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  print->fFormat(chipInfo, sizeof(chipInfo)-1, "%s %s (%d.%d.%d) c#:%d %d mHz f:%d KB %d mHz %d", ESP.getChipModel(), ESP.getSdkVersion(), ESP_ARDUINO_VERSION_MAJOR, ESP_ARDUINO_VERSION_MINOR, ESP_ARDUINO_VERSION_PATCH, ESP.getChipCores(), ESP.getCpuFreqMHz(), ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed()/1000000, ESP.getFlashChipMode());
+  print->fFormat(chipInfo, sizeof(chipInfo), "%s %s (%d.%d.%d) c#:%d %d mHz f:%d KB %d mHz %d", ESP.getChipModel(), ESP.getSdkVersion(), ESP_ARDUINO_VERSION_MAJOR, ESP_ARDUINO_VERSION_MINOR, ESP_ARDUINO_VERSION_PATCH, ESP.getChipCores(), ESP.getCpuFreqMHz(), ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed()/1000000, ESP.getFlashChipMode());
   ui->initText(parentVar, "chip", chipInfo, 16, true);
 
   ui->initProgress(parentVar, "heap", (ESP.getHeapSize()-ESP.getFreeHeap()) / 1000, 0, ESP.getHeapSize()/1000, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
@@ -204,7 +204,7 @@ void SysModSystem::setup() {
   // sscanf(__DATE__, "%s %d %d", version, &day, &year); // Mon dd yyyy
   // month = (strnstr(month_names, version, 32)-month_names)/3+1;
   // sscanf(__TIME__, "%d:%d:%d", &hour, &minute, &second); //hh:mm:ss
-  // print->fFormat(version, sizeof(version)-1, "%02d%02d%02d%02d", year-2000, month, day, hour);
+  // print->fFormat(version, sizeof(version), "%02d%02d%02d%02d", year-2000, month, day, hour);
 
   // ppf("version %s %s %s %d:%d:%d\n", version, __DATE__, __TIME__, hour, minute, second);
 
