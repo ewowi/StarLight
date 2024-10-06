@@ -47,7 +47,7 @@ public:
 
     parentVar = ui->initUserMod(parentVar, name, 6000);
 
-    ui->initIP(parentVar, "ddpInst", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initIP(parentVar, "ddpInst", UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         ui->setLabel(var, "Instance");
         ui->setComment(var, "Instance to send data");
@@ -97,7 +97,7 @@ public:
     const size_t channelCount = eff->fixture.nrOfLeds * (isRGBW? 4:3); // 1 channel for every R,G,B,(W?) value
     const size_t packetCount = ((channelCount-1) / DDP_CHANNELS_PER_PACKET) +1;
 
-    stackUnsigned32 channel = 0; 
+    uint32_t channel = 0; 
     size_t bufferOffset = 0;
 
     sequenceNumber++;

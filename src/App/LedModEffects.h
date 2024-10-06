@@ -27,8 +27,8 @@
 // #define FASTLED_RGBW
 
 //https://www.partsnotincluded.com/fastled-rgbw-neopixels-sk6812/
-inline unsigned16 getRGBWsize(unsigned16 nleds){
-	unsigned16 nbytes = nleds * 4;
+inline uint16_t getRGBWsize(uint16_t nleds){
+	uint16_t nbytes = nleds * 4;
 	if(nbytes % 3 > 0) return nbytes / 3 + 1;
 	else return nbytes / 3;
 }
@@ -42,7 +42,7 @@ public:
   bool newFrame = false; //for other modules (DDP)
   unsigned long frameCounter = 0;
 
-  unsigned16 fps = 60;
+  uint16_t fps = 60;
   unsigned long lastMappingMillis = 0;
 
   std::vector<Effect *> effects;
@@ -160,7 +160,7 @@ public:
 
     JsonObject currentVar;
 
-    JsonObject tableVar = ui->initTable(parentVar, "layers", nullptr, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    JsonObject tableVar = ui->initTable(parentVar, "layers", nullptr, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setComment(var, "List of effects");
         return true;
@@ -189,9 +189,9 @@ public:
       default: return false;
     }});
 
-    currentVar = ui->initSelect(tableVar, "effect", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    currentVar = ui->initSelect(tableVar, "effect", 0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
+        for (size_t rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
           mdl->setValue(var, fixture.layers[rowNr]->effectNr, rowNr);
         return true;
       case onUI: {
@@ -257,9 +257,9 @@ public:
     currentVar["dash"] = true;
 
     //projection, default projection is 'default'
-    currentVar = ui->initSelect(tableVar, "projection", 1, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    currentVar = ui->initSelect(tableVar, "projection", 1, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
+        for (size_t rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
           mdl->setValue(var, fixture.layers[rowNr]->projectionNr, rowNr);
         return true;
       case onUI: {
@@ -284,7 +284,7 @@ public:
 
           // leds->doMap = true; //stop the effects loop already here
 
-          stackUnsigned8 proValue = mdl->getValue(var, rowNr);
+          uint8_t proValue = mdl->getValue(var, rowNr);
           leds->projectionNr = proValue;
           
           if (proValue < fixture.projections.size()) {
@@ -318,9 +318,9 @@ public:
     }});
     currentVar["dash"] = true;
 
-    ui->initCoord3D(tableVar, "start", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(tableVar, "start", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.layers.size(); rowNr++) {
+        for (size_t rowNr = 0; rowNr < fixture.layers.size(); rowNr++) {
           ppf("ledsStart[%d] onSetValue %d,%d,%d\n", rowNr, fixture.layers[rowNr]->startPos.x, fixture.layers[rowNr]->startPos.y, fixture.layers[rowNr]->startPos.z);
           mdl->setValue(var, fixture.layers[rowNr]->startPos, rowNr);
         }
@@ -344,9 +344,9 @@ public:
       default: return false;
     }});
 
-    ui->initCoord3D(tableVar, "middle", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(tableVar, "middle", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.layers.size(); rowNr++) {
+        for (size_t rowNr = 0; rowNr < fixture.layers.size(); rowNr++) {
           ppf("ledsMid[%d] onSetValue %d,%d,%d\n", rowNr, fixture.layers[rowNr]->midPos.x, fixture.layers[rowNr]->midPos.y, fixture.layers[rowNr]->midPos.z);
           mdl->setValue(var, fixture.layers[rowNr]->midPos, rowNr);
         }
@@ -370,9 +370,9 @@ public:
       default: return false;
     }});
 
-    ui->initCoord3D(tableVar, "end", {8,8,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(tableVar, "end", {8,8,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (forUnsigned8 rowNr = 0; rowNr < fixture.layers.size(); rowNr++) {
+        for (size_t rowNr = 0; rowNr < fixture.layers.size(); rowNr++) {
           ppf("ledsEnd[%d] onSetValue %d,%d,%d\n", rowNr, fixture.layers[rowNr]->endPos.x, fixture.layers[rowNr]->endPos.y, fixture.layers[rowNr]->endPos.z);
           mdl->setValue(var, fixture.layers[rowNr]->endPos, rowNr);
         }
@@ -396,10 +396,10 @@ public:
       default: return false;
     }});
 
-    ui->initText(tableVar, "size", nullptr, 32, true, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initText(tableVar, "size", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue: {
         // for (std::vector<LedsLayer *>::iterator leds=fixture.layers.begin(); leds!=fixture.layers.end(); ++leds) {
-        stackUnsigned8 rowNr = 0;
+        uint8_t rowNr = 0;
         for (LedsLayer *leds:fixture.layers) {
           char message[32];
           print->fFormat(message, sizeof(message), "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
@@ -411,7 +411,7 @@ public:
       default: return false;
     }});
 
-    // ui->initSelect(parentVar, "layout", 0, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    // ui->initSelect(parentVar, "layout", 0, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     //   case onUI: {
     //     ui->setComment(var, "WIP");
     //     JsonArray options = ui->setOptions(var);
@@ -477,7 +477,7 @@ public:
 
       //for each programmed effect
       //  run the next frame of the effect
-      stackUnsigned8 rowNr = 0;
+      uint8_t rowNr = 0;
       for (LedsLayer *leds: fixture.layers) {
         if (leds->effectNr < effects.size()) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
           // ppf(" %d %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->effectNr, leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
@@ -581,7 +581,7 @@ public:
 
     //reinit the effect after a mapping change
 
-    stackUnsigned8 rowNr = 0;
+    uint8_t rowNr = 0;
     for (LedsLayer *leds: fixture.layers) {
       initEffect(*leds, rowNr);
       rowNr++;
@@ -612,8 +612,8 @@ public:
             before = after;
             after = strtok(NULL, " ");
 
-            stackUnsigned16 startLed = atoi(before);
-            stackUnsigned16 nrOfLeds = atoi(after) - atoi(before) + 1;
+            uint16_t startLed = atoi(before);
+            uint16_t nrOfLeds = atoi(after) - atoi(before) + 1;
             ppf("addLeds new %d: %d-%d\n", pinNr, startLed, nrOfLeds-1);
 
             #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER

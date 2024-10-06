@@ -25,13 +25,13 @@ class GenFix {
 public:
   char name[32] = "";
 
-  // unsigned16 distance = 1; //cm, not used yet (to display multiple fixture, also from other devices)
+  // uint16_t distance = 1; //cm, not used yet (to display multiple fixture, also from other devices)
 
   char pinSep[2]="";
   char pixelSep[2]="";
 
   Coord3D fixSize = {0,0,0};
-  unsigned16 nrOfLeds=0;
+  uint16_t nrOfLeds=0;
   uint16_t ledSize = 5; //mm
   uint8_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
   
@@ -100,7 +100,7 @@ public:
     files->remove("/temp.json");
   }
 
-  void openPin(unsigned8 pin) {
+  void openPin(uint8_t pin) {
     f.printf("%s{\"pin\":%d,\"leds\":[", pinSep, pin);
     strlcpy(pinSep, ",", sizeof(pinSep));
     strlcpy(pixelSep, "", sizeof(pixelSep));
@@ -113,7 +113,7 @@ public:
     write3D(pixel.x, pixel.y, pixel.z);
   }
 
-  void write3D(unsigned16 x, unsigned16 y, unsigned16 z) {
+  void write3D(uint16_t x, uint16_t y, uint16_t z) {
     // if (x>UINT16_MAX/2 || y>UINT16_MAX/2 || z>UINT16_MAX/2) 
     if (x>1000 || y>1000 || z>1000) 
       ppf("write3D coord too high %d,%d,%d\n", x, y, z);
@@ -121,9 +121,9 @@ public:
     {
       f.printf("%s[%d,%d,%d]", pixelSep, x, y, z);
       strlcpy(pixelSep, ",", sizeof(pixelSep));
-      fixSize.x = max((unsigned16)fixSize.x, x);
-      fixSize.y = max((unsigned16)fixSize.y, y);
-      fixSize.z = max((unsigned16)fixSize.z, z);
+      fixSize.x = max((uint16_t)fixSize.x, x);
+      fixSize.y = max((uint16_t)fixSize.y, y);
+      fixSize.z = max((uint16_t)fixSize.z, z);
       nrOfLeds++;
     }
 
@@ -135,7 +135,7 @@ public:
     else return x;
   }
 
-  void matrix(Coord3D first, Coord3D rowEnd, Coord3D colEnd, unsigned8 ip, unsigned8 pin, uint16_t tilt = 0, uint16_t pan = 0, uint16_t roll = 0) {
+  void matrix(Coord3D first, Coord3D rowEnd, Coord3D colEnd, uint8_t ip, uint8_t pin, uint16_t tilt = 0, uint16_t pan = 0, uint16_t roll = 0) {
 
     openPin(pin);
 
@@ -159,12 +159,12 @@ public:
 
     ppf("middle %d,%d,%d", middle.x, middle.y, middle.z);
 
-    stackUnsigned8 rowDimension; //in what dimension the row will advance (x=0, y=1, z=2), now only one should differ
+    uint8_t rowDimension; //in what dimension the row will advance (x=0, y=1, z=2), now only one should differ
     if (first.x != rowEnd.x) rowDimension = 0;
     if (first.y != rowEnd.y) rowDimension = 1;
     if (first.z != rowEnd.z) rowDimension = 2;
 
-    stackUnsigned8 colDimension; //in what dimension the col will advance, not the rowDimension
+    uint8_t colDimension; //in what dimension the col will advance, not the rowDimension
     if (first.x != colEnd.x && rowDimension != 0) colDimension = 0;
     if (first.y != colEnd.y && rowDimension != 1) colDimension = 1;
     if (first.z != colEnd.z && rowDimension != 2) colDimension = 2;
@@ -172,7 +172,7 @@ public:
     bool rowValueSame = (rowDimension == 0)? first.x == colEnd.x : (rowDimension == 1)? first.y == colEnd.y : first.z == colEnd.z; 
     bool serpentine = rowValueSame;
     
-    unsigned16 nrOfColumns = (colDimension == 0)? u_abs(colEnd.x - first.x) + 1 : (colDimension == 1)? u_abs(colEnd.y - first.y) + 1 : u_abs(colEnd.z - first.z) + 1;
+    uint16_t nrOfColumns = (colDimension == 0)? u_abs(colEnd.x - first.x) + 1 : (colDimension == 1)? u_abs(colEnd.y - first.y) + 1 : u_abs(colEnd.z - first.z) + 1;
     if (nrOfColumns % 2 == 1 && rowValueSame) //if odd nrOfCols and rowValueSame then adjust the endpoint col value to the rowEnd col value
     {
       if (rowDimension == 0)
@@ -186,7 +186,7 @@ public:
     Trigo trigo;
 
     Coord3D colPixel = Coord3D{(rowDimension==0)?colEnd.x:first.x, (rowDimension==1)?colEnd.y:first.y, (rowDimension==2)?colEnd.z:first.z};
-    stackUnsigned8 colNr = 0;
+    uint8_t colNr = 0;
     while (true) {
       // colPixel is not advancing over the dimension of the row but advances over it's own dimension towards the colEnd
 
@@ -220,7 +220,7 @@ public:
     closePin();
   }
 
-  void ring(Coord3D middle, unsigned16 ledCount, unsigned8 ip, unsigned8 pin, uint16_t tilt = 0, uint16_t pan = 0, uint16_t roll = 0, bool preRadius = false) {
+  void ring(Coord3D middle, uint16_t ledCount, uint8_t ip, uint8_t pin, uint16_t tilt = 0, uint16_t pan = 0, uint16_t roll = 0, bool preRadius = false) {
 
     openPin(pin);
 
@@ -256,9 +256,9 @@ public:
     closePin();
   }
 
-  void rings241(Coord3D middle, unsigned8 nrOfRings, bool in2out, unsigned8 ip, unsigned8 pin, uint16_t tilt = 0, uint16_t pan = 0, uint16_t roll = 0) {
-    stackUnsigned8 ringsNrOfLeds[9] = {1, 8, 12, 16, 24, 32, 40, 48, 60};
-    // stackUnsigned8 radiuss[9] = {0, 13, 23, 33, 43, 53, 63, 73, 83}; //in mm
+  void rings241(Coord3D middle, uint8_t nrOfRings, bool in2out, uint8_t ip, uint8_t pin, uint16_t tilt = 0, uint16_t pan = 0, uint16_t roll = 0) {
+    uint8_t ringsNrOfLeds[9] = {1, 8, 12, 16, 24, 32, 40, 48, 60};
+    // uint8_t radiuss[9] = {0, 13, 23, 33, 43, 53, 63, 73, 83}; //in mm
     //  {0, 0},     //0 Center Point -> 1
     //   {1, 8},     //1 -> 8
     //   {9, 20},   //2 -> 12
@@ -269,29 +269,29 @@ public:
     //   {133, 180}, //7 -> 48
     //   {181, 240}, //8 Outer Ring -> 60   -> 241
 
-    // stackUnsigned16 size = radiuss[nrOfRings-1]; //size if the biggest ring
+    // uint16_t size = radiuss[nrOfRings-1]; //size if the biggest ring
     for (int j=0; j<nrOfRings; j++) {
-      stackUnsigned8 ringNrOfLeds = in2out?ringsNrOfLeds[j]:ringsNrOfLeds[nrOfRings - 1 - j];
+      uint8_t ringNrOfLeds = in2out?ringsNrOfLeds[j]:ringsNrOfLeds[nrOfRings - 1 - j];
       ring(middle, ringNrOfLeds, ip, pin, tilt, pan, roll, true); //use predefined radius
     }
   }
 
-  void spiral(Coord3D middle, unsigned16 ledCount, unsigned16 radius, unsigned8 ip, unsigned8 pin) {
+  void spiral(Coord3D middle, uint16_t ledCount, uint16_t radius, uint8_t ip, uint8_t pin) {
 
     openPin(pin);
 
     for (int i=0; i<ledCount; i++) {
       float radians = i*360/48 * DEG_TO_RAD; //48 leds per round
-      stackUnsigned16 x = radius * sinf(radians);
-      stackUnsigned16 y = 10 * i/12; //12 leds is 1 cm ?
-      stackUnsigned16 z = radius * cosf(radians);
+      uint16_t x = radius * sinf(radians);
+      uint16_t y = 10 * i/12; //12 leds is 1 cm ?
+      uint16_t z = radius * cosf(radians);
       write3D(x + middle.x, y + middle.y, z + middle.z);
     }
 
     closePin();
   }
 
-  void helix(Coord3D middle, uint16_t ledCount, uint16_t radius, uint16_t pitch, uint16_t deltaLed, unsigned8 ip, unsigned8 pin, uint16_t tilt = 0, uint16_t pan = 0, uint16_t roll = 0) {
+  void helix(Coord3D middle, uint16_t ledCount, uint16_t radius, uint16_t pitch, uint16_t deltaLed, uint8_t ip, uint8_t pin, uint16_t tilt = 0, uint16_t pan = 0, uint16_t roll = 0) {
 
     openPin(pin);
 
@@ -318,7 +318,7 @@ public:
     closePin();
   }
 
-  void wheel(Coord3D middle, unsigned16 nrOfSpokes, unsigned16 ledsPerSpoke, unsigned8 ip, unsigned8 pin) {
+  void wheel(Coord3D middle, uint16_t nrOfSpokes, uint16_t ledsPerSpoke, uint8_t ip, uint8_t pin) {
 
     openPin(pin);
 
@@ -326,8 +326,8 @@ public:
       float radians = i*360/nrOfSpokes * DEG_TO_RAD;
       for (int j=0;j<ledsPerSpoke;j++) {
         float radius = 50 + 10 * j; //in mm
-        stackUnsigned16 x = radius * sinf(radians);
-        stackUnsigned16 y = radius * cosf(radians);
+        uint16_t x = radius * sinf(radians);
+        uint16_t y = radius * cosf(radians);
         write3D(x+middle.x,y+middle.y, middle.z);
       }
     }
@@ -335,7 +335,7 @@ public:
   }
 
   //https://stackoverflow.com/questions/71816702/coordinates-of-dot-on-an-hexagon-path
-  void hexagon(Coord3D middle, unsigned16 ledsPerSide, unsigned8 ip, unsigned8 pin) {
+  void hexagon(Coord3D middle, uint16_t ledsPerSide, uint8_t ip, uint8_t pin) {
 
     openPin(pin);
 
@@ -345,9 +345,9 @@ public:
     float hexaX[7] = {1.0, 0.5, -0.5, -1.0, -0.5, 0.5, 1.0};
     float hexaY[7] = {0.0, y, y, 0, -y, -y, 0.0};
 
-    for (forUnsigned16 i = 0; i < ledsPerSide * 6; i++) {
+    for (uint16_t i = 0; i < ledsPerSide * 6; i++) {
       float offset = 6.0f * (float)i / (float)(ledsPerSide*6);
-      stackUnsigned8 edgenum = floor(offset);  // On which edge is this dot?
+      uint8_t edgenum = floor(offset);  // On which edge is this dot?
       offset = offset - (float)edgenum; // Retain fractional part only: offset on that edge
 
       // Use interpolation to get coordinates of that point on that edge
@@ -361,10 +361,10 @@ public:
     closePin();
   }
 
-  void cone(Coord3D middle, unsigned8 nrOfRings, unsigned8 ip, unsigned8 pin) {
+  void cone(Coord3D middle, uint8_t nrOfRings, uint8_t ip, uint8_t pin) {
 
     for (int j=0; j<nrOfRings; j++) {
-      stackUnsigned8 ringNrOfLeds = (j+1) * 3;
+      uint8_t ringNrOfLeds = (j+1) * 3;
       middle.y += 10;
 
       ppf("Cone %d %d %d %d,%d,%d\n", j, nrOfRings, ringNrOfLeds, middle.x, middle.y, middle.z);
@@ -373,10 +373,10 @@ public:
 
   }
 
-  void cloud5416(Coord3D first, unsigned8 ip, unsigned8 pin) {
+  void cloud5416(Coord3D first, uint8_t ip, uint8_t pin) {
     //Small RL Alt Test
 
-    stackUnsigned8 y;
+    uint8_t y;
 
     //tbd: different pins for each section!!!
 
@@ -410,7 +410,7 @@ public:
     closePin();
   }
 
-  void globe(Coord3D middle, unsigned8 width, unsigned8 ip, unsigned8 pin) {
+  void globe(Coord3D middle, uint8_t width, uint8_t ip, uint8_t pin) {
 
     // loop over latitudes -> sin 0 to pi
     for (uint8_t lat = 0; lat <= width; lat++) {
@@ -430,11 +430,11 @@ public:
 
   // https://stackoverflow.com/questions/17705621/algorithm-for-a-geodesic-sphere
   //https://opengl.org.ru/docs/pg/0208.html
-  void geodesicDome(Coord3D first, unsigned16 radius, unsigned8 ip, unsigned8 pin) {
+  void geodesicDome(Coord3D first, uint16_t radius, uint8_t ip, uint8_t pin) {
 
     //radius unused (tbd)
  
-    stackUnsigned8 tindices[20][3] = {    {0,40,10}, {0,90,40}, {90,50,40}, {40,50,80}, {40,80,10},       {80,100,10}, {80,30,100}, {50,30,80}, {50,20,30}, {20,70,30},       {70,100,30}, {70,60,100}, {70,110,60}, {110,0,60}, {0,10,60},    {60,10,100}, {90,0,110}, {90,110,20}, {90,20,50}, {70,20,110} };
+    uint8_t tindices[20][3] = {    {0,40,10}, {0,90,40}, {90,50,40}, {40,50,80}, {40,80,10},       {80,100,10}, {80,30,100}, {50,30,80}, {50,20,30}, {20,70,30},       {70,100,30}, {70,60,100}, {70,110,60}, {110,0,60}, {0,10,60},    {60,10,100}, {90,0,110}, {90,110,20}, {90,20,50}, {70,20,110} };
 
     openPin(pin);
 
@@ -459,7 +459,7 @@ public:
     parentVar = ui->initAppMod(parentVar, name, 6302); //created as a usermod, not an appmod to have it in the usermods tab
     parentVar["s"] = true; //setup
 
-    JsonObject currentVar = ui->initSelect(parentVar, "fixtureVar", 0, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    JsonObject currentVar = ui->initSelect(parentVar, "fixtureVar", 0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         ui->setLabel(var, "Fixture");
         ui->setComment(var, "Predefined fixture");
@@ -508,7 +508,7 @@ public:
     uint8_t width = mdl->getValue("fixtureVar", "width");
     uint8_t height = mdl->getValue("fixtureVar", "height");
     //recalc the columns
-    stackUnsigned8 fixNr = 0;
+    uint8_t fixNr = 0;
 
     mdl->findVar("fixTbl", "fixFirst").remove("value");
     mdl->findVar("fixTbl", "mrxRowEnd").remove("value");
@@ -545,10 +545,10 @@ public:
       fixNr = 0; mdl->setValue("fixTbl", "fixPin", 2, fixNr++); // default per board...
     }
     else if (strnstr(fgText, "Sticks", 32) != nullptr) {
-      for (forUnsigned8 fixNr = 0; fixNr < width; fixNr++) {
-        mdl->setValue("fixTbl", "fixFirst", Coord3D{(unsigned16)(fixNr*5), height, 0}, fixNr);
-        mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{(unsigned16)(fixNr*5), height, 0}, fixNr);
-        mdl->setValue("fixTbl", "mrxColEnd", Coord3D{(unsigned16)(fixNr*5), 0, 0}, fixNr);
+      for (uint8_t fixNr = 0; fixNr < width; fixNr++) {
+        mdl->setValue("fixTbl", "fixFirst", Coord3D{(uint16_t)(fixNr*5), height, 0}, fixNr);
+        mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{(uint16_t)(fixNr*5), height, 0}, fixNr);
+        mdl->setValue("fixTbl", "mrxColEnd", Coord3D{(uint16_t)(fixNr*5), 0, 0}, fixNr);
         mdl->setValue("fixTbl", "fixPin", 2, fixNr);
       }
     }
@@ -557,7 +557,7 @@ public:
   void rebuildCube(const char * fgText) {
     uint8_t length = mdl->getValue("fixtureVar", "length");
     //recalc the columns
-    stackUnsigned8 fixNr = 0;
+    uint8_t fixNr = 0;
 
     mdl->findVar("fixTbl", "fixFirst").remove("value");
     mdl->findVar("fixTbl", "mrxRowEnd").remove("value");
@@ -566,25 +566,25 @@ public:
     mdl->findVar("fixTbl", "fixPin").remove("value");
 
     if (strnstr(fgText, "Human Sized Cube", 32) != nullptr) {
-      stackUnsigned8 size = length + 1;
+      uint8_t size = length + 1;
       fixNr = 0; mdl->setValue("fixTbl", "fixFirst", Coord3D{1,1,size}, fixNr++); mdl->setValue("fixTbl", "fixFirst", Coord3D{0,1,1}, fixNr++); mdl->setValue("fixTbl", "fixFirst", Coord3D{1,1,0}, fixNr++); mdl->setValue("fixTbl", "fixFirst", Coord3D{size,1,1}, fixNr++); mdl->setValue("fixTbl", "fixFirst", Coord3D{1,0,1}, fixNr++);
       fixNr = 0; mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{1,length,size}, fixNr++); mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{0,length,1}, fixNr++); mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{1,length,0}, fixNr++); mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{size,length,1}, fixNr++); mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{1,0,length}, fixNr++);
       fixNr = 0; mdl->setValue("fixTbl", "mrxColEnd", Coord3D{length,length,size}, fixNr++); mdl->setValue("fixTbl", "mrxColEnd", Coord3D{0,length,length}, fixNr++); mdl->setValue("fixTbl", "mrxColEnd", Coord3D{length,length,0}, fixNr++); mdl->setValue("fixTbl", "mrxColEnd", Coord3D{size,length,length}, fixNr++); mdl->setValue("fixTbl", "mrxColEnd", Coord3D{length,0,length}, fixNr++);
       fixNr = 0; mdl->setValue("fixTbl", "fixPin", 16, fixNr++); mdl->setValue("fixTbl", "fixPin", 14, fixNr++); mdl->setValue("fixTbl", "fixPin", 32, fixNr++); mdl->setValue("fixTbl", "fixPin", 3, fixNr++); mdl->setValue("fixTbl", "fixPin", 15, fixNr++);
     }
     else if (strnstr(fgText, "CubeBox", 32) != nullptr) {
-      stackUnsigned8 size = length + 1;
+      uint8_t size = length + 1;
       fixNr = 0; mdl->setValue("fixTbl", "fixFirst", Coord3D{1,1,0}, fixNr++); mdl->setValue("fixTbl", "fixFirst", Coord3D{length, size, length}, fixNr++); mdl->setValue("fixTbl", "fixFirst", Coord3D{size, 1, 1}, fixNr++); mdl->setValue("fixTbl", "fixFirst", Coord3D{0, length, length}, fixNr++); mdl->setValue("fixTbl", "fixFirst", Coord3D{length, 1, size}, fixNr++); mdl->setValue("fixTbl", "fixFirst", Coord3D{1, 0, length}, fixNr++);
       fixNr = 0; mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{1,length,0}, fixNr++); mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{1, size, length}, fixNr++); mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{size, 1, length}, fixNr++); mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{0, 1, length}, fixNr++); mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{1, 1, size}, fixNr++); mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{length, 0, length}, fixNr++);
       fixNr = 0; mdl->setValue("fixTbl", "mrxColEnd", Coord3D{length,length,0}, fixNr++); mdl->setValue("fixTbl", "mrxColEnd", Coord3D{1, size, 1}, fixNr++); mdl->setValue("fixTbl", "mrxColEnd", Coord3D{size, length, length}, fixNr++); mdl->setValue("fixTbl", "mrxColEnd", Coord3D{0, 1, 1}, fixNr++); mdl->setValue("fixTbl", "mrxColEnd", Coord3D{1, length, size}, fixNr++); mdl->setValue("fixTbl", "mrxColEnd", Coord3D{length, 0, 1}, fixNr++);
       fixNr = 0; mdl->setValue("fixTbl", "fixPin", 12, fixNr++); mdl->setValue("fixTbl", "fixPin", 12, fixNr++); mdl->setValue("fixTbl", "fixPin", 13, fixNr++); mdl->setValue("fixTbl", "fixPin", 13, fixNr++); mdl->setValue("fixTbl", "fixPin", 14, fixNr++); mdl->setValue("fixTbl", "fixPin", 14, fixNr++);
     }
     else if (strnstr(fgText, "Cube3D", 32) != nullptr) {
-      stackUnsigned8 size = length -1;
-      for (forUnsigned8 fixNr = 0; fixNr < length; fixNr++) {
-        mdl->setValue("fixTbl", "fixFirst", Coord3D{0,0,(unsigned16)fixNr}, fixNr);
-        mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{0, length -1,(unsigned16)fixNr}, fixNr);
-        mdl->setValue("fixTbl", "mrxColEnd", Coord3D{length -1, length -1,(unsigned16)fixNr}, fixNr);
+      uint8_t size = length -1;
+      for (uint8_t fixNr = 0; fixNr < length; fixNr++) {
+        mdl->setValue("fixTbl", "fixFirst", Coord3D{0,0,(uint16_t)fixNr}, fixNr);
+        mdl->setValue("fixTbl", "mrxRowEnd", Coord3D{0, length -1,(uint16_t)fixNr}, fixNr);
+        mdl->setValue("fixTbl", "mrxColEnd", Coord3D{length -1, length -1,(uint16_t)fixNr}, fixNr);
         mdl->setValue("fixTbl", "fixPin", 12, fixNr);
       }
     }
@@ -596,7 +596,7 @@ public:
     JsonObject fixtureVar = mdl->findVar("Fixture Generator", "fixtureVar");
 
     // JsonObject parentVar = mdl->findVar(var["id"]); //local parentVar
-    stackUnsigned8 fgValue = fixtureVar["value"];
+    uint8_t fgValue = fixtureVar["value"];
 
     //find option group and text
     char fgGroup[32];
@@ -619,13 +619,13 @@ public:
           width = 10; height = 54;
         }
 
-        ui->initNumber(fixtureVar, "width", width, 1, NUM_LEDS_Max, false, [this,fgText](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        ui->initNumber(fixtureVar, "width", width, 1, NUM_LEDS_Max, false, [this,fgText](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
           case onChange:
             rebuildMatrix(fgText);
             return true;
           default: return false; 
         }});
-        ui->initNumber(fixtureVar, "height", height, 1, NUM_LEDS_Max, false, [this,fgText](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        ui->initNumber(fixtureVar, "height", height, 1, NUM_LEDS_Max, false, [this,fgText](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
           case onChange:
             rebuildMatrix(fgText);
             return true;
@@ -640,7 +640,7 @@ public:
         else if (strnstr(fgText, "CubeBox", 32) != nullptr)
           length = 8;
 
-        ui->initNumber(fixtureVar, "length", length, 1, NUM_LEDS_Max, false, [this,fgText](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        ui->initNumber(fixtureVar, "length", length, 1, NUM_LEDS_Max, false, [this,fgText](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
           case onChange:
             rebuildCube(fgText);
             return true;
@@ -649,7 +649,7 @@ public:
       }
     }
 
-    ui->initButton(fixtureVar, "generate", false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initButton(fixtureVar, "generate", false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setComment(var, "Create F_ixture.json");
         return true;
@@ -677,7 +677,7 @@ public:
     //default table variables - part 1
     if (showTable) {
 
-      parentVar = ui->initTable(fixtureVar, "fixTbl", nullptr, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      parentVar = ui->initTable(fixtureVar, "fixTbl", nullptr, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onUI:
           ui->setLabel(var, "Fixtures");
           ui->setComment(var, "Multiple parts");
@@ -691,7 +691,7 @@ public:
         default: return false;
       }});
 
-      ui->initCoord3D(parentVar, "fixFirst", {0,0,0}, 0, NUM_LEDS_Max, false, [fgGroup](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      ui->initCoord3D(parentVar, "fixFirst", {0,0,0}, 0, NUM_LEDS_Max, false, [fgGroup](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onUI:
           //show Top Left for all fixture except Matrix as it has its own
           if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0)
@@ -707,7 +707,7 @@ public:
     //custom variables
     if (strncmp(fgGroup, "Strips", 7) == 0) {
       if (strnstr(fgText, "Spiral", 32) != nullptr) {
-        ui->initNumber(parentVar, "fixLeds", 64, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        ui->initNumber(parentVar, "fixLeds", 64, 1, NUM_LEDS_Max, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
           case onUI:
             ui->setLabel(var, "Leds");
             return true;
@@ -716,7 +716,7 @@ public:
         ui->initNumber(parentVar, "radius", 100, 1, 1000);
       }
       else if (strnstr(fgText, "Helix", 32) != nullptr) {
-        ui->initNumber(parentVar, "fixLeds", 100, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+        ui->initNumber(parentVar, "fixLeds", 100, 1, NUM_LEDS_Max, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
           case onUI:
             ui->setLabel(var, "Leds");
             return true;
@@ -729,7 +729,7 @@ public:
     }
     else if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0) {
 
-      ui->initCoord3D(parentVar, "mrxRowEnd", {7,0,0}, 0, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      ui->initCoord3D(parentVar, "mrxRowEnd", {7,0,0}, 0, NUM_LEDS_Max, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onUI:
           ui->setLabel(var, "Row end");
           ui->setComment(var, "-> Orientation");
@@ -737,7 +737,7 @@ public:
         default: return false;
       }});
 
-      ui->initCoord3D(parentVar, "mrxColEnd", {7,7,0}, 0, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      ui->initCoord3D(parentVar, "mrxColEnd", {7,7,0}, 0, NUM_LEDS_Max, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onUI:
           ui->setLabel(var, "Column end");
           ui->setComment(var, "Last LED -> nrOfLeds, Serpentine");
@@ -746,7 +746,7 @@ public:
       }});
     }
     else if (strncmp(fgGroup, "Rings", 6) == 0) {
-      ui->initNumber(parentVar, "fixLeds", 24, 1, NUM_LEDS_Max, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      ui->initNumber(parentVar, "fixLeds", 24, 1, NUM_LEDS_Max, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onUI:
           ui->setLabel(var, "Leds");
           return true;
@@ -789,7 +789,7 @@ public:
 
     //default variables - part 2
     if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0 || strnstr(fgText, "Rings241", 32) != nullptr || strnstr(fgText, "Helix", 32) != nullptr) { //tbd: the rest
-      ui->initCoord3D(parentVar, "fixRotate", {0,0,0}, 0, 359, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+      ui->initCoord3D(parentVar, "fixRotate", {0,0,0}, 0, 359, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onUI:
           ui->setLabel(var, "Rotate");
           ui->setComment(var, "Tilt, Pan, Roll");
@@ -798,7 +798,7 @@ public:
       }});
     }
 
-    ui->initNumber(parentVar, "fixIP", net->localIP()[3], 1, 256, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "fixIP", net->localIP()[3], 1, 256, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setLabel(var, "IP");
         ui->setComment(var, "Super-Sync WIP");
@@ -806,7 +806,7 @@ public:
       default: return false; 
     }});
 
-    ui->initPin(parentVar, "fixPin", 2, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initPin(parentVar, "fixPin", 2, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         ui->setLabel(var, "Pin");
         return true; }
@@ -814,11 +814,11 @@ public:
         //set remaining rows to same pin
         JsonArray valArray = Variable(var).valArray();
 
-        stackUnsigned8 thisVal = var["value"];
-        stackUnsigned8 rowNrL = 0;
+        uint8_t thisVal = var["value"];
+        uint8_t rowNrL = 0;
         for (JsonVariant val: valArray) {
           if (rowNrL > rowNr)
-            mdl->setValue(var, valArray[rowNr].as<unsigned8>(), rowNrL);
+            mdl->setValue(var, valArray[rowNr].as<uint8_t>(), rowNrL);
           rowNrL++;
         }
         return true; }
@@ -827,7 +827,7 @@ public:
 
 
     // predefined options
-    stackUnsigned8 fixNr = 0;
+    uint8_t fixNr = 0;
 
     if (strncmp(fgGroup, "Matrices", 9) == 0)
       rebuildMatrix(fgText); 
@@ -859,7 +859,7 @@ public:
         mdl->setValue("fixTbl", "fixFirst", Coord3D{50,6,0}, fixNr++); 
         mdl->setValue("fixTbl", "fixFirst", Coord3D{60,0,0}, fixNr++); 
 
-        for (forUnsigned8 fixNr = 0; fixNr < 9; fixNr++) {
+        for (uint8_t fixNr = 0; fixNr < 9; fixNr++) {
           mdl->setValue("fixTbl", "ledsPerSide", 6, fixNr);
           mdl->setValue("fixTbl", "fixPin", 2, fixNr);
         }
@@ -884,7 +884,7 @@ public:
       return str; 
   } 
 
-  void getFixtures(const char * fixtureName, std::function<void(GenFix *, unsigned8, Coord3D, unsigned8, unsigned8)> genFun) {
+  void getFixtures(const char * fixtureName, std::function<void(GenFix *, uint8_t, Coord3D, uint8_t, uint8_t)> genFun) {
     GenFix genFix;
 
     char fileName[32];
@@ -898,7 +898,7 @@ public:
     JsonVariant fixFirstValue = mdl->findVar("fixTbl", "fixFirst")["value"];
 
     if (fixFirstValue.is<JsonArray>()) { //multiple rows
-      stackUnsigned8 rowNr = 0;
+      uint8_t rowNr = 0;
       for (JsonVariant firstValueRow: fixFirstValue.as<JsonArray>()) {
         genFun(&genFix, rowNr, mdl->getValue("fixTbl", "fixFirst", rowNr), mdl->getValue("fixTbl", "fixIP", rowNr), mdl->getValue("fixTbl", "fixPin", rowNr));
         rowNr++;
@@ -914,7 +914,7 @@ public:
   void generateOnChange(JsonObject var, char * fileName) {
 
     JsonObject fixtureVar = mdl->findVar("Fixture Generator", "fixtureVar");
-    stackUnsigned8 fgValue = fixtureVar["value"];
+    uint8_t fgValue = fixtureVar["value"];
 
     //find option group and text
     char fgGroup[32];
@@ -925,11 +925,11 @@ public:
     if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0) {
 
       if (strncmp(fgGroup, "Matrices", 9) == 0)
-        print->fFormat(fileName, 32, "%s-%dx%d", fgText, mdl->getValue("fixtureVar", "width").as<unsigned8>(), mdl->getValue("fixtureVar", "height").as<unsigned8>());
+        print->fFormat(fileName, 32, "%s-%dx%d", fgText, mdl->getValue("fixtureVar", "width").as<uint8_t>(), mdl->getValue("fixtureVar", "height").as<uint8_t>());
       else //Cubes
-        print->fFormat(fileName, 32, "%s-%d", fgText, mdl->getValue("fixtureVar", "length").as<unsigned8>());
+        print->fFormat(fileName, 32, "%s-%d", fgText, mdl->getValue("fixtureVar", "length").as<uint8_t>());
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         Coord3D fixRotate = mdl->getValue("fixTbl", "fixRotate", rowNr);
         Coord3D mrxRowEnd = mdl->getValue("fixTbl", "mrxRowEnd", rowNr);
         Coord3D mrxColEnd = mdl->getValue("fixTbl", "mrxColEnd", rowNr);
@@ -938,9 +938,9 @@ public:
 
     } else if (strncmp(fgGroup, "Rings", 6) == 0) {
 
-      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "fixLeds").as<unsigned16>());
+      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "fixLeds").as<uint16_t>());
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         uint16_t ledCount = mdl->getValue("fixTbl", "fixLeds", rowNr);
         //first to middle (in mm)
         Coord3D middle = fixFirst;
@@ -953,9 +953,9 @@ public:
 
     } else if (strnstr(fgText, "Rings241", 32) != nullptr) {
 
-      print->fFormat(fileName, 32, "%s-%d", fgText, mdl->getValue("fixTbl", "nrOfRings").as<unsigned8>());
+      print->fFormat(fileName, 32, "%s-%d", fgText, mdl->getValue("fixTbl", "nrOfRings").as<uint8_t>());
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         uint16_t nrOfLeds = mdl->getValue("fixTbl", "fixLeds", rowNr);
         Coord3D fixRotate = mdl->getValue("fixTbl", "fixRotate", rowNr);
         //first to middle (in mm)
@@ -968,9 +968,9 @@ public:
 
     } else if (strnstr(fgText, "Spiral", 32) != nullptr) {
 
-      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "fixLeds").as<unsigned16>());
+      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "fixLeds").as<uint16_t>());
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         uint16_t fixLeds = mdl->getValue("fixTbl", "fixLeds", rowNr);
         uint16_t radius = mdl->getValue("fixTbl", "radius", rowNr);
         //first to middle (in mm)
@@ -984,9 +984,9 @@ public:
 
     } else if (strnstr(fgText, "Helix", 32) != nullptr) {
 
-      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "fixLeds").as<unsigned16>());
+      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "fixLeds").as<uint16_t>());
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         Coord3D fixRotate = mdl->getValue("fixTbl", "fixRotate", rowNr);
         uint16_t fixLeds = mdl->getValue("fixTbl", "fixLeds", rowNr);
         uint16_t radius = mdl->getValue("fixTbl", "radius", rowNr);
@@ -1004,9 +1004,9 @@ public:
 
     } else if (strnstr(fgText, "Wheel", 32) != nullptr) {
 
-      print->fFormat(fileName, 32, "%s%d%d", fgText, mdl->getValue("fixTbl", "nrOfSpokes").as<unsigned8>(), mdl->getValue("fixTbl", "ledsPerSpoke").as<unsigned8>());
+      print->fFormat(fileName, 32, "%s%d%d", fgText, mdl->getValue("fixTbl", "nrOfSpokes").as<uint8_t>(), mdl->getValue("fixTbl", "ledsPerSpoke").as<uint8_t>());
       
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         uint8_t ledsPerSpoke = mdl->getValue("fixTbl", "ledsPerSpoke", rowNr);
           //first to middle (in mm)
         float size = 50 + 10 * ledsPerSpoke;
@@ -1021,7 +1021,7 @@ public:
     } else if (strnstr(fgText, "Hexa", 32) != nullptr) {
       strlcpy(fileName, fgText, sizeof(fileName));
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         uint8_t ledsPerSide = mdl->getValue("fixTbl", "ledsPerSide", rowNr);
         //first to middle (in mm)
         Coord3D middle = (fixFirst + Coord3D{ledsPerSide, ledsPerSide, 0})*10; //in mm
@@ -1030,9 +1030,9 @@ public:
 
     } else if (strnstr(fgText, "Cone", 32) != nullptr) {
 
-      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "nrOfRings").as<unsigned8>());
+      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "nrOfRings").as<uint8_t>());
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         uint8_t nrOfRings = mdl->getValue("fixTbl", "nrOfRings", rowNr);
 
         //first to middle (in mm)
@@ -1048,14 +1048,14 @@ public:
     } else if (strnstr(fgText, "Cloud5416", 32) != nullptr) {
       strlcpy(fileName, fgText, sizeof(fileName));
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         genFix->cloud5416(fixFirst*10, fixIP, fixPin);
       });
 
     } else if (strnstr(fgText, "Wall", 32) != nullptr) {
       strlcpy(fileName, fgText, sizeof(fileName));
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         genFix->rings241(Coord3D{110,110,0}, 9, true, fixIP, fixPin);
 
         genFix->matrix(Coord3D{190,0,0}, Coord3D{190,80,0}, Coord3D{270,0,0}, fixIP, fixPin);
@@ -1069,7 +1069,7 @@ public:
     } else if (strnstr(fgText, "Star", 32) != nullptr) {
       strlcpy(fileName, fgText, sizeof(fileName));
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
 
         uint8_t ringsCentre = 170;
         uint8_t sateliteRadius = 130;
@@ -1091,7 +1091,7 @@ public:
     } else if (strnstr(fgText, "6Rings", 32) != nullptr) {
       strlcpy(fileName, fgText, sizeof(fileName));
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         genFix->rings241(Coord3D{110,110,0}, 9, true, fixIP, fixPin);
         genFix->rings241(Coord3D{0,110,110}, 9, true, fixIP, fixPin, 0, 90); //pan 90
         genFix->rings241(Coord3D{110,110,220}, 9, true, fixIP, fixPin);
@@ -1103,7 +1103,7 @@ public:
     } else if (strnstr(fgText, "SpaceStation", 32) != nullptr) {
       strlcpy(fileName, fgText, sizeof(fileName));
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         Trigo trigo;
         for (int i=0; i<360; i+=20) {
           uint8_t ringRadius = 50;
@@ -1116,7 +1116,7 @@ public:
     } else if (strnstr(fgText, "Human", 32) != nullptr) {
       strlcpy(fileName, fgText, sizeof(fileName));
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
 
         //total dimensions width: 10 + 18 + 10
         // height 18 + 5 + 
@@ -1140,9 +1140,9 @@ public:
 
     } else if (strnstr(fgText, "Globe", 32) != nullptr) {
 
-      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixtureVar", "width").as<unsigned16>());
+      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixtureVar", "width").as<uint16_t>());
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         uint16_t width = mdl->getValue("fixtureVar", "width", rowNr);
         //first to middle (in mm)
         Coord3D middle;
@@ -1156,7 +1156,7 @@ public:
     } else if (strnstr(fgText, "LeGlorb", 32) != nullptr) {
       strlcpy(fileName, fgText, sizeof(fileName));
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
 
         genFix->openPin(fixPin);
 
@@ -1179,9 +1179,9 @@ public:
 
     } else if (strnstr(fgText, "GeodesicDome", 32) != nullptr) {
 
-      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "radius").as<unsigned16>());
+      print->fFormat(fileName, 32, "%s%d", fgText, mdl->getValue("fixTbl", "radius").as<uint16_t>());
 
-      getFixtures(fileName, [](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         genFix->geodesicDome(fixFirst, mdl->getValue("fixTbl", "radius", rowNr), fixIP, fixPin);
       });
 
@@ -1191,7 +1191,7 @@ public:
       uint16_t height = mdl->getValue("fixtureVar", "height");
       print->fFormat(fileName, 32, "%s%dx%d", fgText, width, height);
 
-      getFixtures(fileName, [width, height](GenFix * genFix, unsigned8 rowNr, Coord3D fixFirst, unsigned8 fixIP, unsigned8 fixPin) {
+      getFixtures(fileName, [width, height](GenFix * genFix, uint8_t rowNr, Coord3D fixFirst, uint8_t fixIP, uint8_t fixPin) {
         genFix->openPin(fixPin);
 
         uint8_t offX;

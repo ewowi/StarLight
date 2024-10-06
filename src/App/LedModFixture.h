@@ -24,7 +24,7 @@ public:
 
     parentVar = ui->initAppMod(parentVar, name, 1100);
 
-    JsonObject currentVar = ui->initCheckBox(parentVar, "on", true, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    JsonObject currentVar = ui->initCheckBox(parentVar, "on", true, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
         mdl->callVarOnChange(mdl->findVar("Fixture", "brightness"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
         return true;
@@ -33,10 +33,10 @@ public:
     currentVar["dash"] = true;
 
     //logarithmic slider (10)
-    currentVar = ui->initSlider(parentVar, "brightness", &bri, 0, 255, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    currentVar = ui->initSlider(parentVar, "brightness", &bri, 0, 255, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange: {
         //bri set by StarMod during onChange
-        stackUnsigned8 result = mdl->getValue("Fixture", "on").as<bool>()?mdl->linearToLogarithm(bri):0;
+        uint8_t result = mdl->getValue("Fixture", "on").as<bool>()?mdl->linearToLogarithm(bri):0;
 
         #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
           eff->driver.setBrightness(result * eff->fixture.setMaxPowerBrightness / 256);
@@ -51,7 +51,7 @@ public:
     currentVar["log"] = true; //logarithmic
     currentVar["dash"] = true; //these values override model.json???
 
-    currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onLoop: {
         var["interval"] =  max(eff->fixture.nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
 
@@ -106,7 +106,7 @@ public:
       default: return false;
     }});
 
-    ui->initSelect(currentVar, "rotation", &viewRotation, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSelect(currentVar, "rotation", &viewRotation, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         JsonArray options = ui->setOptions(var);
         options.add("None");
@@ -122,7 +122,7 @@ public:
 
     ui->initCheckBox(currentVar, "1-byte RGB", &rgb1B, false);
 
-    currentVar = ui->initSelect(parentVar, "fixture", &eff->fixture.fixtureNr, false ,[](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    currentVar = ui->initSelect(parentVar, "fixture", &eff->fixture.fixtureNr, false ,[](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         // ui->setComment(var, "Fixture to display effect on");
         JsonArray options = ui->setOptions(var);
@@ -152,25 +152,25 @@ public:
       default: return false; 
     }}); //fixture
 
-    ui->initCoord3D(currentVar, "size", &eff->fixture.fixSize, 0, NUM_LEDS_Max, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCoord3D(currentVar, "size", &eff->fixture.fixSize, 0, NUM_LEDS_Max, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       default: return false;
     }});
 
-    ui->initNumber(currentVar, "count", &eff->fixture.nrOfLeds, 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(currentVar, "count", &eff->fixture.nrOfLeds, 0, UINT16_MAX, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         web->addResponse(var, "comment", "Max %d", NUM_LEDS_Max, 0); //0 is to force format overload used
         return true;
       default: return false;
     }});
 
-    ui->initNumber(parentVar, "fps", &eff->fps, 1, 999, false, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "fps", &eff->fps, 1, 999, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         ui->setComment(var, "Frames per second");
         return true;
       default: return false; 
     }});
 
-    ui->initNumber(parentVar, "realFps", uint16_t(0), 0, UINT16_MAX, true, [](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "realFps", uint16_t(0), 0, UINT16_MAX, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         web->addResponse(var, "comment", "f(%d leds)", eff->fixture.nrOfLeds, 0); //0 is to force format overload used
         return true;
@@ -181,7 +181,7 @@ public:
       default: return false;
     }});
 
-    ui->initCheckBox(parentVar, "driverShow", &eff->driverShow, false, [this](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "driverShow", &eff->driverShow, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
           ui->setLabel(var, "CLD Show");

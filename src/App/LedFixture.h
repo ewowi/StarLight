@@ -55,8 +55,8 @@ public:
 
   std::vector<Projection *> projections;
 
-  unsigned16 nrOfLeds = 64; //amount of physical leds
-  unsigned8 fixtureNr = -1;
+  uint16_t nrOfLeds = 64; //amount of physical leds
+  uint8_t fixtureNr = -1;
   Coord3D fixSize = {8,8,1};
 
   std::vector<LedsLayer *> layers; //virtual leds
@@ -66,7 +66,7 @@ public:
   bool doMap = false;
   bool doAllocPins = false;
 
-  unsigned8 globalBlend = 128;
+  uint8_t globalBlend = 128;
 
   Fixture() {
     //init pixelsToBlend

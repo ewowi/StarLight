@@ -129,10 +129,10 @@ class SharedData {
 
   private:
     byte *data = nullptr;
-    unsigned16 index = 0;
+    uint16_t index = 0;
 
   public:
-    unsigned16 bytesAllocated = 0;
+    uint16_t bytesAllocated = 0;
     bool alertIfChanged = false;
 
   SharedData() {
@@ -215,7 +215,7 @@ struct PhysMap {
       byte mapType:2;        //2 bits (4)
     }; //16 bits
     uint16_t indexP: 14;   //16384 one physical pixel (type==1) index to ledsP array
-    uint16_t indexes:14;  //16384 multiple physical pixels (type==2) index in std::vector<std::vector<unsigned16>> mappingTableIndexes;
+    uint16_t indexes:14;  //16384 multiple physical pixels (type==2) index in std::vector<std::vector<uint16_t>> mappingTableIndexes;
   }; // 2 bytes
 
   PhysMap() {
@@ -235,57 +235,57 @@ public:
 
   Fixture *fixture;
 
-  unsigned16 nrOfLeds = 64;  //amount of virtual leds (calculated by projection)
+  uint16_t nrOfLeds = 64;  //amount of virtual leds (calculated by projection)
 
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
 
   uint16_t effectNr = UINT16_MAX;
-  unsigned8 projectionNr = UINT8_MAX;
+  uint8_t projectionNr = UINT8_MAX;
 
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
   void (Projection::*setupCached)(LedsLayer &, Coord3D &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = nullptr;
   void (Projection::*adjustXYZCached)(LedsLayer &, Coord3D &) = nullptr;
 
-  unsigned8 effectDimension = -1;
-  unsigned8 projectionDimension = -1;
+  uint8_t effectDimension = -1;
+  uint8_t projectionDimension = -1;
 
   Coord3D startPos = {0,0,0}, endPos = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
   Coord3D midPos = {0,0,0};
   #ifdef STARBASE_USERMOD_MPU6050
     bool proGyro = false;
   #endif
-  unsigned8 proTiltSpeed = 128;
-  unsigned8 proPanSpeed = 128;
-  unsigned8 proRollSpeed = 128;
+  uint8_t proTiltSpeed = 128;
+  uint8_t proPanSpeed = 128;
+  uint8_t proRollSpeed = 128;
 
   SharedData effectData;
   SharedData projectionData;
 
   std::vector<PhysMap> mappingTable;
-  std::vector<std::vector<unsigned16>> mappingTableIndexes;
+  std::vector<std::vector<uint16_t>> mappingTableIndexes;
 
-  unsigned16 indexVLocal = 0; //set in operator[], used by operator=
+  uint16_t indexVLocal = 0; //set in operator[], used by operator=
 
   bool doMap = true; //so a mapping will be made
 
   CRGBPalette16 palette;
 
-  unsigned16 XY(unsigned16 x, unsigned16 y) {
+  uint16_t XY(uint16_t x, uint16_t y) {
     return XYZ(x, y, 0);
   }
 
-  unsigned16 XYZUnprojected(Coord3D pixel) {
+  uint16_t XYZUnprojected(Coord3D pixel) {
     if (pixel >= 0 && pixel < size)
       return pixel.x + pixel.y * size.x + pixel.z * size.x * size.y;
     else
       return UINT16_MAX;
   }
 
-  unsigned16 XYZ(unsigned16 x, unsigned16 y, unsigned16 z) {
+  uint16_t XYZ(uint16_t x, uint16_t y, uint16_t z) {
     return XYZ({x, y, z});
   }
 
-  unsigned16 XYZ(Coord3D pixel);
+  uint16_t XYZ(Coord3D pixel);
 
   LedsLayer(Fixture &fixture) {
     ppf("LedsLayer constructor (PhysMap:%d)\n", sizeof(PhysMap));
@@ -306,7 +306,7 @@ public:
   void triggerMapping();
 
   // indexVLocal stored to be used by other operators
-  LedsLayer& operator[](unsigned16 indexV) {
+  LedsLayer& operator[](uint16_t indexV) {
     indexVLocal = indexV;
     return *this;
   }
@@ -316,7 +316,7 @@ public:
     return *this;
   }
 
-  // CRGB& operator[](unsigned16 indexV) {
+  // CRGB& operator[](uint16_t indexV) {
   //   // indexVLocal = indexV;
   //   CRGB x = getPixelColor(indexV);
   //   return x;
@@ -345,20 +345,20 @@ public:
 
 
   // maps the virtual led to the physical led(s) and assign a color to it
-  void setPixelColor(unsigned16 indexV, CRGB color);
+  void setPixelColor(uint16_t indexV, CRGB color);
   void setPixelColor(Coord3D pixel, CRGB color) {setPixelColor(XYZ(pixel), color);}
 
   // temp methods until all effects have been converted to Palette / 2 byte mapping mode
-  void setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri = 255);
+  void setPixelColorPal(uint16_t indexV, uint8_t palIndex, uint8_t palBri = 255);
   void setPixelColorPal(Coord3D pixel, uint8_t palIndex, uint8_t palBri = 255) {setPixelColorPal(XYZ(pixel), palIndex, palBri);}
 
-  void blendPixelColor(unsigned16 indexV, CRGB color, uint8_t blendAmount);
+  void blendPixelColor(uint16_t indexV, CRGB color, uint8_t blendAmount);
   void blendPixelColor(Coord3D pixel, CRGB color, uint8_t blendAmount) {blendPixelColor(XYZ(pixel), color, blendAmount);}
 
-  CRGB getPixelColor(unsigned16 indexV);
+  CRGB getPixelColor(uint16_t indexV);
   CRGB getPixelColor(Coord3D pixel) {return getPixelColor(XYZ(pixel));}
 
-  void addPixelColor(unsigned16 indexV, CRGB color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
+  void addPixelColor(uint16_t indexV, CRGB color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
   void addPixelColor(Coord3D pixel, CRGB color) {setPixelColor(pixel, getPixelColor(pixel) + color);}
 
   void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX) {
@@ -427,12 +427,12 @@ public:
     }
   }
 
-  void fadeToBlackBy(unsigned8 fadeBy = 255);
+  void fadeToBlackBy(uint8_t fadeBy = 255);
   void fill_solid(const struct CRGB& color);
-  void fill_rainbow(unsigned8 initialhue, unsigned8 deltahue);
+  void fill_rainbow(uint8_t initialhue, uint8_t deltahue);
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
-  bool isMapped(unsigned16 indexV) {
+  bool isMapped(uint16_t indexV) {
     return indexV < mappingTable.size() && (mappingTable[indexV].mapType == m_onePixel || mappingTable[indexV].mapType == m_morePixels);
   }
 
@@ -459,19 +459,19 @@ public:
       blurColumns(size.x, size.y, blur_amount);
   }
 
-  void blurRows(unsigned8 width, unsigned8 height, fract8 blur_amount)
+  void blurRows(uint16_t width, uint16_t height, fract8 blur_amount)
   {
-  /*    for (forUnsigned8 row = 0; row < height; row++) {
+  /*    for (uint16_t row = 0; row < height; row++) {
           CRGB* rowbase = leds + (row * width);
           blur1d( rowbase, width, blur_amount);
       }
   */
       // blur rows same as columns, for irregular matrix
-      stackUnsigned8 keep = 255 - blur_amount;
-      stackUnsigned8 seep = blur_amount >> 1;
-      for (forUnsigned8 row = 0; row < height; row++) {
+      uint8_t keep = 255 - blur_amount;
+      uint8_t seep = blur_amount >> 1;
+      for (uint16_t row = 0; row < height; row++) {
           CRGB carryover = CRGB::Black;
-          for (forUnsigned8 i = 0; i < width; i++) {
+          for (uint16_t i = 0; i < width; i++) {
               CRGB cur = getPixelColor(XY(i,row));
               CRGB part = cur;
               part.nscale8( seep);
@@ -485,14 +485,14 @@ public:
   }
 
   // blurColumns: perform a blur1d on each column of a rectangular matrix
-  void blurColumns(unsigned8 width, unsigned8 height, fract8 blur_amount)
+  void blurColumns(uint16_t width, uint16_t height, fract8 blur_amount)
   {
       // blur columns
-      stackUnsigned8 keep = 255 - blur_amount;
-      stackUnsigned8 seep = blur_amount >> 1;
-      for (forUnsigned8 col = 0; col < width; ++col) {
+      uint8_t keep = 255 - blur_amount;
+      uint8_t seep = blur_amount >> 1;
+      for (uint16_t col = 0; col < width; ++col) {
           CRGB carryover = CRGB::Black;
-          for (forUnsigned8 i = 0; i < height; ++i) {
+          for (uint16_t i = 0; i < height; ++i) {
               CRGB cur = getPixelColor(XY(col,i));
               CRGB part = cur;
               part.nscale8( seep);
@@ -506,7 +506,7 @@ public:
   }
 
   //shift is used by drawText indicating which letter it is drawing
-  void drawCharacter(unsigned char chr, int x = 0, int16_t y = 0, unsigned8 font = 0, CRGB col = CRGB::Red, unsigned16 shiftPixel = 0, unsigned16 shiftChr = 0) {
+  void drawCharacter(unsigned char chr, int x = 0, int16_t y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0, uint16_t shiftChr = 0) {
     if (chr < 32 || chr > 126) return; // only ASCII 32-126 supported
     chr -= 32; // align with font table entries
 
@@ -545,7 +545,7 @@ public:
     }
   }
 
-  void drawText(const char * text, int x = 0, int16_t y = 0, unsigned8 font = 0, CRGB col = CRGB::Red, unsigned16 shiftPixel = 0) {
+  void drawText(const char * text, int x = 0, int16_t y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0) {
     const int numberOfChr = text?strnlen(text, 256):0; //max 256 charcters
     for (int shiftChr = 0; shiftChr < numberOfChr; shiftChr++) {
       drawCharacter(text[shiftChr], x, y, font, col, shiftPixel, shiftChr);

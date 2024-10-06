@@ -16,13 +16,13 @@
 #endif
 
 //convenience functions to call fastled functions out of the Leds namespace (there naming conflict)
-void fastled_fadeToBlackBy(CRGB* leds, unsigned16 num_leds, unsigned8 fadeBy) {
+void fastled_fadeToBlackBy(CRGB* leds, uint16_t num_leds, uint8_t fadeBy) {
   fadeToBlackBy(leds, num_leds, fadeBy);
 }
 void fastled_fill_solid( struct CRGB * targetArray, int numToFill, const struct CRGB& color) {
   fill_solid(targetArray, numToFill, color);
 }
-void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, unsigned8 initialhue, unsigned8 deltahue) {
+void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, uint8_t initialhue, uint8_t deltahue) {
   fill_rainbow(targetArray, numToFill, initialhue, deltahue);
 }
 
@@ -31,7 +31,7 @@ void LedsLayer::triggerMapping() {
     fixture->doMap = true; //fixture will also be remapped
   }
 
-unsigned16 LedsLayer::XYZ(Coord3D pixel) {
+uint16_t LedsLayer::XYZ(Coord3D pixel) {
 
   //as this is a call to a virtual function it reduces the theoretical (no show) speed by half, even if XYZ is not implemented
   //  the real speed is hardly affected, but room for improvement!
@@ -48,7 +48,7 @@ unsigned16 LedsLayer::XYZ(Coord3D pixel) {
 }
 
 // maps the virtual led to the physical led(s) and assign a color to it
-void LedsLayer::setPixelColor(unsigned16 indexV, CRGB color) {
+void LedsLayer::setPixelColor(uint16_t indexV, CRGB color) {
   if (indexV < mappingTable.size()) {
     switch (mappingTable[indexV].mapType) {
       case m_color:{
@@ -63,7 +63,7 @@ void LedsLayer::setPixelColor(unsigned16 indexV, CRGB color) {
         break; }
       case m_morePixels:
         if (mappingTable[indexV].indexes < mappingTableIndexes.size())
-          for (forUnsigned16 indexP: mappingTableIndexes[mappingTable[indexV].indexes]) {
+          for (uint16_t indexP: mappingTableIndexes[mappingTable[indexV].indexes]) {
             fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], fixture->globalBlend): color;
           }
         // else
@@ -79,15 +79,15 @@ void LedsLayer::setPixelColor(unsigned16 indexV, CRGB color) {
     ppf(" dev sPC %d >= %d", indexV, NUM_LEDS_Max);
 }
 
-void LedsLayer::setPixelColorPal(unsigned16 indexV, uint8_t palIndex, uint8_t palBri) {
+void LedsLayer::setPixelColorPal(uint16_t indexV, uint8_t palIndex, uint8_t palBri) {
   setPixelColor(indexV, ColorFromPalette(palette, palIndex, palBri));
 }
 
-void LedsLayer::blendPixelColor(unsigned16 indexV, CRGB color, uint8_t blendAmount) {
+void LedsLayer::blendPixelColor(uint16_t indexV, CRGB color, uint8_t blendAmount) {
   setPixelColor(indexV, blend(color, getPixelColor(indexV), blendAmount));
 }
 
-CRGB LedsLayer::getPixelColor(unsigned16 indexV) {
+CRGB LedsLayer::getPixelColor(uint16_t indexV) {
   if (indexV < mappingTable.size()) {
     switch (mappingTable[indexV].mapType) {
       case m_onePixel:
@@ -111,7 +111,7 @@ CRGB LedsLayer::getPixelColor(unsigned16 indexV) {
   }
 }
 
-void LedsLayer::fadeToBlackBy(unsigned8 fadeBy) {
+void LedsLayer::fadeToBlackBy(uint8_t fadeBy) {
   if (projectionNr == p_None || projectionNr == p_Random || (fixture->layers.size() == 1)) {
     fastled_fadeToBlackBy(fixture->ledsP, fixture->nrOfLeds, fadeBy);
   } else {
@@ -132,7 +132,7 @@ void LedsLayer::fill_solid(const struct CRGB& color) {
   }
 }
 
-void LedsLayer::fill_rainbow(unsigned8 initialhue, unsigned8 deltahue) {
+void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
   if (projectionNr == p_None || projectionNr == p_Random || (fixture->layers.size() == 1)) {
     fastled_fill_rainbow(fixture->ledsP, fixture->nrOfLeds, initialhue, deltahue);
   } else {

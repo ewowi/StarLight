@@ -25,7 +25,7 @@ void Fixture::projectAndMap() {
     StarJson starJson(fileName); //open fileName for deserialize
 
     // reset leds
-    stackUnsigned8 rowNr = 0;
+    uint8_t rowNr = 0;
     for (LedsLayer *leds: layers) {
       if (leds->doMap) {
         leds->fill_solid(CRGB::Black);
@@ -44,7 +44,7 @@ void Fixture::projectAndMap() {
 
     //deallocate all led pins
     if (doAllocPins) {
-      stackUnsigned8 pinNr = 0;
+      uint8_t pinNr = 0;
       for (PinObject &pinObject: pinsM->pinObjects) {
         if (strncmp(pinObject.owner, "Leds", 5) == 0)
           pinsM->deallocatePin(pinNr, "Leds");
@@ -64,7 +64,7 @@ void Fixture::projectAndMap() {
     starJson.lookFor("pin", &currPin);
 
     //lookFor leds array and for each item in array call lambda to make a projection
-    starJson.lookFor("leds", [this, &prevIndexP, &indexP, &currPin](std::vector<unsigned16> uint16CollectList) { //this will be called for each tuple of coordinates!
+    starJson.lookFor("leds", [this, &prevIndexP, &indexP, &currPin](std::vector<uint16_t> uint16CollectList) { //this will be called for each tuple of coordinates!
 
       if (uint16CollectList.size()>=1) { // process one pixel
 
@@ -77,7 +77,7 @@ void Fixture::projectAndMap() {
 
         if (indexP < NUM_LEDS_Max) {
 
-          stackUnsigned8 rowNr = 0;
+          uint8_t rowNr = 0;
           for (LedsLayer *leds: layers) {
 
             if (leds->projectionNr != p_Random && leds->projectionNr != p_None) //only real projections
@@ -194,7 +194,7 @@ void Fixture::projectAndMap() {
     if (starJson.deserialize()) { //this will call above function parameter for each led
 
       //after processing each led
-      stackUnsigned8 rowNr = 0;
+      uint8_t rowNr = 0;
 
       for (LedsLayer *leds: layers) {
         if (leds->doMap) {

@@ -115,7 +115,7 @@ class RainbowEffect: public Effect {
     uint16_t counter = (sys->now * ((speed >> 2) +2)) & 0xFFFF;
     counter = counter >> 8;
 
-    for (forUnsigned16 i = 0; i < leds.nrOfLeds; i++) {
+    for (uint16_t i = 0; i < leds.nrOfLeds; i++) {
       uint8_t index = (i * (16 << (scale / 29)) / leds.nrOfLeds) + counter;
       // leds.setPixelColor(i, ColorFromPalette(leds.palette, index));
       leds.setPixelColorPal(i, index);
@@ -247,7 +247,7 @@ class BPMEffect: public Effect {
   void loop(LedsLayer &leds) {
     uint8_t BeatsPerMinute = 62;
     uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
-    for (forUnsigned16 i = 0; i < leds.nrOfLeds; i++) { //9948
+    for (uint16_t i = 0; i < leds.nrOfLeds; i++) { //9948
       leds[i] = ColorFromPalette(leds.palette, sys->now/50+(i*2), beat-sys->now/50+(i*10));
     }
   }
@@ -534,7 +534,7 @@ class RainEffect: public Effect {
 struct Spark {
   float pos, posX;
   float vel, velX;
-  unsigned16 col;
+  uint16_t col;
   uint8_t colIndex;
 };
 
@@ -1226,11 +1226,11 @@ class OctopusEffect: public Effect {
     Effect::controls(leds, parentVar); //palette
     bool *setup = leds.effectData.write<bool>(true);
     ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(128), 1, 255);
-    ui->initSlider(parentVar, "Offset X", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+    ui->initSlider(parentVar, "Offset X", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
-    ui->initSlider(parentVar, "Offset Y", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+    ui->initSlider(parentVar, "Offset Y", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
@@ -1714,7 +1714,7 @@ class GameOfLifeEffect: public Effect {
 
 class RubiksCubeEffect: public Effect {
   const char * name() {return "Rubik's Cube";}
-  unsigned8     dim() {return _3D;}
+  uint8_t     dim() {return _3D;}
   const char * tags() {return "💫";}
 
   struct Cube {
@@ -1988,11 +1988,11 @@ class RubiksCubeEffect: public Effect {
     Effect::controls(leds, parentVar);
     bool *setup = leds.effectData.write<bool>(true);
     ui->initSlider  (parentVar, "Turns Per Second", leds.effectData.write<uint8_t>(1), 0, 20);   
-    ui->initSlider  (parentVar, "Cube Size",        leds.effectData.write<uint8_t>(2), 1, 8, false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+    ui->initSlider  (parentVar, "Cube Size",        leds.effectData.write<uint8_t>(2), 1, 8, false, [setup] (JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
-    ui->initCheckBox(parentVar, "Random Turning", leds.effectData.write<bool>(false), false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+    ui->initCheckBox(parentVar, "Random Turning", leds.effectData.write<bool>(false), false, [setup] (JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case onChange: {if (!mdl->getValue("effect", "Random Turning")) *setup = true; return true;}
       default: return false;
     }});
@@ -2001,7 +2001,7 @@ class RubiksCubeEffect: public Effect {
 
 class ParticleTestEffect: public Effect {
   const char * name() {return "Particle Test";}
-  unsigned8     dim() {return _3D;}
+  uint8_t     dim() {return _3D;}
   const char * tags() {return "💫🧭";}
   
   struct Particle {
@@ -2219,11 +2219,11 @@ class ParticleTestEffect: public Effect {
     Effect::controls(leds, parentVar);
     bool *setup = leds.effectData.write<bool>(true);
     ui->initSlider  (parentVar, "Speed", leds.effectData.write<uint8_t>(15), 0, 30);
-    ui->initSlider  (parentVar, "Number of Particles", leds.effectData.write<uint8_t>(10), 1, 255, false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+    ui->initSlider  (parentVar, "Number of Particles", leds.effectData.write<uint8_t>(10), 1, 255, false, [setup] (JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
-    ui->initCheckBox(parentVar, "Barriers", leds.effectData.write<bool>(0) , false, [setup] (JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) {
+    ui->initCheckBox(parentVar, "Barriers", leds.effectData.write<bool>(0) , false, [setup] (JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
@@ -2238,7 +2238,7 @@ class ParticleTestEffect: public Effect {
 
 class StarFieldEffect: public Effect {  // Inspired by Daniel Shiffman's Coding Train https://www.youtube.com/watch?v=17WoOqgXsRM
   const char * name() {return "StarField";}
-  unsigned8     dim() {return _2D;}
+  uint8_t     dim() {return _2D;}
   const char * tags() {return "💫";}
 
   struct Star {
@@ -2365,7 +2365,7 @@ public:
 
 class BasicTemplate: public Effect { // add effects.push_back(new Name); to LedModEffects.h
   const char * name() {return "Template";}
-  unsigned8     dim() {return _3D;} // _1D, _2D, or _3D
+  uint8_t     dim() {return _3D;} // _1D, _2D, or _3D
   const char * tags() {return "💫";}
   // 💫 StarLed 
   // 💡 WLED
@@ -2924,7 +2924,7 @@ class LiveScriptEffect: public Effect {
   
   void controls(LedsLayer &leds, JsonObject parentVar) {
     Effect::controls(leds, parentVar);
-    ui->initSelect(parentVar, "script", UINT16_MAX, false , [&leds](JsonObject var, unsigned8 rowNr, unsigned8 funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "script", UINT16_MAX, false , [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         // ui->setComment(var, "Fixture to display effect on");
         JsonArray options = ui->setOptions(var);
@@ -2943,8 +2943,8 @@ class LiveScriptEffect: public Effect {
           files->seqNrToName(web->lastFileUpdated, fileNr, ".sc");
           ppf("script.onChange f:%d s:%s\n", fileNr, web->lastFileUpdated);
 
-          // in LedLayer.h: void setPixelColorLive(unsigned16 indexV, uint32_t color) {setPixelColor(indexV, CRGB::Black);}
-          // void (LedsLayer::*sPCCached)(unsigned16, uint32_t) = &LedsLayer::setPixelColorLive;
+          // in LedLayer.h: void setPixelColorLive(uint16_t indexV, uint32_t color) {setPixelColor(indexV, CRGB::Black);}
+          // void (LedsLayer::*sPCCached)(uint16_t, uint32_t) = &LedsLayer::setPixelColorLive;
           // LedsLayer *leds2 = &leds;
           // (leds2->*sPCCached)(0, 0);
         }
