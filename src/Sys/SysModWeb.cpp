@@ -587,7 +587,7 @@ void SysModWeb::serveUpdate(WebRequest *request, const String& fileName, size_t 
 void SysModWeb::serveFiles(WebRequest *request) {
 
   const char * urlString = request->url().c_str();
-  const char * path = urlString + 6; //strnlen("/file", 6); //remove the uri from the path (skip their positions)
+  const char * path = urlString + strnlen("/file", 6); //remove the uri from the path (skip their positions)
   ppf("fileServer request %s\n", path);
   if(LittleFS.exists(path)) {
     request->send(LittleFS, path, "text/plain");//"application/json");
