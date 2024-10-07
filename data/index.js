@@ -763,7 +763,7 @@ function receiveData(json) {
         flushOnUICommands(); //make sure onUIs of new elements are called
       }
       else if (key == "onAdd") { //update the row of a table
-        ppf("receiveData", key, value); //e.g. "onAdd" {"id":"ArtNet.anTbl","rowNr":255}
+        ppf("receiveData", key, value); //e.g. "onAdd" {"id":"ArtNet.outputs","rowNr":255}
 
         if (value.id && value.rowNr != null) {
           let tableId = value.pid + "." + value.id;
@@ -782,7 +782,7 @@ function receiveData(json) {
           ppf("dev receiveData onAdd no id and/or rowNr specified", key, value);
 
       } else if (key == "onDelete") { //update the row of a table
-        ppf("receiveData", key, value); //e.g. "onDelete" {"id":"ArtNet.anTbl","rowNr":255}
+        ppf("receiveData", key, value); //e.g. "onDelete" {"id":"ArtNet.outputs","rowNr":255}
 
         let tableId = value.pid + "." + value.id;
         let tableVar = controller.modules.findVar(value.pid, value.id);

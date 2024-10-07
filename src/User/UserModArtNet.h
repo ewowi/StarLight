@@ -32,9 +32,8 @@ public:
 
     parentVar = ui->initUserMod(parentVar, name, 6100);
 
-    ui->initNumber(parentVar, "artIP", 11, 0, 255, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "targetIP", 11, 0, 255, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
-        ui->setLabel(var, "Target IP");
         ui->setComment(var, "IP to send data to");
         return true; }
       case onChange: {
@@ -44,23 +43,16 @@ public:
       default: return false;
     }});
 
-    JsonObject tableVar = ui->initTable(parentVar, "anTbl", nullptr, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-      case onUI:
-        ui->setLabel(var, "Outputs");
-        return true;
-      default: return false;
-    }});
+    JsonObject tableVar = ui->initTable(parentVar, "outputs");
 
-    ui->initNumber(tableVar, "anStart", &hardware_outputs_universe_start, 0, UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "start", &hardware_outputs_universe_start, 0, UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "Start");
         ui->setComment(var, "Start universe");
         return true;
       default: return false;
     }});
-    ui->initNumber(tableVar, "anSize", &hardware_outputs, 0, UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "size", &hardware_outputs, 0, UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "Size");
         ui->setComment(var, "# pixels");
         return true;
       default: return false;

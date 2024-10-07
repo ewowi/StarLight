@@ -1462,7 +1462,7 @@
     "max": 255,
     "n": [
       {
-        "id": "artIP",
+        "id": "targetIP",
         "type": "number",
         "ro": false,
         "max": 255,
@@ -1472,12 +1472,12 @@
         "fun": 79
       },
       {
-        "id": "anTbl",
+        "id": "outputs",
         "type": "table",
         "ro": false,
         "n": [
           {
-            "id": "anStart",
+            "id": "start",
             "type": "number",
             "ro": false,
             "value": [
@@ -1490,13 +1490,13 @@
               42,
               49
             ],
-            "pid": "anTbl",
+            "pid": "outputs",
             "o": 104,
             "fun": 81,
             "p": 1073463404
           },
           {
-            "id": "anSize",
+            "id": "size",
             "type": "number",
             "ro": false,
             "value": [
@@ -1509,7 +1509,7 @@
               1024,
               1024
             ],
-            "pid": "anTbl",
+            "pid": "outputs",
             "o": 105,
             "fun": 82,
             "p": 1073463392
