@@ -164,28 +164,22 @@ public:
       case onUI:
         ui->setComment(var, "List of effects");
         return true;
-      case onAdd: {
-        rowNr = fixture.layers.size();
-        // ppf("layers onAdd %s[%d]\n", Variable(var).id(), rowNr);
-
-        web->getResponseObject()["onAdd"]["rowNr"] = rowNr; //also done in callVarFun??
-
+      case onAdd:
         if (rowNr >= fixture.layers.size()) {
           ppf("layers creating new LedsLayer instance %d\n", rowNr);
           LedsLayer *leds = new LedsLayer(fixture);
           fixture.layers.push_back(leds);
         }
-        return true; }
-      case onDelete: {
+        return true;
+      case onDelete:
         // ppf("layers onDelete %s[%d]\n", Variable(var).id(), rowNr);
         //tbd: fade to black
         if (rowNr <fixture.layers.size()) {
           LedsLayer *leds = fixture.layers[rowNr];
           fixture.layers.erase(fixture.layers.begin() + rowNr); //remove from vector
           delete leds; //remove leds itself
-
         }
-        return true; }
+        return true;
       default: return false;
     }});
 

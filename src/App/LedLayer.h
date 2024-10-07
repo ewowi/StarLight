@@ -169,11 +169,14 @@ class SharedData {
       if (bytesAllocated == 0)
         data = (byte*) malloc(newSize);
       else
-        data = (byte*)realloc(data, newSize);
-      memset(data, 0, newSize); //init data with 0
-      if (alertIfChanged)
-        ppf("dev sharedData.readWrite reallocating!!! %d -> %d\n", bytesAllocated, newSize);
-      bytesAllocated = newSize;
+        data = (byte*)reallocf(data, newSize);
+      if (data != nullptr) { //only if alloc is successful
+        memset(data, 0, newSize); //init data with 0
+        if (alertIfChanged)
+          ppf("dev sharedData.readWrite reallocating, this should not happen ! %d -> %d\n", bytesAllocated, newSize);
+        bytesAllocated = newSize;
+      }
+      else ppf("dev sharedData.readWrite, alloc not successful %d->%d %d->%d\n", index, newIndex, bytesAllocated, newSize);
     }
     // ppf("bind %d->%d %d\n", index, newIndex, bytesAllocated);
     Type * returnValue  = reinterpret_cast<Type *>(data + index);
