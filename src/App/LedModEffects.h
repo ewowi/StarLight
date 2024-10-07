@@ -189,7 +189,7 @@ public:
       default: return false;
     }});
 
-    currentVar = ui->initSelect(tableVar, "effect", 0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    currentVar = ui->initSelect(tableVar, "effect", (uint8_t)0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
         for (size_t rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
           mdl->setValue(var, fixture.layers[rowNr]->effectNr, rowNr);

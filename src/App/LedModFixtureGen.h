@@ -459,7 +459,7 @@ public:
     parentVar = ui->initAppMod(parentVar, name, 6302); //created as a usermod, not an appmod to have it in the usermods tab
     parentVar["s"] = true; //setup
 
-    JsonObject currentVar = ui->initSelect(parentVar, "fixtureVar", 0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    JsonObject currentVar = ui->initSelect(parentVar, "fixtureVar", (uint8_t)0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         ui->setLabel(var, "Fixture");
         ui->setComment(var, "Predefined fixture");

@@ -981,7 +981,7 @@ class RotateProjection: public Projection {
   void controls(LedsLayer &leds, JsonObject parentVar) {
     RotateData *data = leds.projectionData.readWrite<RotateData>();
 
-    ui->initSelect(parentVar, "Direction", 0, false, [data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "Direction", (uint8_t)0, false, [data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         JsonArray options = ui->setOptions(var);
         options.add("Clockwise");
