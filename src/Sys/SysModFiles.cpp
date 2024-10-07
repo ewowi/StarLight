@@ -34,12 +34,6 @@ void SysModFiles::setup() {
     case onUI:
       ui->setComment(var, "List of files");
       return true;
-    case onAdd:
-      rowNr = fileNames.size();
-      web->getResponseObject()["onAdd"]["rowNr"] = rowNr; //also done in callVarFun??
-      //add a row with all defaults
-      //tbd: File upload does not call onAdd (bug?)
-      return true;
     case onDelete:
       if (rowNr != UINT8_MAX && rowNr < fileNames.size()) {
         const char * fileName = fileNames[rowNr].s;
@@ -54,11 +48,9 @@ void SysModFiles::setup() {
             strlcpy(web->lastFileUpdated, name, sizeof(web->lastFileUpdated));
           }
         #endif
-
-        // print->printVar(var);
-        // ppf("\n");
       }
       return true;
+    //tbd: File upload does not call onAdd (bug?)
     default: return false;
   }});
 

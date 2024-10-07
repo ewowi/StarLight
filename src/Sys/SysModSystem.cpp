@@ -211,7 +211,7 @@ void SysModSystem::setup() {
 
   ui->initFileUpload(parentVar, "update", nullptr, UINT16_MAX, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
-      ui->setComment(var, "OTA Update");
+      ui->setComment(var, "OTA Firmware Update");
       return true;
     default: return false;
   }});

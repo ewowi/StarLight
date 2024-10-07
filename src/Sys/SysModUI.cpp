@@ -179,24 +179,16 @@ void SysModUI::processJson(JsonVariant json) {
           uint8_t rowNr = command["rowNr"].isNull()?UINT8_MAX:command["rowNr"];
           ppf("processJson %s - %s[%d]\n", key, Variable(var).id(), rowNr);
 
-          bool doWS = false;
-
-          if (callVarFun(var, rowNr, pair.key() == "onAdd"?onAdd:onDelete)) {
-            doWS = true;
-          }
+          callVarFun(var, rowNr, pair.key() == "onAdd"?onAdd:onDelete);
 
           //first remove the deleted row both on server and on client(s)
           if (pair.key() == "onDelete") {
-            ppf("onDelete remove values\n");
+            ppf("onDelete remove removeValuesForRow\n");
             Variable(var).removeValuesForRow(rowNr);
-            doWS = true;
           }
-
-          if (doWS)
-            web->sendResponseObject(); //async response //trigger receiveData->onDelete
-
         }
-        json.remove(key); //key processed we don't need the key in the response
+        // we need to send back the key so UI can add or delete the value
+        // json.remove(key); //key processed we don't need the key in the response
       }
       else if (pair.key() == "onUI") { //JsonString can do ==
         //find the select var and collect it's options...

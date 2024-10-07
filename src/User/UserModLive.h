@@ -175,13 +175,13 @@ public:
 
     ui->initText(parentVar, "fps1", nullptr, 10, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onLoop1s:
-        mdl->setValue(var, "%.0f /s", fps);
+        mdl->setValue(var, "%.0f /s", fps, 0); //0 is to force format overload used
         return true;
       default: return false; 
     }});
     ui->initText(parentVar, "fps2", nullptr, 10, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onLoop1s:
-        mdl->setValue(var, "%d /s", frameCounter);
+        mdl->setValue(var, "%d /s", frameCounter, 0); //0 is to force format overload used
         frameCounter = 0;
         return true;
       default: return false; 

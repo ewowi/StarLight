@@ -319,47 +319,6 @@ public:
     Variable variable = Variable(var);
     bool result = false;
 
-    if (funType == onAdd || funType == onDelete) {
-      //do this before calling onDelete
-      print->printJson("callVarFun add/del", var);
-      //if delete, delete also from vector ...
-      //find the columns of the table
-      if (funType == onDelete) {
-        for (JsonObject childVar: variable.children()) {
-          int pointer;
-          if (childVar["p"].is<JsonArray>())
-            pointer = childVar["p"][rowNr];
-          else
-            pointer = childVar["p"];
-
-          ppf("  delete vector %s[%d] %d\n", Variable(childVar).id(), rowNr, pointer);
-
-          if (pointer != 0) {
-            //pointer checks
-            if (childVar["type"] == "select" || childVar["type"] == "range" || childVar["type"] == "pin") {
-              std::vector<uint8_t> *valuePointer = (std::vector<uint8_t> *)pointer;
-              (*valuePointer).erase((*valuePointer).begin() + rowNr);
-            } else if (childVar["type"] == "number") {
-              std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
-              (*valuePointer).erase((*valuePointer).begin() + rowNr);
-            } else if (childVar["type"] == "checkbox") {
-              std::vector<bool> *valuePointer = (std::vector<bool> *)pointer;
-              (*valuePointer).erase((*valuePointer).begin() + rowNr);
-            } else if (childVar["type"] == "text" || childVar["type"] == "fileEdit") {
-              std::vector<VectorString> *valuePointer = (std::vector<VectorString> *)pointer;
-              (*valuePointer).erase((*valuePointer).begin() + rowNr);
-            } else if (childVar["type"] == "coord3D") {
-              std::vector<Coord3D> *valuePointer = (std::vector<Coord3D> *)pointer;
-              (*valuePointer).erase((*valuePointer).begin() + rowNr);
-            }
-            else
-              print->printJson("dev callVarFun onDelete type not supported yet", childVar);
-          }
-        }
-      }
-      web->getResponseObject()[funType==onAdd?"onAdd":"onDelete"]["rowNr"] = rowNr;
-    }
-
     //call varFun if exists
     if (!var["fun"].isNull()) {//isNull needed here!
       size_t funNr = var["fun"];
@@ -381,11 +340,59 @@ public:
               ppf("%s)\n", variable.valueString().c_str());
             }
           }
-        }
+        } //varFun exists
       }
       else    
         ppf("dev callVarFun function nr %s.%s outside bounds %d >= %d\n", variable.pid(), variable.id(), funNr, varFunctions.size());
-    }
+    } //varFun exists
+
+    //delete pointers after calling var.onDelete as var.onDelete might need the values
+    if (funType == onAdd || funType == onDelete) {
+
+      print->printJson("callVarFun add/del", var);
+      //if delete, delete also from vector ...
+      //find the columns of the table
+      if (funType == onDelete) {
+        for (JsonObject childVar: variable.children()) {
+          int pointer;
+          if (childVar["p"].is<JsonArray>())
+            pointer = childVar["p"][rowNr];
+          else
+            pointer = childVar["p"];
+
+          ppf("  delete vector %s[%d] %d\n", Variable(childVar).id(), rowNr, pointer);
+
+          if (pointer != 0) {
+            //pointer checks
+            if (childVar["type"] == "select" || childVar["type"] == "range" || childVar["type"] == "pin") {
+              std::vector<uint8_t> *valuePointer = (std::vector<uint8_t> *)pointer;
+              if (rowNr < (*valuePointer).size())
+                (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            } else if (childVar["type"] == "number") {
+              std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
+              if (rowNr < (*valuePointer).size())
+                (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            } else if (childVar["type"] == "checkbox") {
+              std::vector<bool> *valuePointer = (std::vector<bool> *)pointer;
+              if (rowNr < (*valuePointer).size())
+                (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            } else if (childVar["type"] == "text" || childVar["type"] == "fileEdit") {
+              std::vector<VectorString> *valuePointer = (std::vector<VectorString> *)pointer;
+              if (rowNr < (*valuePointer).size())
+                (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            } else if (childVar["type"] == "coord3D") {
+              std::vector<Coord3D> *valuePointer = (std::vector<Coord3D> *)pointer;
+              if (rowNr < (*valuePointer).size())
+                (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            }
+            else
+              print->printJson("dev callVarFun onDelete type not supported yet", childVar);
+          }
+        }
+      } //onDelete
+      web->getResponseObject()[funType==onAdd?"onAdd":"onDelete"]["rowNr"] = rowNr;
+      print->printJson("callVarFun add/del response", web->getResponseObject());
+    } //onAdd onDelete
 
     //for ro variables, call onSetValue to add also the value in responseDoc (as it is not stored in the model)
     if (funType == onUI && variable.readOnly()) {
