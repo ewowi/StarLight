@@ -98,10 +98,16 @@ public:
     return initVarAndValue<uint16_t>(parent, id, "number", values, min, max, readOnly, varFun);
   }
 
-  JsonObject initPin(JsonObject parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
-    return initVarAndValue<int>(parent, id, "pin", value, 0, NUM_DIGITAL_PINS, readOnly, varFun);
+  JsonObject initPin(JsonObject parent, const char * id, uint8_t value = UINT8_MAX, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndValue<uint8_t>(parent, id, "pin", value, 0, NUM_DIGITAL_PINS, readOnly, varFun);
   }
 
+  //referenced value
+  JsonObject initPin(JsonObject parent, const char * id, uint8_t *value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndValue<uint8_t>(parent, id, "pin", value, 0, NUM_DIGITAL_PINS, readOnly, varFun);
+  }
+
+  //type int!
   JsonObject initProgress(JsonObject parent, const char * id, int value = UINT16_MAX, int min = 0, int max = 255, bool readOnly = false, VarFun varFun = nullptr) {
     return initVarAndValue<int>(parent, id, "progress", value, min, max, readOnly, varFun);
   }
@@ -115,8 +121,8 @@ public:
   }
 
   //init a range slider, range between 0 and 255!
-  JsonObject initSlider(JsonObject parent, const char * id, int value = UINT16_MAX, int min = 0, int max = 255, bool readOnly = false, VarFun varFun = nullptr) {
-    return initVarAndValue<int>(parent, id, "range", value, min, max, readOnly, varFun);
+  JsonObject initSlider(JsonObject parent, const char * id, uint8_t value = UINT8_MAX, int min = 0, int max = 255, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndValue<uint8_t>(parent, id, "range", value, min, max, readOnly, varFun);
   }
   //init a range slider using referenced value
   JsonObject initSlider(JsonObject parent, const char * id, uint8_t * value = nullptr, int min = 0, int max = 255, bool readOnly = false, VarFun varFun = nullptr) {
@@ -128,8 +134,8 @@ public:
   }
 
   //supports 3 state value: if UINT16_MAX it is indeterminated
-  JsonObject initCheckBox(JsonObject parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
-    return initVarAndValue<int>(parent, id, "checkbox", value, 0, 0, readOnly, varFun);
+  JsonObject initCheckBox(JsonObject parent, const char * id, bool value = UINT8_MAX, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndValue<bool>(parent, id, "checkbox", value, 0, 0, readOnly, varFun);
   }
   //init a checkbox using referenced value
   JsonObject initCheckBox(JsonObject parent, const char * id, bool * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
@@ -142,8 +148,8 @@ public:
   }
 
   //int value ?
-  JsonObject initSelect(JsonObject parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarFun varFun = nullptr) {
-    return initVarAndValue<int>(parent, id, "select", value, 0, 0, readOnly, varFun);
+  JsonObject initSelect(JsonObject parent, const char * id, uint8_t value = UINT8_MAX, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndValue<uint8_t>(parent, id, "select", value, 0, 0, readOnly, varFun);
   }
   //init a select using referenced value
   JsonObject initSelect(JsonObject parent, const char * id, uint8_t * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
@@ -329,15 +335,18 @@ public:
           ppf("  delete vector %s[%d] %d\n", Variable(childVar).id(), rowNr, pointer);
 
           if (pointer != 0) {
-
-            if (childVar["type"] == "select" || childVar["type"] == "checkbox" || childVar["type"] == "range") {
-              std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
-              (*valuePointer).erase((*valuePointer).begin() + rowNr);
-            } else if (childVar["type"] == "text" || childVar["type"] == "fileEdit") {
-              std::vector<VectorString> *valuePointer = (std::vector<VectorString> *)pointer;
+            //pointer checks
+            if (childVar["type"] == "select" || childVar["type"] == "range" || childVar["type"] == "pin") {
+              std::vector<uint8_t> *valuePointer = (std::vector<uint8_t> *)pointer;
               (*valuePointer).erase((*valuePointer).begin() + rowNr);
             } else if (childVar["type"] == "number") {
               std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
+              (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            } else if (childVar["type"] == "checkbox") {
+              std::vector<bool> *valuePointer = (std::vector<bool> *)pointer;
+              (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            } else if (childVar["type"] == "text" || childVar["type"] == "fileEdit") {
+              std::vector<VectorString> *valuePointer = (std::vector<VectorString> *)pointer;
               (*valuePointer).erase((*valuePointer).begin() + rowNr);
             } else if (childVar["type"] == "coord3D") {
               std::vector<Coord3D> *valuePointer = (std::vector<Coord3D> *)pointer;

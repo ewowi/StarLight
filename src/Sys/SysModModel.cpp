@@ -57,8 +57,7 @@ void SysModModel::setup() {
 
   ui->initButton(parentVar, "deleteObsolete", false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
-      ui->setLabel(var, "Delete obsolete variables");
-      ui->setComment(var, "🚧");
+      ui->setComment(var, "Delete obsolete variables 🚧");
       return true;
     // case onChange:
     //   model->to<JsonArray>(); //create
@@ -271,7 +270,8 @@ bool SysModModel::callVarOnChange(JsonObject var, uint8_t rowNr, bool init) {
 
       if (var["value"].is<JsonArray>() && !isPointerArray) { //vector if val array but not if control (each var in array stored in seperate variable)
         if (rowNr != UINT8_MAX) {
-          if (var["type"] == "select" || var["type"] == "checkbox" || var["type"] == "range") {
+          //pointer checks
+          if (var["type"] == "select" || var["type"] == "range" || var["type"] == "pin") {
             std::vector<uint8_t> *valuePointer = (std::vector<uint8_t> *)pointer;
             while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT8_MAX); //create vector space if needed...
             ppf("%s[%d]:%s (%d - %d - %s)\n", variable.id(), rowNr, variable.valueString().c_str(), pointer, (*valuePointer).size(), var["p"].as<String>().c_str());
@@ -281,6 +281,11 @@ bool SysModModel::callVarOnChange(JsonObject var, uint8_t rowNr, bool init) {
             std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
             while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT16_MAX); //create vector space if needed...
             (*valuePointer)[rowNr] = value;
+          }
+          else if (var["type"] == "checkbox") {
+            std::vector<bool> *valuePointer = (std::vector<bool> *)pointer;
+            while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT16_MAX); //create vector space if needed...
+            (*valuePointer)[rowNr] = value.as<bool>();
           }
           else if (var["type"] == "text" || var["type"] == "fileEdit") {
             std::vector<VectorString> *valuePointer = (std::vector<VectorString> *)pointer;
@@ -293,14 +298,19 @@ bool SysModModel::callVarOnChange(JsonObject var, uint8_t rowNr, bool init) {
             (*valuePointer)[rowNr] = value;
           }
           else
-            print->printJson("dev callVarOnChange type not supported yet", var);
+            print->printJson("dev callVarOnChange type not supported yet (arrays)", var);
 
           // ppf("callVarOnChange set pointer to vector %s[%d]: v:%s p:%d\n", variable.id(), rowNr, value.as<String>().c_str(), pointer);
         } else 
           print->printJson("dev value is array but no rowNr\n", var);
-      } else {
-        if (var["type"] == "select" || var["type"] == "checkbox" || var["type"] == "range") {
+      } else { //no array
+        //pointer checks
+        if (var["type"] == "select" || var["type"] == "range" || var["type"] == "pin") {
           uint8_t *valuePointer = (uint8_t *)pointer;
+          *valuePointer = value;
+        }
+        else if (var["type"] == "checkbox") {
+          bool *valuePointer = (bool *)pointer;
           *valuePointer = value;
         }
         else if (var["type"] == "number") {
@@ -311,6 +321,8 @@ bool SysModModel::callVarOnChange(JsonObject var, uint8_t rowNr, bool init) {
           Coord3D *valuePointer = (Coord3D *)pointer;
           *valuePointer = value;
         }
+        else
+          print->printJson("dev callVarOnChange type not supported yet", var);
 
         // ppf("callVarOnChange set pointer %s[%d]: v:%s p:%d\n", variable.id(), rowNr, variable.valueString().c_str(), pointer);
       }

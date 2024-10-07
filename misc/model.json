@@ -6,45 +6,45 @@
     "max": 255,
     "n": [
       {
-        "id": "fileTbl",
+        "id": "files",
         "type": "table",
         "ro": false,
         "n": [
           {
-            "id": "flName",
+            "id": "name",
             "type": "text",
             "ro": true,
             "max": 32,
-            "pid": "fileTbl",
-            "o": 38,
-            "fun": 27,
+            "pid": "files",
+            "o": 9,
+            "fun": 5,
             "p": 1073449632
           },
           {
-            "id": "flSize",
+            "id": "size",
             "type": "number",
             "ro": true,
-            "pid": "fileTbl",
-            "o": 39,
-            "fun": 28,
+            "pid": "files",
+            "o": 10,
+            "fun": 6,
             "p": 1073449644
           },
           {
-            "id": "flTime",
+            "id": "time",
             "type": "number",
             "ro": true,
-            "pid": "fileTbl",
-            "o": 40,
-            "fun": 29,
+            "pid": "files",
+            "o": 11,
+            "fun": 7,
             "p": 1073449656
           },
           {
-            "id": "flEdit",
+            "id": "edit",
             "type": "fileEdit",
             "ro": true,
-            "pid": "fileTbl",
-            "o": 41,
-            "fun": 30,
+            "pid": "files",
+            "o": 12,
+            "fun": 8,
             "p": 1073449632
           }
         ],
@@ -61,7 +61,7 @@
         "fun": 31
       },
       {
-        "id": "drsize",
+        "id": "totalSize",
         "type": "progress",
         "ro": true,
         "max": 262144,
@@ -159,7 +159,7 @@
         "fun": 40
       },
       {
-        "id": "reset0",
+        "id": "reset 0",
         "type": "select",
         "ro": true,
         "pid": "System",
@@ -167,7 +167,7 @@
         "fun": 41
       },
       {
-        "id": "reset1",
+        "id": "reset 1",
         "type": "select",
         "ro": true,
         "pid": "System",
@@ -220,13 +220,14 @@
     "max": 255,
     "n": [
       {
-        "id": "pinTbl",
+        "id": "pins",
         "type": "table",
         "ro": true,
         "n": [
           {
-            "id": "pinNr",
+            "id": "pin",
             "type": "pin",
+            "pid": "pins",
             "ro": true,
             "max": 40,
             "pid": "pinTbl",
@@ -234,8 +235,9 @@
             "fun": 46
           },
           {
-            "id": "pinOwner",
+            "id": "owner",
             "type": "text",
+            "pid": "pins",
             "ro": true,
             "max": 32,
             "pid": "pinTbl",
@@ -243,8 +245,9 @@
             "fun": 47
           },
           {
-            "id": "pinDetails",
+            "id": "details",
             "type": "text",
+            "pid": "pins",
             "ro": true,
             "max": 256,
             "pid": "pinTbl",

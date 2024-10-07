@@ -25,11 +25,11 @@ const pinTypeReserved = 2;
 const pinTypeSpi = 3;
 const pinTypeInvalid = UINT8_MAX;
 let sysInfo = {};
-function getPinType(pinNr) {
+function getPinType(pin) {
   if (!sysInfo.pinTypes) return "🔴"; //Live Server Mode
-  if (sysInfo.pinTypes[pinNr] == pinTypeIO) return "🟢";
-  else if (sysInfo.pinTypes[pinNr] == pinTypeReadOnly) return "🟠";
-  else if (sysInfo.pinTypes[pinNr] == pinTypeReserved) return "🟣";
+  if (sysInfo.pinTypes[pin] == pinTypeIO) return "🟢";
+  else if (sysInfo.pinTypes[pin] == pinTypeReadOnly) return "🟠";
+  else if (sysInfo.pinTypes[pin] == pinTypeReserved) return "🟣";
   else return "🔴";
 }
 
@@ -356,7 +356,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       let tbodyNode = cE("tbody");
       varNode.appendChild(tbodyNode);
 
-      if (!variable.ro && variable.id != "fileTbl") { //fileTbl has upload file
+      if (!variable.ro && variable.pid != "Files" && variable.id != "files") { //files table has upload file
         let buttonNode = cE("input");
         buttonNode.type = "button";
         buttonNode.value = "+";
@@ -1425,8 +1425,18 @@ function toggleModal(varNode) { //canvas or textarea
 
 function initCap(s) {
   if (typeof s !== 'string') return '';
-  // https://www.freecodecamp.org/news/how-to-capitalize-words-in-javascript/
-  return s.replace(/[\W_]/g,' ').replace(/(^\w{1})|(\s+\w{1})/g, l=>l.toUpperCase()); // replace - and _ with space, capitalize every 1st letter
+  let result = "";
+  for (let i = 0; i < s.length; i++) {
+    if (i==0) //first uppercase
+      result += s.charAt(i).toUpperCase();
+      else if (s.charAt(i).toLowerCase() !== s.charAt(i) && s.charAt(i-1).toLowerCase() == s.charAt(i-1)) //uppercase (previous not uppercase) => add space
+      result += " " + s.charAt(i);
+    else if (s.charAt(i) == '-' || s.charAt(i) == '_') //- and _ is space
+      result += " ";
+    else
+      result+=s.charAt(i);
+  }
+  return result;
 }
 
 

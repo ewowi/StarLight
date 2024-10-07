@@ -56,8 +56,8 @@ class Controller {
     json.sysInfo.board = "esp32"
     json.sysInfo.nrOfPins = 40
     json.sysInfo.pinTypes = []
-    for (let pinNr = 0; pinNr < json.sysInfo.nrOfPins; pinNr++)
-      json.sysInfo.pinTypes[pinNr] = Math.round(Math.random() * 3)
+    for (let pin = 0; pin < json.sysInfo.nrOfPins; pin++)
+      json.sysInfo.pinTypes[pin] = Math.round(Math.random() * 3)
     this.receiveData(json);
 
     // every 1 second
@@ -75,9 +75,9 @@ class Controller {
       if (buffer[0] == 0) {
         let canvasNode = gId("Pins.board");
         if (canvasNode) {
-          // console.log(buffer, previewNode);
-          for (let pinNr = 0; pinNr < controller.sysInfo.nrOfPins; pinNr++)
-            buffer[pinNr+5] = Math.round(Math.random() * 256)
+          // console.log(buffer, pviewNode);
+          for (let pin = 0; pin < controller.sysInfo.nrOfPins; pin++)
+            buffer[pin+5] = Math.round(Math.random() * 256)
           controller.modules.previewBoard(canvasNode, buffer);
         }
       }
@@ -230,8 +230,18 @@ function cE(e) { return document.createElement(e); }
 
 function initCap(s) {
   if (typeof s !== 'string') return '';
-  // https://www.freecodecamp.org/news/how-to-capitalize-words-in-javascript/
-  return s.replace(/[\W_]/g,' ').replace(/(^\w{1})|(\s+\w{1})/g, l=>l.toUpperCase()); // replace - and _ with space, capitalize every 1st letter
+  let result = "";
+  for (let i = 0; i < s.length; i++) {
+    if (i==0) //first uppercase
+      result += s.charAt(i).toUpperCase();
+    else if (s.charAt(i).toLowerCase() !== s.charAt(i) && s.charAt(i-1).toLowerCase() == s.charAt(i-1)) //uppercase (previous not uppercase) => add space
+      result += " " + s.charAt(i);
+    else if (s.charAt(i) == '-' || s.charAt(i) == '_') //- and _ is space
+      result += " ";
+    else
+      result+=s.charAt(i);
+  }
+  return result;
 }
 
 //https://stackoverflow.com/questions/8511281/check-if-a-value-is-an-object-in-javascript

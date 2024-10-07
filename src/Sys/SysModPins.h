@@ -37,10 +37,10 @@ public:
   void setup();
   void loop20ms();
 
-  void allocatePin(uint8_t pinNr, const char * owner, const char * details);
-  void deallocatePin(uint8_t pinNr = UINT8_MAX, const char * owner = nullptr);
-  bool isOwner(uint8_t pinNr, const char * owner) {
-    return strncmp(pinObjects[pinNr].owner, owner, sizeof(PinObject::owner)) == 0;
+  void allocatePin(uint8_t pin, const char * owner, const char * details);
+  void deallocatePin(uint8_t pin = UINT8_MAX, const char * owner = nullptr);
+  bool isOwner(uint8_t pin, const char * owner) {
+    return strncmp(pinObjects[pin].owner, owner, sizeof(PinObject::owner)) == 0;
   }
 
   //temporary functions until we refactored the PinObject
@@ -65,50 +65,50 @@ public:
     return n;
   }
   uint8_t getPinNr(uint8_t rowNr) {
-    uint8_t pinNr = 0;
+    uint8_t pin = 0;
     uint8_t n = 0;
     for (PinObject &pinObject:pinObjects) {
       if (strncmp(pinObject.owner, "", sizeof(PinObject::owner)) != 0) {
         if (n == rowNr)
-          return pinNr;
+          return pin;
         n++;
       }
-      pinNr++;
+      pin++;
     }
     return UINT8_MAX;
   }
 
   bool pinsChanged = false; //update pins table if pins changed
 
-  uint8_t getPinType(uint8_t pinNr) {
+  uint8_t getPinType(uint8_t pin) {
     uint8_t pinType;
-    if (digitalPinIsValid(pinNr)) {
+    if (digitalPinIsValid(pin)) {
 
       #if defined(CONFIG_IDF_TARGET_ESP32S2)
-        if ((pinNr > 18 && pinNr < 21) || (pinNr > 21 && pinNr < 33)) pinType = pinTypeReserved; else 
+        if ((pin > 18 && pin < 21) || (pin > 21 && pin < 33)) pinType = pinTypeReserved; else 
       #elif defined(CONFIG_IDF_TARGET_ESP32S3)
-        if ((pinNr > 18 && pinNr < 21) || (pinNr > 21 && pinNr < 33)) pinType = pinTypeReserved; else 
+        if ((pin > 18 && pin < 21) || (pin > 21 && pin < 33)) pinType = pinTypeReserved; else 
       #elif defined(CONFIG_IDF_TARGET_ESP32C3)
-        if ((pinNr > 11 && pinNr < 18) || (pinNr > 17 && pinNr < 20)) pinType = pinTypeReserved; else 
+        if ((pin > 11 && pin < 18) || (pin > 17 && pin < 20)) pinType = pinTypeReserved; else 
       #elif defined(ESP32)
-        if (pinNr > 5 && pinNr < 12) pinType = pinTypeReserved; else 
+        if (pin > 5 && pin < 12) pinType = pinTypeReserved; else 
       #else //???
         prf("dev unknown board\n");
         pinType = pinTypeInvalid; return pinType; 
       #endif
 
-      if (!digitalPinCanOutput(pinNr)) 
+      if (!digitalPinCanOutput(pin)) 
         pinType = pinTypeReadOnly;
       else
         pinType = pinTypeIO;
 
       //results in crashes
-      // if (digitalPinToRtcPin(pinNr)) pinType = pinTypeIO; else pinType = pinTypeInvalid; //error: 'RTC_GPIO_IS_VALID_GPIO' was not declared in this scope
-      // if (digitalPinToDacChannel(pinNr)) pinType = pinTypeIO; else pinType = pinTypeInvalid; //error: 'DAC_CHANNEL_1_GPIO_NUM' was not declared in this scope
+      // if (digitalPinToRtcPin(pin)) pinType = pinTypeIO; else pinType = pinTypeInvalid; //error: 'RTC_GPIO_IS_VALID_GPIO' was not declared in this scope
+      // if (digitalPinToDacChannel(pin)) pinType = pinTypeIO; else pinType = pinTypeInvalid; //error: 'DAC_CHANNEL_1_GPIO_NUM' was not declared in this scope
 
       //not so relevant
-      // if (digitalPinToAnalogChannel(pinNr)) pinType = pinTypeInvalid;
-      // if (digitalPinToTouchChannel(pinNr)) pinType = pinTypeInvalid;
+      // if (digitalPinToAnalogChannel(pin)) pinType = pinTypeInvalid;
+      // if (digitalPinToTouchChannel(pin)) pinType = pinTypeInvalid;
     }
     else 
       pinType = pinTypeInvalid;

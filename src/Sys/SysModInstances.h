@@ -25,7 +25,7 @@ struct DMX {
 
 //additional data not in wled header
 struct SysData {
-  unsigned long upTime;
+  unsigned long uptime;
   uint32_t now; //25
   uint8_t timeSource; //29
   uint32_t tokiTime; //30 in sec
@@ -201,7 +201,7 @@ public:
     ui->initNumber(tableVar, "insUp", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, instances[rowNrL].sysData.upTime, rowNrL);
+          mdl->setValue(var, instances[rowNrL].sysData.uptime, rowNrL);
         return true;
       case onUI:
         ui->setLabel(var, "Uptime");
@@ -419,8 +419,8 @@ public:
 
           InstanceInfo *instance = findInstance(notifierUdp.remoteIP()); //if not exist, created
 
-          // instance->sysData.upTime = (wledSyncMessage.now[0] * 256*256*256 + 256*256*wledSyncMessage.now[1] + 256*wledSyncMessage.now[2] + wledSyncMessage.now[3]) / 1000;
-          instance->sysData.upTime = (wledSyncMessage.now[0] << 24) | (wledSyncMessage.now[1] << 16) | (wledSyncMessage.now[2] << 8) | (wledSyncMessage.now[3]);
+          // instance->sysData.uptime = (wledSyncMessage.now[0] * 256*256*256 + 256*256*wledSyncMessage.now[1] + 256*wledSyncMessage.now[2] + wledSyncMessage.now[3]) / 1000;
+          instance->sysData.uptime = (wledSyncMessage.now[0] << 24) | (wledSyncMessage.now[1] << 16) | (wledSyncMessage.now[2] << 8) | (wledSyncMessage.now[3]);
           instance->sysData.now = (wledSyncMessage.now[0] << 24) | (wledSyncMessage.now[1] << 16) | (wledSyncMessage.now[2] << 8) | (wledSyncMessage.now[3]);
           instance->sysData.timeSource = wledSyncMessage.timeSource;
           instance->sysData.tokiTime = (wledSyncMessage.tokiTime[0] << 24) | (wledSyncMessage.tokiTime[1] << 16) | (wledSyncMessage.tokiTime[2] << 8) | (wledSyncMessage.tokiTime[3]);
@@ -600,7 +600,7 @@ public:
     starMessage.header.insId = localIP[3]; //WLED: used in map of instances as index!
     starMessage.header.version = VERSION;
     starMessage.sysData.type = (strncmp(_INIT(TOSTRING(APP)), "StarBase", 9)==0)?1:(strncmp(_INIT(TOSTRING(APP)), "StarLight", 10)==0)?2:(strncmp(_INIT(TOSTRING(APP)), "StarLedsLive", 13)==0)?3:99; //0=WLED, 1=StarBase, 2=StarLight, 3=StarLedsLive, else=StarFork
-    starMessage.sysData.upTime = millis()/1000;
+    starMessage.sysData.uptime = millis()/1000;
     starMessage.sysData.now = millis() + sys->timebase; //similar to now
     starMessage.sysData.timeSource = sys->toki.getTimeSource();
     starMessage.sysData.tokiTime = sys->toki.getTime().sec;
@@ -698,7 +698,7 @@ public:
       if (udpStarMessage.sysData.type == 0) {//WLED only
         instance.sysData.type = 0; //WLED
         //updated in udp sync message:
-        instance.sysData.upTime = 0;
+        instance.sysData.uptime = 0;
         instance.sysData.dmx.universe = 0;
         instance.sysData.dmx.start = 0;
         instance.sysData.dmx.count = 0;

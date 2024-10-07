@@ -15,9 +15,9 @@
 
 SysModPins::SysModPins() :SysModule("Pins") {
   //start with no pins allocated
-  for (int pinNr=0; pinNr<NUM_DIGITAL_PINS; pinNr++) {
-    strlcpy(pinObjects[pinNr].owner, "", sizeof(PinObject::owner));  
-    strlcpy(pinObjects[pinNr].details, "", sizeof(PinObject::details));  
+  for (int pin=0; pin<NUM_DIGITAL_PINS; pin++) {
+    strlcpy(pinObjects[pin].owner, "", sizeof(PinObject::owner));  
+    strlcpy(pinObjects[pin].details, "", sizeof(PinObject::details));  
   }
 };
 
@@ -26,56 +26,46 @@ void SysModPins::setup() {
   parentVar = ui->initSysMod(parentVar, name, 2202);
 
   //show table of allocated pins
-  JsonObject tableVar = ui->initTable(parentVar, "pinTbl", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  JsonObject tableVar = ui->initTable(parentVar, "pins", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI: {
-      ui->setLabel(var, "Allocated Pins");
+      ui->setComment(var, "Allocated Pins");
       return true; }
     default: return false;
   }});
 
-  ui->initPin(tableVar, "pinNr", UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initPin(tableVar, "pin", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue:
       var.remove("value");
-      ppf("pinNr onSetValue %s %d\n", var["value"].as<String>().c_str(), getNrOfAllocatedPins());
+      ppf("pin onSetValue %s %d\n", var["value"].as<String>().c_str(), getNrOfAllocatedPins());
       for (uint8_t rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++)
         mdl->setValue(var, getPinNr(rowNr), rowNr);
-      return true;
-    case onUI:
-      ui->setLabel(var, "Pin");
       return true;
     default: return false;
   }});
 
-  ui->initText(tableVar, "pinOwner", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(tableVar, "owner", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue:
       var.remove("value");
       for (uint8_t rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++)
         mdl->setValue(var, JsonString(getNthAllocatedPinObject(rowNr).owner, JsonString::Copied), rowNr);
       return true;
-    case onUI:
-      ui->setLabel(var, "Owner");
-      return true;
     default: return false;
   }});
 
-  ui->initText(tableVar, "pinDetails", nullptr, 256, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(tableVar, "details", nullptr, 256, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue:
       var.remove("value");
       for (uint8_t rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++) {
-        // ppf("pinDetails[%d] d:%s\n", rowNr, getNthAllocatedPinObject(rowNr).details);
+        // ppf("details[%d] d:%s\n", rowNr, getNthAllocatedPinObject(rowNr).details);
         mdl->setValue(var, JsonString(getNthAllocatedPinObject(rowNr).details, JsonString::Copied), rowNr);
       }
-      return true;
-    case onUI:
-      ui->setLabel(var, "Details");
       return true;
     default: return false;
   }});
 
   ui->initCanvas(parentVar, "board", UINT16_MAX, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
-      ui->setLabel(var, "Pin viewer");
-      ui->setComment(var, "🚧");
+      ui->setComment(var, "Pin viewer 🚧");
       return true;
     case onLoop:
       var["interval"] = 100; //every 100 ms
@@ -86,9 +76,9 @@ void SysModPins::setup() {
         buffer = wsBuf->get();
 
         // send pins to clients
-        for (size_t pinNr = 0; pinNr < NUM_DIGITAL_PINS; pinNr++)
+        for (size_t pin = 0; pin < NUM_DIGITAL_PINS; pin++)
         {
-          buffer[pinNr+5] = random(8);// digitalRead(pinNr) * 255; // is only 0 or 1
+          buffer[pin+5] = random(8);// digitalRead(pin) * 255; // is only 0 or 1
         }
         // ppf("\n");
         //new values
@@ -128,29 +118,29 @@ void SysModPins::loop20ms() {
   if (pinsChanged) {
     pinsChanged = false;
 
-    for (JsonObject childVar: Variable(mdl->findVar("Pins", "pinTbl")).children())
+    for (JsonObject childVar: Variable(mdl->findVar("Pins", "pins")).children())
       ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
   }
 }
 
-void SysModPins::allocatePin(uint8_t pinNr, const char * owner, const char * details) {
-  ppf("allocatePin %d %s %s\n", pinNr, owner, details);
-  if ((pinNr < NUM_DIGITAL_PINS) && (digitalPinIsValid(pinNr))) {
-    if (strnlen(pinObjects[pinNr].owner, sizeof(PinObject::owner)) > 0 && strncmp(pinObjects[pinNr].owner, owner, sizeof(PinObject::owner)) != 0)
-      ppf("allocatePin %d: not owner %s!=%s", pinNr, owner, pinObjects[pinNr].owner);
+void SysModPins::allocatePin(uint8_t pin, const char * owner, const char * details) {
+  ppf("allocatePin %d %s %s\n", pin, owner, details);
+  if ((pin < NUM_DIGITAL_PINS) && (digitalPinIsValid(pin))) {
+    if (strnlen(pinObjects[pin].owner, sizeof(PinObject::owner)) > 0 && strncmp(pinObjects[pin].owner, owner, sizeof(PinObject::owner)) != 0)
+      ppf("allocatePin %d: not owner %s!=%s", pin, owner, pinObjects[pin].owner);
     else {
-      strlcpy(pinObjects[pinNr].owner, owner, sizeof(PinObject::owner));
-      strlcpy(pinObjects[pinNr].details, details, sizeof(PinObject::details));
+      strlcpy(pinObjects[pin].owner, owner, sizeof(PinObject::owner));
+      strlcpy(pinObjects[pin].details, details, sizeof(PinObject::details));
       pinsChanged = true;
     }
   }
 }
 
-void SysModPins::deallocatePin(uint8_t pinNr, const char * owner) {
+void SysModPins::deallocatePin(uint8_t pin, const char * owner) {
   for (int p = 0; p<NUM_DIGITAL_PINS; p++) {
-    if (pinNr == UINT8_MAX || pinNr == p) {
+    if (pin == UINT8_MAX || pin == p) {
       if (strncmp(pinObjects[p].owner, owner, sizeof(PinObject::owner)) != 0) {
-        if (pinNr != UINT8_MAX)
+        if (pin != UINT8_MAX)
           ppf("deallocatePin %d: not owner %s!=%s\n", p, owner, pinObjects[p].owner);
       } else {
         ppf("deallocatePin %d %s %s\n", p, owner, pinObjects[p].details);

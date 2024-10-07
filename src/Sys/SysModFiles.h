@@ -18,7 +18,7 @@ class SysModFiles: public SysModule {
 
 public:
 
-  bool filesChanged = true; //init fileTbl;
+  bool filesChanged = true; //init files table;
 
   std::vector<VectorString> fileNames;
   std::vector<uint16_t> fileSizes;
