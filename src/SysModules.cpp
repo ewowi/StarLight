@@ -50,8 +50,8 @@ void SysModules::setup() {
     default: return false;
   }});
 
-  //UINT16_MAX: no value set
-  ui->initCheckBox(tableVar, "success", UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  //UINT8_MAX: tri state boolean: not true not false
+  ui->initCheckBox(tableVar, "success", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue:
       for (size_t rowNr = 0; rowNr < modules.size(); rowNr++)
         mdl->setValue(var, modules[rowNr]->success, rowNr);
@@ -59,7 +59,8 @@ void SysModules::setup() {
     default: return false;
   }});
 
-  ui->initCheckBox(tableVar, "enabled", UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun not readonly! (tbd)
+  //UINT8_MAX: tri state boolean: not true not false
+  ui->initCheckBox(tableVar, "enabled", UINT8_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun not readonly! (tbd)
     case onSetValue:
       //never a rowNr as parameter, set all
       //execute only if var has not been set

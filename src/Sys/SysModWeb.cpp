@@ -47,57 +47,45 @@ void SysModWeb::setup() {
   SysModule::setup();
   parentVar = ui->initSysMod(parentVar, name, 3101);
 
-  JsonObject tableVar = ui->initTable(parentVar, "clTbl", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onUI:
-      ui->setLabel(var, "Clients");
-      return true;
+  JsonObject tableVar = ui->initTable(parentVar, "clients", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onLoop1s:
       for (JsonObject childVar: Variable(var).children())
         ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
     default: return false;
   }});
 
-  ui->initNumber(tableVar, "clNr", UINT16_MAX, 0, 999, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initNumber(tableVar, "nr", UINT16_MAX, 0, 999, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, client->id(), rowNr++);
       return true; }
-    case onUI:
-      ui->setLabel(var, "Nr");
-      return true;
     default: return false;
   }});
 
-  ui->initText(tableVar, "clIp", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(tableVar, "ip", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
       return true; }
-    case onUI:
-      ui->setLabel(var, "IP");
-      return true;
     default: return false;
   }});
 
-  ui->initCheckBox(tableVar, "clIsFull", UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  //UINT8_MAX: tri state boolean: not true not false
+  ui->initCheckBox(tableVar, "full", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, client->queueIsFull(), rowNr++);
       return true; }
-    case onUI:
-      ui->setLabel(var, "Is full");
-      return true;
     default: return false;
   }});
 
-  ui->initSelect(tableVar, "clStatus", UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initSelect(tableVar, "status", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
         mdl->setValue(var, client->status(), rowNr++);
       return true; }
     case onUI:
     {
-      ui->setLabel(var, "Status");
       //tbd: not working yet in ui
       JsonArray options = ui->setOptions(var);
       options.add("Disconnected"); //0
@@ -181,12 +169,12 @@ void SysModWeb::loop20ms() {
     this->modelUpdated = false;
   }
 
-  // if something changed in clTbl
+  // if something changed in clients
   if (clientsChanged) {
     clientsChanged = false;
 
     // ppf("SysModWeb clientsChanged\n");
-    for (JsonObject childVar: Variable(mdl->findVar("Web", "clTbl")).children())
+    for (JsonObject childVar: Variable(mdl->findVar("Web", "clients")).children())
       ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
   }
 

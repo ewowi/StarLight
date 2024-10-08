@@ -647,7 +647,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       changeHTML(variable, variable, rowNr); // set the variable with its own changed values
     }
     else { //onUI
-      if (variable.value)
+      if (variable.value != null) //also if value == false (checkbox)
         changeHTML(variable, {"value":variable.value, "chk":"gen1"}, rowNr); //set only the value
 
       if (variable.options) // eg for pin type
@@ -1423,14 +1423,21 @@ function toggleModal(varNode) { //canvas or textarea
 }
 // https://stackoverflow.com/questions/324303/cut-and-paste-moving-nodes-in-the-dom-with-javascript
 
+function isLowerCase(s) {
+  return s.toLowerCase() == s
+}
+
 function initCap(s) {
   if (typeof s !== 'string') return '';
   let result = "";
   for (let i = 0; i < s.length; i++) {
     if (i==0) //first uppercase
       result += s.charAt(i).toUpperCase();
-      else if (s.charAt(i).toLowerCase() !== s.charAt(i) && s.charAt(i-1).toLowerCase() == s.charAt(i-1)) //uppercase (previous not uppercase) => add space
+    else if (!isLowerCase(s.charAt(i)) && isLowerCase(s.charAt(i-1))) //uppercase (previous not uppercase) => add space
+    // else if (!isLowerCase(s.charAt(i)) && isLowerCase(s.charAt(i-1)) && (i+1 >= s.length || isLowerCase(s.charAt(i+1))))
       result += " " + s.charAt(i);
+    // else if (!isLowerCase(s.charAt(i)) && !isLowerCase(s.charAt(i-1)) && (i+1 >= s.length || isLowerCase(s.charAt(i+1))))
+    //   result += " " + s.charAt(i);
     else if (s.charAt(i) == '-' || s.charAt(i) == '_') //- and _ is space
       result += " ";
     else
@@ -1438,7 +1445,6 @@ function initCap(s) {
   }
   return result;
 }
-
 
 //drag and drop functionality
 //===========================

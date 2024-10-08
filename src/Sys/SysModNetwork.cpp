@@ -32,7 +32,6 @@ void SysModNetwork::setup() {
   parentVar["s"] = true; //setup
 
   // JsonObject tableVar = ui->initTable(parentVar, "wfTbl", nullptr, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { //varFun ro false: create and delete row possible
-  //   ui->setLabel(var, "Wifi");
   //   ui->setComment(var, "List of defined and available Wifi APs");
   // });
 
@@ -40,10 +39,7 @@ void SysModNetwork::setup() {
 
   #ifdef STARBASE_ETHERNET
 
-    currentVar = ui->initCheckBox(parentVar, "ethOn", false, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onUI:
-      ui->setLabel(var, "Ethernet");
-      return true;
+    currentVar = ui->initCheckBox(parentVar, "ethernet", false, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onLoop1s:
       //initEthernet not done in onChange as initEthernet needs a bit of a delay
       if (!ethActive && mdl->getValue(var).as<bool>())
@@ -52,9 +48,8 @@ void SysModNetwork::setup() {
     }});
 
     //set olimex default as details hidden then
-    ui->initSelect(currentVar, "ethConfig", 1, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(currentVar, "config", 1, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
-        ui->setLabel(var, "Config");
         JsonArray options = ui->setOptions(var);
         options.add("Manual");
         options.add("Olimex ESP32 Gateway");
@@ -65,45 +60,32 @@ void SysModNetwork::setup() {
         mdl->setValueRowNr = rowNr;
 
         if (var["value"] == 0) {//manual
-          ui->initNumber(var, "ethaddr", (uint16_t)0, 0, 255, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-            case onUI:
-              ui->setLabel(var, "Address");
-              return true;
+          ui->initNumber(var, "address", (uint16_t)0, 0, 255, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
             case onChange:
               ethActive = false;
               return true;
             default: return false;
           }});
-          ui->initPin(var, "ethpower", 14, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-            case onUI:
-              ui->setLabel(var, "Power");
-              return true;
+          ui->initPin(var, "power", 14, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
             case onChange:
               ethActive = false;
               return true;
             default: return false;
           }});
-          ui->initPin(var, "ethmdc", 23, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-            case onUI:
-              ui->setLabel(var, "mdc");
-              return true;
+          ui->initPin(var, "mdc", 23, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
             case onChange:
               ethActive = false;
               return true;
             default: return false;
           }});
-          ui->initPin(var, "ethmdio", 18, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-            case onUI:
-              ui->setLabel(var, "mdio");
-              return true;
+          ui->initPin(var, "mdio", 18, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
             case onChange:
               ethActive = false;
               return true;
             default: return false;
           }});
-          ui->initSelect(var, "ethtype", ETH_PHY_LAN8720, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          ui->initSelect(var, "type", ETH_PHY_LAN8720, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
             case onUI: {
-              ui->setLabel(var, "Type");
               JsonArray options = ui->setOptions(var);
               options.add("LAN8720");
               options.add("TLK110");
@@ -120,9 +102,8 @@ void SysModNetwork::setup() {
               return true;
             default: return false;
           }});
-          ui->initSelect(var, "ethclkmode", ETH_CLOCK_GPIO17_OUT, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          ui->initSelect(var, "clockMode", ETH_CLOCK_GPIO17_OUT, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
             case onUI: {
-              ui->setLabel(var, "Clock mode");
               JsonArray options = ui->setOptions(var);
               options.add("GPIO0_IN");
               options.add("GPIO0_OUT");
@@ -147,10 +128,7 @@ void SysModNetwork::setup() {
       default: return false;
     }});
 
-    ui->initText(currentVar, "etStatus", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-      case onUI:
-        ui->setLabel(var, "Status");
-        return true;
+    ui->initText(currentVar, "status", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onLoop1s:
           mdl->setValue(var, "%s %s", ethActive?ETH.localIP()[0]?"🟢":"🟠":"🛑", ethActive?ETH.localIP().toString().c_str():"inactive");
         return true;
@@ -159,10 +137,7 @@ void SysModNetwork::setup() {
 
   #endif
 
-  currentVar = ui->initCheckBox(parentVar, "wifiOn", true, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onUI:
-      ui->setLabel(var, "WiFi");
-      return true;
+  currentVar = ui->initCheckBox(parentVar, "wiFi", true, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onChange:
       if (var["value"].as<bool>())
         initWiFiConnection();
@@ -174,7 +149,7 @@ void SysModNetwork::setup() {
 
   ui->initText(currentVar, "ssid", "", 31, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onChange:
-      if (mdl->getValue("Network", "wifiOn").as<bool>()) {
+      if (mdl->getValue("Network", "wiFi").as<bool>()) {
         stopWiFiConnection();
         initWiFiConnection();
       }
@@ -182,12 +157,9 @@ void SysModNetwork::setup() {
     default: return false;
   }});
 
-  ui->initPassword(currentVar, "pw", "", 63, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onUI:
-      ui->setLabel(var, "Password");
-      return true;
+  ui->initPassword(currentVar, "password", "", 63, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onChange:
-      if (mdl->getValue("Network", "wifiOn").as<bool>()) {
+      if (mdl->getValue("Network", "wiFi").as<bool>()) {
         stopWiFiConnection();
         initWiFiConnection();
       }
@@ -196,29 +168,20 @@ void SysModNetwork::setup() {
   }});
 
   ui->initText(currentVar, "rssi", nullptr, 32, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onUI:
-      ui->setLabel(var, "Signal");
-      return true;
     case onLoop1s:
       mdl->setValue(var, "%d dBm", WiFi.RSSI(), 0); //0 is to force format overload used
       return true;
     default: return false;
   }});
 
-  ui->initText(currentVar, "wfStatus", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onUI:
-      ui->setLabel(var, "Status");
-      return true;
+  ui->initText(currentVar, "status", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onLoop1s:
       mdl->setValue(var, "%s %s (s:%d)",  wfActive?WiFi.localIP()[0]?"🟢":"🟠":"🛑", wfActive?WiFi.localIP().toString().c_str():"inactive", WiFi.status());
       return true;
     default: return false;
   }});
 
-  currentVar = ui->initCheckBox(parentVar, "apOn", false, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onUI:
-      ui->setLabel(var, "AP");
-      return true;
+  currentVar = ui->initCheckBox(parentVar, "AP", false, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onChange:
       if (var["value"].as<bool>())
         initAP();
@@ -233,10 +196,7 @@ void SysModNetwork::setup() {
       // return true;
     default: return false;
   }});
-  ui->initText(currentVar, "apStatus", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onUI:
-      ui->setLabel(var, "Status");
-      return true;
+  ui->initText(currentVar, "status", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onLoop1s:
       mdl->setValue(var, "%s %s",  apActive?WiFi.softAPIP()[0]?"🟢":"🟠":"🛑", apActive?WiFi.softAPIP().toString().c_str():"inactive");
       return true;
@@ -251,7 +211,7 @@ void SysModNetwork::loop1s() {
   // char test1[] = "Hello";
   // ppf("test1=%s s:%d l:%d\n", test1, sizeof(test1), strlen(test1));
 
-  // const char * test2 = mdl->getValue("wifiOn", "ssid");
+  // const char * test2 = mdl->getValue("wiFi", "ssid");
   // ppf("test2=%s  s:%d l:%d\n", test2, sizeof(test2), strlen(test2)); //test2 may not be nullptr, size is size of ptr
 
   // char test3[32] = "";
@@ -285,7 +245,7 @@ void SysModNetwork::loop10s() {
       initAP();
     }
   } else {
-    if (apActive && !mdl->getValue("Network", "apOn").as<bool>()) {
+    if (apActive && !mdl->getValue("Network", "AP").as<bool>()) {
       ppf("IP's found -> stopAP (%s %s)\n", ETH.localIP().toString().c_str(), WiFi.localIP().toString().c_str());
       stopAP();
     }
@@ -318,9 +278,9 @@ void SysModNetwork::initWiFiConnection() {
   //   WiFi.mode(WIFI_STA);
   // }
 
-  const char * ssid = mdl->getValue("wifiOn", "ssid");
-  const char * password = mdl->getValue("wifiOn", "pw");
-  if (ssid && strnlen(ssid, 128) > 0 && password) {
+  const char * ssid = mdl->getValue("wiFi", "ssid");
+  const char * password = mdl->getValue("wiFi", "password");
+  if (ssid && strnlen(ssid, 128) > 0 && password && strnlen(password, 64) > 0) {
     char passXXX [64] = "";
     for (int i = 0; i < strnlen(password, 128); i++) strlcat(passXXX, "*", sizeof(passXXX));
     WiFi.begin(ssid, password);
@@ -340,7 +300,7 @@ void SysModNetwork::initWiFiConnection() {
     // else ppf("initWiFiConnection failed: status not connected\n");
   }
   else
-    ppf("initWiFiConnection not succesful ssid:%s pw:%s s:%d\n", ssid?ssid:"No SSID", password?password:"No Password", WiFi.status());
+    ppf("initWiFiConnection not successful ssid:%s pw:%s s:%d\n", ssid?ssid:"No SSID", password?password:"No Password", WiFi.status());
 }
 
 void SysModNetwork::stopWiFiConnection() {
@@ -421,22 +381,22 @@ bool SysModNetwork::initEthernet() {
 
   pinsM->deallocatePin(UINT8_MAX, "Eth");
 
-  uint8_t ethernet = mdl->getValue("ethOn", "ethConfig");
+  uint8_t ethernetConfig = mdl->getValue("ethernet", "config");
 
   ethernet_settings es;
 
   bool result;
 
-  switch (ethernet) {
+  switch (ethernetConfig) {
     case 0: //manual
     {
       es = {
-        mdl->getValue("ethOn", "ethaddr"),			              // eth_address,
-        mdl->getValue("ethOn", "ethpower"),			              // eth_power,
-        mdl->getValue("ethOn", "ethmdc"),			              // eth_mdc,
-        mdl->getValue("ethOn", "ethmdio"),			              // eth_mdio,
-        mdl->getValue("ethOn", "ethtype"),      // eth_type,
-        mdl->getValue("ethOn", "ethclkmode")	// eth_clk_mode
+        mdl->getValue("ethernet", "address"),
+        mdl->getValue("ethernet", "power"),
+        mdl->getValue("ethernet", "mdc"),
+        mdl->getValue("ethernet", "mdio"),
+        mdl->getValue("ethernet", "type"),
+        mdl->getValue("ethernet", "clockMode")
       };
 
     }
@@ -506,7 +466,7 @@ bool SysModNetwork::initEthernet() {
     ethActive = true;
 
     //tbd: make eth vars readonly as once connected cannot be changed anymore
-    // mdl->findVar("ethOn")["ro"] = true; //not possible to change anymore if connected
+    // mdl->findVar("ethernet")["ro"] = true; //not possible to change anymore if connected
 
     if (!connected) {
       connected = true;

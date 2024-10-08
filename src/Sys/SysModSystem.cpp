@@ -43,7 +43,6 @@ void SysModSystem::setup() {
 
   ui->initText(parentVar, "name", _INIT(TOSTRING(APP)), 24, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
-      // ui->setLabel(var, "Name");
       ui->setComment(var, "Instance name");
       return true;
     case onChange:
@@ -68,7 +67,6 @@ void SysModSystem::setup() {
 
   ui->initNumber(parentVar, "now", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
-      ui->setLabel(var, "now");
       ui->setComment(var, "s");
       return true;
     case onLoop1s:
@@ -79,7 +77,6 @@ void SysModSystem::setup() {
 
   ui->initNumber(parentVar, "timeBase", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
-      ui->setLabel(var, "TimeBase");
       ui->setComment(var, "s");
       return true;
     case onLoop1s:

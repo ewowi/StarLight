@@ -18,6 +18,8 @@
 
 //include all system wide libraries here (so no need to replicate in multiple modules)
 
+#define bool3State uint8_t //0/false, 1/true, UINT8_MAX/unknown
+
 #include <Arduino.h>
 #include <HardwareSerial.h>  // ensure we have the correct "Serial" on new MCUs (depends on ARDUINO_USB_MODE and ARDUINO_USB_CDC_ON_BOOT)
 #include <WiFi.h>

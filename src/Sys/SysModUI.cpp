@@ -22,32 +22,25 @@ void SysModUI::setup() {
 
   parentVar = initSysMod(parentVar, name, 4101);
 
-  JsonObject tableVar = initTable(parentVar, "vlTbl", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  JsonObject tableVar = initTable(parentVar, "loops", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
-      ui->setLabel(var, "Variable loops");
       ui->setComment(var, "Loops initiated by a variable");
       return true;
     default: return false;
   }});
 
-  initText(tableVar, "vlVar", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  initText(tableVar, "variable", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue:
       for (size_t rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
         mdl->setValue(var, JsonString(loopFunctions[rowNr].var["id"], JsonString::Copied), rowNr);
       return true;
-    case onUI:
-      ui->setLabel(var, "Name");
-      return true;
     default: return false;
   }});
 
-  initNumber(tableVar, "vlLoopps", UINT16_MAX, 0, 999, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  initNumber(tableVar, "#loops", UINT16_MAX, 0, 999, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onSetValue:
       for (size_t rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
         mdl->setValue(var, loopFunctions[rowNr].counter, rowNr);
-      return true;
-    case onUI:
-      ui->setLabel(var, "Loops p s");
       return true;
     case onLoop1s:
       callVarFun(var, UINT8_MAX, onSetValue); //set the value (WIP)

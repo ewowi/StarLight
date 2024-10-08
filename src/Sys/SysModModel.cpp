@@ -48,7 +48,7 @@ void SysModModel::setup() {
 
   #ifdef STARBASE_DEVMODE
 
-  ui->initCheckBox(parentVar, "showObsolete", &doShowObsolete, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initCheckBox(parentVar, "showObsolete", false, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onUI:
       ui->setComment(var, "Show in UI (refresh)");
       return true;
@@ -114,6 +114,7 @@ void SysModModel::cleanUpModel(JsonObject parent, bool oPos, bool ro) {
   else
     vars = Variable(parent).children();
 
+  bool showObsolete = mdl->getValue("Model", "showObsolete");
   for (JsonArray::iterator varV=vars.begin(); varV!=vars.end(); ++varV) {
   // for (JsonVariant varV : vars) {
     if (varV->is<JsonObject>()) {
@@ -124,10 +125,9 @@ void SysModModel::cleanUpModel(JsonObject parent, bool oPos, bool ro) {
       if (!ro) {
         if (oPos) {
           if (var["o"].isNull() || variable.order() >= 0) { //not set negative in initVar
-            if (!doShowObsolete) {
-              ppf("cleanUpModel remove var %s (""o"">=0)\n", variable.id());          
+            ppf("obsolete found %s removed: %d\n", variable.id(), showObsolete);
+            if (!showObsolete)
               vars.remove(varV); //remove the obsolete var (no o or )
-            }
           }
           else {
             variable.order( -variable.order()); //make it possitive
@@ -283,9 +283,9 @@ bool SysModModel::callVarOnChange(JsonObject var, uint8_t rowNr, bool init) {
             (*valuePointer)[rowNr] = value;
           }
           else if (var["type"] == "checkbox") {
-            std::vector<bool> *valuePointer = (std::vector<bool> *)pointer;
-            while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT16_MAX); //create vector space if needed...
-            (*valuePointer)[rowNr] = value.as<bool>();
+            std::vector<bool3State> *valuePointer = (std::vector<bool3State> *)pointer;
+            while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT8_MAX); //create vector space if needed...
+            (*valuePointer)[rowNr] = value;
           }
           else if (var["type"] == "text" || var["type"] == "fileEdit") {
             std::vector<VectorString> *valuePointer = (std::vector<VectorString> *)pointer;
@@ -309,12 +309,12 @@ bool SysModModel::callVarOnChange(JsonObject var, uint8_t rowNr, bool init) {
           uint8_t *valuePointer = (uint8_t *)pointer;
           *valuePointer = value;
         }
-        else if (var["type"] == "checkbox") {
-          bool *valuePointer = (bool *)pointer;
-          *valuePointer = value;
-        }
         else if (var["type"] == "number") {
           uint16_t *valuePointer = (uint16_t *)pointer;
+          *valuePointer = value;
+        }
+        else if (var["type"] == "checkbox") {
+          bool3State *valuePointer = (bool3State *)pointer;
           *valuePointer = value;
         }
         else if (var["type"] == "coord3D") {

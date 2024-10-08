@@ -133,9 +133,9 @@ public:
     return initVarAndValue<int>(parent, id, "canvas", value, 0, 0, readOnly, varFun);
   }
 
-  //supports 3 state value: if UINT16_MAX it is indeterminated
-  JsonObject initCheckBox(JsonObject parent, const char * id, bool value = UINT8_MAX, bool readOnly = false, VarFun varFun = nullptr) {
-    return initVarAndValue<bool>(parent, id, "checkbox", value, 0, 0, readOnly, varFun);
+  //supports 3 state value: if UINT8_MAX it is indeterminated
+  JsonObject initCheckBox(JsonObject parent, const char * id, bool3State value = UINT8_MAX, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndValue<bool3State>(parent, id, "checkbox", value, 0, 0, readOnly, varFun);
   }
   //init a checkbox using referenced value
   JsonObject initCheckBox(JsonObject parent, const char * id, bool * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
@@ -302,7 +302,7 @@ public:
         }
 
         if (onChangeExists)
-          ppf("initValue onChange init %s[x] <- %s\n", variable.id(), variable.valueString().c_str());
+          ppf("initValue onChange %s.%s <- %s\n", variable.pid(), variable.id(), variable.valueString().c_str());
       }
     }
     return false;
@@ -325,7 +325,7 @@ public:
       if (funNr < varFunctions.size()) {
         result = varFunctions[funNr](var, rowNr, funType);
         if (result && !variable.readOnly()) { //send rowNr = 0 if no rowNr
-          //only print vars with a value and not onSetValue as that changes a lot due to insTbl clTbl etc (tbd)
+          //only print vars with a value and not onSetValue as that changes a lot due to insTbl clients etc (tbd)
           //don't print if onSetValue or oldValue is null
           if (funType != onSetValue && (!var["oldValue"].isNull() || ((rowNr != UINT8_MAX) && !var["oldValue"][rowNr].isNull()))) {
             ppf("%sFun %s", funType==onSetValue?"val":funType==onUI?"ui":funType==onChange?"ch":funType==onAdd?"add":funType==onDelete?"del":"other", Variable(var).id());
@@ -364,6 +364,7 @@ public:
 
           if (pointer != 0) {
             //pointer checks
+            // check rowNr as it can be 255 
             if (childVar["type"] == "select" || childVar["type"] == "range" || childVar["type"] == "pin") {
               std::vector<uint8_t> *valuePointer = (std::vector<uint8_t> *)pointer;
               if (rowNr < (*valuePointer).size())
@@ -373,7 +374,7 @@ public:
               if (rowNr < (*valuePointer).size())
                 (*valuePointer).erase((*valuePointer).begin() + rowNr);
             } else if (childVar["type"] == "checkbox") {
-              std::vector<bool> *valuePointer = (std::vector<bool> *)pointer;
+              std::vector<bool3State> *valuePointer = (std::vector<bool3State> *)pointer;
               if (rowNr < (*valuePointer).size())
                 (*valuePointer).erase((*valuePointer).begin() + rowNr);
             } else if (childVar["type"] == "text" || childVar["type"] == "fileEdit") {

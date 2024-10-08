@@ -228,14 +228,21 @@ const UINT16_MAX = 256*256-1;
 function gId(c) {return document.getElementById(c);}
 function cE(e) { return document.createElement(e); }
 
+function isLowerCase(s) {
+  return s.toLowerCase() == s
+}
+
 function initCap(s) {
   if (typeof s !== 'string') return '';
   let result = "";
   for (let i = 0; i < s.length; i++) {
     if (i==0) //first uppercase
       result += s.charAt(i).toUpperCase();
-    else if (s.charAt(i).toLowerCase() !== s.charAt(i) && s.charAt(i-1).toLowerCase() == s.charAt(i-1)) //uppercase (previous not uppercase) => add space
+    else if (!isLowerCase(s.charAt(i)) && isLowerCase(s.charAt(i-1))) //uppercase (previous not uppercase) => add space
+    // else if (!isLowerCase(s.charAt(i)) && isLowerCase(s.charAt(i-1)) && (i+1 >= s.length || isLowerCase(s.charAt(i+1))))
       result += " " + s.charAt(i);
+    // else if (!isLowerCase(s.charAt(i)) && !isLowerCase(s.charAt(i-1)) && (i+1 >= s.length || isLowerCase(s.charAt(i+1))))
+    //   result += " " + s.charAt(i);
     else if (s.charAt(i) == '-' || s.charAt(i) == '_') //- and _ is space
       result += " ";
     else

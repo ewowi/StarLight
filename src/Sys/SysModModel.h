@@ -524,7 +524,6 @@ public:
   }
 
 private:
-  bool doShowObsolete = false;
   bool cleanUpModelDone = false;
 
 };
