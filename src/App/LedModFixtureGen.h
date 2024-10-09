@@ -987,7 +987,7 @@ public:
       });
 
     } else if (strnstr(fgText, "Hexa", 32) != nullptr) {
-      strlcpy(fileName, fgText, sizeof(fileName));
+      strlcpy(fileName, fgText, 32);
 
       getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D firstLed, uint8_t IP, uint8_t pin) {
         uint8_t ledsPerSide = mdl->getValue("elements", "ledsPerSide", rowNr);
@@ -1014,14 +1014,14 @@ public:
       });
 
     } else if (strnstr(fgText, "Cloud5416", 32) != nullptr) {
-      strlcpy(fileName, fgText, sizeof(fileName));
+      strlcpy(fileName, fgText, 32);
 
       getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D firstLed, uint8_t IP, uint8_t pin) {
         genFix->cloud5416(firstLed*10, IP, pin);
       });
 
     } else if (strnstr(fgText, "Wall", 32) != nullptr) {
-      strlcpy(fileName, fgText, sizeof(fileName));
+      strlcpy(fileName, fgText, 32);
 
       getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D firstLed, uint8_t IP, uint8_t pin) {
         genFix->rings241(Coord3D{110,110,0}, 9, true, IP, pin);
@@ -1035,7 +1035,7 @@ public:
       });
 
     } else if (strnstr(fgText, "Star", 32) != nullptr) {
-      strlcpy(fileName, fgText, sizeof(fileName));
+      strlcpy(fileName, fgText, 32);
 
       getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D firstLed, uint8_t IP, uint8_t pin) {
 
@@ -1057,7 +1057,7 @@ public:
       });
 
     } else if (strnstr(fgText, "6Rings", 32) != nullptr) {
-      strlcpy(fileName, fgText, sizeof(fileName));
+      strlcpy(fileName, fgText, 32);
 
       getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D firstLed, uint8_t IP, uint8_t pin) {
         genFix->rings241(Coord3D{110,110,0}, 9, true, IP, pin);
@@ -1069,7 +1069,7 @@ public:
       });
 
     } else if (strnstr(fgText, "SpaceStation", 32) != nullptr) {
-      strlcpy(fileName, fgText, sizeof(fileName));
+      strlcpy(fileName, fgText, 32);
 
       getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D firstLed, uint8_t IP, uint8_t pin) {
         Trigo trigo;
@@ -1082,7 +1082,7 @@ public:
       });
 
     } else if (strnstr(fgText, "Human", 32) != nullptr) {
-      strlcpy(fileName, fgText, sizeof(fileName));
+      strlcpy(fileName, fgText, 32);
 
       getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D firstLed, uint8_t IP, uint8_t pin) {
 
@@ -1122,7 +1122,7 @@ public:
       });
 
     } else if (strnstr(fgText, "LeGlorb", 32) != nullptr) {
-      strlcpy(fileName, fgText, sizeof(fileName));
+      strlcpy(fileName, fgText, 32);
 
       getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D firstLed, uint8_t IP, uint8_t pin) {
 
