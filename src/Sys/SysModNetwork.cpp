@@ -37,6 +37,50 @@ void SysModNetwork::setup() {
 
   JsonObject currentVar;
 
+  currentVar = ui->initCheckBox(parentVar, "wiFi", true, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    case onChange:
+      if (var["value"].as<bool>())
+        initWiFiConnection();
+      else
+        stopWiFiConnection();
+      return true;
+    default: return false;
+  }});
+
+  ui->initText(currentVar, "ssid", "", 31, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    case onChange:
+      if (mdl->getValue("Network", "wiFi").as<bool>()) {
+        stopWiFiConnection();
+        initWiFiConnection();
+      }
+      return true;
+    default: return false;
+  }});
+
+  ui->initPassword(currentVar, "password", "", 63, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    case onChange:
+      if (mdl->getValue("Network", "wiFi").as<bool>()) {
+        stopWiFiConnection();
+        initWiFiConnection();
+      }
+      return true;
+    default: return false;
+  }});
+
+  ui->initText(currentVar, "rssi", nullptr, 32, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    case onLoop1s:
+      mdl->setValue(var, "%d dBm", WiFi.RSSI(), 0); //0 is to force format overload used
+      return true;
+    default: return false;
+  }});
+
+  ui->initText(currentVar, "status", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    case onLoop1s:
+      mdl->setValue(var, "%s %s (s:%d)",  wfActive?WiFi.localIP()[0]?"🟢":"🟠":"🛑", wfActive?WiFi.localIP().toString().c_str():"inactive", WiFi.status());
+      return true;
+    default: return false;
+  }});
+
   #ifdef STARBASE_ETHERNET
 
     currentVar = ui->initCheckBox(parentVar, "ethernet", false, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
@@ -136,50 +180,6 @@ void SysModNetwork::setup() {
     }});
 
   #endif
-
-  currentVar = ui->initCheckBox(parentVar, "wiFi", true, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onChange:
-      if (var["value"].as<bool>())
-        initWiFiConnection();
-      else
-        stopWiFiConnection();
-      return true;
-    default: return false;
-  }});
-
-  ui->initText(currentVar, "ssid", "", 31, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onChange:
-      if (mdl->getValue("Network", "wiFi").as<bool>()) {
-        stopWiFiConnection();
-        initWiFiConnection();
-      }
-      return true;
-    default: return false;
-  }});
-
-  ui->initPassword(currentVar, "password", "", 63, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onChange:
-      if (mdl->getValue("Network", "wiFi").as<bool>()) {
-        stopWiFiConnection();
-        initWiFiConnection();
-      }
-      return true;
-    default: return false;
-  }});
-
-  ui->initText(currentVar, "rssi", nullptr, 32, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onLoop1s:
-      mdl->setValue(var, "%d dBm", WiFi.RSSI(), 0); //0 is to force format overload used
-      return true;
-    default: return false;
-  }});
-
-  ui->initText(currentVar, "status", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onLoop1s:
-      mdl->setValue(var, "%s %s (s:%d)",  wfActive?WiFi.localIP()[0]?"🟢":"🟠":"🛑", wfActive?WiFi.localIP().toString().c_str():"inactive", WiFi.status());
-      return true;
-    default: return false;
-  }});
 
   currentVar = ui->initCheckBox(parentVar, "AP", false, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onChange:

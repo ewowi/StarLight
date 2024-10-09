@@ -353,7 +353,7 @@
             "fun": 34
           },
           {
-            "id": "clLength",
+            "id": "length",
             "type": "number",
             "pid": "clients",
             "ro": true,
@@ -376,7 +376,7 @@
         "o": 77
       },
       {
-        "id": "wsSend",
+        "id": "WSSend",
         "type": "text",
         "ro": true,
         "max": 16,
@@ -385,7 +385,7 @@
         "fun": 58
       },
       {
-        "id": "wsRecv",
+        "id": "WSRecv",
         "type": "text",
         "ro": true,
         "max": 16,
@@ -394,7 +394,7 @@
         "fun": 59
       },
       {
-        "id": "udpSend",
+        "id": "UDPSend",
         "type": "text",
         "ro": true,
         "max": 16,
@@ -403,7 +403,7 @@
         "fun": 60
       },
       {
-        "id": "udpRecv",
+        "id": "UDPRecv",
         "type": "text",
         "ro": true,
         "max": 16,
@@ -604,7 +604,7 @@
     "max": 255,
     "n": [
       {
-        "id": "dun",
+        "id": "universe",
         "type": "number",
         "ro": false,
         "max": 7,
@@ -615,7 +615,7 @@
         "p": 1073463688
       },
       {
-        "id": "dch",
+        "id": "channel",
         "type": "number",
         "ro": false,
         "min": 1,
@@ -628,13 +628,14 @@
         "dash": true
       },
       {
-        "id": "e131Tbl",
+        "id": "watches",
         "type": "table",
         "ro": true,
         "n": [
           {
-            "id": "e131Channel",
+            "id": "channel",
             "type": "number",
+            "pid": "watches",
             "ro": true,
             "min": 1,
             "max": 512,
@@ -643,8 +644,9 @@
             "fun": 86
           },
           {
-            "id": "e131Name",
+            "id": "variable",
             "type": "text",
+            "pid": "watches",
             "ro": true,
             "max": 32,
             "pid": "e131Tbl",
@@ -652,16 +654,17 @@
             "fun": 87
           },
           {
-            "id": "e131Max",
+            "id": "max",
             "type": "number",
+            "pid": "watches",
             "ro": true,
-            "pid": "e131Tbl",
-            "o": 112,
-            "fun": 88
+            "o": 76,
+            "fun": 61
           },
           {
-            "id": "e131Value",
+            "id": "value",
             "type": "number",
+            "pid": "watches",
             "ro": true,
             "max": 255,
             "pid": "e131Tbl",
@@ -798,13 +801,14 @@
     "max": 255,
     "n": [
       {
-        "id": "insTbl",
+        "id": "instances",
         "type": "table",
         "ro": true,
         "n": [
           {
-            "id": "insName",
+            "id": "name",
             "type": "text",
+            "pid": "instances",
             "ro": false,
             "max": 32,
             "pid": "insTbl",
@@ -812,24 +816,25 @@
             "fun": 101
           },
           {
-            "id": "insShow",
+            "id": "show",
             "type": "url",
+            "pid": "instances",
             "ro": true,
-            "pid": "insTbl",
-            "o": 131,
-            "fun": 102
+            "o": 93,
+            "fun": 74
           },
           {
-            "id": "insLink",
+            "id": "link",
             "type": "number",
+            "pid": "instances",
             "ro": true,
-            "pid": "insTbl",
-            "o": 132,
-            "fun": 103
+            "o": 94,
+            "fun": 75
           },
           {
-            "id": "insIp",
+            "id": "IP",
             "type": "text",
+            "pid": "instances",
             "ro": true,
             "max": 16,
             "pid": "insTbl",
@@ -837,8 +842,9 @@
             "fun": 104
           },
           {
-            "id": "insType",
+            "id": "type",
             "type": "text",
+            "pid": "instances",
             "ro": true,
             "max": 16,
             "pid": "insTbl",
@@ -846,8 +852,9 @@
             "fun": 105
           },
           {
-            "id": "insVersion",
+            "id": "version",
             "type": "number",
+            "pid": "instances",
             "ro": true,
             "max": -1,
             "pid": "insTbl",
@@ -855,8 +862,9 @@
             "fun": 106
           },
           {
-            "id": "insUp",
+            "id": "uptime",
             "type": "number",
+            "pid": "instances",
             "ro": true,
             "max": -1,
             "pid": "insTbl",
@@ -864,8 +872,9 @@
             "fun": 107
           },
           {
-            "id": "insNow",
+            "id": "now",
             "type": "number",
+            "pid": "instances",
             "ro": true,
             "max": -1,
             "pid": "insTbl",
@@ -873,8 +882,9 @@
             "fun": 108
           },
           {
-            "id": "insTS",
+            "id": "timestamp",
             "type": "number",
+            "pid": "instances",
             "ro": true,
             "max": -1,
             "pid": "insTbl",
@@ -882,8 +892,9 @@
             "fun": 109
           },
           {
-            "id": "insTT",
+            "id": "time",
             "type": "number",
+            "pid": "instances",
             "ro": true,
             "max": -1,
             "pid": "insTbl",
@@ -891,8 +902,9 @@
             "fun": 110
           },
           {
-            "id": "insTM",
+            "id": "ms",
             "type": "number",
+            "pid": "instances",
             "ro": true,
             "max": -1,
             "pid": "insTbl",
@@ -902,14 +914,15 @@
           {
             "id": "inson",
             "type": "checkbox",
+            "pid": "instances",
             "ro": false,
-            "pid": "insTbl",
-            "o": 142,
-            "fun": 113
+            "o": 104,
+            "fun": 85
           },
           {
             "id": "insbrightness",
             "type": "range",
+            "pid": "instances",
             "ro": false,
             "max": 255,
             "log": true,
@@ -920,6 +933,7 @@
           {
             "id": "insdch",
             "type": "number",
+            "pid": "instances",
             "ro": false,
             "min": 1,
             "max": 512,

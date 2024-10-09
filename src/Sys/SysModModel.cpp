@@ -142,7 +142,7 @@ void SysModModel::cleanUpModel(JsonObject parent, bool oPos, bool ro) {
 
       //remove ro values (ro vars cannot be deleted as SM uses these vars)
       // remove if var is ro or table is instance table (exception here, values don't need to be saved)
-      if (ro && (parent["id"] == "insTbl" || variable.readOnly())) {// && !var["value"].isNull())
+      if (ro && (parent["id"] == "instances" || variable.readOnly())) {// && !var["value"].isNull())
         // ppf("remove ro value %s\n", variable.id());          
         var.remove("value");
       }

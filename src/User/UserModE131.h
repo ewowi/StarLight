@@ -27,73 +27,55 @@ public:
 
     parentVar = ui->initUserMod(parentVar, name, 6201);
 
-    ui->initNumber(parentVar, "dun", &universe, 0, 7, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-      case onUI:
-        ui->setLabel(var, "DMX Universe");
-        return true;
-      default: return false;
-    }});
+    ui->initNumber(parentVar, "universe", &universe, 0, 7);
 
-    JsonObject currentVar = ui->initNumber(parentVar, "dch", &channel, 1, 512, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    JsonObject currentVar = ui->initNumber(parentVar, "channel", &channel, 1, 512, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "DMX Channel");
         ui->setComment(var, "First channel");
         return true;
       case onChange:
-        for (JsonObject childVar: Variable(mdl->findVar("E131", "e131Tbl")).children())
+        for (JsonObject childVar: Variable(mdl->findVar("E131", "watches")).children())
           ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
         return true;
       default: return false;
     }});
     currentVar["dash"] = true;
 
-    JsonObject tableVar = ui->initTable(parentVar, "e131Tbl", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    JsonObject tableVar = ui->initTable(parentVar, "watches", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "Vars to watch");
+        ui->setComment(var, "Variables to watch");
         return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "e131Channel", UINT16_MAX, 1, 512, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "channel", UINT16_MAX, 1, 512, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
         for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
           mdl->setValue(var, channel + varsToWatch[rowNr].channelOffset, rowNr);
         return true;
-      case onUI:
-        ui->setLabel(var, "Channel");
-        return true;
       default: return false;
     }});
 
-    ui->initText(tableVar, "e131Name", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(tableVar, "variable", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
         for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
           mdl->setValue(var, varsToWatch[rowNr].id, rowNr);
         return true;
-      case onUI:
-        ui->setLabel(var, "Name");
-        return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "e131Max", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "max", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
         for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
           mdl->setValue(var, varsToWatch[rowNr].max, rowNr);
         return true;
-      case onUI:
-        ui->setLabel(var, "Max");
-        return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "e131Value", UINT16_MAX, 0, 255, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "value", UINT16_MAX, 0, 255, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
         for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
           mdl->setValue(var, varsToWatch[rowNr].savedValue, rowNr);
-        return true;
-      case onUI:
-        ui->setLabel(var, "Value");
         return true;
       default: return false;
     }});

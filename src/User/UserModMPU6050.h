@@ -36,9 +36,9 @@ public:
     SysModule::setup();
     parentVar = ui->initUserMod(parentVar, name, 6305);
 
-    ui->initCheckBox(parentVar, "mtReady", &motionTrackingReady, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "ready", &motionTrackingReady, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "tracking ready");
+        ui->setComment(var, "tracking ready");
         return true;
       default: return false;
     }}); 

@@ -325,7 +325,7 @@ public:
       if (funNr < varFunctions.size()) {
         result = varFunctions[funNr](var, rowNr, funType);
         if (result && !variable.readOnly()) { //send rowNr = 0 if no rowNr
-          //only print vars with a value and not onSetValue as that changes a lot due to insTbl clients etc (tbd)
+          //only print vars with a value and not onSetValue as that changes a lot due to instances clients etc (tbd)
           //don't print if onSetValue or oldValue is null
           if (funType != onSetValue && (!var["oldValue"].isNull() || ((rowNr != UINT8_MAX) && !var["oldValue"][rowNr].isNull()))) {
             ppf("%sFun %s", funType==onSetValue?"val":funType==onUI?"ui":funType==onChange?"ch":funType==onAdd?"add":funType==onDelete?"del":"other", Variable(var).id());

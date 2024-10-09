@@ -702,7 +702,7 @@ function genTableRowHTML(json, parentNode = null, rowNr = UINT8_MAX) {
     trNode.appendChild(tdNode);
   }
   flushOnUICommands();
-  if (variable.pid == "Instances" && variable.id == "insTbl")
+  if (variable.pid == "Instances" && variable.id == "instances")
     setInstanceTableColumns();
 }
 
@@ -1026,7 +1026,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
 
         flushOnUICommands(); //make sure onUIs of new elements are called
 
-        if (variable.pid == "Instances" && variable.id == "insTbl")
+        if (variable.pid == "Instances" && variable.id == "instances")
           setInstanceTableColumns();
       }
       else
@@ -1602,7 +1602,7 @@ function uploadFileWithText(name, text)
 
 function setInstanceTableColumns() {
 
-  let tbl = gId("Instances.insTbl");
+  let tbl = gId("Instances.instances");
   if (!tbl) return;
   let isDashView = gId("vDash").classList.contains("selected");
   let thead = tbl.querySelector("thead");
