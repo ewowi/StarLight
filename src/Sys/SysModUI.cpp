@@ -249,7 +249,8 @@ void SysModUI::processJson(JsonVariant json) {
             }
             else {
               mdl->setValueJV(var, newValue, rowNr);
-              json.remove(key); //key / var["id"] processed we don't need the key in the response
+              //we do need the response! to update multiple clients and also things within a client (e.g. systemName)
+              // json.remove(key); //key / var["id"] processed we don't need the key in the response
               // print->printJson("setValueJV", web->getResponseObject());
             }
           }

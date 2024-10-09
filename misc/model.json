@@ -687,7 +687,7 @@
     "max": 255,
     "n": [
       {
-        "id": "mtReady",
+        "id": "ready",
         "type": "checkbox",
         "ro": true,
         "pid": "Motion Tracking",

@@ -415,9 +415,10 @@ public:
               //   }
               // }
           
-          instance->jsonData["brightness"] = wledSyncMessage.bri; //LEDs specific
+          //LEDs specific
+          instance->jsonData["brightness"] = wledSyncMessage.bri; 
           instance->jsonData["effect"] = wledSyncMessage.mainsegMode; //tbd: rowNr
-          instance->jsonData["pal"] = wledSyncMessage.palette; //tbd: rowNr
+          instance->jsonData["palette"] = wledSyncMessage.palette; //tbd: rowNr
 
           // for (size_t x = 0; x < packetSize; x++) {
           //   char xx = (char)udpIn[x];
@@ -524,7 +525,8 @@ public:
         ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //no rowNr so all rows updated
 
       //tbd: pubsub mechanism
-      ui->callVarFun("DDP", "ddpInst", UINT8_MAX, onUI); //rebuild options
+      //LEDs specific
+      ui->callVarFun("DDP", "instance", UINT8_MAX, onUI); //rebuild options
       // ui->callVarFun("Artnet", "artInst", UINT8_MAX, onUI); //rebuild options
     }
   }
@@ -782,7 +784,8 @@ public:
       ppf("instances new instance %s\n", messageIP.toString().c_str());
 
       //tbd: pubsub mechanism
-      ui->callVarFun("DDP", "ddpInst", UINT8_MAX, onUI); //rebuild options
+      //LEDs specific
+      ui->callVarFun("DDP", "instance", UINT8_MAX, onUI); //rebuild options
       // ui->callVarFun("Artnet", "artInst", UINT8_MAX, onUI); //rebuild options
 
       // ui->processOnUI("instances");

@@ -94,10 +94,10 @@ void SysModules::loop() {
   // }
   for (SysModule *module:modules) {
     if (module->isEnabled && module->success) {
-      module->loop();
+      module->loop(); //use virtual cached function for speed???
       if (millis() - module->twentyMsMillis >= 20) {
         module->twentyMsMillis = millis();
-        module->loop20ms();
+        module->loop20ms(); //use virtual cached function for speed???
       }
       if (millis() - module->oneSecondMillis >= 1000) {
         module->oneSecondMillis = millis();

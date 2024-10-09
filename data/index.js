@@ -763,7 +763,7 @@ function receiveData(json) {
         flushOnUICommands(); //make sure onUIs of new elements are called
       }
       else if (key == "onAdd") { //update the row of a table
-        ppf("receiveData", key, value); //e.g. "onAdd" {"id":"ArtNet.outputs","rowNr":255}
+        ppf("receiveData", key, value); //e.g. "onDelete" {"id":"instances","name":255}
 
         if (value.id && value.rowNr != null) {
           let tableId = value.pid + "." + value.id;
@@ -782,7 +782,7 @@ function receiveData(json) {
           ppf("dev receiveData onAdd no id and/or rowNr specified", key, value);
 
       } else if (key == "onDelete") { //update the row of a table
-        ppf("receiveData", key, value); //e.g. "onDelete" {"id":"ArtNet.outputs","rowNr":255}
+        ppf("receiveData", key, value); //e.g. "onDelete" {"id":"instances","name":255}
 
         let tableId = value.pid + "." + value.id;
         let tableVar = controller.modules.findVar(value.pid, value.id);
@@ -1012,7 +1012,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
         //add each row
         let newRowNr = 0;
         for (var row of commandJson.value) {
-          if (row) { //not null, e.g. fixTbl sent value:[null]... tbd: check why
+          if (row) { //not null, e.g. fixture.elements sent value:[null]... tbd: check why
             genTableRowHTML(variable, node, newRowNr);
             let colNr = 0;
             for (let columnVar of variable.n) {
@@ -1216,7 +1216,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
 
       //'hack' show the instanceName on top of the page
       if (variable.pid == "System" && variable.id == "name") {
-        gId("serverName").innerText = commandJson.value;
+        gId("systemName").innerText = commandJson.value;
         document.title = commandJson.value;
       }
     }
