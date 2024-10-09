@@ -51,6 +51,8 @@ public:
 
   bool driverShow = true;
 
+  uint8_t doInitEffectRowNr = UINT8_MAX;
+
   #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
     #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
       I2SClocklessLedDriveresp32S3 driver;
@@ -238,6 +240,7 @@ public:
               leds->effectDimension = effect->dim();
               leds->triggerMapping();
               //initEffect is called after mapping done to make sure dimensions are right before controls are done...
+              doInitEffectRowNr = rowNr;
             }
             else {
               initEffect(*leds, rowNr);
@@ -573,14 +576,15 @@ public:
   void mapInitAlloc() {
     fixture.projectAndMap();
 
-    //reinit the effect after a mapping change
-
+    //reinit the effect after an effect change causing a mapping change
     uint8_t rowNr = 0;
     for (LedsLayer *leds: fixture.layers) {
-      initEffect(*leds, rowNr);
+      if (doInitEffectRowNr == rowNr) {
+        doInitEffectRowNr = UINT8_MAX;
+        initEffect(*leds, rowNr);
+      }
       rowNr++;
     }
-
 
     //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
 

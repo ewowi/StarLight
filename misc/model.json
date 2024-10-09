@@ -322,7 +322,6 @@
             "pid": "clients",
             "ro": true,
             "max": 999,
-            "pid": "clTbl",
             "o": 72,
             "fun": 53
           },
@@ -332,7 +331,6 @@
             "pid": "clients",
             "ro": true,
             "max": 16,
-            "pid": "clTbl",
             "o": 73,
             "fun": 54
           },
@@ -358,7 +356,6 @@
             "pid": "clients",
             "ro": true,
             "max": 64,
-            "pid": "clTbl",
             "o": 76,
             "fun": 57
           }
@@ -443,7 +440,6 @@
                 "max": 255,
                 "value": 0,
                 "o": 85,
-                "pid": "ethConfig",
                 "fun": 64
               },
               {
@@ -454,7 +450,6 @@
                 "max": 40,
                 "value": 14,
                 "o": 86,
-                "pid": "ethConfig",
                 "fun": 65
               },
               {
@@ -465,7 +460,6 @@
                 "max": 40,
                 "value": 23,
                 "o": 87,
-                "pid": "ethConfig",
                 "fun": 66
               },
               {
@@ -476,7 +470,6 @@
                 "max": 40,
                 "value": 18,
                 "o": 88,
-                "pid": "ethConfig",
                 "fun": 67
               },
               {
@@ -486,7 +479,6 @@
                 "ro": false,
                 "value": 0,
                 "o": 89,
-                "pid": "ethConfig",
                 "fun": 68
               },
               {
@@ -496,11 +488,9 @@
                 "ro": false,
                 "value": 3,
                 "o": 90,
-                "pid": "ethConfig",
                 "fun": 69
               }
             ],
-            "pid": "ethOn",
             "o": 84,
             "fun": 63
           },
@@ -510,7 +500,6 @@
             "pid": "ethernet",
             "ro": true,
             "max": 32,
-            "pid": "ethOn",
             "o": 91,
             "fun": 70
           }
@@ -532,7 +521,6 @@
             "ro": false,
             "max": 31,
             "value": "ewtr",
-            "pid": "wifiOn",
             "o": 93,
             "fun": 72
           },
@@ -543,7 +531,6 @@
             "ro": false,
             "max": 63,
             "value": "zonledmod",
-            "pid": "wifiOn",
             "o": 94,
             "fun": 73
           },
@@ -553,7 +540,6 @@
             "pid": "wiFi",
             "ro": true,
             "max": 32,
-            "pid": "wifiOn",
             "o": 95,
             "fun": 74
           },
@@ -563,7 +549,6 @@
             "pid": "wiFi",
             "ro": true,
             "max": 32,
-            "pid": "wifiOn",
             "o": 96,
             "fun": 75
           }
@@ -584,7 +569,6 @@
             "pid": "AP",
             "ro": true,
             "max": 32,
-            "pid": "apOn",
             "o": 98,
             "fun": 77
           }
@@ -639,7 +623,6 @@
             "ro": true,
             "min": 1,
             "max": 512,
-            "pid": "e131Tbl",
             "o": 110,
             "fun": 86
           },
@@ -649,7 +632,6 @@
             "pid": "watches",
             "ro": true,
             "max": 32,
-            "pid": "e131Tbl",
             "o": 111,
             "fun": 87
           },
@@ -667,7 +649,6 @@
             "pid": "watches",
             "ro": true,
             "max": 255,
-            "pid": "e131Tbl",
             "o": 113,
             "fun": 89
           }
@@ -771,7 +752,6 @@
             "pid": "loops",
             "ro": true,
             "max": 32,
-            "pid": "vlTbl",
             "o": 124,
             "fun": 97
           },
@@ -781,7 +761,6 @@
             "pid": "loops",
             "ro": true,
             "max": 999,
-            "pid": "vlTbl",
             "o": 125,
             "fun": 98
           }
@@ -811,7 +790,6 @@
             "pid": "instances",
             "ro": false,
             "max": 32,
-            "pid": "insTbl",
             "o": 130,
             "fun": 101
           },
@@ -837,7 +815,6 @@
             "pid": "instances",
             "ro": true,
             "max": 16,
-            "pid": "insTbl",
             "o": 133,
             "fun": 104
           },
@@ -847,7 +824,6 @@
             "pid": "instances",
             "ro": true,
             "max": 16,
-            "pid": "insTbl",
             "o": 134,
             "fun": 105
           },
@@ -857,7 +833,6 @@
             "pid": "instances",
             "ro": true,
             "max": -1,
-            "pid": "insTbl",
             "o": 135,
             "fun": 106
           },
@@ -867,7 +842,6 @@
             "pid": "instances",
             "ro": true,
             "max": -1,
-            "pid": "insTbl",
             "o": 136,
             "fun": 107
           },
@@ -877,7 +851,6 @@
             "pid": "instances",
             "ro": true,
             "max": -1,
-            "pid": "insTbl",
             "o": 137,
             "fun": 108
           },
@@ -887,7 +860,6 @@
             "pid": "instances",
             "ro": true,
             "max": -1,
-            "pid": "insTbl",
             "o": 138,
             "fun": 109
           },
@@ -897,7 +869,6 @@
             "pid": "instances",
             "ro": true,
             "max": -1,
-            "pid": "insTbl",
             "o": 139,
             "fun": 110
           },
@@ -907,12 +878,11 @@
             "pid": "instances",
             "ro": true,
             "max": -1,
-            "pid": "insTbl",
             "o": 140,
             "fun": 111
           },
           {
-            "id": "inson",
+            "id": "on",
             "type": "checkbox",
             "pid": "instances",
             "ro": false,
@@ -920,40 +890,38 @@
             "fun": 85
           },
           {
-            "id": "insbrightness",
+            "id": "brightness",
             "type": "range",
             "pid": "instances",
             "ro": false,
             "max": 255,
             "log": true,
-            "pid": "insTbl",
             "o": 143,
             "fun": 114
           },
           {
-            "id": "insdch",
+            "id": "channel",
             "type": "number",
             "pid": "instances",
             "ro": false,
             "min": 1,
             "max": 512,
-            "pid": "insTbl",
             "o": 141,
             "fun": 112
           },
           {
-            "id": "insfx",
+            "id": "effect",
             "type": "select",
             "ro": false,
-            "pid": "insTbl",
+            "pid": "instances",
             "o": 144,
             "fun": 115
           },
           {
-            "id": "inspro",
+            "id": "projection",
             "type": "select",
             "ro": false,
-            "pid": "insTbl",
+            "pid": "instances",
             "o": 145,
             "fun": 116
           }
