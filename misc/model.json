@@ -1213,7 +1213,7 @@
             ],
             "n": [
               {
-                "id": "pal",
+                "id": "palette",
                 "type": "select",
                 "ro": false,
                 "value": [
@@ -1380,7 +1380,7 @@
     "s": true,
     "n": [
       {
-        "id": "fixtureVar",
+        "id": "fixture",
         "type": "select",
         "ro": false,
         "value": 0,
@@ -1391,23 +1391,23 @@
           {
             "id": "generate",
             "type": "button",
-            "pid": "fixtureVar",
+            "pid": "fixture",
             "ro": false,
             "o": 29,
             "fun": 20
           },
           {
-            "id": "fixTbl",
+            "id": "elements",
             "type": "table",
-            "pid": "fixtureVar",
+            "pid": "fixture",
             "ro": false,
             "o": 30,
             "fun": 21,
             "n": [
               {
-                "id": "fixFirst",
+                "id": "firstLed",
                 "type": "coord3D",
-                "pid": "fixTbl",
+                "pid": "elements",
                 "ro": false,
                 "o": 31,
                 "fun": 22,
@@ -1419,9 +1419,9 @@
                 }
               },
               {
-                "id": "fixLeds",
+                "id": "#Leds",
                 "type": "number",
-                "pid": "fixTbl",
+                "pid": "elements",
                 "ro": false,
                 "o": 32,
                 "fun": 23,
@@ -1432,7 +1432,7 @@
               {
                 "id": "radius",
                 "type": "number",
-                "pid": "fixTbl",
+                "pid": "elements",
                 "ro": false,
                 "o": 33,
                 "min": 1,
@@ -1440,9 +1440,9 @@
                 "value": 100
               },
               {
-                "id": "fixIP",
+                "id": "IP",
                 "type": "number",
-                "pid": "fixTbl",
+                "pid": "elements",
                 "ro": false,
                 "o": 34,
                 "fun": 24,
@@ -1451,9 +1451,9 @@
                 "value": 0
               },
               {
-                "id": "fixPin",
+                "id": "pin",
                 "type": "pin",
-                "pid": "fixTbl",
+                "pid": "elements",
                 "ro": false,
                 "o": 35,
                 "fun": 25,
@@ -1475,7 +1475,7 @@
     "max": 255,
     "n": [
       {
-        "id": "ddpInst",
+        "id": "instance",
         "type": "ip",
         "ro": false,
         "max": 255,
@@ -1562,7 +1562,7 @@
     "max": 255,
     "n": [
       {
-        "id": "audioStatus",
+        "id": "status",
         "type": "text",
         "ro": true,
         "max": 16,

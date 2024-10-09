@@ -347,7 +347,7 @@ class TiltPanRollProjection: public Projection {
   void controls(LedsLayer &leds, JsonObject parentVar) {
     //tbd: implement variable by reference for rowNrs
     #ifdef STARBASE_USERMOD_MPU6050
-      ui->initCheckBox(parentVar, "proGyro", false, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "gyro", false, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onChange:
           if (rowNr < leds.fixture->layers.size())
             leds.fixture->layers[rowNr]->proGyro = mdl->getValue(var, rowNr);
@@ -355,23 +355,23 @@ class TiltPanRollProjection: public Projection {
         default: return false;
       }});
     #endif
-    ui->initSlider(parentVar, "proTilt", 128, 0, 254, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "tilt", 128, 0, 254, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
         if (rowNr < leds.fixture->layers.size())
           leds.fixture->layers[rowNr]->proTiltSpeed = mdl->getValue(var, rowNr);
         return true;
       default: return false;
     }});
-    ui->initSlider(parentVar, "proPan", 128, 0, 254, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "pan", 128, 0, 254, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
         if (rowNr < leds.fixture->layers.size())
           leds.fixture->layers[rowNr]->proPanSpeed = mdl->getValue(var, rowNr);
         return true;
       default: return false;
     }});
-    ui->initSlider(parentVar, "proRoll", 128, 0, 254, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "roll", 128, 0, 254, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
-        ui->setLabel(var, "Roll speed");
+        ui->setComment(var, "Roll speed");
         return true;
       case onChange:
         if (rowNr < leds.fixture->layers.size())

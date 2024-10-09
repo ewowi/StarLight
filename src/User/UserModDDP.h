@@ -47,9 +47,8 @@ public:
 
     parentVar = ui->initUserMod(parentVar, name, 6000);
 
-    ui->initIP(parentVar, "ddpInst", UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initIP(parentVar, "instance", UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
-        ui->setLabel(var, "Instance");
         ui->setComment(var, "Instance to send data");
         JsonArray options = ui->setOptions(var);
         //keyValueOption: add key (ip[3] and value instance name/ip)
@@ -78,7 +77,7 @@ public:
         }
         return true; }
       default: return false;
-    }}); //ddpInst
+    }}); //instance
   }
 
   void loop() {

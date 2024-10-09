@@ -41,9 +41,8 @@ public:
   virtual void loop(LedsLayer &leds) {}
 
   virtual void controls(LedsLayer &leds, JsonObject parentVar) {
-    ui->initSelect(parentVar, "pal", 4, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "palette", 4, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
-        ui->setLabel(var, "Palette");
         JsonArray options = ui->setOptions(var);
         options.add("CloudColors");
         options.add("LavaColors");

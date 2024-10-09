@@ -37,10 +37,7 @@ public:
     SysModule::setup();
     parentVar = ui->initUserMod(parentVar, name, 6300);
   
-    ui->initText(parentVar, "audioStatus", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onUI:
-      ui->setLabel(var, "Status");
-      return true;
+    ui->initText(parentVar, "status", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
     case onLoop1s: {
       String msg = "";
       if((lastData != 0) && isTimeout()) {

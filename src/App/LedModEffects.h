@@ -424,7 +424,7 @@ public:
       // if (e131mod->isEnabled) {
           e131mod->patchChannel(0, "Fixture", "brightness", 255); //should be 256??
           e131mod->patchChannel(1, "layers", "effect", effects.size());
-          e131mod->patchChannel(2, "effect", "pal", 8); //tbd: calculate nr of palettes (from select)
+          e131mod->patchChannel(2, "effect", "palette", 8); //tbd: calculate nr of palettes (from select)
           // //add these temporary to test remote changing of this values do not crash the system
           // e131mod->patchChannel(3, "projection", Projections::count);
           // e131mod->patchChannel(4, "fixture", 5); //assuming 5!!!
