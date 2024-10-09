@@ -279,7 +279,7 @@ public:
       success = false;
     }
 
-    ppf("UDPWLEDSyncMessage %d %d %d\n", sizeof(UDPWLEDMessage), sizeof(UDPStarMessage), sizeof(UDPWLEDSyncMessage));
+    ppf("UDP message sizes WLED:%d Star:%d WLED-Sync:%d\n", sizeof(UDPWLEDMessage), sizeof(UDPStarMessage), sizeof(UDPWLEDSyncMessage));
   }
 
   void onOffChanged() {
@@ -455,6 +455,11 @@ public:
           byte *udpIn = (byte *)&starMessage.header;
           instanceUDP.read(udpIn, packetSize);
 
+          // ppf("WLED instance %s received: size: %d\n", instanceUDP.remoteIP().toString().c_str(), packetSize);
+          // for (int i=0; i<44; i++) {
+          //   Serial.printf("%d: %d\n", i, udpIn[i]);
+          // }
+
           starMessage.sysData.type = 0; //WLED
 
           if (starMessage.header.ip0 == net->localIP()[0]) { // checksum - no other type of message
@@ -467,6 +472,8 @@ public:
           UDPStarMessage starMessage;
           byte *udpIn = (byte *)&starMessage;
           instanceUDP.read(udpIn, packetSize);
+
+          // ppf("Star instance %s received: size: %d\n", instanceUDP.remoteIP().toString().c_str(), packetSize);
 
           if (starMessage.header.ip0 == net->localIP()[0]) { // checksum - no other type of message
             updateInstance(starMessage);
@@ -546,6 +553,7 @@ public:
     starMessage.header.ip1 = localIP[1];
     starMessage.header.ip2 = localIP[2];
     starMessage.header.ip3 = localIP[3];
+    memset((byte *)starMessage.header.name, 0, 32); //init with 0
     const char * name = mdl->getValue("System", "name");
     strlcpy(starMessage.header.name, name?name:_INIT(TOSTRING(APP)), sizeof(starMessage.header.name));
     #if defined(CONFIG_IDF_TARGET_ESP32S2)
@@ -560,6 +568,14 @@ public:
       prf("dev unknown board\n");
       starMessage.header.type = 0;
     #endif
+    // if (bri) 
+      starMessage.header.type |= 0x80U;  // add on/off state
+    // 38: 160
+    // 39: 171
+    // 40: 138
+    // 41: 186
+    // 42: 36
+    // 43: 0
     starMessage.header.insId = localIP[3]; //WLED: used in map of instances as index!
     starMessage.header.version = VERSION;
     starMessage.sysData.type = (strncmp(_INIT(TOSTRING(APP)), "StarBase", 9)==0)?1:(strncmp(_INIT(TOSTRING(APP)), "StarLight", 10)==0)?2:(strncmp(_INIT(TOSTRING(APP)), "StarLedsLive", 13)==0)?3:99; //0=WLED, 1=StarBase, 2=StarLight, 3=StarLedsLive, else=StarFork
@@ -619,6 +635,21 @@ public:
     else {
       ppf("sendSysInfoUDP error\n");
     }
+    // if (0 != instanceUDP.beginPacket(IPAddress(255, 255, 255, 255), instanceUDPPort)) {  // WLEDMM beginPacket == 0 --> error
+    //   ppf("sendSysInfoUDP %s s:%d p:%d i:...%d\n", starMessage.header.name, sizeof(UDPWLEDMessage), instanceUDPPort, localIP[3]);
+    //   for (size_t x = 0; x < sizeof(UDPWLEDMessage); x++) {
+    //     char * xx = (char *)&starMessage.header;
+    //     Serial.printf("%d: %d - %c\n", x, xx[x], xx[x]);
+    //   }
+
+    //   instanceUDP.write((uint8_t*)&starMessage.header, sizeof(UDPWLEDMessage));
+    //   web->sendUDPCounter++;
+    //   web->sendUDPBytes+=sizeof(UDPWLEDMessage);
+    //   instanceUDP.endPacket();
+    // }
+    // else {
+    //   ppf("sendSysInfoUDP error\n");
+    // }
   }
 
   //sends an UDP message to a specific ip. Broadcast?

@@ -295,7 +295,8 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
               sendResponseObject(isOnUI?client:nullptr); //onUI only send to requesting client async response
             }
             else {
-              ppf("wsEvent no responseDoc\n");
+              if (!isOnUI) //for onui we know json.remove(key) is done
+                ppf("wsEvent no responseDoc ui:%d\n", isOnUI);
               client->text("{\"success\":true}"); // we have to send something back otherwise WS connection closes
             }
           }
