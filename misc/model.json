@@ -954,7 +954,6 @@
         "pid": "LiveScripts",
         "ro": true,
         "max": 10,
-        "pid": "Live",
         "o": 148
       },
       {
@@ -963,7 +962,6 @@
         "pid": "LiveScripts",
         "ro": true,
         "max": 10,
-        "pid": "Live",
         "o": 149
       }
     ],

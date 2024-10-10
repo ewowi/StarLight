@@ -76,9 +76,19 @@ public:
     }
     ppf("Fixture constructor ptb:%d", pixelsToBlend.size());
   }
-  
+
+  //temporary here  
+  unsigned long start = millis();
+  uint16_t indexP = 0;
+  uint16_t prevIndexP = 0;
+  uint16_t currPin; //lookFor needs u16
+
   //load fixture json file, parse it and depending on the projection, create a mapping for it
   void projectAndMap();
+  void projectAndMapPre();
+  void projectAndMapPixel(Coord3D pixel);
+  void projectAndMapPin(uint16_t pin);
+  void projectAndMapPost();
 
   #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
     uint8_t setMaxPowerBrightness = 30; //tbd: implement driver.setMaxPowerInMilliWatts

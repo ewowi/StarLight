@@ -434,7 +434,7 @@ public:
 
           // ui->dashVarChanged = true;
           // //rebuild the table
-          for (JsonObject childVar: Variable(mdl->findVar("E131", "e131Tbl")).children())
+          for (JsonObject childVar: Variable(mdl->findVar("E131", "watches")).children())
             ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
 
       // }

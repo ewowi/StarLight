@@ -1275,17 +1275,29 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
   }
 
   if (commandJson.hasOwnProperty("file")) {
-    console.log("changeHTML file requested", variable.id, rowNr, commandJson);
+    console.log("changeHTML file requested", variable.pid, variable.id, rowNr, commandJson);
+
+    if (commandJson.file.includes(".json")) {
+        //we need to send a request which the server can handle using request variable
+      let url = `http://${window.location.hostname}/file/`;
+      fetchAndExecute(url, commandJson.file, node.id, function(id, text) { //send node.id as parameter
+        // console.log("fetchAndExecute", text); //in case of invalid commandJson
+        var json = JSON.parse(text);
+        variable.file = json;
+        variable.file.new = true;
+        // console.log("changeHTML file fetched", id, variable, json);
+      }); 
+    }
+    else if (commandJson.file.includes(".sc")) {
+      //WIP!!!
+      // console.log("get script results", commandJson);
+      // variable.file ={"name":"F_test","nrOfLeds":256,"width":16,"height":16,"depth":1,"ledSize":5,"shape":0,"outputs":[{"pin":2,"leds":[[0,0,0],[0,10,0],[0,20,0],[0,30,0]]}]};
+      // variable.file.new = true;
+    }
+    else {
+      console.log("dev file type not supported", commandJson)
+    }
   
-    //we need to send a request which the server can handle using request variable
-    let url = `http://${window.location.hostname}/file/`;
-    fetchAndExecute(url, commandJson.file, node.id, function(id, text) { //send node.id as parameter
-      // console.log("fetchAndExecute", text); //in case of invalid commandJson
-      var json = JSON.parse(text);
-      variable.file = json;
-      variable.file.new = true;
-      // console.log("changeHTML file fetched", id, variable, json);
-    }); 
   }
 } //changeHTML
 
