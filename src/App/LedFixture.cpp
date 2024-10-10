@@ -108,14 +108,14 @@ void Fixture::projectAndMapPixel(Coord3D pixel) {
 
   if (indexP < NUM_LEDS_Max) {
 
-      //send pixel to ui ...
-    web->sendDataWs([this](AsyncWebSocketMessageBuffer * wsBuf) {
-      byte* buffer;
+    // //send pixel to ui ...
+    // web->sendDataWs([this](AsyncWebSocketMessageBuffer * wsBuf) {
+    //   byte* buffer;
 
-      buffer = wsBuf->get();
-      buffer[0] = 0; //,,,
+    //   buffer = wsBuf->get();
+    //   buffer[0] = 0; //,,,
 
-    }, 100, true);
+    // }, 100, true);
     
     uint8_t rowNr = 0;
     for (LedsLayer *leds: layers) {
