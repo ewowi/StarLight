@@ -2336,13 +2336,17 @@ public:
     uint8_t micro_mutator_max = leds.effectData.read<uint8_t>();
     uint16_t macro_mutator = beatsin16(macro_mutator_freq, macro_mutator_min << 8, macro_mutator_max << 8); // beatsin16(14, 65350, 65530);
     uint16_t micro_mutator = beatsin16(micro_mutator_freq, micro_mutator_min, micro_mutator_max); // beatsin16(2, 550, 900);
+    //uint16_t macro_mutator = beatsin8(macro_mutator_freq, macro_mutator_min, macro_mutator_max); // beatsin16(14, 65350, 65530);
+    //uint16_t micro_mutator = beatsin8(micro_mutator_freq, micro_mutator_min, micro_mutator_max); // beatsin16(2, 550, 900);
     
     Coord3D pos = {0,0,0};
     uint8_t huebase = sys->now / 40; // 1 + ~huespeed
 
     for (pos.x = 0; pos.x < leds.size.x; pos.x++){
       for(pos.y = 0; pos.y < leds.size.y; pos.y++){
-        uint8_t hue = huebase + ((pos.x+pos.y)*(250-macro_mutator)/5) + ((pos.x+pos.y*macro_mutator*pos.x)/(micro_mutator+1));
+        //uint8_t hue = huebase + (-(pos.x+pos.y)*macro_mutator*10) + ((pos.x+pos.x*pos.y*(macro_mutator*256))/(micro_mutator+1));
+        uint8_t hue = huebase + ((pos.x+pos.y*macro_mutator*pos.x)/(micro_mutator+1));
+        // uint8_t hue = huebase + ((pos.x+pos.y)*(250-macro_mutator)/5) + ((pos.x+pos.y*macro_mutator*pos.x)/(micro_mutator+1)); Original
         CRGB colour = ColorFromPalette(leds.palette, hue, 255, LINEARBLEND);
         leds[pos] = colour;// blend(leds.getPixelColor(pos), colour, 155);
       }
@@ -2353,11 +2357,11 @@ public:
     Effect::controls(leds, parentVar);
     //ui->initSlider(parentVar, "Hue Speed", leds.effectData.write<uint8_t>(20), 1, 100); // (14), 1, 255)
     //ui->initSlider(parentVar, "Saturation", leds.effectData.write<uint8_t>(255), 0, 255);
-    ui->initSlider(parentVar, "Macro Mutator Freq", leds.effectData.write<uint8_t>(8), 0, 255); // (14), 1, 255)
-    ui->initSlider(parentVar, "Macro Mutator Min", leds.effectData.write<uint8_t>(250), 0, 255); // (125), 1, 2500)
+    ui->initSlider(parentVar, "Macro Mutator Freq", leds.effectData.write<uint8_t>(3), 0, 15); // (14), 1, 255)
+    ui->initSlider(parentVar, "Macro Mutator Min", leds.effectData.write<uint8_t>(250), 250, 255); // (125), 1, 2500)
     ui->initSlider(parentVar, "Macro Mutator Max", leds.effectData.write<uint8_t>(255), 0, 255); // (1), 1, 2500)
-    ui->initSlider(parentVar, "Micro Mutator Freq", leds.effectData.write<uint8_t>(2), 0, 255); // (128), 1, 255)
-    ui->initSlider(parentVar, "Micro Mutator Min", leds.effectData.write<uint8_t>(125), 0, 255); // (550), 0, 2500)
+    ui->initSlider(parentVar, "Micro Mutator Freq", leds.effectData.write<uint8_t>(4), 0, 15); // (128), 1, 255)
+    ui->initSlider(parentVar, "Micro Mutator Min", leds.effectData.write<uint8_t>(200), 0, 255); // (550), 0, 2500)
     ui->initSlider(parentVar, "Micro Mutator Max", leds.effectData.write<uint8_t>(255), 0, 255); // (900), 0, 2500)
   }
 }; // Praxis
