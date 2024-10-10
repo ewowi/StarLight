@@ -935,7 +935,7 @@
     "o": 4000
   },
   {
-    "id": "Live",
+    "id": "LiveScripts",
     "type": "usermod",
     "ro": true,
     "max": 255,
@@ -943,14 +943,15 @@
       {
         "id": "script",
         "type": "select",
+        "pid": "LiveScripts",
         "ro": false,
-        "pid": "Live",
-        "o": 147,
-        "fun": 117
+        "o": 107,
+        "fun": 87
       },
       {
         "id": "fps1",
         "type": "text",
+        "pid": "LiveScripts",
         "ro": true,
         "max": 10,
         "pid": "Live",
@@ -959,6 +960,7 @@
       {
         "id": "fps2",
         "type": "text",
+        "pid": "LiveScripts",
         "ro": true,
         "max": 10,
         "pid": "Live",

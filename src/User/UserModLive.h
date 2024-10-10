@@ -12,7 +12,7 @@
 
 // #define __RUN_CORE 0
 #pragma once
-#include "newParser.h"
+#include "ESPLiveScript.h"
 
 long time1;
 long time4;
@@ -134,7 +134,7 @@ public:
   char fileName[32] = ""; //running sc file
   string scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
 
-  UserModLive() :SysModule("Live") {
+  UserModLive() :SysModule("LiveScripts") {
     isEnabled = false; //need to enable after fresh setup
   };
 
@@ -186,6 +186,57 @@ public:
         return true;
       default: return false; 
     }});
+
+    JsonObject tableVar = ui->initTable(parentVar, "scripts", nullptr, true);
+
+    ui->initText(tableVar, "name", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      case onSetValue:
+        for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
+          if (runningPrograms.execPtr[rowNr]) {
+            const char *name = runningPrograms.execPtr[rowNr]->name.c_str();
+            mdl->setValue(var, JsonString(name?name:"xx", JsonString::Copied), rowNr);
+          }
+        }
+        return true;
+      default: return false;
+    }});
+    ui->initCheckBox(tableVar, "running", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      case onSetValue:
+        for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
+          if (runningPrograms.execPtr[rowNr])
+            mdl->setValue(var, runningPrograms.execPtr[rowNr]->isRunning(), rowNr);
+        }
+        return true;
+      default: return false;
+    }});
+    ui->initCheckBox(tableVar, "halted", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      case onSetValue:
+        for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
+          if (runningPrograms.execPtr[rowNr])
+            mdl->setValue(var, runningPrograms.execPtr[rowNr]->isHalted, rowNr);
+        }
+        return true;
+      default: return false;
+    }});
+    ui->initCheckBox(tableVar, "exe", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      case onSetValue:
+        for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
+          if (runningPrograms.execPtr[rowNr])
+            mdl->setValue(var, runningPrograms.execPtr[rowNr]->exeExist, rowNr);
+        }
+        return true;
+      default: return false;
+    }});
+    ui->initNumber(tableVar, "handle", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      case onSetValue:
+        for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
+          if (runningPrograms.execPtr[rowNr])
+            mdl->setValue(var, runningPrograms.execPtr[rowNr]->__run_handle_index, rowNr);
+        }
+        return true;
+      default: return false;
+    }});
+
 
     //Live scripts defaults
     addExternalFun("void", "show", "()", (void *)&show); //comment if setup/loop model works
@@ -301,6 +352,11 @@ public:
     }
   }
 
+  void loop1s() {
+    for (JsonObject childVar: Variable(mdl->findVar("LiveScripts", "scripts")).children())
+      ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
+  }
+
   void run(const char *fileName) {
     ppf("live run n:%s o:%s (f:%d)\n", fileName, this->fileName);
 
@@ -324,12 +380,13 @@ public:
         }
         //end LEDs specific
 
-        Serial.println(scScript.c_str());
+        Serial.println(scScript.c_str()); //ppf has a max
 
         unsigned preScriptNrOfLines = 0;
-        for(int i = 0; i < scScript.length(); i++)
+
+        for (size_t i = 0; i < scScript.length(); i++)
         {
-          if (scScript[i] == '\n') 
+          if (scScript[i] == '\n')
             preScriptNrOfLines++;
         }
 
@@ -343,6 +400,7 @@ public:
         ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
         myexec = p.parseScript(&scScript);
+        myexec.name = string(fileName);
 
         if (myexec.exeExist)
         {
@@ -375,4 +433,39 @@ public:
 extern UserModLive *liveM;
 
 
-//asm_parser.h:393:1: warning: control reaches end of non-void function 
+/*
+Pre script:
+
+external void show();
+external void resetStat();
+external void display(int a1);
+external void dp(float a1);
+external void error(int a1, int a2, int a3);
+external void print(char * a1);
+external float atan2(float a1, float a2);
+external float hypot(float a1, float a2);
+external float sin(float a1);
+external float time(float a1);
+external float triangle(float a1);
+external uint32_t millis();
+external void pinMode(int a1, int a2);
+external void digitalWrite(int a1, int a2);
+external void delay(int a1);
+external uint8_t slider1;
+external uint8_t slider2;
+external uint8_t slider3;
+external CRGB hsv(int a1, int a2, int a3);
+external CRGB rgb(int a1, int a2, int a3);
+external uint8_t beatSin8(uint8_t a1, uint8_t a2, uint8_t a3);
+external uint8_t inoise8(uint16_t a1, uint16_t a2, uint16_t a3);
+external uint8_t random8();
+external uint8_t sin8(uint8_t a1);
+external uint8_t cos8(uint8_t a1);
+external void sPC(uint16_t a1, CRGB a2);
+external void sCFP(uint16_t a1, uint8_t a2, uint8_t a3);
+external void fadeToBlackBy(uint8_t a1);
+define width 32
+define height 32
+define NUM_LEDS 1024
+define panel_width 32
+*/
