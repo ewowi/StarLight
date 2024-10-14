@@ -333,8 +333,8 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
       let helpNode = cE("a");
       helpNode.innerText = "ⓘ";
       helpNode.style="float: right;"
-      let initCapVarType = variable.id=="Workflow"?"SysMod":variable.type=="appmod"?appName() + "Mod":variable.type=="usermod"?"UserMod":"SysMod"; 
-      helpNode.setAttribute('href', "https://ewowi.github.io/StarDocs/" + initCapVarType + "/" + initCapVarType + initCap(variable.id));
+      let initCapVarType = variable.type=="appmod"?appName() + "Mod":variable.type=="usermod"?"UserMod":"SysMod"; 
+      helpNode.setAttribute('href', "https://ewowi.github.io/StarDocs/" + initCapVarType + "/" + initCapVarType + variable.id);
       hgroupNode.appendChild(helpNode);
 
       varNode.appendChild(hgroupNode);

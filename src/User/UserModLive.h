@@ -22,7 +22,7 @@ static uint32_t _nb_stat = 0;
 static float _totfps;
 static float fps = 0; //integer?
 static unsigned long frameCounter = 0;
-static uint8_t loopState = 0; //waiting on live script
+static uint8_t loopState = 0; //waiting on Live Script
 
 //external function implementation (tbd: move into class)
 
@@ -60,12 +60,12 @@ static void show()
   // SKIPPED: check that both v1 and v2 are int numbers
   // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
   delay(1); //to feed the watchdog (also if loopState == 0)
-  while (loopState != 0) { //not waiting on live script
+  while (loopState != 0) { //not waiting on Live Script
     delay(1); //to feed the watchdog
     // set to 0 by main loop
   }
-  //do live script cycle
-  loopState = 1; //live script produced a frame, main loop will deal with it
+  //do Live Script cycle
+  loopState = 1; //Live Script produced a frame, main loop will deal with it
   // ppf("loopState %d\n", loopState);
 }
 
@@ -230,7 +230,7 @@ public:
     }});
 
 
-    //Live scripts defaults
+    //Live Scripts defaults
     addExternalFun("void", "show", "()", (void *)&show); //comment if setup/loop model works
     // addExternalFun("void", "showM", "()", (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
     addExternalFun("void", "resetStat", "()", (void *)&resetShowStats);
@@ -319,7 +319,7 @@ public:
   void loop() {
     if (myexec.isRunning()) {
       if (loopState == 2) {// show has been called (in other loop)
-        loopState = 0; //waiting on live script
+        loopState = 0; //waiting on Live Script
         // ppf("loopState %d\n", loopState);
       }
       else if (loopState == 1) {
