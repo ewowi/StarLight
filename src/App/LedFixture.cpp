@@ -23,7 +23,7 @@ void Fixture::projectAndMap() {
   if (files->seqNrToName(fileName, fixtureNr, "F_")) { // get the fixture.json
 
     if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
-      ppf("Live script fixture %s\n", fileName);
+      ppf("Live Fixture %s\n", fileName);
 
       strlcpy(web->lastFileUpdated, fileName, sizeof(web->lastFileUpdated));
       // ppf("script.onChange f:%d s:%s\n", fileNr, web->lastFileUpdated);
@@ -62,7 +62,7 @@ void Fixture::projectAndMap() {
       if (starJson.deserialize()) { //this will call above function parameter for each led
         projectAndMapPost();
       } // if deserialize
-    }//live scripts
+    }//Live Fixture
   } //if fileName
   else
     ppf("projectAndMap: Filename for fixture %d not found\n", fixtureNr);

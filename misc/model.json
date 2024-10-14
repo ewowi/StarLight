@@ -1341,7 +1341,7 @@
     "o": 2201
   },
   {
-    "id": "Fixture Generator",
+    "id": "FixtureGenerator",
     "type": "appmod",
     "ro": true,
     "max": 255,
@@ -1352,7 +1352,7 @@
         "type": "select",
         "ro": false,
         "value": 0,
-        "pid": "Fixture Generator",
+        "pid": "FixtureGenerator",
         "o": 28,
         "fun": 19,
         "n": [

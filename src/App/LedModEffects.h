@@ -125,7 +125,7 @@ public:
     effects.push_back(new MarioTestEffect);
 
     #ifdef STARBASE_USERMOD_LIVE
-      effects.push_back(new LiveScriptEffect);
+      effects.push_back(new LiveEffect);
     #endif
 
     //load projections
@@ -220,10 +220,10 @@ public:
           // leds->doMap = true; //stop the effects loop already here
 
           #ifdef STARBASE_USERMOD_LIVE
-            //kill live script of moving to other effect
+            //kill Live Script if moving to other effect
             if (leds->effectNr < effects.size()) {
               Effect* effect = effects[leds->effectNr];
-              if (strncmp(effect->name(), "Live Script", 12) == 0) {
+              if (strncmp(effect->name(), "Live Effect", 12) == 0) {
                 liveM->kill();
               }
             }

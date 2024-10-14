@@ -260,6 +260,7 @@ public:
     addExternalVal("uint8_t", "slider3", &slider3); //used in map function
 
     //LEDS specific
+    //For Live Effects
     addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV);
     addExternalFun("CRGB", "rgb", "(int a1, int a2, int a3)", (void *)rgb);
     addExternalFun("uint8_t", "beatSin8", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)_beatSin8);

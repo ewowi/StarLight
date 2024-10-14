@@ -451,7 +451,7 @@ class LedModFixtureGen:public SysModule {
 
 public:
 
-  LedModFixtureGen() :SysModule("Fixture Generator") {};
+  LedModFixtureGen() :SysModule("FixtureGenerator") {};
 
   void setup() {
     SysModule::setup();
@@ -592,7 +592,7 @@ public:
   //generate dynamic html for fixture controls
   void fixtureOnChange() {
 
-    JsonObject fixture = mdl->findVar("Fixture Generator", "fixture");
+    JsonObject fixture = mdl->findVar("FixtureGenerator", "fixture");
 
     // JsonObject parentVar = mdl->findVar(var["id"]); //local parentVar
     uint8_t fgValue = fixture["value"];
@@ -881,7 +881,7 @@ public:
   //generate the F-ixture.json file
   void generateOnChange(JsonObject var, char * fileName) {
 
-    JsonObject fixture = mdl->findVar("Fixture Generator", "fixture");
+    JsonObject fixture = mdl->findVar("FixtureGenerator", "fixture");
     uint8_t fgValue = fixture["value"];
 
     //find option group and text

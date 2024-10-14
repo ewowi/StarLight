@@ -2917,8 +2917,8 @@ class MarioTestEffect: public Effect {
 
 #ifdef STARBASE_USERMOD_LIVE
 
-class LiveScriptEffect: public Effect {
-  const char * name() {return "Live Script";}
+class LiveEffect: public Effect {
+  const char * name() {return "Live Effect";}
   uint8_t dim() {return _2D;}
   const char * tags() {return "💫";}
 
@@ -2939,7 +2939,7 @@ class LiveScriptEffect: public Effect {
         //set script
         uint8_t fileNr = var["value"][rowNr];
 
-        gLeds = &leds; //LEDs specific set the leds class for live script
+        gLeds = &leds; //LEDs specific set the leds class for the Live Scripts Module
         if (fileNr > 0) { //not None and live setup done (before )
 
           fileNr--;  //-1 as none is no file
