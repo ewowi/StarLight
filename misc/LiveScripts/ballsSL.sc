@@ -12,8 +12,6 @@ float yc[max_nb_balls];
 float r[max_nb_balls];
 int color[max_nb_balls];
 
-//CRGB cc;
-
 void drawBall(float xc, float yc, float r, int c)
 {
    int startx = (float)(xc - r);
@@ -36,14 +34,13 @@ void drawBall(float xc, float yc, float r, int c)
          if (distance <= r2)
          {
             v = (float)(255 * (1 - distance * distance / (r4)));
-            CRGB cc=hsv(c,255,v);
-            sPC(i + j * panel_width, cc);
+            sPC(i + j * panel_width, hsv(c,255,v));
            // int h=(int)(2 * xc - i) + j * panel_width;
-            sPC((int)(2 * xc - i) + j * panel_width,cc);
+            sPC((int)(2 * xc - i) + j * panel_width, hsv(c,255,v));
           // h=(int)(2 * xc - i) + (int)(2 * yc - j) * panel_widthsdfsdf;
-            sPC((int)(2 * xc - i) + (int)(2 * yc - j) * panel_width,  cc);
+            sPC((int)(2 * xc - i) + (int)(2 * yc - j) * panel_width,  hsv(c,255,v));
            // h=i + (int)(2 * yc - j) * panel_width;
-            sPC(i + (int)(2 * yc - j) * panel_width, cc);
+            sPC(i + (int)(2 * yc - j) * panel_width, hsv(c,255,v));
          }
       }
    }
@@ -126,8 +123,7 @@ void loop()
     {
       for(int j=0;j<height;j++)
       {
-         CRGB gg = hsv(i+h+j,255,180);
-        sPC(i+panel_width*j, gg);
+        sPC(i+panel_width*j, hsv(i+h+j,255,180));
       }
    }
 
