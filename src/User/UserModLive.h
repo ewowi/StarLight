@@ -101,13 +101,13 @@ uint8_t slider3 = 128;
 //LEDS specific
 static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);} //why call POSV and not hsv?
 static CRGB rgb(uint8_t r, uint8_t g, uint8_t b) {return CRGB(r, g, b);} //why call POSV and not hsv?
-static uint8_t _sin8(uint8_t a) {return sin8(a);}
-static uint8_t _cos8(uint8_t a) {return cos8(a);}
-static uint8_t _beatSin8(uint8_t a1, uint8_t a2, uint8_t a3) {return beatsin8(a1, a2, a3);}
-static uint8_t _inoise8(uint16_t a1, uint16_t a2, uint16_t a3) {return inoise8(a1, a2, a3);}
+static uint8_t _sin8(uint8_t theta) {return sin8(theta);}
+static uint8_t _cos8(uint8_t theta) {return cos8(theta);}
+static uint8_t _beatSin8(uint8_t bpm, uint8_t lowest, uint8_t highest) {return beatsin8(bpm, lowest, highest);}
+static uint8_t _inoise8(uint16_t x, uint16_t y, uint16_t z) {return inoise8(x, y, z);}
 static uint8_t _random8() {return random8();}
 static LedsLayer *gLeds = nullptr;
-static void _fadeToBlackBy(uint8_t a1) {if (gLeds) gLeds->fadeToBlackBy(a1);}
+static void _fadeToBlackBy(uint8_t fadeBy) {if (gLeds) gLeds->fadeToBlackBy(fadeBy);}
 
 static void _addPixelsPre() {if (gLeds) gLeds->fixture->projectAndMapPre();}
 static void _addPixel(uint8_t a1, uint8_t a2, uint8_t a3) {if (gLeds) gLeds->fixture->projectAndMapPixel({a1, a2, a3});}
@@ -240,8 +240,8 @@ public:
     addExternalFun("void", "error", "(int a1, int a2, int a3)", (void *)&showError);
     addExternalFun("void", "print", "(char * a1)", (void *)__print);
 
-    addExternalFun("float", "atan2","(float a1, float a2)",(void*)_atan2);
-    addExternalFun("float", "hypot","(float a1, float a2)",(void*)_hypot);
+    addExternalFun("float", "atan2", "(float a1, float a2)",(void*)_atan2);
+    addExternalFun("float", "hypot", "(float a1, float a2)",(void*)_hypot);
     addExternalFun("float", "sin", "(float a1)", (void *)_sin);
     addExternalFun("float", "time", "(float a1)", (void *)_time);
     addExternalFun("float", "triangle", "(float a1)", (void *)_triangle);
@@ -261,13 +261,13 @@ public:
 
     //LEDS specific
     //For Live Effects
-    addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV);
-    addExternalFun("CRGB", "rgb", "(int a1, int a2, int a3)", (void *)rgb);
+    addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV); //uint8_t?
+    addExternalFun("CRGB", "rgb", "(int a1, int a2, int a3)", (void *)rgb);//uint8_t?
     addExternalFun("uint8_t", "beatSin8", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)_beatSin8);
     addExternalFun("uint8_t", "inoise8", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_inoise8);
     addExternalFun("uint8_t", "random8", "()", (void *)_random8);
-    addExternalFun("uint8_t", "sin8","(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
-    addExternalFun("uint8_t", "cos8","(uint8_t a1)",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
+    addExternalFun("uint8_t", "sin8", "(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
+    addExternalFun("uint8_t", "cos8", "(uint8_t a1)",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
     addExternalFun("void", "sPC", "(uint16_t a1, CRGB a2)", (void *)sPCLive);
     addExternalFun("void", "sCFP", "(uint16_t a1, uint8_t a2, uint8_t a3)", (void *)sCFPLive);
     addExternalFun("void", "fadeToBlackBy", "(uint8_t a1)", (void *)_fadeToBlackBy);
