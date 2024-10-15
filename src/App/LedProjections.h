@@ -9,7 +9,7 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
-//should not contain variables/bytes to keep mem as small as possible!!
+//Projections should not contain variables/bytes to keep mem as small as possible!!
 
 class NoneProjection: public Projection {
   const char * name() {return "None";}
@@ -26,11 +26,12 @@ class DefaultProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
-    if (leds.size == Coord3D{0,0,0}) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
+    if (leds.size == Coord3D{0,0,0}) { //first
       adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
       leds.size = sizeAdjusted;
     }
+    Coord3D mapped;
     adjustMapped(leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     indexV = leds.XYZUnprojected(mapped);
   }
@@ -136,11 +137,12 @@ class PinwheelProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     if (leds.size == Coord3D{0,0,0}) {
       adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
       leds.size = sizeAdjusted;
     }
+    Coord3D mapped;
     adjustMapped(leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     indexV = leds.XYZUnprojected(mapped);
   }
@@ -254,10 +256,10 @@ class MultiplyProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
-    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
@@ -310,10 +312,10 @@ class TiltPanRollProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     // adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted); // Uncomment to expand grid to fill corners
     DefaultProjection dp;
-    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
@@ -388,9 +390,9 @@ class DistanceFromPointProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     DefaultProjection dp;
-    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
     if (leds.projectionDimension == _2D && leds.effectDimension == _2D) postProcessing(leds, indexV);
   }
 
@@ -441,10 +443,10 @@ class Preset1Projection: public Projection {
   const char * name() {return "Preset1";}
   const char * tags() {return "💫";}
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
-    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
@@ -469,6 +471,10 @@ class RandomProjection: public Projection {
   const char * name() {return "Random";}
   const char * tags() {return "💫";}
 
+  void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {
+    pixel = {random(leds.size.x), random(leds.size.y), random(leds.size.z)};
+  }
+
   void controls(LedsLayer &leds, JsonObject parentVar) {
   }
 }; //RandomProjection
@@ -479,10 +485,10 @@ class ReverseProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) { 
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) { 
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
-    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
@@ -533,10 +539,10 @@ class MirrorProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
-    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
@@ -595,10 +601,10 @@ class GroupingProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
-    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
@@ -629,10 +635,10 @@ class SpacingProjection: public Projection {
   const char * name() {return "Spacing WIP";}
   const char * tags() {return "💡";}
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
-    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
@@ -669,10 +675,10 @@ class TransposeProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
-    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
@@ -727,9 +733,9 @@ class ScrollingProjection: public Projection {
   const char * name() {return "Scrolling WIP";}
   const char * tags() {return "💫";}
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     MirrorProjection mp;
-    mp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+    mp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {
@@ -769,9 +775,9 @@ class AccelerationProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     DefaultProjection dp;
-    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {
@@ -814,14 +820,14 @@ class CheckerboardProjection: public Projection {
   const char * name() {return "Checkerboard";}
   const char * tags() {return "💫";}
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     leds.projectionData.begin();
     Coord3D size = leds.projectionData.read<Coord3D>();
     bool invert = leds.projectionData.read<bool>();
     bool group = leds.projectionData.read<bool>();
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
-    if (group) {GroupingProjection gp; gp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);}
-    else       {DefaultProjection  dp; dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);}
+    if (group) {GroupingProjection gp; gp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);}
+    else       {DefaultProjection  dp; dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);}
   }
 
   void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
@@ -896,10 +902,10 @@ class RotateProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {
+  void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
-    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+    dp.setup(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {

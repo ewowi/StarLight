@@ -24,19 +24,6 @@
 
 class LedsLayer; //forward
 
-class Projection {
-public:
-  virtual const char * name() {return "noname";}
-  virtual const char * tags() {return "";}
-
-  virtual void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, Coord3D &mapped, uint16_t &indexV) {}
-  
-  virtual void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {}
-  
-  virtual void controls(LedsLayer &leds, JsonObject parentVar) {}
-
-};
-
 class Fixture {
 
 public:
@@ -52,8 +39,6 @@ public:
   // if (leds) free(leds);
   // leds = (CRGB*)malloc(nrOfLeds * sizeof(CRGB));
   // leds = (CRGB*)reallocarray
-
-  std::vector<Projection *> projections;
 
   uint16_t nrOfLeds = 64; //amount of physical leds
   uint8_t fixtureNr = -1;

@@ -33,16 +33,9 @@ void LedsLayer::triggerMapping() {
 
 uint16_t LedsLayer::XYZ(Coord3D pixel) {
 
-  //as this is a call to a virtual function it reduces the theoretical (no show) speed by half, even if XYZ is not implemented
-  //  the real speed is hardly affected, but room for improvement!
-  //  so as a workaround we list them here explicetly
-  // if ((projectionNr == p_TiltPanRoll || projectionNr == p_Preset1) && projectionNr < fixture->projections.size())
-    // fixture->projections[projectionNr]->adjustXYZ(*this, pixel);
-
-
   //using cached virtual class methods! (so no need for if projectionNr optimizations!)
-  if (projectionNr < fixture->projections.size())
-    (fixture->projections[projectionNr]->*adjustXYZCached)(*this, pixel);
+  if (projection)
+    (projection->*adjustXYZCached)(*this, pixel);
 
   return XYZUnprojected(pixel);
 }
@@ -71,10 +64,8 @@ void LedsLayer::setPixelColor(uint16_t indexV, CRGB color) {
         break;
     }
   }
-  else if (indexV < NUM_LEDS_Max) { //no projection
-    uint16_t indexP = (projectionNr == p_Random)?random(fixture->nrOfLeds):indexV;
-    fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], fixture->globalBlend): color;
-  }
+  else if (indexV < NUM_LEDS_Max) //no projection
+    fixture->ledsP[indexV] = fixture->pixelsToBlend[indexV]?blend(color, fixture->ledsP[indexV], fixture->globalBlend): color;
   else if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
     ppf(" dev sPC %d >= %d", indexV, NUM_LEDS_Max);
 }
@@ -112,7 +103,7 @@ CRGB LedsLayer::getPixelColor(uint16_t indexV) {
 }
 
 void LedsLayer::fadeToBlackBy(uint8_t fadeBy) {
-  if (projectionNr == p_None || projectionNr == p_Random || (fixture->layers.size() == 1)) {
+  if (!projection || (fixture->layers.size() == 1)) { //faster, else manual 
     fastled_fadeToBlackBy(fixture->ledsP, fixture->nrOfLeds, fadeBy);
   } else {
     for (uint16_t index = 0; index < mappingTable.size(); index++) {
@@ -124,7 +115,7 @@ void LedsLayer::fadeToBlackBy(uint8_t fadeBy) {
 }
 
 void LedsLayer::fill_solid(const struct CRGB& color) {
-  if (projectionNr == p_None || projectionNr == p_Random || (fixture->layers.size() == 1)) {
+  if (!projection || (fixture->layers.size() == 1)) { //faster, else manual 
     fastled_fill_solid(fixture->ledsP, fixture->nrOfLeds, color);
   } else {
     for (uint16_t index = 0; index < mappingTable.size(); index++)
@@ -133,7 +124,7 @@ void LedsLayer::fill_solid(const struct CRGB& color) {
 }
 
 void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
-  if (projectionNr == p_None || projectionNr == p_Random || (fixture->layers.size() == 1)) {
+  if (!projection || (fixture->layers.size() == 1)) { //faster, else manual 
     fastled_fill_rainbow(fixture->ledsP, fixture->nrOfLeds, initialhue, deltahue);
   } else {
     CHSV hsv;

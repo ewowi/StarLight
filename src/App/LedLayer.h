@@ -30,29 +30,6 @@
 
 #define NUM_VLEDS_Max 8192
 
-enum ProjectionsE
-{
-  p_None,
-  p_Default,
-  p_Pinwheel,
-  p_Multiply,
-  p_TiltPanRoll,
-  p_DistanceFromPoint,
-  p_Preset1,
-  p_Random,
-  p_Reverse,
-  p_Mirror,
-  p_Grouping,
-  p_Spacing,
-  p_Transpose,
-  // p_Kaleidoscope,
-  p_Scrolling,
-  p_Acceleration,
-  p_Checkerboard,
-  p_Rotate,
-  p_count // keep as last entry
-};
-
 //     sin8/cos8   sin16/cos16
 //0:   128, 255    0 32645
 //64:  255, 128    32645 0
@@ -230,7 +207,19 @@ struct PhysMap {
 
 }; // 2 bytes
 
-class Projection; //forward for cached virtual class methods!
+class Projection {
+public:
+  virtual const char * name() {return "noname";}
+  virtual const char * tags() {return "";}
+
+  virtual void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {}
+  
+  virtual void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {}
+  
+  virtual void controls(LedsLayer &leds, JsonObject parentVar) {}
+
+};
+
 
 class LedsLayer {
 
@@ -243,11 +232,13 @@ public:
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
 
   uint16_t effectNr = UINT16_MAX;
-  uint8_t projectionNr = UINT8_MAX;
+  Projection *projection = nullptr;
 
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
-  void (Projection::*setupCached)(LedsLayer &, Coord3D &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = nullptr;
-  void (Projection::*adjustXYZCached)(LedsLayer &, Coord3D &) = nullptr;
+      //setting cached virtual class methods! (By chatGPT so no source and don't understand how it works - scary!)
+      //   (don't know how it works as it is not refering to derived classes, just to the base class but later it calls the derived class method)
+  void (Projection::*setupCached)(LedsLayer &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = &Projection::setup;
+  void (Projection::*adjustXYZCached)(LedsLayer &, Coord3D &) = &Projection::adjustXYZ;
 
   uint8_t effectDimension = -1;
   uint8_t projectionDimension = -1;

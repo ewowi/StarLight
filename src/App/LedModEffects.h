@@ -46,6 +46,7 @@ public:
   unsigned long lastMappingMillis = 0;
 
   std::vector<Effect *> effects;
+  std::vector<Projection *> projections;
 
   Fixture fixture = Fixture();
 
@@ -129,24 +130,24 @@ public:
     #endif
 
     //load projections
-    fixture.projections.push_back(new NoneProjection);
-    fixture.projections.push_back(new DefaultProjection);
-    fixture.projections.push_back(new PinwheelProjection);
-    fixture.projections.push_back(new MultiplyProjection);
-    fixture.projections.push_back(new TiltPanRollProjection);
-    fixture.projections.push_back(new DistanceFromPointProjection);
-    fixture.projections.push_back(new Preset1Projection);
-    fixture.projections.push_back(new RandomProjection);
-    fixture.projections.push_back(new ReverseProjection);
-    fixture.projections.push_back(new MirrorProjection);
-    fixture.projections.push_back(new GroupingProjection);
-    fixture.projections.push_back(new SpacingProjection);
-    fixture.projections.push_back(new TransposeProjection);
-    // fixture.projections.push_back(new KaleidoscopeProjection);
-    fixture.projections.push_back(new ScrollingProjection);
-    fixture.projections.push_back(new AccelerationProjection);
-    fixture.projections.push_back(new CheckerboardProjection);
-    fixture.projections.push_back(new RotateProjection);
+    projections.push_back(new NoneProjection);
+    projections.push_back(new DefaultProjection);
+    projections.push_back(new PinwheelProjection);
+    projections.push_back(new MultiplyProjection);
+    projections.push_back(new TiltPanRollProjection);
+    projections.push_back(new DistanceFromPointProjection);
+    projections.push_back(new Preset1Projection);
+    projections.push_back(new RandomProjection);
+    projections.push_back(new ReverseProjection);
+    projections.push_back(new MirrorProjection);
+    projections.push_back(new GroupingProjection);
+    projections.push_back(new SpacingProjection);
+    projections.push_back(new TransposeProjection);
+    // projections.push_back(new KaleidoscopeProjection);
+    projections.push_back(new ScrollingProjection);
+    projections.push_back(new AccelerationProjection);
+    projections.push_back(new CheckerboardProjection);
+    projections.push_back(new RotateProjection);
 
     #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
       #if !(CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2)
@@ -255,15 +256,15 @@ public:
 
     //projection, default projection is 'default'
     currentVar = ui->initSelect(tableVar, "projection", 1, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-      case onSetValue:
-        for (size_t rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
-          mdl->setValue(var, fixture.layers[rowNr]->projectionNr, rowNr);
-        return true;
+      // case onSetValue:
+      //   for (size_t rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
+      //     mdl->setValue(var, fixture.layers[rowNr]->projectionNr, rowNr);
+      //   return true;
       case onUI: {
         ui->setComment(var, "How to project effect");
 
         JsonArray options = ui->setOptions(var);
-        for (Projection *projection:fixture.projections) {
+        for (Projection *projection:projections) {
           char buf[32] = "";
           strlcat(buf, projection->name(), sizeof(buf));
           // strlcat(buf, projection->dim()==_1D?" ┊":projection->dim()==_2D?" ▦":" 🧊");
@@ -282,17 +283,15 @@ public:
           // leds->doMap = true; //stop the effects loop already here
 
           uint8_t proValue = mdl->getValue(var, rowNr);
-          leds->projectionNr = proValue;
-          
-          if (proValue < fixture.projections.size()) {
-            Projection* projection = fixture.projections[proValue];
 
-            //setting cached virtual class methods! (By chatGPT so no source and don't understand how it works - scary!)
-            //   (don't know how it works as it is not refering to derived classes, just to the base class but later it calls the derived class method)
-            leds->setupCached = &Projection::setup;
-            leds->adjustXYZCached = &Projection::adjustXYZ;
+          if (proValue < projections.size()) {
+            if (proValue == 0) //none
+              leds->projection = nullptr; //not projections[0] so test on if (leds->projection) can be used
+            else
+              leds->projection = projections[proValue];
 
-            //initProjection
+            // leds->setupCached = &Projection::setup;
+            // leds->adjustXYZCached = &Projection::adjustXYZ;
 
             ppf("initProjection leds[%d] effect:%d a:%d\n", rowNr, leds->effectNr, leds->projectionData.bytesAllocated);
 
@@ -300,12 +299,14 @@ public:
 
             Variable(var).preDetails(); //set all positive var N orders to negative
             mdl->setValueRowNr = rowNr;
-            projection->controls(*leds, var);
+            if (leds->projection) leds->projection->controls(*leds, var); //not if None projection
             Variable(var).postDetails(rowNr);
             mdl->setValueRowNr = UINT8_MAX;
 
             leds->projectionData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
           }
+          else
+            leds->projection = nullptr;
           // ppf("onChange pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.layers.size());
 
           leds->triggerMapping(); //set also fixture.doMap

@@ -77,7 +77,7 @@ void Fixture::projectAndMapPre() {
     if (leds->doMap) {
       leds->fill_solid(CRGB::Black);
 
-      ppf("projectAndMap clear leds[%d] effect:%d pro:%d\n", rowNr, leds->effectNr, leds->projectionNr);
+      ppf("projectAndMap clear leds[%d] effect:%d pro:%s\n", rowNr, leds->effectNr, leds->projection?leds->projection->name():"None");
       leds->size = Coord3D{0,0,0};
       //vectors really gone now?
       for (std::vector<uint16_t> mappingTableIndex: leds->mappingTableIndexes) {
@@ -120,8 +120,7 @@ void Fixture::projectAndMapPixel(Coord3D pixel) {
     uint8_t rowNr = 0;
     for (LedsLayer *leds: layers) {
 
-      if (leds->projectionNr != p_Random && leds->projectionNr != p_None) //only real projections
-      if (leds->doMap) { //add pixel in leds mappingtable
+      if (leds->projection && leds->doMap) { //only real projections: add pixel in leds mappingtable
 
         //set start and endPos between bounderies of fixture
         Coord3D startPosAdjusted = (leds->startPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
@@ -143,27 +142,17 @@ void Fixture::projectAndMapPixel(Coord3D pixel) {
           if (sizeAdjusted.y > 1) leds->projectionDimension++;
           if (sizeAdjusted.z > 1) leds->projectionDimension++;
 
-          Projection *projection = nullptr;
-          if (leds->projectionNr < projections.size())
-            projection = projections[leds->projectionNr];
-          else {
-            ppf("projectAndMap: projection %d not found! Switching to default.\n", leds->projectionNr);
-            leds->projectionNr = p_Default;
-            projection = projections[leds->projectionNr];
-          }
-          leds->setupCached = &Projection::setup;
-          leds->adjustXYZCached = &Projection::adjustXYZ;
+          // leds->setupCached = &Projection::setup;
+          // leds->adjustXYZCached = &Projection::adjustXYZ;
 
           mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
 
-          //calculate the indexV to add to current physical led to
-          uint16_t indexV = UINT16_MAX;
-
-          Coord3D mapped;
+          uint16_t indexV = leds->XYZUnprojected(pixelAdjusted); //default
 
           // Setup changes leds.size, mapped, indexV
-          (projection->*leds->setupCached)(*leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, mapped, indexV);
+          if (leds->projection) (leds->projection->*leds->setupCached)(*leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
 
+          if (leds->size == Coord3D{0,0,0}) leds->size = sizeAdjusted; //first, not assigned in setupCached
           leds->nrOfLeds = leds->size.x * leds->size.y * leds->size.z;
 
           if (indexV != UINT16_MAX) {
@@ -235,14 +224,14 @@ void Fixture::projectAndMapPost() {
 
   for (LedsLayer *leds: layers) {
     if (leds->doMap) {
-      ppf("projectAndMap post leds[%d] effect:%d pro:%d\n", rowNr, leds->effectNr, leds->projectionNr);
+      ppf("projectAndMap post leds[%d] effect:%d pro:%s\n", rowNr, leds->effectNr, leds->projection?leds->projection->name():"None");
 
       uint16_t nrOfLogical = 0;
       uint16_t nrOfPhysical = 0;
       uint16_t nrOfPhysicalM = 0;
       uint16_t nrOfColor = 0;
 
-      if (leds->projectionNr == p_Random || leds->projectionNr == p_None) {
+      if (!leds->projection) { //projection is none
 
         //defaults
         leds->size = fixSize;
