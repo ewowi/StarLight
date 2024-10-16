@@ -209,15 +209,13 @@ class PinwheelProjection: public Projection {
 
     ui->initSlider(parentVar, "Swirl", swirlVal, 0, 60, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-      if (rowNr < leds.fixture->layers.size())
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
     ui->initCheckBox(parentVar, "Reverse", reverse, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-      if (rowNr < leds.fixture->layers.size())
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
@@ -225,8 +223,7 @@ class PinwheelProjection: public Projection {
     if (leds.projectionDimension == _3D) {
       ui->initSlider(parentVar, "Z Twist", zTwist, 0, 42, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onChange:
-        if (rowNr < leds.fixture->layers.size())
-          leds.fixture->layers[rowNr]->triggerMapping();
+          leds.triggerMapping();
           return true;
         default: return false;
       }});
@@ -234,16 +231,14 @@ class PinwheelProjection: public Projection {
     // Rotation symmetry. Uses factors of 360.
     ui->initSlider(parentVar, "Rotational Symmetry", symmetry, 1, 23, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-      if (rowNr < leds.fixture->layers.size())
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
     // Naming petals, arms, blades, rays? Controls virtual strip length.
     ui->initSlider(parentVar, "Petals", petals, 1, 60, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-      if (rowNr < leds.fixture->layers.size())
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
@@ -289,17 +284,13 @@ class MultiplyProjection: public Projection {
     bool *mirror = leds.projectionData.write<bool>(false);
     ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        if (rowNr < leds.fixture->layers.size()) {
-          leds.fixture->layers[rowNr]->triggerMapping();
-        }
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
     ui->initCheckBox(parentVar, "mirror", mirror, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        if (rowNr < leds.fixture->layers.size()) {
-          leds.fixture->layers[rowNr]->triggerMapping();
-        }
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
@@ -351,23 +342,20 @@ class TiltPanRollProjection: public Projection {
     #ifdef STARBASE_USERMOD_MPU6050
       ui->initCheckBox(parentVar, "gyro", false, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onChange:
-          if (rowNr < leds.fixture->layers.size())
-            leds.fixture->layers[rowNr]->proGyro = mdl->getValue(var, rowNr);
+          leds.proGyro = mdl->getValue(var, rowNr);
           return true;
         default: return false;
       }});
     #endif
     ui->initSlider(parentVar, "tilt", 128, 0, 254, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        if (rowNr < leds.fixture->layers.size())
-          leds.fixture->layers[rowNr]->proTiltSpeed = mdl->getValue(var, rowNr);
+        leds.proTiltSpeed = mdl->getValue(var, rowNr);
         return true;
       default: return false;
     }});
     ui->initSlider(parentVar, "pan", 128, 0, 254, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        if (rowNr < leds.fixture->layers.size())
-          leds.fixture->layers[rowNr]->proPanSpeed = mdl->getValue(var, rowNr);
+        leds.proPanSpeed = mdl->getValue(var, rowNr);
         return true;
       default: return false;
     }});
@@ -376,8 +364,7 @@ class TiltPanRollProjection: public Projection {
         ui->setComment(var, "Roll speed");
         return true;
       case onChange:
-        if (rowNr < leds.fixture->layers.size())
-          leds.fixture->layers[rowNr]->proRollSpeed = mdl->getValue(var, rowNr);
+        leds.proRollSpeed = mdl->getValue(var, rowNr);
         return true;
       default: return false;
     }});
@@ -510,14 +497,14 @@ class ReverseProjection: public Projection {
 
     ui->initCheckBox(parentVar, "reverse X", reverseX, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
     if (leds.effectDimension >= _2D || leds.projectionDimension >= _2D) {
       ui->initCheckBox(parentVar, "reverse Y", reverseY, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->layers[rowNr]->triggerMapping();
+          leds.triggerMapping();
           return true;
         default: return false;
       }});
@@ -525,7 +512,7 @@ class ReverseProjection: public Projection {
     if (leds.effectDimension == _3D || leds.projectionDimension == _3D) {
       ui->initCheckBox(parentVar, "reverse Z", reverseZ, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->layers[rowNr]->triggerMapping();
+          leds.triggerMapping();
           return true;
         default: return false;
       }});
@@ -572,14 +559,14 @@ class MirrorProjection: public Projection {
     bool *mirrorZ = leds.projectionData.write<bool>(false);
     ui->initCheckBox(parentVar, "mirror X", mirrorX, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
     if (leds.projectionDimension >= _2D) {
       ui->initCheckBox(parentVar, "mirror Y", mirrorY, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->layers[rowNr]->triggerMapping();
+          leds.triggerMapping();
           return true;
         default: return false;
       }});
@@ -587,7 +574,7 @@ class MirrorProjection: public Projection {
     if (leds.projectionDimension == _3D) {
       ui->initCheckBox(parentVar, "mirror Z", mirrorZ, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->layers[rowNr]->triggerMapping();
+          leds.triggerMapping();
           return true;
         default: return false;
       }});
@@ -624,7 +611,7 @@ class GroupingProjection: public Projection {
     Coord3D *grouping = leds.projectionData.write<Coord3D>({2,2,2});
     ui->initCoord3D(parentVar, "Grouping", grouping, 0, 100, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
@@ -662,7 +649,7 @@ class SpacingProjection: public Projection {
     Coord3D *spacing = leds.projectionData.write<Coord3D>({1,1,1});
     ui->initCoord3D(parentVar, "Spacing", spacing, 0, 100, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
@@ -700,20 +687,20 @@ class TransposeProjection: public Projection {
 
     ui->initCheckBox(parentVar, "transpose XY", transposeXY, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
     if (leds.effectDimension == _3D) {
       ui->initCheckBox(parentVar, "transpose XZ", transposeXZ, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->layers[rowNr]->triggerMapping();
+          leds.triggerMapping();
           return true;
         default: return false;
       }});
       ui->initCheckBox(parentVar, "transpose YZ", transposeYZ, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onChange:
-          leds.fixture->layers[rowNr]->triggerMapping();
+          leds.triggerMapping();
           return true;
         default: return false;
       }});
@@ -857,19 +844,19 @@ class CheckerboardProjection: public Projection {
     bool *group = leds.projectionData.write<bool>(false);
     ui->initCoord3D(parentVar, "Square Size", size, 0, 100, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
     ui->initCheckBox(parentVar, "Invert", invert, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
     ui->initCheckBox(parentVar, "Group", group, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
@@ -1011,7 +998,7 @@ class RotateProjection: public Projection {
     }});
     ui->initCheckBox(parentVar, "Expand", false, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        leds.fixture->layers[rowNr]->triggerMapping();
+        leds.triggerMapping();
         return true;
       default: return false;
     }});
