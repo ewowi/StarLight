@@ -17,7 +17,7 @@
 
 //load fixture json file, parse it and depending on the projection, create a mapping for it
 void Fixture::projectAndMap() {
-  start = millis();
+  unsigned long start = millis();
   char fileName[32] = "";
 
   if (files->seqNrToName(fileName, fixtureNr, "F_")) { // get the fixture.json
@@ -67,6 +67,7 @@ void Fixture::projectAndMap() {
   else
     ppf("projectAndMap: Filename for fixture %d not found\n", fixtureNr);
 
+  ppf("projectAndMap done %d ms\n", millis()-start);
 }
 
 void Fixture::projectAndMapPre() {
@@ -75,32 +76,23 @@ void Fixture::projectAndMapPre() {
   uint8_t rowNr = 0;
   for (LedsLayer *leds: layers) {
     if (leds->doMap) {
-      leds->fill_solid(CRGB::Black);
-
-      ppf("projectAndMap clear leds[%d] effect:%d pro:%s\n", rowNr, leds->effectNr, leds->projection?leds->projection->name():"None");
-      leds->size = Coord3D{0,0,0};
-      //vectors really gone now?
-      for (std::vector<uint16_t> mappingTableIndex: leds->mappingTableIndexes) {
-        mappingTableIndex.clear();
-      }
-      leds->mappingTableIndexes.clear();
-      leds->mappingTable.clear();
+      leds->projectAndMapPre();
     }
     rowNr++;
   }
 
   //deallocate all led pins
   if (doAllocPins) {
-    uint8_t pinNr = 0;
-    for (PinObject &pinObject: pinsM->pinObjects) {
-      if (strncmp(pinObject.owner, "Leds", 5) == 0)
-        pinsM->deallocatePin(pinNr, "Leds");
-      pinNr++;
-    }
+    // uint8_t pinNr = 0;
+    // for (PinObject &pinObject: pinsM->pinObjects) {
+    //   if (strncmp(pinObject.owner, "Leds", 5) == 0)
+        pinsM->deallocatePin(UINT8_MAX, "Leds"); //deallocate all led pins
+    //   pinNr++;
+    // }
   }
 
   indexP = 0;
-  prevIndexP = 0;
+  prevIndexP = 0; //for allocPins
 }
 
 void Fixture::projectAndMapPixel(Coord3D pixel) {
@@ -119,69 +111,13 @@ void Fixture::projectAndMapPixel(Coord3D pixel) {
     
     uint8_t rowNr = 0;
     for (LedsLayer *leds: layers) {
-
-      if (leds->projection && leds->doMap) { //only real projections: add pixel in leds mappingtable
-
-        //set start and endPos between bounderies of fixture
-        Coord3D startPosAdjusted = (leds->startPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
-        Coord3D endPosAdjusted = (leds->endPos).minimum(fixSize - Coord3D{1,1,1}) * 10;
-        Coord3D midPosAdjusted = (leds->midPos).minimum(fixSize - Coord3D{1,1,1}); //not * 10
-
-        // mdl->setValue("start", startPosAdjusted/10, rowNr); //rowNr
-        // mdl->setValue("end", endPosAdjusted/10, rowNr); //rowNr
-
-        if (pixel >= startPosAdjusted && pixel <= endPosAdjusted ) { //if pixel between start and end pos
-
-          Coord3D pixelAdjusted = (pixel - startPosAdjusted)/10; //pixelRelative to startPos in cm
-
-          Coord3D sizeAdjusted = (endPosAdjusted - startPosAdjusted)/10 + Coord3D{1,1,1}; // in cm
-
-          // 0 to 3D depending on start and endpos (e.g. to display ScrollingText on one side of a cube)
-          leds->projectionDimension = 0;
-          if (sizeAdjusted.x > 1) leds->projectionDimension++;
-          if (sizeAdjusted.y > 1) leds->projectionDimension++;
-          if (sizeAdjusted.z > 1) leds->projectionDimension++;
-
-          // leds->setupCached = &Projection::setup;
-          // leds->adjustXYZCached = &Projection::adjustXYZ;
-
-          mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
-
-          uint16_t indexV = leds->XYZUnprojected(pixelAdjusted); //default
-
-          // Setup changes leds.size, mapped, indexV
-          if (leds->projection) (leds->projection->*leds->setupCached)(*leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
-
-          if (leds->size == Coord3D{0,0,0}) leds->size = sizeAdjusted; //first, not assigned in setupCached
-          leds->nrOfLeds = leds->size.x * leds->size.y * leds->size.z;
-
-          if (indexV != UINT16_MAX) {
-            if (indexV >= leds->nrOfLeds || indexV >= NUM_VLEDS_Max)
-              ppf("dev pre [%d] indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, leds->nrOfLeds, NUM_VLEDS_Max, leds->mappingTable.size(), indexP, pixel.x, pixel.y, pixel.z, leds->size.x, leds->size.y, leds->size.z);
-            else {
-
-              //create new physMaps if needed
-              if (indexV >= leds->mappingTable.size()) {
-                for (size_t i = leds->mappingTable.size(); i <= indexV; i++) {
-                  // ppf("mapping %d,%d,%d add physMap before %d %d\n", pixel.y, pixel.y, pixel.z, indexV, leds->mappingTable.size());
-                  leds->mappingTable.push_back(PhysMap());
-                }
-              }
-
-              leds->mappingTable[indexV].addIndexP(*leds, indexP);
-              // ppf("mapping b:%d t:%d V:%d\n", indexV, indexP, leds->mappingTable.size());
-            } //indexV not too high
-          } //indexV
-
-          mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
-
-        } //if x,y,z between start and endpos
-      } //if leds->doMap
+      leds->projectAndMapPixel(pixel, rowNr);
       rowNr++;
     } //for layers
   } //indexP < max
   else 
     ppf("dev post indexP too high %d>=%d or %d p:%d,%d,%d\n", indexP, nrOfLeds, NUM_LEDS_Max, pixel.x, pixel.y, pixel.z);
+
   indexP++; //also increase if no buffer created
 }
 
@@ -192,6 +128,7 @@ void Fixture::projectAndMapPin(uint16_t pin) {
     char details[32] = "";
     if (pinsM->isOwner(pin, "Leds")) { //if owner
 
+      //merge already assigned leds with new assignleds in %d-%d
       char * after = strtok((char *)pinObject.details, "-");
       if (after != NULL ) {
         char * before;
@@ -224,66 +161,8 @@ void Fixture::projectAndMapPost() {
 
   for (LedsLayer *leds: layers) {
     if (leds->doMap) {
-      ppf("projectAndMap post leds[%d] effect:%d pro:%s\n", rowNr, leds->effectNr, leds->projection?leds->projection->name():"None");
-
-      uint16_t nrOfLogical = 0;
-      uint16_t nrOfPhysical = 0;
-      uint16_t nrOfPhysicalM = 0;
-      uint16_t nrOfColor = 0;
-
-      if (!leds->projection) { //projection is none
-
-        //defaults
-        leds->size = fixSize;
-        leds->nrOfLeds = nrOfLeds;
-        nrOfPhysical = nrOfLeds;
-
-      } else {
-
-        if (leds->mappingTable.size() < leds->size.x * leds->size.y * leds->size.z)
-          ppf("mapping add extra physMap %d to %d size: %d,%d,%d\n", leds->mappingTable.size(), leds->size.x * leds->size.y * leds->size.z, leds->size.x, leds->size.y, leds->size.z);
-        for (size_t i = leds->mappingTable.size(); i < leds->size.x * leds->size.y * leds->size.z; i++) {
-          leds->mappingTable.push_back(PhysMap());
-        }
-
-        leds->nrOfLeds = leds->mappingTable.size();
-
-        //debug info + summary values
-        for (PhysMap &map:leds->mappingTable) {
-          switch (map.mapType) {
-            case m_color:
-              nrOfColor++;
-              break;
-            case m_onePixel:
-              // ppf("ledV %d mapping =1: #ledsP : %d\n", nrOfLogical, map.indexP);
-              nrOfPhysical++;
-              break;
-            case m_morePixels:
-              // ppf("ledV %d mapping >1: #ledsP :", nrOfLogical);
-              
-              for (uint16_t indexP: leds->mappingTableIndexes[map.indexes]) {
-                // ppf(" %d", indexP);
-                nrOfPhysicalM++;
-              }
-              // ppf("\n");
-              break;
-          }
-          nrOfLogical++;
-          // else
-          //   ppf("ledV %d no mapping\n", x);
-        }
-      }
-
-      ppf("projectAndMap leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d c:%d)\n", rowNr, leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, nrOfColor);
-
-      char buf[32];
-      print->fFormat(buf, sizeof(buf), "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
-      mdl->setValue("layers", "size", JsonString(buf, JsonString::Copied), rowNr);
-
-      ppf("projectAndMap leds[%d].size = %d + m:(%d * %d) + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), leds->mappingTable.size(), sizeof(PhysMap), leds->effectData.bytesAllocated, leds->projectionData.bytesAllocated); //44 -> 164
-
-      leds->doMap = false;
-    } //leds->doMap
+      leds->projectAndMapPost(rowNr);
+    }
     rowNr++;
   } // leds
 
@@ -298,6 +177,6 @@ void Fixture::projectAndMapPost() {
     if (pixelsToBlend.size() < nrOfLeds)
       pixelsToBlend.push_back(false);
   }
+  
   doMap = false;
-  ppf("projectAndMap done %d ms\n", millis()-start);
 }

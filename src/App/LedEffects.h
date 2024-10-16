@@ -30,55 +30,6 @@ float distance(float x1, float y1, float z1, float x2, float y2, float z2) {
 }
 
 //should not contain variables/bytes to keep mem as small as possible!!
-class Effect {
-public:
-  virtual const char * name() {return "noname";}
-  virtual const char * tags() {return "";}
-  virtual uint8_t dim() {return _1D;};
-
-  virtual void setup(LedsLayer &leds) {}
-
-  virtual void loop(LedsLayer &leds) {}
-
-  virtual void controls(LedsLayer &leds, JsonObject parentVar) {
-    ui->initSelect(parentVar, "palette", 4, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-      case onUI: {
-        JsonArray options = ui->setOptions(var);
-        options.add("CloudColors");
-        options.add("LavaColors");
-        options.add("OceanColors");
-        options.add("ForestColors");
-        options.add("RainbowColors");
-        options.add("RainbowStripeColors");
-        options.add("PartyColors");
-        options.add("HeatColors");
-        options.add("RandomColors");
-        return true; }
-      case onChange:
-        switch (var["value"][rowNr].as<uint8_t>()) {
-          case 0: leds.palette = CloudColors_p; break;
-          case 1: leds.palette = LavaColors_p; break;
-          case 2: leds.palette = OceanColors_p; break;
-          case 3: leds.palette = ForestColors_p; break;
-          case 4: leds.palette = RainbowColors_p; break;
-          case 5: leds.palette = RainbowStripeColors_p; break;
-          case 6: leds.palette = PartyColors_p; break;
-          case 7: leds.palette = HeatColors_p; break;
-          case 8: { //randomColors
-            for (int i=0; i < sizeof(leds.palette.entries) / sizeof(CRGB); i++) {
-              leds.palette[i] = CHSV(random8(), 255, 255); //take the max saturation, max brightness of the colorwheel
-            }
-            break;
-          }
-          default: leds.palette = PartyColors_p; //should never occur
-        }
-        return true;
-      default: return false;
-    }});
-  }
-
-};
-
 class SolidEffect: public Effect {
   const char * name() {return "Solid";}
   uint8_t dim() {return _1D;}

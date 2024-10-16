@@ -17,11 +17,6 @@
 
 #define NUM_LEDS_Max 8192
 
-#define _1D 1
-#define _2D 2
-#define _3D 3
-
-
 class LedsLayer; //forward
 
 class Fixture {
@@ -63,7 +58,6 @@ public:
   }
 
   //temporary here  
-  unsigned long start = millis();
   uint16_t indexP = 0;
   uint16_t prevIndexP = 0;
   uint16_t currPin; //lookFor needs u16

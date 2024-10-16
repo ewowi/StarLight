@@ -207,6 +207,25 @@ struct PhysMap {
 
 }; // 2 bytes
 
+#define _1D 1
+#define _2D 2
+#define _3D 3
+
+//should not contain variables/bytes to keep mem as small as possible!!
+class Effect {
+public:
+  virtual const char * name() {return "noname";}
+  virtual const char * tags() {return "";}
+  virtual uint8_t dim() {return _1D;};
+
+  virtual void setup(LedsLayer &leds) {}
+
+  virtual void loop(LedsLayer &leds) {}
+
+  virtual void controls(LedsLayer &leds, JsonObject parentVar);
+
+};
+
 class Projection {
 public:
   virtual const char * name() {return "noname";}
@@ -231,7 +250,8 @@ public:
 
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
 
-  uint16_t effectNr = UINT16_MAX;
+  // uint16_t effectNr = UINT16_MAX;
+  Effect *effect = nullptr;
   Projection *projection = nullptr;
 
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
@@ -546,4 +566,10 @@ public:
     }
   }
 
-};
+  void projectAndMapPre();
+
+  void projectAndMapPixel(Coord3D pixel, uint8_t rowNr);
+
+  void projectAndMapPost(uint8_t rowNr);
+
+}; //LedsLayer
