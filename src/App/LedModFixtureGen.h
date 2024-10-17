@@ -9,8 +9,6 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
-#include "SysModule.h"
-
 //GenFix: class to provide fixture write functions and save to json file
 // {
 //   "name": "F_Hexagon",

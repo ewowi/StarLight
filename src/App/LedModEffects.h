@@ -9,9 +9,8 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
-#include "SysModule.h"
+#include "LedLayer.h"
 
-#include "LedFixture.h"
 #include "LedEffects.h"
 #include "LedProjections.h"
 
