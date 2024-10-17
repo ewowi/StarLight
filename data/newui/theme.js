@@ -26,7 +26,8 @@ class Theme {
       <option value="pink">Pink</option>
       <option value="space">Space</option>
       <option value="nyan">Nyan</option>
-    </select></p>`
+      </select><span> | </span><input type="button" value="ClassicUI" id="bClassicUI" onclick="window.open('${window.location.href.replace("/newui", "")}' ,'_self');"></input>
+      </p>`
   }
 
   setTheme(value) {

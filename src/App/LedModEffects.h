@@ -475,7 +475,7 @@ public:
       //  run the next frame of the effect
       uint8_t rowNr = 0;
       for (LedsLayer *leds: fixture.layers) {
-        if (leds->effect) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
+        if (leds->effect && !leds->doMap) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
           // ppf(" %s %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->effect->name(), leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
           mdl->getValueRowNr = rowNr++;
 

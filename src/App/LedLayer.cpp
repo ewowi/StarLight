@@ -15,7 +15,9 @@
 
 #include "../Sys/SysModFiles.h"
 #include "../Sys/SysStarJson.h"
-
+#ifdef STARBASE_USERMOD_LIVExx
+  #include "../User/UserModLive.h"
+#endif
 #ifdef STARBASE_USERMOD_MPU6050
   #include "../User/UserModMPU6050.h"
 #endif
@@ -252,11 +254,137 @@ void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
     }
   }
 
+//load fixture json file, parse it and depending on the projection, create a mapping for it
+void Fixture::projectAndMap() {
+  unsigned long start = millis();
+  char fileName[32] = "";
+
+  if (files->seqNrToName(fileName, fixtureNr, "F_")) { // get the fixture.json
+
+#ifdef STARBASE_USERMOD_LIVExx
+    if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
+      ppf("projectAndMap Live Fixture %s\n", fileName);
+
+      // strlcpy(web->lastFileUpdated, fileName, sizeof(web->lastFileUpdated));
+      // ppf("script.onChange f:%d s:%s\n", fileNr, web->lastFileUpdated);
+
+      Parser p = Parser();
+      Executable myexec;
+
+      liveM->scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
+
+      //adding to scPreBaseScript
+      liveM->addExternalFun("void", "addPixelsPre", "(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4)", (void *)_addPixelsPre);
+      liveM->addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
+      liveM->addExternalFun("void", "addPin", "(uint16_t a1)", (void *)_addPin);
+      liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
+
+      File f = files->open(fileName, "r");
+      if (!f)
+        ppf("UserModLive setup script open %s for %s failed\n", fileName, "r");
+      else {
+
+        string scScript = liveM->scPreBaseScript;
+
+        unsigned preScriptNrOfLines = 0;
+
+        for (size_t i = 0; i < scScript.length(); i++)
+        {
+          if (scScript[i] == '\n')
+            preScriptNrOfLines++;
+        }
+
+        ppf("preScript of %s has %d lines\n", fileName, preScriptNrOfLines+1); //+1 to subtract the line from parser error line reported
+
+        scScript += string(f.readString().c_str()); // add sc file
+
+        // scScript += "void main(){resetStat();setup();}\n"; //add main which calls setup and loop
+
+        // Serial.println(scScript.c_str()); //ppf has a max
+        size_t scripLines = 0;
+        size_t lastIndex = 0;
+        for (size_t i = 0; i < scScript.length(); i++)
+        {
+          if (scScript[i] == '\n' || i == scScript.length()-1) {
+            ppf("%3d %s", scripLines+1, scScript.substr(lastIndex, i-lastIndex+1).c_str());
+            scripLines++;
+            lastIndex = i + 1;
+          }
+        }
+
+        ppf("Before parsing of %s\n", fileName);
+        ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+
+        myexec = p.parseScript(&scScript);
+        myexec.name = string(fileName);
+
+        if (myexec.exeExist)
+        {
+          ppf("parsing %s done\n", fileName);
+          ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+
+          myexec.executeAsTask("main");
+          // ppf("setup done\n");
+          // strlcpy(this->fileName, fileName, sizeof(this->fileName));
+        }
+        f.close();
+      }
+    } else 
+#endif
+    {
+
+      StarJson starJson(fileName); //open fileName for deserialize
+
+      bool first = true;
+
+      //what to deserialize
+      starJson.lookFor("width", (uint16_t *)&fixSize.x);
+      starJson.lookFor("height", (uint16_t *)&fixSize.y);
+      starJson.lookFor("depth", (uint16_t *)&fixSize.z);
+      starJson.lookFor("nrOfLeds", &nrOfLeds);
+      starJson.lookFor("ledSize", &ledSize);
+      starJson.lookFor("shape", &shape);
+      starJson.lookFor("pin", &currPin);
+
+      //lookFor leds array and for each item in array call lambda to make a projection
+      starJson.lookFor("leds", [this, &first](std::vector<uint16_t> uint16CollectList) { //this will be called for each tuple of coordinates!
+
+        if (first) { 
+          projectAndMapPre({fixSize.x, fixSize.y, fixSize.z}, nrOfLeds, ledSize, shape);
+          first = false;
+        }
+
+        if (uint16CollectList.size()>=1) { // process one pixel
+
+          Coord3D pixel; //in mm !
+          pixel.x = uint16CollectList[0];
+          pixel.y = (uint16CollectList.size()>=2)?uint16CollectList[1]: 0;
+          pixel.z = (uint16CollectList.size()>=3)?uint16CollectList[2]: 0;
+
+          projectAndMapPixel(pixel);
+        } //if 1D-3D pixel
+
+        else { // end of leds array
+          projectAndMapPin(currPin);
+        }
+      }); //starJson.lookFor("leds" (create the right type, otherwise crash)
+
+      if (starJson.deserialize()) { //this will call above function parameter for each led
+        projectAndMapPost();
+      } // if deserialize
+    }//Live Fixture
+  } //if fileName
+  else
+    ppf("projectAndMap: Filename for fixture %d not found\n", fixtureNr);
+
+  ppf("projectAndMap done %d ms\n", millis()-start);
+}
+
   void LedsLayer::projectAndMapPre() {
     if (doMap) {
       fill_solid(CRGB::Black);
 
-      ppf("projectAndMap clear leds[x] effect:%s pro:%s\n", effect?effect->name():"None", projection?projection->name():"None");
+      ppf("projectAndMapPre clear leds[x] effect:%s pro:%s\n", effect?effect->name():"None", projection?projection->name():"None");
       size = Coord3D{0,0,0};
       //vectors really gone now?
       for (std::vector<uint16_t> mappingTableIndex: mappingTableIndexes) {
@@ -329,7 +457,7 @@ void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
 
   void LedsLayer::projectAndMapPost(uint8_t rowNr) {
     if (doMap) {
-      ppf("projectAndMap post leds[%d] effect:%s pro:%s\n", rowNr, effect?effect->name():"None", projection?projection->name():"None");
+      ppf("projectAndMapPost leds[%d] effect:%s pro:%s\n", rowNr, effect?effect->name():"None", projection?projection->name():"None");
 
       uint16_t nrOfLogical = 0;
       uint16_t nrOfPhysical = 0;
@@ -346,7 +474,7 @@ void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
       } else {
 
         if (mappingTable.size() < size.x * size.y * size.z)
-          ppf("mapping add extra physMap %d to %d size: %d,%d,%d\n", mappingTable.size(), size.x * size.y * size.z, size.x, size.y, size.z);
+          ppf("projectAndMapPost add extra physMap %d to %d size: %d,%d,%d\n", mappingTable.size(), size.x * size.y * size.z, size.x, size.y, size.z);
         for (size_t i = mappingTable.size(); i < size.x * size.y * size.z; i++) {
           mappingTable.push_back(PhysMap());
         }
@@ -379,76 +507,21 @@ void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
         }
       }
 
-      ppf("projectAndMap leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d c:%d)\n", rowNr, size.x, size.y, size.z, nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, nrOfColor);
+      ppf("projectAndMapPost leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d c:%d)\n", rowNr, size.x, size.y, size.z, nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, nrOfColor);
 
       char buf[32];
       print->fFormat(buf, sizeof(buf), "%d x %d x %d -> %d", size.x, size.y, size.z, nrOfLeds);
       mdl->setValue("layers", "size", JsonString(buf, JsonString::Copied), rowNr);
 
-      ppf("projectAndMap leds[%d].size = %d + m:(%d * %d) + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164
+      ppf("projectAndMapPost leds[%d].size = %d + m:(%d * %d) + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164
 
       doMap = false;
     } //doMap
 
   }
 
-//load fixture json file, parse it and depending on the projection, create a mapping for it
-void Fixture::projectAndMap() {
-  unsigned long start = millis();
-  char fileName[32] = "";
-
-  if (files->seqNrToName(fileName, fixtureNr, "F_")) { // get the fixture.json
-
-    if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
-      ppf("Live Fixture %s\n", fileName);
-
-      strlcpy(web->lastFileUpdated, fileName, sizeof(web->lastFileUpdated));
-      // ppf("script.onChange f:%d s:%s\n", fileNr, web->lastFileUpdated);
-    }
-    else {
-
-      StarJson starJson(fileName); //open fileName for deserialize
-
-      projectAndMapPre();
-
-      //what to deserialize
-      starJson.lookFor("width", (uint16_t *)&fixSize.x);
-      starJson.lookFor("height", (uint16_t *)&fixSize.y);
-      starJson.lookFor("depth", (uint16_t *)&fixSize.z);
-      starJson.lookFor("nrOfLeds", &nrOfLeds);
-      starJson.lookFor("pin", &currPin);
-
-      //lookFor leds array and for each item in array call lambda to make a projection
-      starJson.lookFor("leds", [this](std::vector<uint16_t> uint16CollectList) { //this will be called for each tuple of coordinates!
-
-        if (uint16CollectList.size()>=1) { // process one pixel
-
-          Coord3D pixel; //in mm !
-          pixel.x = uint16CollectList[0];
-          pixel.y = (uint16CollectList.size()>=2)?uint16CollectList[1]: 0;
-          pixel.z = (uint16CollectList.size()>=3)?uint16CollectList[2]: 0;
-
-          projectAndMapPixel(pixel);
-        } //if 1D-3D pixel
-
-        else { // end of leds array
-          projectAndMapPin(currPin);
-        }
-      }); //starJson.lookFor("leds" (create the right type, otherwise crash)
-
-      if (starJson.deserialize()) { //this will call above function parameter for each led
-        projectAndMapPost();
-      } // if deserialize
-    }//Live Fixture
-  } //if fileName
-  else
-    ppf("projectAndMap: Filename for fixture %d not found\n", fixtureNr);
-
-  ppf("projectAndMap done %d ms\n", millis()-start);
-}
-
-void Fixture::projectAndMapPre() {
-  ppf("projectAndMapPre\n");
+void Fixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize, uint8_t shape) {
+  ppf("projectAndMapPre %d,%d,%d -> %d s:%d s:%d\n", size.x, size.y, size.z, nrOfLeds, ledSize, shape);
   // reset leds
   uint8_t rowNr = 0;
   for (LedsLayer *leds: layers) {
@@ -470,6 +543,24 @@ void Fixture::projectAndMapPre() {
 
   indexP = 0;
   prevIndexP = 0; //for allocPins
+
+  size_t len = nrOfLeds * 6 + 11;
+  wsBuf = web->ws.makeBuffer(len);
+  if (wsBuf) {
+    wsBuf->lock();
+    byte* buffer = wsBuf->get();
+    buffer[0] = 1; //userfun 1
+    buffer[1] = size.x/256;
+    buffer[2] = size.x%256;
+    buffer[3] = size.y/256;
+    buffer[4] = size.y%256;
+    buffer[5] = size.z/256;
+    buffer[6] = size.z%256;
+    buffer[7] = nrOfLeds/256;
+    buffer[8] = nrOfLeds%256;
+    buffer[9] = ledSize;
+    buffer[10] = shape;
+  }
 }
 
 void Fixture::projectAndMapPixel(Coord3D pixel) {
@@ -478,13 +569,16 @@ void Fixture::projectAndMapPixel(Coord3D pixel) {
   if (indexP < NUM_LEDS_Max) {
 
     // //send pixel to ui ...
-    // web->sendDataWs([this](AsyncWebSocketMessageBuffer * wsBuf) {
-    //   byte* buffer;
-
-    //   buffer = wsBuf->get();
-    //   buffer[0] = 0; //,,,
-
-    // }, 100, true);
+    if (wsBuf && indexP < nrOfLeds) {
+      uint8_t headerBytes = 11;
+      byte* buffer = wsBuf->get();
+      buffer[indexP*6+headerBytes] = pixel.x/256;
+      buffer[indexP*6+headerBytes + 1] = pixel.x%256;
+      buffer[indexP*6+headerBytes + 2] = pixel.y/256;
+      buffer[indexP*6+headerBytes + 3] = pixel.y%256;
+      buffer[indexP*6+headerBytes + 4] = pixel.z/256;
+      buffer[indexP*6+headerBytes + 5] = pixel.z%256;
+    }
     
     uint8_t rowNr = 0;
     for (LedsLayer *leds: layers) {
@@ -533,7 +627,31 @@ void Fixture::projectAndMapPin(uint16_t pin) {
 }
 
 void Fixture::projectAndMapPost() {
+  ppf("projectAndMapPost ip:%d\n", indexP);
   //after processing each led
+
+  if (wsBuf) {
+
+    for (auto &loopClient:web->ws.getClients()) {
+      if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
+        // if (loopClient->queueLen() <= 3) {
+          loopClient->binary(wsBuf);
+          web->sendWsCounter++;
+          web->sendWsBBytes+=indexP;
+        // }
+      }
+      else {
+        web->printClient("sendDataWs client full or not connected", loopClient);
+        // ppf("sendDataWs client full or not connected\n");
+        web->ws.cleanupClients(); //only if above threshold
+        web->ws._cleanBuffers();
+      }
+    }
+
+    wsBuf->unlock();
+    web->ws._cleanBuffers();
+  }
+
   uint8_t rowNr = 0;
 
   for (LedsLayer *leds: layers) {

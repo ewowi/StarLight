@@ -163,7 +163,7 @@ function makeWS() {
   ws.onmessage = (e)=>{
     if (e.data instanceof ArrayBuffer) { // preview packet
       let buffer = new Uint8Array(e.data);
-      if (buffer[0]==0) {
+      if (buffer[0] == 0) {
         let canvasNode = gId("Pins.board");
         // console.log(buffer, canvasNode);
         previewBoard(canvasNode, buffer);

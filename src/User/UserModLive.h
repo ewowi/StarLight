@@ -109,7 +109,7 @@ static uint8_t _random8() {return random8();}
 static LedsLayer *gLeds = nullptr;
 static void _fadeToBlackBy(uint8_t fadeBy) {if (gLeds) gLeds->fadeToBlackBy(fadeBy);}
 
-static void _addPixelsPre() {if (gLeds) gLeds->fixture->projectAndMapPre();}
+static void _addPixelsPre(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4) {if (gLeds) gLeds->fixture->projectAndMapPre({a1, a2, a3}, a4);}
 static void _addPixel(uint8_t a1, uint8_t a2, uint8_t a3) {if (gLeds) gLeds->fixture->projectAndMapPixel({a1, a2, a3});}
 static void _addPin(uint8_t a1) {if (gLeds) gLeds->fixture->projectAndMapPin(a1);}
 static void _addPixelsPost() {if (gLeds) gLeds->fixture->projectAndMapPost();}
@@ -275,10 +275,10 @@ public:
     //ISO C++ forbids taking the address of a bound member function to form a pointer to member function.  Say '&LedsLayer::setPixelColorLive' [-fpermissive]
     //converting from 'void (LedsLayer::*)(uint16_t, uint32_t)' {aka 'void (LedsLayer::*)(short unsigned int, unsigned int)'} to 'void*' [-Wpmf-conversions]
 
-    addExternalFun("void", "addPixelsPre", "()", (void *)_addPixelsPre);
-    addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
-    addExternalFun("void", "addPin", "(uint16_t a1)", (void *)_addPin);
-    addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
+    // addExternalFun("void", "addPixelsPre", "(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4)", (void *)_addPixelsPre);
+    // addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
+    // addExternalFun("void", "addPin", "(uint16_t a1)", (void *)_addPin);
+    // addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
 
     //End LEDS specific
 

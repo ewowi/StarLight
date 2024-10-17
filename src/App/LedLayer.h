@@ -191,6 +191,8 @@ public:
   uint16_t nrOfLeds = 64; //amount of physical leds
   uint8_t fixtureNr = -1;
   Coord3D fixSize = {8,8,1};
+  uint16_t ledSize = 5; //mm
+  uint16_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
 
   std::vector<LedsLayer *> layers; //virtual leds
 
@@ -216,8 +218,9 @@ public:
   uint16_t currPin; //lookFor needs u16
 
   //load fixture json file, parse it and depending on the projection, create a mapping for it
+  AsyncWebSocketMessageBuffer * wsBuf;
   void projectAndMap();
-  void projectAndMapPre();
+  void projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize = 5, uint8_t shape = 0);
   void projectAndMapPixel(Coord3D pixel);
   void projectAndMapPin(uint16_t pin);
   void projectAndMapPost();
