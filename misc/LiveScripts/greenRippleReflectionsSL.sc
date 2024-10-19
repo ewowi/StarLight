@@ -38,9 +38,9 @@ void loop() {
     c = triangle(index * 3 / width + 1 + sin(t3) / 2 % 1);
     v = (a + b + c) / 3;
     v = v * v;
-    printf("test full i:%d a:%d b:%d b:%d v:%d", index,(int)(a), (int)(b), (int)(c), (int)(v));
+    //printf("test full i:%d a:%d v:%d r:%d g:%d b:%d\n", index, (int)(a*255), (int)(v*255), cc.red, cc.green, cc.blue);
     for (uint8_t y = 0; y < height; y++) {
-      sPC(y*panel_width+index, hsv((float)(0.3 * 255), (float)(a * 255), (float)(v * 255)));
+      sPC(y*panel_width+index, hsv(0.3 * 255, a * 255, v*255));
     }
   }
 }

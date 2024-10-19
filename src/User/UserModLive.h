@@ -77,11 +77,6 @@ static void resetShowStats()
     _totfps = 0;
 }
 
-static void dispshit(int g) { ppf("coming from assembly int %x %d", g, g);}
-static void __print(char *s) {ppf("from assembly :%s\r\n", s);}
-static void showError(int line, uint32_t size, uint32_t got) { ppf("Overflow error line %d max size: %d got %d", line, size, got);}
-static void displayfloat(float j) {ppf(" %f", j);}
-
 static float _hypot(float x,float y) {return hypot(x,y);}
 static float _atan2(float x,float y) { return atan2(x,y);}
 static float _sin(float j) {return sin(j);}
@@ -99,8 +94,8 @@ uint8_t slider2 = 128;
 uint8_t slider3 = 128;
 
 //LEDS specific
-static CRGB POSV(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);} //why call POSV and not hsv?
-static CRGB rgb(uint8_t r, uint8_t g, uint8_t b) {return CRGB(r, g, b);} //why call POSV and not hsv?
+static CRGB hsv(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);}
+static CRGB rgb(uint8_t r, uint8_t g, uint8_t b) {return CRGB(r, g, b);}
 static uint8_t _sin8(uint8_t theta) {return sin8(theta);}
 static uint8_t _cos8(uint8_t theta) {return cos8(theta);}
 static uint8_t _beatSin8(uint8_t bpm, uint8_t lowest, uint8_t highest) {return beatsin8(bpm, lowest, highest);}
@@ -235,11 +230,6 @@ public:
     // addExternalFun("void", "showM", "()", (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
     addExternalFun("void", "resetStat", "()", (void *)&resetShowStats);
 
-    addExternalFun("void", "display", "(int a1)", (void *)&dispshit);
-    addExternalFun("void", "dp", "(float a1)", (void *)displayfloat);
-    addExternalFun("void", "error", "(int a1, int a2, int a3)", (void *)&showError);
-    addExternalFun("void", "print", "(char * a1)", (void *)__print);
-
     addExternalFun("float", "atan2", "(float a1, float a2)",(void*)_atan2);
     addExternalFun("float", "hypot", "(float a1, float a2)",(void*)_hypot);
     addExternalFun("float", "sin", "(float a1)", (void *)_sin);
@@ -261,8 +251,8 @@ public:
 
     //LEDS specific
     //For Live Effects
-    addExternalFun("CRGB", "hsv", "(int a1, int a2, int a3)", (void *)POSV); //uint8_t?
-    addExternalFun("CRGB", "rgb", "(int a1, int a2, int a3)", (void *)rgb);//uint8_t?
+    addExternalFun("CRGB", "hsv", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)hsv);
+    addExternalFun("CRGB", "rgb", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)rgb);
     addExternalFun("uint8_t", "beatSin8", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)_beatSin8);
     addExternalFun("uint8_t", "inoise8", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_inoise8);
     addExternalFun("uint8_t", "random8", "()", (void *)_random8);
@@ -378,8 +368,6 @@ public:
         }
         //end LEDs specific
 
-        Serial.println(scScript.c_str()); //ppf has a max
-
         unsigned preScriptNrOfLines = 0;
 
         for (size_t i = 0; i < scScript.length(); i++)
@@ -393,6 +381,17 @@ public:
         scScript += string(f.readString().c_str()); // add sc file
 
         scScript += "void main(){resetStat();setup();while(2>1){loop();show();}}"; //add main which calls setup and loop
+
+        size_t scripLines = 0;
+        size_t lastIndex = 0;
+        for (size_t i = 0; i < scScript.length(); i++)
+        {
+          if (scScript[i] == '\n' || i == scScript.length()-1) {
+            ppf("%3d %s", scripLines+1, scScript.substr(lastIndex, i-lastIndex+1).c_str());
+            scripLines++;
+            lastIndex = i + 1;
+          }
+        }
 
         ppf("Before parsing of %s\n", fileName);
         ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());

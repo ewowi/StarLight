@@ -300,7 +300,6 @@ void Fixture::projectAndMap() {
 
         // scScript += "void main(){resetStat();setup();}\n"; //add main which calls setup and loop
 
-        // Serial.println(scScript.c_str()); //ppf has a max
         size_t scripLines = 0;
         size_t lastIndex = 0;
         for (size_t i = 0; i < scScript.length(); i++)
