@@ -268,13 +268,13 @@ public:
     });
 
     if (sizeof(UDPWLEDMessage) != 44) {
-      ppf("Program error: Size of UDP message is not 44: %d\n", sizeof(UDPWLEDMessage));
+      ppf("dev Size of UDP message is not 44: %d\n", sizeof(UDPWLEDMessage));
       // ppf("udpMessage size %d = %d + %d + %d + ...\n", sizeof(UDPWLEDMessage), sizeof(udpMessage.ip0), sizeof(udpMessage.version), sizeof(udpMessage.name));
       success = false;
     }
     if (sizeof(UDPStarMessage) != 1460) { //size of UDP Packet
       // one udp frame should be 1460, not 1472 (then split by network in 1460 and 12)
-      ppf("Program error: Size of UDP message is not 44: %d\n", sizeof(UDPStarMessage));
+      ppf("dev Size of UDP message is not 44: %d\n", sizeof(UDPStarMessage));
       // ppf("udpMessage size %d = %d + %d + %d + ...\n", sizeof(UDPWLEDMessage), sizeof(udpMessage.ip0), sizeof(udpMessage.version), sizeof(udpMessage.name));
       success = false;
     }

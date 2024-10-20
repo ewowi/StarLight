@@ -392,7 +392,7 @@ void SysModWeb::sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fi
 
   if (ws.count()) {
     if (len > 8192)
-      ppf("program error: sendDataWs BufferLen too high !!!%d\n", len);
+      ppf("dev sendDataWs BufferLen too high !!!%d\n", len);
     AsyncWebSocketMessageBuffer * wsBuf = ws.makeBuffer(len); //assert failed: block_trim_free heap_tlsf.c:371 (block_is_free(block) && "block must be free"), AsyncWebSocket::makeBuffer(unsigned int)
 
     if (wsBuf) {
@@ -505,7 +505,14 @@ void SysModWeb::serveUpload(WebRequest *request, const String& fileName, size_t 
 
       if (fileName.indexOf(".sc") > 0) {
         ppf("sc file added %s\n", fileName.c_str());
-        strlcpy(lastFileUpdated, ("/"+fileName).c_str(), sizeof(lastFileUpdated)); //workaround 
+        size_t seqNr = UINT8_MAX;
+        files->nameToSeqNr((fileName).c_str(), &seqNr, ".sc");
+
+        if (seqNr != UINT8_MAX) {
+          //now only working for rowNr 0 !!! TBD!
+          mdl->setValue("effect", "script", 0, 0); //kill the old 
+          mdl->setValue("effect", "script", seqNr + 1, 0); //+1 as None is in dropdown
+        }
       }
 
       // got multiple definition error here ???

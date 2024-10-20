@@ -22,6 +22,11 @@
 
 #ifdef STARBASE_USERMOD_LIVE
   #include "../User/UserModLive.h"
+  //StarLight functions
+  static LedsLayer *gLeds = nullptr;
+  uint8_t slider1 = 128;
+  uint8_t slider2 = 128;
+  uint8_t slider3 = 128;
 #endif
 
 //utility function
