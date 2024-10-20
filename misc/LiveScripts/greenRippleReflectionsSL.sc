@@ -1,4 +1,4 @@
-//green_ripple_reflectionsSL
+//greenRippleReflectionsSL
 
 //https://github.com/MoonModules/WLED-Effects/blob/master/ARTIFX/wled/green_ripple_reflections.wled
 //original from https://patterns.electromage.com/pattern/Ktjben4j36Wqxnk8N
@@ -38,9 +38,9 @@ void loop() {
     c = triangle(index * 3 / width + 1 + sin(t3) / 2 % 1);
     v = (a + b + c) / 3;
     v = v * v;
-    //printCustom((float)index,a,b,c,v);
+    //printf("test full i:%d a:%d v:%d r:%d g:%d b:%d\n", index, (int)(a*255), (int)(v*255), cc.red, cc.green, cc.blue);
     for (uint8_t y = 0; y < height; y++) {
-      sPC(y*panel_width+index, hsv(0.3 * 255, a * 255, v * 255));
+      sPC(y*panel_width+index, hsv(0.3 * 255, a * 255, v*255));
     }
   }
 }

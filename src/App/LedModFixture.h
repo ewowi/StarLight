@@ -52,6 +52,9 @@ public:
     currentVar["dash"] = true; //these values override model.json???
 
     currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      case onUI:
+        eff->fixture.doMap = true; //rebuild the fixture - so it is send to ui
+        return true;
       case onLoop: {
         var["interval"] =  max(eff->fixture.nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
 
@@ -63,7 +66,7 @@ public:
           #define headerBytes 4
 
           //new values
-          buffer[0] = 1; //userFun id
+          buffer[0] = 2; //userFun id
           //rotations
           if (viewRotation == 0) {
             buffer[1] = 0;

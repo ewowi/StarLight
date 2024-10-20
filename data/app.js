@@ -23,12 +23,31 @@ function userFunSetup() {
 }
 
 function userFun(buffer) {
-  if (buffer[0]==1) {
+  let previewVar = controller.modules.findVar("Fixture", "preview");
+  if (buffer[0] == 1) {
+    console.log("userFun Fixture definition", buffer, previewVar)
+    previewVar.file = {};
+    previewVar.file.new = true;
+    previewVar.file.width = buffer[1]*256 + buffer[2];
+    previewVar.file.height = buffer[3]*256 + buffer[4];
+    previewVar.file.depth = buffer[5]*256 + buffer[6];
+    previewVar.file.nrOfLeds = buffer[7]*256 + buffer[8];
+    previewVar.file.ledSize = buffer[9];
+    previewVar.file.shape = buffer[10];
+    previewVar.file.outputs = [];
+    let headerBytes = 11
+    let output = {};
+    output.leds = [];
+    for (let i = 0; i<previewVar.file.nrOfLeds*6; i+=6) { //steps of 6
+      // if (headerBytes + 5 + i < previewVar.file.nrOfLeds * 6 + 11)
+        output.leds.push([buffer[headerBytes+i]*256+buffer[headerBytes+1+i],buffer[headerBytes+2+i]*256+buffer[headerBytes+3+i],buffer[headerBytes+4+i]*256+buffer[headerBytes+5+i]]);
+    }
+    previewVar.file.outputs.push(output);
+    console.log("userFun Fixture definition", buffer, previewVar.file)
+  }
+  else if (buffer[0] == 2) {
     let canvasNode = gId("Fixture.preview");
-    if (!canvasNode) canvasNode = gId("preview"); //backwards compatibility (temp)
-
     if (canvasNode) {
-      let previewVar = controller.modules.findVar("Fixture", "preview");
   
       //replace the canvas: in case we switch from 2D to 3D as they cannot be reused between them
       //not needed anymore as we do only three.js

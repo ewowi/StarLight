@@ -9,11 +9,12 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
-#include "SysModule.h"
+#include "LedLayer.h"
 
-#include "LedFixture.h"
 #include "LedEffects.h"
 #include "LedProjections.h"
+
+#include "../Sys/SysStarJson.h"
 
 #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
   #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
@@ -21,6 +22,26 @@
   #else
     #include "I2SClocklessLedDriver.h"
   #endif
+#endif
+
+#ifdef STARBASE_USERMOD_LIVE
+  Fixture *gFixture = nullptr;
+  static void _addPixelsPre(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4) {
+    if (gFixture) {
+      gFixture->fixSize.x = a1;
+      gFixture->fixSize.y = a2;
+      gFixture->fixSize.z = a3;
+      gFixture->nrOfLeds = a4;
+      gFixture->ledSize = 5;
+      gFixture->shape = 0;
+      gFixture->projectAndMapPre(gFixture->fixSize, gFixture->nrOfLeds, gFixture->ledSize, gFixture->shape);
+    }
+  }
+  static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {if (gFixture) gFixture->projectAndMapPixel({a1, a2, a3});}
+  static void _addPin(uint8_t a1) {if (gFixture) gFixture->projectAndMapPin(a1);}
+  static void _addPixelsPost() {if (gFixture) gFixture->projectAndMapPost();
+    ppf("_addPixelsPost done\n");
+  }
 #endif
 
 
@@ -46,6 +67,7 @@ public:
   unsigned long lastMappingMillis = 0;
 
   std::vector<Effect *> effects;
+  std::vector<Projection *> projections;
 
   Fixture fixture = Fixture();
 
@@ -129,24 +151,24 @@ public:
     #endif
 
     //load projections
-    fixture.projections.push_back(new NoneProjection);
-    fixture.projections.push_back(new DefaultProjection);
-    fixture.projections.push_back(new PinwheelProjection);
-    fixture.projections.push_back(new MultiplyProjection);
-    fixture.projections.push_back(new TiltPanRollProjection);
-    fixture.projections.push_back(new DistanceFromPointProjection);
-    fixture.projections.push_back(new Preset1Projection);
-    fixture.projections.push_back(new RandomProjection);
-    fixture.projections.push_back(new ReverseProjection);
-    fixture.projections.push_back(new MirrorProjection);
-    fixture.projections.push_back(new GroupingProjection);
-    fixture.projections.push_back(new SpacingProjection);
-    fixture.projections.push_back(new TransposeProjection);
-    // fixture.projections.push_back(new KaleidoscopeProjection);
-    fixture.projections.push_back(new ScrollingProjection);
-    fixture.projections.push_back(new AccelerationProjection);
-    fixture.projections.push_back(new CheckerboardProjection);
-    fixture.projections.push_back(new RotateProjection);
+    projections.push_back(new NoneProjection);
+    projections.push_back(new DefaultProjection);
+    projections.push_back(new PinwheelProjection);
+    projections.push_back(new MultiplyProjection);
+    projections.push_back(new TiltPanRollProjection);
+    projections.push_back(new DistanceFromPointProjection);
+    projections.push_back(new Preset1Projection);
+    projections.push_back(new RandomProjection);
+    projections.push_back(new ReverseProjection);
+    projections.push_back(new MirrorProjection);
+    projections.push_back(new GroupingProjection);
+    projections.push_back(new SpacingProjection);
+    projections.push_back(new TransposeProjection);
+    // projections.push_back(new KaleidoscopeProjection);
+    projections.push_back(new ScrollingProjection);
+    projections.push_back(new AccelerationProjection);
+    projections.push_back(new CheckerboardProjection);
+    projections.push_back(new RotateProjection);
 
     #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
       #if !(CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2)
@@ -186,10 +208,10 @@ public:
     }});
 
     currentVar = ui->initSelect(tableVar, "effect", (uint8_t)0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-      case onSetValue:
-        for (size_t rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
-          mdl->setValue(var, fixture.layers[rowNr]->effectNr, rowNr);
-        return true;
+      // case onSetValue:
+      //   for (size_t rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
+      //     mdl->setValue(var, fixture.layers[rowNr]->effectNr, rowNr);
+      //   return true;
       case onUI: {
         ui->setComment(var, "Effect to show");
         JsonArray options = ui->setOptions(var);
@@ -208,7 +230,7 @@ public:
 
         //create a new leds instance if a new row is created
         if (rowNr >= fixture.layers.size()) {
-          ppf("layers effect[%d] onChange %d %s\n", rowNr, fixture.layers.size(), Variable(mdl->findVar("layers", "effect")).valueString().c_str());
+          ppf("layers effect[%d] onChange #:%d v:%s\n", rowNr, fixture.layers.size(), Variable(var).valueString().c_str());
           ppf("effect creating new LedsLayer instance %d\n", rowNr);
           LedsLayer *leds = new LedsLayer(fixture);
           fixture.layers.push_back(leds);
@@ -221,23 +243,22 @@ public:
 
           #ifdef STARBASE_USERMOD_LIVE
             //kill Live Script if moving to other effect
-            if (leds->effectNr < effects.size()) {
-              Effect* effect = effects[leds->effectNr];
-              if (strncmp(effect->name(), "Live Effect", 12) == 0) {
+            // if (leds->effectNr < effects.size()) {
+            //   Effect* effect = effects[leds->effectNr];
+              if (leds->effect && strncmp(leds->effect->name(), "Live Effect", 12) == 0) {
                 liveM->kill();
               }
-            }
+            // }
           #endif
 
-          leds->effectNr = mdl->getValue(var, rowNr);
+          uint16_t effectNr = mdl->getValue(var, rowNr);
 
-          if (leds->effectNr < effects.size()) {
-            ppf("setEffect effect[%d]: %d\n", rowNr, leds->effectNr);
+          if (effectNr < effects.size()) {
+            leds->effect = effects[effectNr];
+            ppf("setEffect effect[%d]: %s\n", rowNr, leds->effect->name());
 
-            Effect* effect = effects[leds->effectNr];
-
-            if (effect->dim() != leds->effectDimension) {
-              leds->effectDimension = effect->dim();
+            if (leds->effect->dim() != leds->effectDimension) {
+              leds->effectDimension = leds->effect->dim();
               leds->triggerMapping();
               //initEffect is called after mapping done to make sure dimensions are right before controls are done...
               doInitEffectRowNr = rowNr;
@@ -255,15 +276,15 @@ public:
 
     //projection, default projection is 'default'
     currentVar = ui->initSelect(tableVar, "projection", 1, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-      case onSetValue:
-        for (size_t rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
-          mdl->setValue(var, fixture.layers[rowNr]->projectionNr, rowNr);
-        return true;
+      // case onSetValue:
+      //   for (size_t rowNr = 0; rowNr < fixture.layers.size(); rowNr++)
+      //     mdl->setValue(var, fixture.layers[rowNr]->projectionNr, rowNr);
+      //   return true;
       case onUI: {
         ui->setComment(var, "How to project effect");
 
         JsonArray options = ui->setOptions(var);
-        for (Projection *projection:fixture.projections) {
+        for (Projection *projection:projections) {
           char buf[32] = "";
           strlcat(buf, projection->name(), sizeof(buf));
           // strlcat(buf, projection->dim()==_1D?" ┊":projection->dim()==_2D?" ▦":" 🧊");
@@ -282,30 +303,30 @@ public:
           // leds->doMap = true; //stop the effects loop already here
 
           uint8_t proValue = mdl->getValue(var, rowNr);
-          leds->projectionNr = proValue;
-          
-          if (proValue < fixture.projections.size()) {
-            Projection* projection = fixture.projections[proValue];
 
-            //setting cached virtual class methods! (By chatGPT so no source and don't understand how it works - scary!)
-            //   (don't know how it works as it is not refering to derived classes, just to the base class but later it calls the derived class method)
-            leds->setupCached = &Projection::setup;
-            leds->adjustXYZCached = &Projection::adjustXYZ;
+          if (proValue < projections.size()) {
+            if (proValue == 0) //none
+              leds->projection = nullptr; //not projections[0] so test on if (leds->projection) can be used
+            else
+              leds->projection = projections[proValue];
 
-            //initProjection
+            // leds->setupCached = &Projection::setup;
+            // leds->adjustXYZCached = &Projection::adjustXYZ;
 
-            ppf("initProjection leds[%d] effect:%d a:%d\n", rowNr, leds->effectNr, leds->projectionData.bytesAllocated);
+            ppf("initProjection leds[%d] effect:%s a:%d\n", rowNr, leds->effect->name(), leds->projectionData.bytesAllocated);
 
             leds->projectionData.clear(); //delete effectData memory so it can be rebuild
 
             Variable(var).preDetails(); //set all positive var N orders to negative
             mdl->setValueRowNr = rowNr;
-            projection->controls(*leds, var);
+            if (leds->projection) leds->projection->controls(*leds, var); //not if None projection
             Variable(var).postDetails(rowNr);
             mdl->setValueRowNr = UINT8_MAX;
 
             leds->projectionData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
           }
+          else
+            leds->projection = nullptr;
           // ppf("onChange pro[%d] <- %d (%d)\n", rowNr, proValue, fixture.layers.size());
 
           leds->triggerMapping(); //set also fixture.doMap
@@ -476,12 +497,12 @@ public:
       //  run the next frame of the effect
       uint8_t rowNr = 0;
       for (LedsLayer *leds: fixture.layers) {
-        if (leds->effectNr < effects.size()) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
-          // ppf(" %d %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->effectNr, leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
+        if (leds->effect && !leds->doMap) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
+          // ppf(" %s %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->effect->name(), leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
           mdl->getValueRowNr = rowNr++;
 
           leds->effectData.begin(); //sets the effectData pointer back to 0 so loop effect can go through it
-          effects[leds->effectNr]->loop(*leds);
+          leds->effect->loop(*leds);
 
           mdl->getValueRowNr = UINT8_MAX;
           // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
@@ -574,7 +595,79 @@ public:
   } //loop
 
   void mapInitAlloc() {
-    fixture.projectAndMap();
+    // fixture.projectAndMap();
+
+    unsigned long start = millis();
+
+    char fileName[32] = "";
+
+    if (files->seqNrToName(fileName, fixture.fixtureNr, "F_")) { // get the fixture.json
+
+    #ifdef STARBASE_USERMOD_LIVE
+      if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
+        ppf("projectAndMap Live Fixture %s\n", fileName);
+
+        liveM->scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
+
+        //adding to scPreBaseScript
+        liveM->addExternalFun("void", "addPixelsPre", "(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4)", (void *)_addPixelsPre);
+        liveM->addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
+        liveM->addExternalFun("void", "addPin", "(uint16_t a1)", (void *)_addPin);
+        liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
+
+        gFixture = &fixture;
+
+        liveM->run(fileName);
+
+      } else 
+    #endif
+      {
+
+        StarJson starJson(fileName); //open fileName for deserialize
+
+        bool first = true;
+
+        //what to deserialize
+        starJson.lookFor("width", (uint16_t *)&fixture.fixSize.x);
+        starJson.lookFor("height", (uint16_t *)&fixture.fixSize.y);
+        starJson.lookFor("depth", (uint16_t *)&fixture.fixSize.z);
+        starJson.lookFor("nrOfLeds", &fixture.nrOfLeds);
+        starJson.lookFor("ledSize", &fixture.ledSize);
+        starJson.lookFor("shape", &fixture.shape);
+        starJson.lookFor("pin", &fixture.currPin);
+
+        //lookFor leds array and for each item in array call lambda to make a projection
+        starJson.lookFor("leds", [this, &first](std::vector<uint16_t> uint16CollectList) { //this will be called for each tuple of coordinates!
+
+          if (first) { 
+            fixture.projectAndMapPre({fixture.fixSize.x, fixture.fixSize.y, fixture.fixSize.z}, fixture.nrOfLeds, fixture.ledSize, fixture.shape);
+            first = false;
+          }
+
+          if (uint16CollectList.size()>=1) { // process one pixel
+
+            Coord3D pixel; //in mm !
+            pixel.x = uint16CollectList[0];
+            pixel.y = (uint16CollectList.size()>=2)?uint16CollectList[1]: 0;
+            pixel.z = (uint16CollectList.size()>=3)?uint16CollectList[2]: 0;
+
+            fixture.projectAndMapPixel(pixel);
+          } //if 1D-3D pixel
+
+          else { // end of leds array
+            fixture.projectAndMapPin(fixture.currPin);
+          }
+        }); //starJson.lookFor("leds" (create the right type, otherwise crash)
+
+        if (starJson.deserialize()) { //this will call above function parameter for each led
+          fixture.projectAndMapPost();
+        } // if deserialize
+      }//Live Fixture
+    } //if fileName
+    else
+      ppf("projectAndMap: Filename for fixture %d not found\n", fixture.fixtureNr);
+
+    ppf("projectAndMap done %d ms\n", millis()-start);
 
     //reinit the effect after an effect change causing a mapping change
     uint8_t rowNr = 0;
@@ -838,27 +931,25 @@ public:
       #endif
       fixture.doAllocPins = false;
     } //fixture.doAllocPins
-  } //loop1s
+  } //mapInitAlloc
 
   void initEffect(LedsLayer &leds, uint8_t rowNr) {
-      ppf("initEffect leds[%d] effect:%d a:%d (%d,%d,%d)\n", rowNr, leds.effectNr, leds.effectData.bytesAllocated, leds.size.x, leds.size.y, leds.size.z);
+      ppf("initEffect leds[%d] effect:%s a:%d (%d,%d,%d)\n", rowNr, leds.effect->name(), leds.effectData.bytesAllocated, leds.size.x, leds.size.y, leds.size.z);
 
       leds.effectData.clear(); //delete effectData memory so it can be rebuild
 
-      Effect* effect = effects[leds.effectNr];
-
-      effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right
+      leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right
 
       JsonObject var = mdl->findVar("layers", "effect");
       Variable(var).preDetails();
       mdl->setValueRowNr = rowNr;
-      effect->controls(leds, var); //set all defaults in effectData
+      leds.effect->controls(leds, var); //set all defaults in effectData
       Variable(var).postDetails(rowNr);
       mdl->setValueRowNr = UINT8_MAX;
 
       leds.effectData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
 
-      effect->setup(leds); //if changed then run setup once (like call==0 in WLED)
+      leds.effect->setup(leds); //if changed then run setup once (like call==0 in WLED)
 
   }
 

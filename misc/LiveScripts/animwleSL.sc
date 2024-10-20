@@ -68,7 +68,7 @@ void render2D(int x1, int y1)
 
   if (iter < maxIterations)
   {
-    sPC(panel_width * y1 + x1, hsv((float)((t2 + (iter / maxIterations)) * 255), 255, 255));
+    sPC(panel_width * y1 + x1, hsv(((t2 + (iter / maxIterations)) * 255), 255, 255));
   }
   else
   {

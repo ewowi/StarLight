@@ -14,32 +14,26 @@ int color[max_nb_balls];
 
 void drawBall(float xc, float yc, float r, int c)
 {
-   int startx = (float)(xc - r);
-   int r2 =(float) (r * r);
+   int startx = (xc - r);
+   int r2 = (r * r);
    float r4=r*r*r*r;
-   // int endx=(float)(xc+r);
-   int starty = (float)(yc - r);
-   // int endy=(float)(yc+r);
+   int starty = (yc - r);
    int _xc=xc;
    int _yc=yc;
-  // CRGB *_leds=leds;
    for (int i = startx; i <= _xc; i++)
    {
       for (int j = starty; j <= _yc; j++)
       {
          int v;
 
-         int distance = (float)((i - xc) * (i - xc) + (j - yc) * (j - yc));
+         int distance = ((i - xc) * (i - xc) + (j - yc) * (j - yc));
   
          if (distance <= r2)
          {
-            v = (float)(255 * (1 - distance * distance / (r4)));
+            v = (255 * (1 - distance * distance / (r4)));
             sPC(i + j * panel_width, hsv(c,255,v));
-           // int h=(int)(2 * xc - i) + j * panel_width;
             sPC((int)(2 * xc - i) + j * panel_width, hsv(c,255,v));
-          // h=(int)(2 * xc - i) + (int)(2 * yc - j) * panel_widthsdfsdf;
             sPC((int)(2 * xc - i) + (int)(2 * yc - j) * panel_width,  hsv(c,255,v));
-           // h=i + (int)(2 * yc - j) * panel_width;
             sPC(i + (int)(2 * yc - j) * panel_width, hsv(c,255,v));
          }
       }

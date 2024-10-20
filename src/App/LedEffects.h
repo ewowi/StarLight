@@ -22,12 +22,27 @@
 
 #ifdef STARBASE_USERMOD_LIVE
   #include "../User/UserModLive.h"
+
+  //FastLed functions
+  static CRGB hsv(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);}
+  static CRGB rgb(uint8_t r, uint8_t g, uint8_t b) {return CRGB(r, g, b);}
+  static uint8_t _sin8(uint8_t theta) {return sin8(theta);}
+  static uint8_t _cos8(uint8_t theta) {return cos8(theta);}
+  static uint8_t _beatSin8(uint8_t bpm, uint8_t lowest, uint8_t highest) {return beatsin8(bpm, lowest, highest);}
+  static uint8_t _inoise8(uint16_t x, uint16_t y, uint16_t z) {return inoise8(x, y, z);}
+  static uint8_t _random8() {return random8();}
+
   //StarLight functions
   static LedsLayer *gLeds = nullptr;
+  static void _fadeToBlackBy(uint8_t fadeBy) {if (gLeds) gLeds->fadeToBlackBy(fadeBy);}
+  static void sPCLive(uint16_t pixel, CRGB color) {if (gLeds) gLeds->setPixelColor(pixel, color);} //setPixelColor with color
+  static void sCFPLive(uint16_t pixel, uint8_t index, uint8_t brightness) {if (gLeds) gLeds->setPixelColor(pixel, ColorFromPalette(gLeds->palette, index, brightness));} //setPixelColor within palette
+
   uint8_t slider1 = 128;
   uint8_t slider2 = 128;
   uint8_t slider3 = 128;
 #endif
+
 
 //utility function
 float distance(float x1, float y1, float z1, float x2, float y2, float z2) {
@@ -35,55 +50,6 @@ float distance(float x1, float y1, float z1, float x2, float y2, float z2) {
 }
 
 //should not contain variables/bytes to keep mem as small as possible!!
-class Effect {
-public:
-  virtual const char * name() {return "noname";}
-  virtual const char * tags() {return "";}
-  virtual uint8_t dim() {return _1D;};
-
-  virtual void setup(LedsLayer &leds) {}
-
-  virtual void loop(LedsLayer &leds) {}
-
-  virtual void controls(LedsLayer &leds, JsonObject parentVar) {
-    ui->initSelect(parentVar, "palette", 4, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-      case onUI: {
-        JsonArray options = ui->setOptions(var);
-        options.add("CloudColors");
-        options.add("LavaColors");
-        options.add("OceanColors");
-        options.add("ForestColors");
-        options.add("RainbowColors");
-        options.add("RainbowStripeColors");
-        options.add("PartyColors");
-        options.add("HeatColors");
-        options.add("RandomColors");
-        return true; }
-      case onChange:
-        switch (var["value"][rowNr].as<uint8_t>()) {
-          case 0: leds.palette = CloudColors_p; break;
-          case 1: leds.palette = LavaColors_p; break;
-          case 2: leds.palette = OceanColors_p; break;
-          case 3: leds.palette = ForestColors_p; break;
-          case 4: leds.palette = RainbowColors_p; break;
-          case 5: leds.palette = RainbowStripeColors_p; break;
-          case 6: leds.palette = PartyColors_p; break;
-          case 7: leds.palette = HeatColors_p; break;
-          case 8: { //randomColors
-            for (int i=0; i < sizeof(leds.palette.entries) / sizeof(CRGB); i++) {
-              leds.palette[i] = CHSV(random8(), 255, 255); //take the max saturation, max brightness of the colorwheel
-            }
-            break;
-          }
-          default: leds.palette = PartyColors_p; //should never occur
-        }
-        return true;
-      default: return false;
-    }});
-  }
-
-};
-
 class SolidEffect: public Effect {
   const char * name() {return "Solid";}
   uint8_t dim() {return _1D;}
@@ -2944,21 +2910,50 @@ class LiveEffect: public Effect {
         //set script
         uint8_t fileNr = var["value"][rowNr];
 
-        gLeds = &leds; //LEDs specific set the leds class for the Live Scripts Module
+        gLeds = &leds; //set the leds class for the Live Scripts Module
         if (fileNr > 0) { //not None and live setup done (before )
 
           fileNr--;  //-1 as none is no file
-          files->seqNrToName(web->lastFileUpdated, fileNr, ".sc");
-          ppf("script.onChange f:%d s:%s\n", fileNr, web->lastFileUpdated);
 
-          // in LedLayer.h: void setPixelColorLive(uint16_t indexV, uint32_t color) {setPixelColor(indexV, CRGB::Black);}
-          // void (LedsLayer::*sPCCached)(uint16_t, uint32_t) = &LedsLayer::setPixelColorLive;
-          // LedsLayer *leds2 = &leds;
-          // (leds2->*sPCCached)(0, 0);
+          char fileName[32] = "";
+
+          if (files->seqNrToName(fileName, fileNr, ".sc")) { // get the fixture.json
+
+            if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
+              ppf("projectAndMap Live Fixture %s\n", fileName);
+
+              liveM->scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
+
+              liveM->addExternals();
+
+              liveM->addExternalFun("CRGB", "hsv", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)hsv);
+              liveM->addExternalFun("CRGB", "rgb", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)rgb);
+              liveM->addExternalFun("uint8_t", "beatSin8", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)_beatSin8);
+              liveM->addExternalFun("uint8_t", "inoise8", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_inoise8);
+              liveM->addExternalFun("uint8_t", "random8", "()", (void *)_random8);
+              liveM->addExternalFun("uint8_t", "sin8", "(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
+              liveM->addExternalFun("uint8_t", "cos8", "(uint8_t a1)",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
+              liveM->addExternalFun("void", "sPC", "(uint16_t a1, CRGB a2)", (void *)sPCLive);
+              liveM->addExternalFun("void", "sCFP", "(uint16_t a1, uint8_t a2, uint8_t a3)", (void *)sCFPLive);
+              liveM->addExternalFun("void", "fadeToBlackBy", "(uint8_t a1)", (void *)_fadeToBlackBy);
+
+              liveM->addExternalVal("uint8_t", "slider1", &slider1); //used in map function
+              liveM->addExternalVal("uint8_t", "slider2", &slider2); //used in map function
+              liveM->addExternalVal("uint8_t", "slider3", &slider3); //used in map function
+
+              liveM->scPreBaseScript += "define width " + to_string(leds.size.x) + "\n";
+              liveM->scPreBaseScript += "define height " + to_string(leds.size.y) + "\n";
+              liveM->scPreBaseScript += "define NUM_LEDS " + to_string(leds.nrOfLeds) + "\n";
+              liveM->scPreBaseScript += "define panel_width " + to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
+
+              liveM->run(fileName, "main", "void main(){resetStat();setup();while(2>1){loop();show();}}");
+            }
+          }
         }
         else {
           liveM->kill();
-          ppf("script.onChange set to None:%d\n", fileNr);
+          leds.fadeToBlackBy(255);
+          ppf("effect.script.onChange set to None:%d\n", fileNr);
         }
 
         return true; }

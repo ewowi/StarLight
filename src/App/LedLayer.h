@@ -20,38 +20,10 @@
 // #define FASTLED_I2S_MAX_CONTROLLERS 8 // 8 LED pins should be enough (default = 24)
 #include "FastLED.h"
 
-#include "LedFixture.h"
-
-#include "../misc/font/console_font_4x6.h"
-#include "../misc/font/console_font_5x8.h"
-#include "../misc/font/console_font_5x12.h"
-#include "../misc/font/console_font_6x8.h"
-#include "../misc/font/console_font_7x9.h"
+#include "../Sys/SysModModel.h" //for Coord3D
 
 #define NUM_VLEDS_Max 8192
-
-enum ProjectionsE
-{
-  p_None,
-  p_Default,
-  p_Pinwheel,
-  p_Multiply,
-  p_TiltPanRoll,
-  p_DistanceFromPoint,
-  p_Preset1,
-  p_Random,
-  p_Reverse,
-  p_Mirror,
-  p_Grouping,
-  p_Spacing,
-  p_Transpose,
-  // p_Kaleidoscope,
-  p_Scrolling,
-  p_Acceleration,
-  p_Checkerboard,
-  p_Rotate,
-  p_count // keep as last entry
-};
+#define NUM_LEDS_Max 8192
 
 //     sin8/cos8   sin16/cos16
 //0:   128, 255    0 32645
@@ -120,9 +92,6 @@ struct Trigo16: Trigo { //FastLed sin16 and cos16
 };
 
 static Trigo trigoTiltPanRoll(255); // Trigo8 is hardly any faster (27 vs 28 fps) (spanXY=28)
-
-class Fixture; //forward
-
 
 //StarLight implementation of segment.data
 class SharedData {
@@ -201,15 +170,72 @@ class SharedData {
 
 };
 
+class LedsLayer; //forward
+
+class Fixture {
+
+public:
+
+  CRGB ledsP[NUM_LEDS_Max];
+  std::vector<bool> pixelsToBlend; //this is a 1-bit vector !!! overlapping effects will blend
+
+  // CRGB *leds = nullptr;
+    // if (!leds)
+  //   leds = (CRGB*)calloc(nrOfLeds, sizeof(CRGB));
+  // else
+  //   leds = (CRGB*)reallocarray(leds, nrOfLeds, sizeof(CRGB));
+  // if (leds) free(leds);
+  // leds = (CRGB*)malloc(nrOfLeds * sizeof(CRGB));
+  // leds = (CRGB*)reallocarray
+
+  uint16_t nrOfLeds = 64; //amount of physical leds
+  uint8_t fixtureNr = -1;
+  Coord3D fixSize = {8,8,1};
+  uint16_t ledSize = 5; //mm
+  uint16_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
+
+  std::vector<LedsLayer *> layers; //virtual leds
+
+  Coord3D head = {0,0,0};
+
+  bool doMap = false;
+  bool doAllocPins = false;
+
+  uint8_t globalBlend = 128;
+
+  Fixture() {
+    //init pixelsToBlend
+    for (uint16_t i=0; i<nrOfLeds; i++) {
+      if (pixelsToBlend.size() < nrOfLeds)
+        pixelsToBlend.push_back(false);
+    }
+    ppf("Fixture constructor ptb:%d", pixelsToBlend.size());
+  }
+
+  //temporary here  
+  uint16_t indexP = 0;
+  uint16_t prevIndexP = 0;
+  uint16_t currPin; //lookFor needs u16
+
+  //load fixture json file, parse it and depending on the projection, create a mapping for it
+  AsyncWebSocketMessageBuffer * wsBuf;
+  void projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize = 5, uint8_t shape = 0);
+  void projectAndMapPixel(Coord3D pixel);
+  void projectAndMapPin(uint16_t pin);
+  void projectAndMapPost();
+
+  #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+    uint8_t setMaxPowerBrightness = 30; //tbd: implement driver.setMaxPowerInMilliWatts
+  #endif
+
+};
+
 enum mapType {
   m_color,
   m_onePixel,
   m_morePixels,
   m_count //keep as last entry
 };
-
-class LedsLayer; //forward
-
 
 struct PhysMap {
   union {
@@ -230,7 +256,38 @@ struct PhysMap {
 
 }; // 2 bytes
 
-class Projection; //forward for cached virtual class methods!
+#define _1D 1
+#define _2D 2
+#define _3D 3
+
+//should not contain variables/bytes to keep mem as small as possible!!
+class Effect {
+public:
+  virtual const char * name() {return "noname";}
+  virtual const char * tags() {return "";}
+  virtual uint8_t dim() {return _1D;};
+
+  virtual void setup(LedsLayer &leds) {}
+
+  virtual void loop(LedsLayer &leds) {}
+
+  virtual void controls(LedsLayer &leds, JsonObject parentVar);
+
+};
+
+class Projection {
+public:
+  virtual const char * name() {return "noname";}
+  virtual const char * tags() {return "";}
+
+  virtual void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {}
+  
+  virtual void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {}
+  
+  virtual void controls(LedsLayer &leds, JsonObject parentVar) {}
+
+};
+
 
 class LedsLayer {
 
@@ -242,12 +299,14 @@ public:
 
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
 
-  uint16_t effectNr = UINT16_MAX;
-  uint8_t projectionNr = UINT8_MAX;
+  Effect *effect = nullptr;
+  Projection *projection = nullptr;
 
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
-  void (Projection::*setupCached)(LedsLayer &, Coord3D &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = nullptr;
-  void (Projection::*adjustXYZCached)(LedsLayer &, Coord3D &) = nullptr;
+      //setting cached virtual class methods! (By chatGPT so no source and don't understand how it works - scary!)
+      //   (don't know how it works as it is not refering to derived classes, just to the base class but later it calls the derived class method)
+  void (Projection::*setupCached)(LedsLayer &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = &Projection::setup;
+  void (Projection::*adjustXYZCached)(LedsLayer &, Coord3D &) = &Projection::adjustXYZ;
 
   uint8_t effectDimension = -1;
   uint8_t projectionDimension = -1;
@@ -364,72 +423,6 @@ public:
   void addPixelColor(uint16_t indexV, CRGB color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
   void addPixelColor(Coord3D pixel, CRGB color) {setPixelColor(pixel, getPixelColor(pixel) + color);}
 
-  void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX) {
-    if (x0 >= size.x || x1 >= size.x || y0 >= size.y || y1 >= size.y) return;
-
-    // WLEDMM shorten line according to depth
-    if (depth < UINT8_MAX) {
-      if (depth == 0) return;         // nothing to paint
-      if (depth<2) {x1 = x0; y1=y0; } // single pixel
-      else {                          // shorten line
-        x0 *=2; y0 *=2; // we do everything "*2" for better rounding
-        int dx1 = ((int(2*x1) - int(x0)) * int(depth)) / 255;  // X distance, scaled down by depth 
-        int dy1 = ((int(2*y1) - int(y0)) * int(depth)) / 255;  // Y distance, scaled down by depth
-        x1 = (x0 + dx1 +1) / 2;
-        y1 = (y0 + dy1 +1) / 2;
-        x0 /=2; y0 /=2;
-      }
-    }
-
-    const int16_t dx = abs(x1-x0), sx = x0<x1 ? 1 : -1;
-    const int16_t dy = abs(y1-y0), sy = y0<y1 ? 1 : -1;
-
-    // single pixel (line length == 0)
-    if (dx+dy == 0) {
-      setPixelColor(XY(x0, y0), color);
-      return;
-    }
-
-    if (soft) {
-      // Xiaolin Wu’s algorithm
-      const bool steep = dy > dx;
-      if (steep) {
-        // we need to go along longest dimension
-        std::swap(x0,y0);
-        std::swap(x1,y1);
-      }
-      if (x0 > x1) {
-        // we need to go in increasing fashion
-        std::swap(x0,x1);
-        std::swap(y0,y1);
-      }
-      float gradient = x1-x0 == 0 ? 1.0f : float(y1-y0) / float(x1-x0);
-      float intersectY = y0;
-      for (int x = x0; x <= x1; x++) {
-        unsigned keep = float(0xFFFF) * (intersectY-int(intersectY)); // how much color to keep
-        unsigned seep = 0xFFFF - keep; // how much background to keep
-        int y = int(intersectY);
-        if (steep) std::swap(x,y);  // temporarily swap if steep
-        // pixel coverage is determined by fractional part of y co-ordinate
-        setPixelColor(XY(x, y), blend(color, getPixelColor(XY(x, y)), keep));
-        setPixelColor(XY(x+int(steep), y+int(!steep)), blend(color, getPixelColor(XY(x+int(steep), y+int(!steep))), seep));
-        intersectY += gradient;
-        if (steep) std::swap(x,y);  // restore if steep
-      }
-    } else {
-      // Bresenham's algorithm
-      int err = (dx>dy ? dx : -dy)/2;   // error direction
-      for (;;) {
-        // if (x0 >= cols || y0 >= rows) break; // WLEDMM we hit the edge - should never happen
-        setPixelColor(XY(x0, y0), color);
-        if (x0==x1 && y0==y1) break;
-        int e2 = err;
-        if (e2 >-dx) { err -= dy; x0 += sx; }
-        if (e2 < dy) { err += dx; y0 += sy; }
-      }
-    }
-  }
-
   void fadeToBlackBy(uint8_t fadeBy = 255);
   void fill_solid(const struct CRGB& color);
   void fill_rainbow(uint8_t initialhue, uint8_t deltahue);
@@ -508,45 +501,74 @@ public:
       }
   }
 
-  //shift is used by drawText indicating which letter it is drawing
-  void drawCharacter(unsigned char chr, int x = 0, int16_t y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0, uint16_t shiftChr = 0) {
-    if (chr < 32 || chr > 126) return; // only ASCII 32-126 supported
-    chr -= 32; // align with font table entries
+  void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX) {
+    if (x0 >= size.x || x1 >= size.x || y0 >= size.y || y1 >= size.y) return;
 
-    Coord3D fontSize;
-    switch (font%5) {
-      case 0: fontSize.x = 4; fontSize.y = 6; break;
-      case 1: fontSize.x = 5; fontSize.y = 8; break;
-      case 2: fontSize.x = 5; fontSize.y = 12; break;
-      case 3: fontSize.x = 6; fontSize.y = 8; break;
-      case 4: fontSize.x = 7; fontSize.y = 9; break;
+    // WLEDMM shorten line according to depth
+    if (depth < UINT8_MAX) {
+      if (depth == 0) return;         // nothing to paint
+      if (depth<2) {x1 = x0; y1=y0; } // single pixel
+      else {                          // shorten line
+        x0 *=2; y0 *=2; // we do everything "*2" for better rounding
+        int dx1 = ((int(2*x1) - int(x0)) * int(depth)) / 255;  // X distance, scaled down by depth 
+        int dy1 = ((int(2*y1) - int(y0)) * int(depth)) / 255;  // Y distance, scaled down by depth
+        x1 = (x0 + dx1 +1) / 2;
+        y1 = (y0 + dy1 +1) / 2;
+        x0 /=2; y0 /=2;
+      }
     }
 
-    Coord3D chrPixel;
-    for (chrPixel.y = 0; chrPixel.y<fontSize.y; chrPixel.y++) { // character height
-      Coord3D pixel;
-      pixel.z = 0;
-      pixel.y = y + chrPixel.y;
-      if (pixel.y >= 0 && pixel.y < size.y) {
-        byte bits = 0;
-        switch (font%5) {
-          case 0: bits = pgm_read_byte_near(&console_font_4x6[(chr * fontSize.y) + chrPixel.y]); break;
-          case 1: bits = pgm_read_byte_near(&console_font_5x8[(chr * fontSize.y) + chrPixel.y]); break;
-          case 2: bits = pgm_read_byte_near(&console_font_5x12[(chr * fontSize.y) + chrPixel.y]); break;
-          case 3: bits = pgm_read_byte_near(&console_font_6x8[(chr * fontSize.y) + chrPixel.y]); break;
-          case 4: bits = pgm_read_byte_near(&console_font_7x9[(chr * fontSize.y) + chrPixel.y]); break;
-        }
+    const int16_t dx = abs(x1-x0), sx = x0<x1 ? 1 : -1;
+    const int16_t dy = abs(y1-y0), sy = y0<y1 ? 1 : -1;
 
-        for (chrPixel.x = 0; chrPixel.x<fontSize.x; chrPixel.x++) {
-          //x adjusted by: chr in text, scroll value, font column
-          pixel.x = (x + shiftChr * fontSize.x + shiftPixel + (fontSize.x-1) - chrPixel.x)%size.x;
-          if ((pixel.x >= 0 && pixel.x < size.x) && ((bits>>(chrPixel.x+(8-fontSize.x))) & 0x01)) { // bit set & drawing on-screen
-            setPixelColor(pixel, col);
-          }
-        }
+    // single pixel (line length == 0)
+    if (dx+dy == 0) {
+      setPixelColor(XY(x0, y0), color);
+      return;
+    }
+
+    if (soft) {
+      // Xiaolin Wu’s algorithm
+      const bool steep = dy > dx;
+      if (steep) {
+        // we need to go along longest dimension
+        std::swap(x0,y0);
+        std::swap(x1,y1);
+      }
+      if (x0 > x1) {
+        // we need to go in increasing fashion
+        std::swap(x0,x1);
+        std::swap(y0,y1);
+      }
+      float gradient = x1-x0 == 0 ? 1.0f : float(y1-y0) / float(x1-x0);
+      float intersectY = y0;
+      for (int x = x0; x <= x1; x++) {
+        unsigned keep = float(0xFFFF) * (intersectY-int(intersectY)); // how much color to keep
+        unsigned seep = 0xFFFF - keep; // how much background to keep
+        int y = int(intersectY);
+        if (steep) std::swap(x,y);  // temporarily swap if steep
+        // pixel coverage is determined by fractional part of y co-ordinate
+        setPixelColor(XY(x, y), blend(color, getPixelColor(XY(x, y)), keep));
+        setPixelColor(XY(x+int(steep), y+int(!steep)), blend(color, getPixelColor(XY(x+int(steep), y+int(!steep))), seep));
+        intersectY += gradient;
+        if (steep) std::swap(x,y);  // restore if steep
+      }
+    } else {
+      // Bresenham's algorithm
+      int err = (dx>dy ? dx : -dy)/2;   // error direction
+      for (;;) {
+        // if (x0 >= cols || y0 >= rows) break; // WLEDMM we hit the edge - should never happen
+        setPixelColor(XY(x0, y0), color);
+        if (x0==x1 && y0==y1) break;
+        int e2 = err;
+        if (e2 >-dx) { err -= dy; x0 += sx; }
+        if (e2 < dy) { err += dx; y0 += sy; }
       }
     }
   }
+
+  //shift is used by drawText indicating which letter it is drawing
+  void drawCharacter(unsigned char chr, int x = 0, int16_t y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0, uint16_t shiftChr = 0);
 
   void drawText(const char * text, int x = 0, int16_t y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0) {
     const int numberOfChr = text?strnlen(text, 256):0; //max 256 charcters
@@ -555,4 +577,10 @@ public:
     }
   }
 
-};
+  void projectAndMapPre();
+
+  void projectAndMapPixel(Coord3D pixel, uint8_t rowNr);
+
+  void projectAndMapPost(uint8_t rowNr);
+
+}; //LedsLayer
