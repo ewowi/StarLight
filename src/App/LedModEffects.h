@@ -14,12 +14,34 @@
 #include "LedEffects.h"
 #include "LedProjections.h"
 
+#include "../Sys/SysStarJson.h"
+
 #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
   #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
     #include "I2SClockLessLedDriveresp32s3.h"
   #else
     #include "I2SClocklessLedDriver.h"
   #endif
+#endif
+
+#ifdef STARBASE_USERMOD_LIVE
+  Fixture *gFixture = nullptr;
+  static void _addPixelsPre(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4) {
+    if (gFixture) {
+      gFixture->fixSize.x = a1;
+      gFixture->fixSize.y = a2;
+      gFixture->fixSize.z = a3;
+      gFixture->nrOfLeds = a4;
+      gFixture->ledSize = 5;
+      gFixture->shape = 0;
+      gFixture->projectAndMapPre(gFixture->fixSize, gFixture->nrOfLeds, gFixture->ledSize, gFixture->shape);
+    }
+  }
+  static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {if (gFixture) gFixture->projectAndMapPixel({a1, a2, a3});}
+  static void _addPin(uint8_t a1) {if (gFixture) gFixture->projectAndMapPin(a1);}
+  static void _addPixelsPost() {if (gFixture) gFixture->projectAndMapPost();
+    ppf("_addPixelsPost done\n");
+  }
 #endif
 
 
@@ -573,7 +595,79 @@ public:
   } //loop
 
   void mapInitAlloc() {
-    fixture.projectAndMap();
+    // fixture.projectAndMap();
+
+    unsigned long start = millis();
+
+    char fileName[32] = "";
+
+    if (files->seqNrToName(fileName, fixture.fixtureNr, "F_")) { // get the fixture.json
+
+    #ifdef STARBASE_USERMOD_LIVE
+      if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
+        ppf("projectAndMap Live Fixture %s\n", fileName);
+
+        liveM->scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
+
+        //adding to scPreBaseScript
+        liveM->addExternalFun("void", "addPixelsPre", "(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4)", (void *)_addPixelsPre);
+        liveM->addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
+        liveM->addExternalFun("void", "addPin", "(uint16_t a1)", (void *)_addPin);
+        liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
+
+        gFixture = &fixture;
+
+        liveM->run(fileName);
+
+      } else 
+    #endif
+      {
+
+        StarJson starJson(fileName); //open fileName for deserialize
+
+        bool first = true;
+
+        //what to deserialize
+        starJson.lookFor("width", (uint16_t *)&fixture.fixSize.x);
+        starJson.lookFor("height", (uint16_t *)&fixture.fixSize.y);
+        starJson.lookFor("depth", (uint16_t *)&fixture.fixSize.z);
+        starJson.lookFor("nrOfLeds", &fixture.nrOfLeds);
+        starJson.lookFor("ledSize", &fixture.ledSize);
+        starJson.lookFor("shape", &fixture.shape);
+        starJson.lookFor("pin", &fixture.currPin);
+
+        //lookFor leds array and for each item in array call lambda to make a projection
+        starJson.lookFor("leds", [this, &first](std::vector<uint16_t> uint16CollectList) { //this will be called for each tuple of coordinates!
+
+          if (first) { 
+            fixture.projectAndMapPre({fixture.fixSize.x, fixture.fixSize.y, fixture.fixSize.z}, fixture.nrOfLeds, fixture.ledSize, fixture.shape);
+            first = false;
+          }
+
+          if (uint16CollectList.size()>=1) { // process one pixel
+
+            Coord3D pixel; //in mm !
+            pixel.x = uint16CollectList[0];
+            pixel.y = (uint16CollectList.size()>=2)?uint16CollectList[1]: 0;
+            pixel.z = (uint16CollectList.size()>=3)?uint16CollectList[2]: 0;
+
+            fixture.projectAndMapPixel(pixel);
+          } //if 1D-3D pixel
+
+          else { // end of leds array
+            fixture.projectAndMapPin(fixture.currPin);
+          }
+        }); //starJson.lookFor("leds" (create the right type, otherwise crash)
+
+        if (starJson.deserialize()) { //this will call above function parameter for each led
+          fixture.projectAndMapPost();
+        } // if deserialize
+      }//Live Fixture
+    } //if fileName
+    else
+      ppf("projectAndMap: Filename for fixture %d not found\n", fixture.fixtureNr);
+
+    ppf("projectAndMap done %d ms\n", millis()-start);
 
     //reinit the effect after an effect change causing a mapping change
     uint8_t rowNr = 0;
@@ -837,7 +931,7 @@ public:
       #endif
       fixture.doAllocPins = false;
     } //fixture.doAllocPins
-  } //loop1s
+  } //mapInitAlloc
 
   void initEffect(LedsLayer &leds, uint8_t rowNr) {
       ppf("initEffect leds[%d] effect:%s a:%d (%d,%d,%d)\n", rowNr, leds.effect->name(), leds.effectData.bytesAllocated, leds.size.x, leds.size.y, leds.size.z);

@@ -204,6 +204,33 @@ bool SysModFiles::seqNrToName(char * fileName, size_t seqNr, const char * filter
   return false;
 }
 
+bool SysModFiles::nameToSeqNr(const char * fileName, size_t *seqNr, const char * filter) {
+
+  File root = LittleFS.open("/");
+  File file = root.openNextFile();
+
+  *seqNr = UINT8_MAX;
+
+  size_t counter = 0;
+  while (file) {
+    if (filter == nullptr || strnstr(file.name(), filter, 32) != nullptr) {
+      if (strnstr(fileName, file.name(), 32) != nullptr) { //fileName starts with "/"
+        ppf("nameToSeqNr: %d %s - %s %d found !!\n", *seqNr, fileName, file.name(), file.size());
+        root.close();
+        *seqNr = counter;
+        file.close();
+        return true;
+      }
+      counter++;
+    }
+    file.close();
+    file = root.openNextFile();
+  }
+
+  root.close();
+  return false;
+}
+
 bool SysModFiles::readObjectFromFile(const char* path, JsonDocument* dest) {
   // if (doCloseFile) closeFile();
   File f = open(path, "r");

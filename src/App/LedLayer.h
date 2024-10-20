@@ -219,7 +219,6 @@ public:
 
   //load fixture json file, parse it and depending on the projection, create a mapping for it
   AsyncWebSocketMessageBuffer * wsBuf;
-  void projectAndMap();
   void projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize = 5, uint8_t shape = 0);
   void projectAndMapPixel(Coord3D pixel);
   void projectAndMapPin(uint16_t pin);

@@ -1,13 +1,12 @@
-//F_test.sc
+//F_panel4020.sc
 
-define width 8
-define height 8
-define depth 4
-define nrOfPixels 256
+define width 40
+define height 20
+define depth 1
 
 void main()
 {
-  addPixelsPre(width,height,depth,nrOfPixels);
+  addPixelsPre(width,height,depth,width * height * depth);
   for (int z=0; z<depth;z++) {
     for (int y=0; y<height; y++) {
       for (int x=0; x<width;x++) {
