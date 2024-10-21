@@ -18,80 +18,131 @@
 // #define FASTLED_ESP32_I2S true        // to use I2S parallel driver (instead of RMT)
 // #define I2S_DEVICE 1                  // I2S driver: allows to still use I2S#0 for audio (only on esp32 and esp32-s3)
 // #define FASTLED_I2S_MAX_CONTROLLERS 8 // 8 LED pins should be enough (default = 24)
-#include "FastLED.h"
+
+#include "FastLED.h" //CRGB
 
 #include "../Sys/SysModModel.h" //for Coord3D
 
 #define NUM_VLEDS_Max 8192
 #define NUM_LEDS_Max 8192
 
-//     sin8/cos8   sin16/cos16
-//0:   128, 255    0 32645
-//64:  255, 128    32645 0
-//128: 128, 1      0 -32645
-//192: 1, 127      -32645 0
+class LedsLayer; //forward
 
-static unsigned trigoCached = 1;
-static unsigned trigoUnCached = 1;
+class Fixture {
 
-struct Trigo {
-  uint16_t period = 360; //default period 360
-  Trigo(uint16_t period = 360) {this->period = period;}
-  float sinValue[3]; uint16_t sinAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of sinValue=sin(sinAngle) for tilt, pan and roll
-  float cosValue[3]; uint16_t cosAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of cosValue=cos(cosAngle) for tilt, pan and roll
-  virtual float sinBase(uint16_t angle) {return sinf(M_TWOPI * angle / period);}
-  virtual float cosBase(uint16_t angle) {return cosf(M_TWOPI * angle / period);}
-  int16_t sin(int16_t factor, uint16_t angle, uint8_t cache012 = 0) {
-    if (sinAngle[cache012] != angle) {sinAngle[cache012] = angle; sinValue[cache012] = sinBase(angle);trigoUnCached++;} else trigoCached++;
-    return factor * sinValue[cache012];
-  };
-  int16_t cos(int16_t factor, uint16_t angle, uint8_t cache012 = 0) {
-    if (cosAngle[cache012] != angle) {cosAngle[cache012] = angle; cosValue[cache012] = cosBase(angle);trigoUnCached++;} else trigoCached++;
-    return factor * cosValue[cache012];
-  };
-  // https://msl.cs.uiuc.edu/planning/node102.html
-  Coord3D pan(Coord3D in, Coord3D middle, uint16_t angle) {
-    Coord3D inM = in - middle;
-    Coord3D out;
-    out.x = cos(inM.x, angle, 0) + sin(inM.z, angle, 0);
-    out.y = inM.y;
-    out.z = - sin(inM.x, angle, 0) + cos(inM.z, angle, 0);
-    return out + middle;
+public:
+
+  CRGB ledsP[NUM_LEDS_Max];
+  std::vector<bool> pixelsToBlend; //this is a 1-bit vector !!! overlapping effects will blend
+
+  // CRGB *leds = nullptr;
+    // if (!leds)
+  //   leds = (CRGB*)calloc(nrOfLeds, sizeof(CRGB));
+  // else
+  //   leds = (CRGB*)reallocarray(leds, nrOfLeds, sizeof(CRGB));
+  // if (leds) free(leds);
+  // leds = (CRGB*)malloc(nrOfLeds * sizeof(CRGB));
+  // leds = (CRGB*)reallocarray
+
+  uint16_t nrOfLeds = 64; //amount of physical leds
+  uint8_t fixtureNr = -1;
+  Coord3D fixSize = {8,8,1};
+  uint16_t ledSize = 5; //mm
+  uint16_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
+
+  std::vector<LedsLayer *> layers; //virtual leds
+
+  Coord3D head = {0,0,0};
+
+  uint8_t mappingStatus = 0; //not mapping
+  bool doAllocPins = false;
+
+  uint8_t globalBlend = 128;
+
+  Fixture() {
+    //init pixelsToBlend
+    for (uint16_t i=0; i<nrOfLeds; i++) {
+      if (pixelsToBlend.size() < nrOfLeds)
+        pixelsToBlend.push_back(false);
+    }
+    ppf("Fixture constructor ptb:%d", pixelsToBlend.size());
   }
-  Coord3D tilt(Coord3D in, Coord3D middle, uint16_t angle) {
-    Coord3D inM = in - middle;
-    Coord3D out;
-    out.x = inM.x;
-    out.y = cos(inM.y, angle, 1) - sin(inM.z, angle, 1);
-    out.z = sin(inM.y, angle, 1) + cos(inM.z, angle, 1);
-    return out + middle;
-  }
-  Coord3D roll(Coord3D in, Coord3D middle, uint16_t angle) {
-    Coord3D inM = in - middle;
-    Coord3D out;
-    out.x = cos(inM.x, angle, 2) - sin(inM.y, angle, 2);
-    out.y = sin(inM.x, angle, 2) + cos(inM.y, angle, 2);
-    out.z = inM.z;
-    return out + middle;
-  }
-  Coord3D rotate(Coord3D in, Coord3D middle, uint16_t tiltAngle, uint16_t panAngle, uint16_t rollAngle, uint16_t period = 360) {
-    this->period = period;
-    return roll(pan(tilt(in, middle, tiltAngle), middle, panAngle), middle, rollAngle);
-  }
+
+  //temporary here  
+  uint16_t indexP = 0;
+  uint16_t prevIndexP = 0;
+  uint16_t currPin; //lookFor needs u16
+
+  //load fixture json file, parse it and depending on the projection, create a mapping for it
+  AsyncWebSocketMessageBuffer * wsBuf;
+  void projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize = 5, uint8_t shape = 0);
+  void projectAndMapPixel(Coord3D pixel);
+  void projectAndMapPin(uint16_t pin);
+  void projectAndMapPost();
+
+  #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+    uint8_t setMaxPowerBrightness = 30; //tbd: implement driver.setMaxPowerInMilliWatts
+  #endif
+
+}; //Fixture
+
+#define _1D 1
+#define _2D 2
+#define _3D 3
+
+//should not contain variables/bytes to keep mem as small as possible!!
+class Effect {
+public:
+  virtual const char * name() {return "noname";}
+  virtual const char * tags() {return "";}
+  virtual uint8_t dim() {return _1D;};
+
+  virtual void setup(LedsLayer &leds) {}
+
+  virtual void loop(LedsLayer &leds) {}
+
+  virtual void controls(LedsLayer &leds, JsonObject parentVar);
+
 };
 
-struct Trigo8: Trigo { //FastLed sin8 and cos8
-  using Trigo::Trigo;
-  float sinBase(uint16_t angle) {return (sin8(256.0f * angle / period) - 128) / 127.0f;}
-  float cosBase(uint16_t angle) {return (cos8(256.0f * angle / period) - 128) / 127.0f;}
-};
-struct Trigo16: Trigo { //FastLed sin16 and cos16
-  using Trigo::Trigo;
-  float sinBase(uint16_t angle) {return sin16(65536.0f * angle / period) / 32645.0f;}
-  float cosBase(uint16_t angle) {return cos16(65536.0f * angle / period) / 32645.0f;}
+class Projection {
+public:
+  virtual const char * name() {return "noname";}
+  virtual const char * tags() {return "";}
+
+  virtual void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {}
+  
+  virtual void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {}
+  
+  virtual void controls(LedsLayer &leds, JsonObject parentVar) {}
+
 };
 
-static Trigo trigoTiltPanRoll(255); // Trigo8 is hardly any faster (27 vs 28 fps) (spanXY=28)
+enum mapType {
+  m_color,
+  m_onePixel,
+  m_morePixels,
+  m_count //keep as last entry
+};
+
+struct PhysMap {
+  union {
+    struct {                 //condensed rgb
+      uint16_t rgb14: 14;    //14 bits (554 RGB)
+      byte mapType:2;        //2 bits (4)
+    }; //16 bits
+    uint16_t indexP: 14;   //16384 one physical pixel (type==1) index to ledsP array
+    uint16_t indexes:14;  //16384 multiple physical pixels (type==2) index in std::vector<std::vector<uint16_t>> mappingTableIndexes;
+  }; // 2 bytes
+
+  PhysMap() {
+    mapType = m_color; // the default until indexP is added
+    rgb14 = 0;
+  }
+
+  void addIndexP(LedsLayer &leds, uint16_t indexP);
+
+}; // 2 bytes
 
 //StarLight implementation of segment.data
 class SharedData {
@@ -169,142 +220,6 @@ class SharedData {
   }
 
 };
-
-class LedsLayer; //forward
-
-//utility function
-static bool getBitValue(const byte* byteArray, size_t n) {
-    size_t byteIndex = n / 8;
-    size_t bitIndex = n % 8;
-    uint8_t byte = byteArray[byteIndex];
-    return (byte >> bitIndex) & 1;
-}
-//utility function
-static void setBitValue(byte* byteArray, size_t n, bool value) {
-    size_t byteIndex = n / 8;
-    size_t bitIndex = n % 8;
-    if (value)
-        byteArray[byteIndex] |= (1 << bitIndex);
-    else
-        byteArray[byteIndex] &= ~(1 << bitIndex);
-}
-
-class Fixture {
-
-public:
-
-  CRGB ledsP[NUM_LEDS_Max];
-  std::vector<bool> pixelsToBlend; //this is a 1-bit vector !!! overlapping effects will blend
-
-  // CRGB *leds = nullptr;
-    // if (!leds)
-  //   leds = (CRGB*)calloc(nrOfLeds, sizeof(CRGB));
-  // else
-  //   leds = (CRGB*)reallocarray(leds, nrOfLeds, sizeof(CRGB));
-  // if (leds) free(leds);
-  // leds = (CRGB*)malloc(nrOfLeds * sizeof(CRGB));
-  // leds = (CRGB*)reallocarray
-
-  uint16_t nrOfLeds = 64; //amount of physical leds
-  uint8_t fixtureNr = -1;
-  Coord3D fixSize = {8,8,1};
-  uint16_t ledSize = 5; //mm
-  uint16_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
-
-  std::vector<LedsLayer *> layers; //virtual leds
-
-  Coord3D head = {0,0,0};
-
-  bool doMap = false;
-  bool doAllocPins = false;
-
-  uint8_t globalBlend = 128;
-
-  Fixture() {
-    //init pixelsToBlend
-    for (uint16_t i=0; i<nrOfLeds; i++) {
-      if (pixelsToBlend.size() < nrOfLeds)
-        pixelsToBlend.push_back(false);
-    }
-    ppf("Fixture constructor ptb:%d", pixelsToBlend.size());
-  }
-
-  //temporary here  
-  uint16_t indexP = 0;
-  uint16_t prevIndexP = 0;
-  uint16_t currPin; //lookFor needs u16
-
-  //load fixture json file, parse it and depending on the projection, create a mapping for it
-  AsyncWebSocketMessageBuffer * wsBuf;
-  void projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize = 5, uint8_t shape = 0);
-  void projectAndMapPixel(Coord3D pixel);
-  void projectAndMapPin(uint16_t pin);
-  void projectAndMapPost();
-
-  #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-    uint8_t setMaxPowerBrightness = 30; //tbd: implement driver.setMaxPowerInMilliWatts
-  #endif
-
-};
-
-enum mapType {
-  m_color,
-  m_onePixel,
-  m_morePixels,
-  m_count //keep as last entry
-};
-
-struct PhysMap {
-  union {
-    struct {                 //condensed rgb
-      uint16_t rgb14: 14;    //14 bits (554 RGB)
-      byte mapType:2;        //2 bits (4)
-    }; //16 bits
-    uint16_t indexP: 14;   //16384 one physical pixel (type==1) index to ledsP array
-    uint16_t indexes:14;  //16384 multiple physical pixels (type==2) index in std::vector<std::vector<uint16_t>> mappingTableIndexes;
-  }; // 2 bytes
-
-  PhysMap() {
-    mapType = m_color; // the default until indexP is added
-    rgb14 = 0;
-  }
-
-  void addIndexP(LedsLayer &leds, uint16_t indexP);
-
-}; // 2 bytes
-
-#define _1D 1
-#define _2D 2
-#define _3D 3
-
-//should not contain variables/bytes to keep mem as small as possible!!
-class Effect {
-public:
-  virtual const char * name() {return "noname";}
-  virtual const char * tags() {return "";}
-  virtual uint8_t dim() {return _1D;};
-
-  virtual void setup(LedsLayer &leds) {}
-
-  virtual void loop(LedsLayer &leds) {}
-
-  virtual void controls(LedsLayer &leds, JsonObject parentVar);
-
-};
-
-class Projection {
-public:
-  virtual const char * name() {return "noname";}
-  virtual const char * tags() {return "";}
-
-  virtual void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {}
-  
-  virtual void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {}
-  
-  virtual void controls(LedsLayer &leds, JsonObject parentVar) {}
-
-};
-
 
 class LedsLayer {
 
@@ -601,3 +516,71 @@ public:
   void projectAndMapPost(uint8_t rowNr);
 
 }; //LedsLayer
+
+//     sin8/cos8   sin16/cos16
+//0:   128, 255    0 32645
+//64:  255, 128    32645 0
+//128: 128, 1      0 -32645
+//192: 1, 127      -32645 0
+
+static unsigned trigoCached = 1;
+static unsigned trigoUnCached = 1;
+
+struct Trigo {
+  uint16_t period = 360; //default period 360
+  Trigo(uint16_t period = 360) {this->period = period;}
+  float sinValue[3]; uint16_t sinAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of sinValue=sin(sinAngle) for tilt, pan and roll
+  float cosValue[3]; uint16_t cosAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of cosValue=cos(cosAngle) for tilt, pan and roll
+  virtual float sinBase(uint16_t angle) {return sinf(M_TWOPI * angle / period);}
+  virtual float cosBase(uint16_t angle) {return cosf(M_TWOPI * angle / period);}
+  int16_t sin(int16_t factor, uint16_t angle, uint8_t cache012 = 0) {
+    if (sinAngle[cache012] != angle) {sinAngle[cache012] = angle; sinValue[cache012] = sinBase(angle);trigoUnCached++;} else trigoCached++;
+    return factor * sinValue[cache012];
+  };
+  int16_t cos(int16_t factor, uint16_t angle, uint8_t cache012 = 0) {
+    if (cosAngle[cache012] != angle) {cosAngle[cache012] = angle; cosValue[cache012] = cosBase(angle);trigoUnCached++;} else trigoCached++;
+    return factor * cosValue[cache012];
+  };
+  // https://msl.cs.uiuc.edu/planning/node102.html
+  Coord3D pan(Coord3D in, Coord3D middle, uint16_t angle) {
+    Coord3D inM = in - middle;
+    Coord3D out;
+    out.x = cos(inM.x, angle, 0) + sin(inM.z, angle, 0);
+    out.y = inM.y;
+    out.z = - sin(inM.x, angle, 0) + cos(inM.z, angle, 0);
+    return out + middle;
+  }
+  Coord3D tilt(Coord3D in, Coord3D middle, uint16_t angle) {
+    Coord3D inM = in - middle;
+    Coord3D out;
+    out.x = inM.x;
+    out.y = cos(inM.y, angle, 1) - sin(inM.z, angle, 1);
+    out.z = sin(inM.y, angle, 1) + cos(inM.z, angle, 1);
+    return out + middle;
+  }
+  Coord3D roll(Coord3D in, Coord3D middle, uint16_t angle) {
+    Coord3D inM = in - middle;
+    Coord3D out;
+    out.x = cos(inM.x, angle, 2) - sin(inM.y, angle, 2);
+    out.y = sin(inM.x, angle, 2) + cos(inM.y, angle, 2);
+    out.z = inM.z;
+    return out + middle;
+  }
+  Coord3D rotate(Coord3D in, Coord3D middle, uint16_t tiltAngle, uint16_t panAngle, uint16_t rollAngle, uint16_t period = 360) {
+    this->period = period;
+    return roll(pan(tilt(in, middle, tiltAngle), middle, panAngle), middle, rollAngle);
+  }
+};
+
+struct Trigo8: Trigo { //FastLed sin8 and cos8
+  using Trigo::Trigo;
+  float sinBase(uint16_t angle) {return (sin8(256.0f * angle / period) - 128) / 127.0f;}
+  float cosBase(uint16_t angle) {return (cos8(256.0f * angle / period) - 128) / 127.0f;}
+};
+struct Trigo16: Trigo { //FastLed sin16 and cos16
+  using Trigo::Trigo;
+  float sinBase(uint16_t angle) {return sin16(65536.0f * angle / period) / 32645.0f;}
+  float cosBase(uint16_t angle) {return cos16(65536.0f * angle / period) / 32645.0f;}
+};
+
+static Trigo trigoTiltPanRoll(255); // Trigo8 is hardly any faster (27 vs 28 fps) (spanXY=28)

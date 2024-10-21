@@ -1364,7 +1364,7 @@ class Noise2DEffect: public Effect {
   }
 }; //Noise2D
 
-//utiltity function?
+//utility function?
 uint16_t crc16(const unsigned char* data_p, size_t length) {
   uint8_t x;
   uint16_t crc = 0xFFFF;
@@ -1377,6 +1377,7 @@ uint16_t crc16(const unsigned char* data_p, size_t length) {
   return crc;
 }
 
+//utility function?
 uint16_t gcd(uint16_t a, uint16_t b) {
   while (b != 0) {
     uint16_t t = b;
@@ -1386,8 +1387,26 @@ uint16_t gcd(uint16_t a, uint16_t b) {
   return a;
 }
 
+//utility function?
 uint16_t lcm(uint16_t a, uint16_t b) {
   return a / gcd(a, b) * b;
+}
+
+//utility function
+static bool getBitValue(const byte* byteArray, size_t n) {
+    size_t byteIndex = n / 8;
+    size_t bitIndex = n % 8;
+    uint8_t byte = byteArray[byteIndex];
+    return (byte >> bitIndex) & 1;
+}
+//utility function
+static void setBitValue(byte* byteArray, size_t n, bool value) {
+    size_t byteIndex = n / 8;
+    size_t bitIndex = n % 8;
+    if (value)
+        byteArray[byteIndex] |= (1 << bitIndex);
+    else
+        byteArray[byteIndex] &= ~(1 << bitIndex);
 }
 
 // Written by Ewoud Wijma in 2022, inspired by https://natureofcode.com/book/chapter-7-cellular-automata/ and https://github.com/DougHaber/nlife-color ,
@@ -2927,10 +2946,10 @@ class LiveEffect: public Effect {
               liveM->addExternalVal("uint8_t", "slider2", &slider2); //used in map function
               liveM->addExternalVal("uint8_t", "slider3", &slider3); //used in map function
 
-              liveM->scPreBaseScript += "define width " + to_string(leds.size.x) + "\n";
-              liveM->scPreBaseScript += "define height " + to_string(leds.size.y) + "\n";
-              liveM->scPreBaseScript += "define NUM_LEDS " + to_string(leds.nrOfLeds) + "\n";
-              liveM->scPreBaseScript += "define panel_width " + to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
+              liveM->scPreBaseScript += "define width " + std::to_string(leds.size.x) + "\n";
+              liveM->scPreBaseScript += "define height " + std::to_string(leds.size.y) + "\n";
+              liveM->scPreBaseScript += "define NUM_LEDS " + std::to_string(leds.nrOfLeds) + "\n";
+              liveM->scPreBaseScript += "define panel_width " + std::to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
 
               liveM->run(fileName, "main", "void main(){resetStat();setup();while(2>1){loop();show();}}");
             }

@@ -12,7 +12,6 @@
 #include "LedLayer.h"
 
 #include "../Sys/SysModSystem.h"  //for sys->now
-
 #include "../Sys/SysModFiles.h"
 
 #ifdef STARBASE_USERMOD_MPU6050
@@ -34,6 +33,165 @@ void fastled_fill_solid( struct CRGB * targetArray, int numToFill, const struct 
 }
 void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, uint8_t initialhue, uint8_t deltahue) {
   fill_rainbow(targetArray, numToFill, initialhue, deltahue);
+}
+
+#define headerBytes 11
+
+void Fixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize, uint8_t shape) {
+  ppf("projectAndMapPre %d,%d,%d -> %d s:%d s:%d\n", size.x, size.y, size.z, nrOfLeds, ledSize, shape);
+  // reset leds
+  uint8_t rowNr = 0;
+  for (LedsLayer *leds: layers) {
+    if (leds->doMap) {
+      leds->projectAndMapPre();
+    }
+    rowNr++;
+  }
+
+  //deallocate all led pins
+  if (doAllocPins) {
+    // uint8_t pinNr = 0;
+    // for (PinObject &pinObject: pinsM->pinObjects) {
+    //   if (strncmp(pinObject.owner, "Leds", 5) == 0)
+        pinsM->deallocatePin(UINT8_MAX, "Leds"); //deallocate all led pins
+    //   pinNr++;
+    // }
+  }
+
+  indexP = 0;
+  prevIndexP = 0; //for allocPins
+
+  size_t len = nrOfLeds * 6 + headerBytes;
+  wsBuf = web->ws.makeBuffer(len);
+  if (wsBuf) {
+    wsBuf->lock();
+    byte* buffer = wsBuf->get();
+    buffer[0] = 1; //userfun 1
+    buffer[1] = size.x/256;
+    buffer[2] = size.x%256;
+    buffer[3] = size.y/256;
+    buffer[4] = size.y%256;
+    buffer[5] = size.z/256;
+    buffer[6] = size.z%256;
+    buffer[7] = nrOfLeds/256;
+    buffer[8] = nrOfLeds%256;
+    buffer[9] = ledSize;
+    buffer[10] = shape;
+  }
+}
+
+void Fixture::projectAndMapPixel(Coord3D pixel) {
+  // ppf("led %d,%d,%d start %d,%d,%d end %d,%d,%d\n",x,y,z, startPos.x, startPos.y, startPos.z, endPos.x, endPos.y, endPos.z);
+
+  if (indexP < NUM_LEDS_Max) {
+
+    // //send pixel to ui ...
+    if (wsBuf && indexP < nrOfLeds) {
+      byte* buffer = wsBuf->get();
+      buffer[indexP*6+headerBytes] = pixel.x/256;
+      buffer[indexP*6+headerBytes + 1] = pixel.x%256;
+      buffer[indexP*6+headerBytes + 2] = pixel.y/256;
+      buffer[indexP*6+headerBytes + 3] = pixel.y%256;
+      buffer[indexP*6+headerBytes + 4] = pixel.z/256;
+      buffer[indexP*6+headerBytes + 5] = pixel.z%256;
+    }
+    
+    uint8_t rowNr = 0;
+    for (LedsLayer *leds: layers) {
+      leds->projectAndMapPixel(pixel, rowNr);
+      rowNr++;
+    } //for layers
+  } //indexP < max
+  else 
+    ppf("dev post indexP too high %d>=%d or %d p:%d,%d,%d\n", indexP, nrOfLeds, NUM_LEDS_Max, pixel.x, pixel.y, pixel.z);
+
+  indexP++; //also increase if no buffer created
+}
+
+void Fixture::projectAndMapPin(uint16_t pin) {
+  if (doAllocPins) {
+    //check if pin already allocated, if so, extend range in details
+    PinObject pinObject = pinsM->pinObjects[pin];
+    char details[32] = "";
+    if (pinsM->isOwner(pin, "Leds")) { //if owner
+
+      //merge already assigned leds with new assignleds in %d-%d
+      char * after = strtok((char *)pinObject.details, "-");
+      if (after != NULL ) {
+        char * before;
+        before = after;
+        after = strtok(NULL, "-");
+        uint16_t startLed = atoi(before);
+        uint16_t nrOfLeds = atoi(after) - atoi(before) + 1;
+        print->fFormat(details, sizeof(details), "%d-%d", min(prevIndexP, startLed), max((uint16_t)(indexP - 1), nrOfLeds)); //careful: LedModEffects:loop uses this to assign to FastLed
+        ppf("pins extend leds %d: %s\n", pin, details);
+        //tbd: more check
+
+        strlcpy(pinsM->pinObjects[pin].details, details, sizeof(PinObject::details));  
+        pinsM->pinsChanged = true;
+      }
+    }
+    else {//allocate new pin
+      //tbd: check if free
+      print->fFormat(details, sizeof(details), "%d-%d", prevIndexP, indexP - 1); //careful: LedModEffects:loop uses this to assign to FastLed
+      // ppf("allocatePin %d: %s\n", pin, details);
+      pinsM->allocatePin(pin, "Leds", details);
+    }
+
+    prevIndexP = indexP;
+  }
+}
+
+void Fixture::projectAndMapPost() {
+  ppf("projectAndMapPost indexP:%d\n", indexP);
+  //after processing each led
+
+  if (wsBuf) {
+
+    for (auto &loopClient:web->ws.getClients()) {
+      if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
+        // if (loopClient->queueLen() <= 3) {
+          loopClient->binary(wsBuf);
+          web->sendWsCounter++;
+          web->sendWsBBytes+=indexP;
+        // }
+      }
+      else {
+        web->printClient("sendDataWs client full or not connected", loopClient);
+        // ppf("sendDataWs client full or not connected\n");
+        web->ws.cleanupClients(); //only if above threshold
+        web->ws._cleanBuffers();
+      }
+    }
+
+    wsBuf->unlock();
+    web->ws._cleanBuffers();
+  }
+
+  uint8_t rowNr = 0;
+
+  for (LedsLayer *leds: layers) {
+    if (leds->doMap) {
+      leds->projectAndMapPost(rowNr);
+    }
+    rowNr++;
+  } // leds
+
+  ppf("projectAndMapPost fixture P:%dx%dx%d -> %d\n", fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
+
+  //causes crash if in ELS task...
+  mdl->setValue("fixture", "size", fixSize);
+  mdl->setValue("fixture", "count", nrOfLeds);
+
+  //init pixelsToBlend
+  for (uint16_t i=0; i<nrOfLeds; i++) {
+    if (pixelsToBlend.size() < nrOfLeds)
+      pixelsToBlend.push_back(false);
+  }
+
+  ppf("projectAndMapPost fixture.size = %d + l:(%d * %d) B\n", sizeof(Fixture) - NUM_LEDS_Max * sizeof(CRGB), NUM_LEDS_Max, sizeof(CRGB)); //56
+
+  mappingStatus = 0; //not mapping
 }
 
 void Effect::controls(LedsLayer &leds, JsonObject parentVar) {
@@ -73,10 +231,35 @@ void Effect::controls(LedsLayer &leds, JsonObject parentVar) {
     }});
 }
 
+void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
+  // ppf("addIndexP i:%d t:%d", indexP, mapType);
+  switch (mapType) {
+    case m_color:
+    // case m_rgbColor:
+      this->indexP = indexP;
+      mapType = m_onePixel;
+      break;
+    case m_onePixel: {
+      uint16_t oldIndexP = this->indexP;
+      std::vector<uint16_t> newVector;
+      newVector.push_back(oldIndexP);
+      newVector.push_back(indexP);
+      leds.mappingTableIndexes.push_back(newVector);
+      indexes = leds.mappingTableIndexes.size() - 1;
+      mapType = m_morePixels;
+      break; }
+    case m_morePixels:
+      leds.mappingTableIndexes[indexes].push_back(indexP);
+      // ppf(" more %d", mappingTableIndexes.size());
+      break;
+  }
+  // ppf("\n");
+}
+
 
 void LedsLayer::triggerMapping() {
     doMap = true; //specify which leds to remap
-    fixture->doMap = true; //fixture will also be remapped
+    fixture->mappingStatus = 1; //start mapping
   }
 
 uint16_t LedsLayer::XYZ(Coord3D pixel) {
@@ -185,31 +368,6 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
       hsv.hue += deltahue;
     }
   }
-}
-
-void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
-  // ppf("addIndexP i:%d t:%d", indexP, mapType);
-  switch (mapType) {
-    case m_color:
-    // case m_rgbColor:
-      this->indexP = indexP;
-      mapType = m_onePixel;
-      break;
-    case m_onePixel: {
-      uint16_t oldIndexP = this->indexP;
-      std::vector<uint16_t> newVector;
-      newVector.push_back(oldIndexP);
-      newVector.push_back(indexP);
-      leds.mappingTableIndexes.push_back(newVector);
-      indexes = leds.mappingTableIndexes.size() - 1;
-      mapType = m_morePixels;
-      break; }
-    case m_morePixels:
-      leds.mappingTableIndexes[indexes].push_back(indexP);
-      // ppf(" more %d", mappingTableIndexes.size());
-      break;
-  }
-  // ppf("\n");
 }
 
   void LedsLayer::drawCharacter(unsigned char chr, int x, int16_t y, uint8_t font, CRGB col, uint16_t shiftPixel, uint16_t shiftChr) {
@@ -390,160 +548,3 @@ void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
     } //doMap
 
   }
-
-void Fixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize, uint8_t shape) {
-  ppf("projectAndMapPre %d,%d,%d -> %d s:%d s:%d\n", size.x, size.y, size.z, nrOfLeds, ledSize, shape);
-  // reset leds
-  uint8_t rowNr = 0;
-  for (LedsLayer *leds: layers) {
-    if (leds->doMap) {
-      leds->projectAndMapPre();
-    }
-    rowNr++;
-  }
-
-  //deallocate all led pins
-  if (doAllocPins) {
-    // uint8_t pinNr = 0;
-    // for (PinObject &pinObject: pinsM->pinObjects) {
-    //   if (strncmp(pinObject.owner, "Leds", 5) == 0)
-        pinsM->deallocatePin(UINT8_MAX, "Leds"); //deallocate all led pins
-    //   pinNr++;
-    // }
-  }
-
-  indexP = 0;
-  prevIndexP = 0; //for allocPins
-
-  size_t len = nrOfLeds * 6 + 11;
-  wsBuf = web->ws.makeBuffer(len);
-  if (wsBuf) {
-    wsBuf->lock();
-    byte* buffer = wsBuf->get();
-    buffer[0] = 1; //userfun 1
-    buffer[1] = size.x/256;
-    buffer[2] = size.x%256;
-    buffer[3] = size.y/256;
-    buffer[4] = size.y%256;
-    buffer[5] = size.z/256;
-    buffer[6] = size.z%256;
-    buffer[7] = nrOfLeds/256;
-    buffer[8] = nrOfLeds%256;
-    buffer[9] = ledSize;
-    buffer[10] = shape;
-  }
-}
-
-void Fixture::projectAndMapPixel(Coord3D pixel) {
-  // ppf("led %d,%d,%d start %d,%d,%d end %d,%d,%d\n",x,y,z, startPos.x, startPos.y, startPos.z, endPos.x, endPos.y, endPos.z);
-
-  if (indexP < NUM_LEDS_Max) {
-
-    // //send pixel to ui ...
-    if (wsBuf && indexP < nrOfLeds) {
-      uint8_t headerBytes = 11;
-      byte* buffer = wsBuf->get();
-      buffer[indexP*6+headerBytes] = pixel.x/256;
-      buffer[indexP*6+headerBytes + 1] = pixel.x%256;
-      buffer[indexP*6+headerBytes + 2] = pixel.y/256;
-      buffer[indexP*6+headerBytes + 3] = pixel.y%256;
-      buffer[indexP*6+headerBytes + 4] = pixel.z/256;
-      buffer[indexP*6+headerBytes + 5] = pixel.z%256;
-    }
-    
-    uint8_t rowNr = 0;
-    for (LedsLayer *leds: layers) {
-      leds->projectAndMapPixel(pixel, rowNr);
-      rowNr++;
-    } //for layers
-  } //indexP < max
-  else 
-    ppf("dev post indexP too high %d>=%d or %d p:%d,%d,%d\n", indexP, nrOfLeds, NUM_LEDS_Max, pixel.x, pixel.y, pixel.z);
-
-  indexP++; //also increase if no buffer created
-}
-
-void Fixture::projectAndMapPin(uint16_t pin) {
-  if (doAllocPins) {
-    //check if pin already allocated, if so, extend range in details
-    PinObject pinObject = pinsM->pinObjects[pin];
-    char details[32] = "";
-    if (pinsM->isOwner(pin, "Leds")) { //if owner
-
-      //merge already assigned leds with new assignleds in %d-%d
-      char * after = strtok((char *)pinObject.details, "-");
-      if (after != NULL ) {
-        char * before;
-        before = after;
-        after = strtok(NULL, "-");
-        uint16_t startLed = atoi(before);
-        uint16_t nrOfLeds = atoi(after) - atoi(before) + 1;
-        print->fFormat(details, sizeof(details), "%d-%d", min(prevIndexP, startLed), max((uint16_t)(indexP - 1), nrOfLeds)); //careful: LedModEffects:loop uses this to assign to FastLed
-        ppf("pins extend leds %d: %s\n", pin, details);
-        //tbd: more check
-
-        strlcpy(pinsM->pinObjects[pin].details, details, sizeof(PinObject::details));  
-        pinsM->pinsChanged = true;
-      }
-    }
-    else {//allocate new pin
-      //tbd: check if free
-      print->fFormat(details, sizeof(details), "%d-%d", prevIndexP, indexP - 1); //careful: LedModEffects:loop uses this to assign to FastLed
-      // ppf("allocatePin %d: %s\n", pin, details);
-      pinsM->allocatePin(pin, "Leds", details);
-    }
-
-    prevIndexP = indexP;
-  }
-}
-
-void Fixture::projectAndMapPost() {
-  ppf("projectAndMapPost indexP:%d\n", indexP);
-  //after processing each led
-
-  if (wsBuf) {
-
-    for (auto &loopClient:web->ws.getClients()) {
-      if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
-        // if (loopClient->queueLen() <= 3) {
-          loopClient->binary(wsBuf);
-          web->sendWsCounter++;
-          web->sendWsBBytes+=indexP;
-        // }
-      }
-      else {
-        web->printClient("sendDataWs client full or not connected", loopClient);
-        // ppf("sendDataWs client full or not connected\n");
-        web->ws.cleanupClients(); //only if above threshold
-        web->ws._cleanBuffers();
-      }
-    }
-
-    wsBuf->unlock();
-    web->ws._cleanBuffers();
-  }
-
-  uint8_t rowNr = 0;
-
-  for (LedsLayer *leds: layers) {
-    if (leds->doMap) {
-      leds->projectAndMapPost(rowNr);
-    }
-    rowNr++;
-  } // leds
-
-  ppf("projectAndMapPost fixture P:%dx%dx%d -> %d\n", fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
-  ppf("projectAndMapPost fixture.size = %d + l:(%d * %d) B\n", sizeof(Fixture) - NUM_LEDS_Max * sizeof(CRGB), NUM_LEDS_Max, sizeof(CRGB)); //56
-
-  //causes crash if in ELS task...
-  mdl->setValue("fixture", "size", fixSize);
-  mdl->setValue("fixture", "count", nrOfLeds);
-
-  //init pixelsToBlend
-  for (uint16_t i=0; i<nrOfLeds; i++) {
-    if (pixelsToBlend.size() < nrOfLeds)
-      pixelsToBlend.push_back(false);
-  }
-  
-  doMap = false;
-}
