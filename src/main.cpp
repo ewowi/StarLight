@@ -36,9 +36,11 @@ UserModMDNS *mdns;
   #include "App/LedModEffects.h"
   #include "App/LedModFixture.h"
   #include "App/LedModFixtureGen.h"
+  #include "App/StarLightProjectionSets.h"
   LedModFixture *fix;
   LedModFixtureGen *lfg;
   LedModEffects *eff;
+  StarLightProjectionSets *proSets;
   #ifdef STARLIGHT_USERMOD_ARTNET
     #include "User/UserModArtNet.h"
     UserModArtNet *artnetmod;
@@ -87,6 +89,7 @@ void setup() {
     eff = new LedModEffects();
     fix = new LedModFixture();
     lfg = new LedModFixtureGen();
+    proSets = new StarLightProjectionSets();
     #ifdef STARLIGHT_USERMOD_ARTNET
       artnetmod = new UserModArtNet();
     #endif
@@ -117,6 +120,7 @@ void setup() {
     mdls->add(fix);
     mdls->add(eff);
     mdls->add(lfg);
+    mdls->add(proSets);
   #endif
   mdls->add(files);
   mdls->add(sys);
