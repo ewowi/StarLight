@@ -31,6 +31,7 @@
   static uint8_t _beatSin8(uint8_t bpm, uint8_t lowest, uint8_t highest) {return beatsin8(bpm, lowest, highest);}
   static uint8_t _inoise8(uint16_t x, uint16_t y, uint16_t z) {return inoise8(x, y, z);}
   static uint8_t _random8() {return random8();}
+  static uint8_t _random16(uint8_t r) {return random16(r);}
 
   //StarLight functions
   static LedsLayer *gLeds = nullptr;
@@ -1363,22 +1364,6 @@ class Noise2DEffect: public Effect {
   }
 }; //Noise2D
 
-//utility function
-static bool getBitValue(const byte* byteArray, size_t n) {
-    size_t byteIndex = n / 8;
-    size_t bitIndex = n % 8;
-    uint8_t byte = byteArray[byteIndex];
-    return (byte >> bitIndex) & 1;
-}
-//utility function
-static void setBitValue(byte* byteArray, size_t n, bool value) {
-    size_t byteIndex = n / 8;
-    size_t bitIndex = n % 8;
-    if (value)
-        byteArray[byteIndex] |= (1 << bitIndex);
-    else
-        byteArray[byteIndex] &= ~(1 << bitIndex);
-}
 //utiltity function?
 uint16_t crc16(const unsigned char* data_p, size_t length) {
   uint8_t x;
@@ -2931,6 +2916,7 @@ class LiveEffect: public Effect {
               liveM->addExternalFun("uint8_t", "beatSin8", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)_beatSin8);
               liveM->addExternalFun("uint8_t", "inoise8", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_inoise8);
               liveM->addExternalFun("uint8_t", "random8", "()", (void *)_random8);
+              liveM->addExternalFun("uint16_t", "random16", "(uint16_t a1)", (void *)_random16);
               liveM->addExternalFun("uint8_t", "sin8", "(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
               liveM->addExternalFun("uint8_t", "cos8", "(uint8_t a1)",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
               liveM->addExternalFun("void", "sPC", "(uint16_t a1, CRGB a2)", (void *)sPCLive);

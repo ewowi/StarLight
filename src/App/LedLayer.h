@@ -172,12 +172,29 @@ class SharedData {
 
 class LedsLayer; //forward
 
+//utility function
+static bool getBitValue(const byte* byteArray, size_t n) {
+    size_t byteIndex = n / 8;
+    size_t bitIndex = n % 8;
+    uint8_t byte = byteArray[byteIndex];
+    return (byte >> bitIndex) & 1;
+}
+//utility function
+static void setBitValue(byte* byteArray, size_t n, bool value) {
+    size_t byteIndex = n / 8;
+    size_t bitIndex = n % 8;
+    if (value)
+        byteArray[byteIndex] |= (1 << bitIndex);
+    else
+        byteArray[byteIndex] &= ~(1 << bitIndex);
+}
+
 class Fixture {
 
 public:
 
   CRGB ledsP[NUM_LEDS_Max];
-  std::vector<bool> pixelsToBlend; //this is a 1-bit vector !!! overlapping effects will blend
+  byte pixelsToBlend[NUM_LEDS_Max/8]; //this is a 1-bit vector !!! overlapping effects will blend
 
   // CRGB *leds = nullptr;
     // if (!leds)

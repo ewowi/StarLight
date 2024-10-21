@@ -1,6 +1,5 @@
 //ballsSL.sc
 
-import rand
 define max_nb_balls 20
 define rmax 4
 define rmin 3
@@ -98,13 +97,13 @@ void setup()
 {
    for(int i=0;i<max_nb_balls;i++)
    {
-      vx[i] = rand(280)/255+0.7;
-      vy[i] = rand(280)/255+0.5;
-      r[i] = (rmax-rmin)*(rand(280)/180) +rmin;
-      xc[i] = width/2*(rand(280)/255+0.3)+15;
-      yc[i] = height/2*(rand(280)/255+0.3)+15;
+      vx[i] = random16(280)/255+0.7;
+      vy[i] = random16(280)/255+0.5;
+      r[i] = (rmax-rmin)*(random16(280)/180) +rmin;
+      xc[i] = width/2*(random16(280)/255+0.3)+15;
+      yc[i] = height/2*(random16(280)/255+0.3)+15;
       
-      color[i] = rand(255);
+      color[i] = random8();
    }  
 
    h=0;

@@ -95,6 +95,7 @@ static void resetShowStats()
 static float _hypot(float x,float y) {return hypot(x,y);}
 static float _atan2(float x,float y) { return atan2(x,y);}
 static float _sin(float j) {return sin(j);}
+static float _cos(float j) {return cos(j);}
 static float _triangle(float j) {return 1.0 - fabs(fmod(2 * j, 2.0) - 1.0);}
 static float _time(float j) {
       float myVal = sys->now;
@@ -227,7 +228,8 @@ public:
     }});
     ui->initButton(tableVar, "Kill", false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        kill(runningPrograms.execPtr[rowNr]->name.c_str());
+        if (runningPrograms.execPtr[rowNr])
+          kill(runningPrograms.execPtr[rowNr]->name.c_str());
         return true;
       default: return false;
     }});
@@ -248,6 +250,7 @@ public:
     addExternalFun("float", "atan2", "(float a1, float a2)",(void*)_atan2);
     addExternalFun("float", "hypot", "(float a1, float a2)",(void*)_hypot);
     addExternalFun("float", "sin", "(float a1)", (void *)_sin);
+    addExternalFun("float", "cos", "(float a1)", (void *)_cos);
     addExternalFun("float", "time", "(float a1)", (void *)_time);
     addExternalFun("float", "triangle", "(float a1)", (void *)_triangle);
     addExternalFun("uint32_t", "millis", "()", (void *)millis);

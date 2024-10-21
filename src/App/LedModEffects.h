@@ -26,14 +26,14 @@
 
 #ifdef STARBASE_USERMOD_LIVE
   Fixture *gFixture = nullptr;
-  static void _addPixelsPre(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4) {
+  static void _addPixelsPre(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4, uint8_t a5, uint8_t a6) {
     if (gFixture) {
       gFixture->fixSize.x = a1;
       gFixture->fixSize.y = a2;
       gFixture->fixSize.z = a3;
       gFixture->nrOfLeds = a4;
-      gFixture->ledSize = 5;
-      gFixture->shape = 0;
+      gFixture->ledSize = a5;
+      gFixture->shape = a6;
       gFixture->projectAndMapPre(gFixture->fixSize, gFixture->nrOfLeds, gFixture->ledSize, gFixture->shape);
     }
   }
@@ -609,8 +609,10 @@ public:
 
         liveM->scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
 
+        liveM->addExternals();
+
         //adding to scPreBaseScript
-        liveM->addExternalFun("void", "addPixelsPre", "(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4)", (void *)_addPixelsPre);
+        liveM->addExternalFun("void", "addPixelsPre", "(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4, uint8_t a5, uint8_t a6)", (void *)_addPixelsPre);
         liveM->addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
         liveM->addExternalFun("void", "addPin", "(uint16_t a1)", (void *)_addPin);
         liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
@@ -618,6 +620,8 @@ public:
         gFixture = &fixture;
 
         liveM->run(fileName);
+
+        fixture.doMap = false; //so don't run it twice
 
       } else 
     #endif
