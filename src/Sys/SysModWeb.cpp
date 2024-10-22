@@ -400,26 +400,8 @@ void SysModWeb::sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fi
 
       fill(wsBuf); //function parameter
 
-      for (auto &loopClient:ws.getClients()) {
-        if (!client || client == loopClient) {
-          if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
-            if (!isBinary || loopClient->queueLen() <= 3) {
-              isBinary?loopClient->binary(wsBuf): loopClient->text(wsBuf);
-              sendWsCounter++;
-              if (isBinary)
-                sendWsBBytes+=len;
-              else 
-                sendWsTBytes+=len;
-            }
-          }
-          else {
-            printClient("sendDataWs client full or not connected", loopClient);
-            // ppf("sendDataWs client full or not connected\n");
-            ws.cleanupClients(); //only if above threshold
-            ws._cleanBuffers();
-          }
-        }
-      }
+      sendBuffer(wsBuf, isBinary, client);
+
       wsBuf->unlock();
       ws._cleanBuffers();
     }
@@ -432,6 +414,29 @@ void SysModWeb::sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fi
   }
 
   xSemaphoreGive(wsMutex);
+}
+
+void SysModWeb::sendBuffer(AsyncWebSocketMessageBuffer * wsBuf, bool isBinary, WebClient * client) {
+  for (auto &loopClient:ws.getClients()) {
+    if (!client || client == loopClient) {
+      if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
+        if (!isBinary || loopClient->queueLen() <= 3) {
+          isBinary?loopClient->binary(wsBuf): loopClient->text(wsBuf);
+          sendWsCounter++;
+          if (isBinary)
+            sendWsBBytes+=wsBuf->length();
+          else 
+            sendWsTBytes+=wsBuf->length();
+        }
+      }
+      else {
+        printClient("sendDataWs client full or not connected", loopClient);
+        // ppf("sendDataWs client full or not connected\n");
+        ws.cleanupClients(); //only if above threshold
+        ws._cleanBuffers();
+      }
+    }
+  }
 }
 
 //add an url to the webserver to listen to

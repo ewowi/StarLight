@@ -71,9 +71,7 @@ void SysModPins::setup() {
       var["interval"] = 100; //every 100 ms
 
       web->sendDataWs([](AsyncWebSocketMessageBuffer * wsBuf) {
-        byte* buffer;
-
-        buffer = wsBuf->get();
+        byte* buffer = wsBuf->get();
 
         // send pins to clients
         for (size_t pin = 0; pin < NUM_DIGITAL_PINS; pin++)

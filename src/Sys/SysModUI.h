@@ -328,7 +328,7 @@ public:
           //only print vars with a value and not onSetValue as that changes a lot due to instances clients etc (tbd)
           //don't print if onSetValue or oldValue is null
           if (funType != onSetValue && (!var["oldValue"].isNull() || ((rowNr != UINT8_MAX) && !var["oldValue"][rowNr].isNull()))) {
-            ppf("%sFun %s", funType==onSetValue?"val":funType==onUI?"ui":funType==onChange?"ch":funType==onAdd?"add":funType==onDelete?"del":"other", Variable(var).id());
+            ppf("%sFun %s.%s", funType==onSetValue?"val":funType==onUI?"ui":funType==onChange?"ch":funType==onAdd?"add":funType==onDelete?"del":"other", Variable(var).pid(), Variable(var).id());
             if (rowNr != UINT8_MAX) {
               ppf("[%d] (", rowNr);
               if (funType == onChange) ppf("%s ->", var["oldValue"][rowNr].as<String>().c_str());

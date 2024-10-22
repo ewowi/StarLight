@@ -76,6 +76,7 @@ public:
   //send json to client or all clients
   void sendDataWs(JsonVariant json = JsonVariant(), WebClient * client = nullptr);
   void sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fill, size_t len, bool isBinary, WebClient * client = nullptr);
+  void sendBuffer(AsyncWebSocketMessageBuffer * wsBuf, bool isBinary, WebClient * client = nullptr);
 
   //add an url to the webserver to listen to
   void serveIndex(WebRequest *request);
