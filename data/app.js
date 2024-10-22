@@ -27,7 +27,7 @@ let cumulatativeBuffer;
 function userFun(buffer) {
   let previewVar = controller.modules.findVar("Fixture", "preview");
   if (buffer[0] == 1) {
-    let headerBytes = 16
+    let headerBytesFixture = 16
     if (buffer[1] != 255) {
       console.log("userFun Fixture definition", buffer)
       previewVar.file = {};
@@ -48,8 +48,8 @@ function userFun(buffer) {
 
     let output = {};
     output.leds = [];
-    for (let i = headerBytes; i+5<=previewBufferIndex-1; i+=6) { //steps of 6
-      // if (headerBytes + 5 + i < previewVar.file.nrOfLeds * 6 + 11)
+    for (let i = headerBytesFixture; i+5<=previewBufferIndex-1; i+=6) { //steps of 6
+      // if (headerBytesFixture + 5 + i < previewVar.file.nrOfLeds * 6 + 11)
         output.leds.push([buffer[i]*256+buffer[i+1],buffer[i+2]*256+buffer[i+3],buffer[i+4]*256+buffer[i+5]]);
     }
     previewVar.file.outputs.push(output);
@@ -58,18 +58,18 @@ function userFun(buffer) {
   else if (buffer[0] == 2) {
     let canvasNode = gId("Fixture.preview");
     if (canvasNode) {
-      let headerBytes = 5
+      let headerBytesPreview = 5
       let bytesPerPixel = buffer[4]
       if (buffer[1] != 255) { //initial
         cumulatativeBuffer = buffer;
-        // console.log("init buffer", cumulatativeBuffer, headerBytes + previewVar.file.nrOfLeds * bytesPerPixel);
+        // console.log("init buffer", cumulatativeBuffer, headerBytesPreview + previewVar.file.nrOfLeds * bytesPerPixel);
       }
       else {
-        // console.log("add buffer", cumulatativeBuffer, buffer.slice(0, headerBytes), buffer.slice(headerBytes), headerBytes + previewVar.file.nrOfLeds * bytesPerPixel);
-        cumulatativeBuffer = new Uint8Array([...cumulatativeBuffer, ...buffer.slice(headerBytes)])
+        // console.log("add buffer", cumulatativeBuffer, buffer.slice(0, headerBytesPreview), buffer.slice(headerBytesPreview), headerBytesPreview + previewVar.file.nrOfLeds * bytesPerPixel);
+        cumulatativeBuffer = new Uint8Array([...cumulatativeBuffer, ...buffer.slice(headerBytesPreview)])
       }
-      if (cumulatativeBuffer.length >= headerBytes + previewVar.file.nrOfLeds * bytesPerPixel ) {
-        // console.log("send buffer", cumulatativeBuffer, headerBytes + previewVar.file.nrOfLeds * bytesPerPixel);
+      if (cumulatativeBuffer.length >= headerBytesPreview + previewVar.file.nrOfLeds * bytesPerPixel ) {
+        // console.log("send buffer", cumulatativeBuffer, headerBytesPreview + previewVar.file.nrOfLeds * bytesPerPixel);
         preview3D(canvasNode, cumulatativeBuffer, previewVar);
       }
     }
@@ -302,9 +302,9 @@ function preview3D(canvasNode, buffer, previewVar) {
         }
 
         //light up the cube
-        let headerBytes = 5;
+        let headerBytesPreview = 5;
         var i = 0;
-        let bytesPerPixel = buffer[4];// previewVar.file.nrOfLeds == buffer.length - headerBytes; //1-byte rgb
+        let bytesPerPixel = buffer[4];// previewVar.file.nrOfLeds == buffer.length - headerBytesPreview; //1-byte rgb
         // console.log(previewVar.file.nrOfLeds, buffer.length);
         if (previewVar.file.outputs) {
           // console.log("preview3D jsonValues", previewVar.file);
@@ -313,21 +313,21 @@ function preview3D(canvasNode, buffer, previewVar) {
               for (var led of output.leds) {
                 if (i < scene.children.length) {
                   if (bytesPerPixel == 1) {
-                    let bte = buffer[headerBytes + i];
+                    let bte = buffer[headerBytesPreview + i];
                     //decode rgb from 8 bits: 3 for red, 3 for green, 2 for blue
                     scene.children[i].material.color = new THREE.Color(`${((bte & 0xE0) >> 5)*31/255}`, `${((bte & 0x1C) >> 2)*31/255}`, `${(bte & 0x03)*63/255}`);
                   }
                   else if (bytesPerPixel == 2) {
                     //encode rgb in 16 bits: 5 for red, 6 for green, 5 for blue
-                    // let encodedColor = buffer[headerBytes + i] * 256 + buffer[headerBytes + i + 1]; //in 16 bits
-                    let encodedColor = (buffer[headerBytes + i*2]<< 8) | buffer[headerBytes + i*2 + 1]; //in 16 bits
+                    // let encodedColor = buffer[headerBytesPreview + i] * 256 + buffer[headerBytesPreview + i + 1]; //in 16 bits
+                    let encodedColor = (buffer[headerBytesPreview + i*2]<< 8) | buffer[headerBytesPreview + i*2 + 1]; //in 16 bits
                     scene.children[i].material.color = new THREE.Color(`${((encodedColor >> 11) & 0x1F)/31}`, `${((encodedColor >> 5) & 0x3F)/63}`, `${(encodedColor & 0x1F)/31}`);
-                    // scene.children[i].material.color = new THREE.Color(`${buffer[headerBytes + i]/255}`, `${0}`, `${buffer[headerBytes + i + 1]/255}`);
+                    // scene.children[i].material.color = new THREE.Color(`${buffer[headerBytesPreview + i]/255}`, `${0}`, `${buffer[headerBytesPreview + i + 1]/255}`);
                   }
                   else {
-                    // scene.children[i].visible = buffer[headerBytes + i*3] + buffer[headerBytes + i*3 + 1] + buffer[headerBytes + i*3 + 2] > 10; //do not show blacks
+                    // scene.children[i].visible = buffer[headerBytesPreview + i*3] + buffer[headerBytesPreview + i*3 + 1] + buffer[headerBytesPreview + i*3 + 2] > 10; //do not show blacks
                     // if (scene.children[i].visible) {
-                      scene.children[i].material.color = new THREE.Color(`${buffer[headerBytes + i*3]/255}`, `${buffer[headerBytes + i*3 + 1]/255}`, `${buffer[headerBytes + i*3 + 2]/255}`);
+                      scene.children[i].material.color = new THREE.Color(`${buffer[headerBytesPreview + i*3]/255}`, `${buffer[headerBytesPreview + i*3 + 1]/255}`, `${buffer[headerBytesPreview + i*3 + 2]/255}`);
                       // scene.children[i].geometry.setAtttribute("radius", buffer[4] / 30);
                     // }
                   }

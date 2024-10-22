@@ -2569,7 +2569,7 @@ class LaserGEQEffect: public Effect {
     int8_t *projector_dir = leds.effectData.readWrite<int8_t>();
     uint32_t *counter = leds.effectData.readWrite<uint32_t>();
 
-    if (numBands == 0) return; //initEffect
+    if (numBands == 0) return; //init Effect
 
     const int cols = leds.size.x;
     const int rows = leds.size.y;

@@ -11,6 +11,8 @@
 
 //Projections should not contain variables/bytes to keep mem as small as possible!!
 
+#include "LedModFixture.h"
+
 class NoneProjection: public Projection {
   const char * name() {return "None";}
   //uint8_t dim() {return _1D;} // every projection should work for all D
@@ -333,7 +335,7 @@ class TiltPanRollProjection: public Projection {
       if (leds.proTiltSpeed) pixel = trigoTiltPanRoll.tilt(pixel, leds.size/2, sys->now * 5 / (255 - leds.proTiltSpeed));
       if (leds.proPanSpeed) pixel = trigoTiltPanRoll.pan(pixel, leds.size/2, sys->now * 5 / (255 - leds.proPanSpeed));
       if (leds.proRollSpeed) pixel = trigoTiltPanRoll.roll(pixel, leds.size/2, sys->now * 5 / (255 - leds.proRollSpeed));
-      if (leds.fixture->fixSize.z == 1) pixel.z = 0; // 3d effects will be flattened on 2D fixtures
+      if (fix->fixSize.z == 1) pixel.z = 0; // 3d effects will be flattened on 2D fixtures
     }
   }
 

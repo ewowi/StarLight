@@ -93,7 +93,7 @@ public:
     bool isRGBW = false;
     uint8_t bri = mdl->linearToLogarithm(fix->bri);
 
-    const size_t channelCount = eff->fixture.nrOfLeds * (isRGBW? 4:3); // 1 channel for every R,G,B,(W?) value
+    const size_t channelCount = fix->nrOfLeds * (isRGBW? 4:3); // 1 channel for every R,G,B,(W?) value
     const size_t packetCount = ((channelCount-1) / DDP_CHANNELS_PER_PACKET) +1;
 
     uint32_t channel = 0; 
@@ -139,8 +139,8 @@ public:
       /*8*/ddpUdp.write(0xFF & (packetSize >> 8));
       /*9*/ddpUdp.write(0xFF & (packetSize     ));
 
-      for (size_t i = 0; i < eff->fixture.nrOfLeds; i++) {
-        CRGB pixel = eff->fixture.ledsP[i];
+      for (size_t i = 0; i < fix->nrOfLeds; i++) {
+        CRGB pixel = fix->ledsP[i];
         ddpUdp.write(scale8(pixel.r, bri)); // R
         ddpUdp.write(scale8(pixel.g, bri)); // G
         ddpUdp.write(scale8(pixel.b, bri)); // B
