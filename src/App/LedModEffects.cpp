@@ -462,7 +462,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     random16_set_seed(sys->now);
 
     //set new frame
-    if (sys->now - frameMillis >= 1000.0/fps) {
+    if (sys->now - frameMillis >= 1000.0/fps && fixture.mappingStatus == 0) {
 
       //reset pixelsToBlend if multiple leds effects
       // ppf(" %d-%d", fixture.pixelsToBlend.size(), fixture.nrOfLeds);

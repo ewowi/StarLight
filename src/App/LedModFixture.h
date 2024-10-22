@@ -17,7 +17,7 @@ public:
 
   uint8_t viewRotation = 0;
   uint8_t bri = 10;
-  bool rgb1B = false;
+  uint8_t bytesPerPixel = 2;
 
   LedModFixture() :SysModule("Fixture") {};
 

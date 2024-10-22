@@ -84,6 +84,7 @@ public:
     uint8_t setMaxPowerBrightness = 30; //tbd: implement driver.setMaxPowerInMilliWatts
   #endif
 
+  uint16_t previewBufferIndex = 0;
 }; //Fixture
 
 #define _1D 1

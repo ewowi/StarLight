@@ -35,7 +35,7 @@ void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, uint8_t init
   fill_rainbow(targetArray, numToFill, initialhue, deltahue);
 }
 
-#define headerBytes 11
+#define headerBytes 16 // so 680 pixels will fit in a 4096 package
 
 void Fixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize, uint8_t shape) {
   ppf("projectAndMapPre %d,%d,%d -> %d s:%d s:%d\n", size.x, size.y, size.z, nrOfLeds, ledSize, shape);
@@ -61,7 +61,7 @@ void Fixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize,
   indexP = 0;
   prevIndexP = 0; //for allocPins
 
-  size_t len = nrOfLeds * 6 + headerBytes;
+  size_t len = min(nrOfLeds * 6 + headerBytes, 4096);
   wsBuf = web->ws.makeBuffer(len);
   if (wsBuf) {
     wsBuf->lock();
@@ -77,6 +77,7 @@ void Fixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize,
     buffer[8] = nrOfLeds%256;
     buffer[9] = ledSize;
     buffer[10] = shape;
+    previewBufferIndex = headerBytes;
   }
 }
 
@@ -85,15 +86,31 @@ void Fixture::projectAndMapPixel(Coord3D pixel) {
 
   if (indexP < NUM_LEDS_Max) {
 
-    // //send pixel to ui ...
-    if (wsBuf && indexP < nrOfLeds) {
+    //send pixel to ui ...
+    if (wsBuf && indexP < nrOfLeds ) { //max index to process && indexP * 6 + headerBytes + 5 < 2 * 8192
       byte* buffer = wsBuf->get();
-      buffer[indexP*6+headerBytes] = pixel.x/256;
-      buffer[indexP*6+headerBytes + 1] = pixel.x%256;
-      buffer[indexP*6+headerBytes + 2] = pixel.y/256;
-      buffer[indexP*6+headerBytes + 3] = pixel.y%256;
-      buffer[indexP*6+headerBytes + 4] = pixel.z/256;
-      buffer[indexP*6+headerBytes + 5] = pixel.z%256;
+      if (previewBufferIndex + 6 > 4096) {
+        //add previewBufferIndex to package
+        buffer[11] = previewBufferIndex/256; //last slot filled
+        buffer[12] = previewBufferIndex%256; //last slot filled
+        //send the buffer and create a new one
+        web->sendBuffer(wsBuf, true);
+        delay(50);
+
+        buffer[0] = 1; //userfun 1
+        buffer[1] = UINT8_MAX;
+        buffer[2] = indexP/256; //fixSize.x%256;
+        buffer[3] = indexP%256; //fixSize.x%256;
+        ppf("new buffer created i:%d p:%d r:%d r6:%d\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6);
+        previewBufferIndex = headerBytes;
+      }
+
+      buffer[previewBufferIndex++] = pixel.x/256;
+      buffer[previewBufferIndex++] = pixel.x%256;
+      buffer[previewBufferIndex++] = pixel.y/256;
+      buffer[previewBufferIndex++] = pixel.y%256;
+      buffer[previewBufferIndex++] = pixel.z/256;
+      buffer[previewBufferIndex++] = pixel.z%256;
     }
     
     uint8_t rowNr = 0;
@@ -147,26 +164,18 @@ void Fixture::projectAndMapPost() {
   //after processing each led
 
   if (wsBuf) {
+    byte* buffer = wsBuf->get();
+    buffer[11] = previewBufferIndex/256; //last slot filled
+    buffer[12] = previewBufferIndex%256; //last slot filled
+    web->sendBuffer(wsBuf, true);
 
-    for (auto &loopClient:web->ws.getClients()) {
-      if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
-        // if (loopClient->queueLen() <= 3) {
-          loopClient->binary(wsBuf);
-          web->sendWsCounter++;
-          web->sendWsBBytes+=indexP;
-        // }
-      }
-      else {
-        web->printClient("sendDataWs client full or not connected", loopClient);
-        // ppf("sendDataWs client full or not connected\n");
-        web->ws.cleanupClients(); //only if above threshold
-        web->ws._cleanBuffers();
-      }
-    }
-
+    ppf("projectAndMapPost before unlock and clean:%d\n", indexP);
     wsBuf->unlock();
     web->ws._cleanBuffers();
+    delay(50);
   }
+
+  ppf("projectAndMapPost after unlock and clean:%d\n", indexP);
 
   uint8_t rowNr = 0;
 
@@ -179,7 +188,6 @@ void Fixture::projectAndMapPost() {
 
   ppf("projectAndMapPost fixture P:%dx%dx%d -> %d\n", fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
 
-  //causes crash if in ELS task...
   mdl->setValue("fixture", "size", fixSize);
   mdl->setValue("fixture", "count", nrOfLeds);
 

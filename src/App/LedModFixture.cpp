@@ -53,17 +53,16 @@
         eff->fixture.mappingStatus = 1; //rebuild the fixture - so it is send to ui
         return true;
       case onLoop: {
-        if (eff->fixture.mappingStatus == 0) { //not remapping
-          // ppf("preview.onLoop #:%d 1b:%d len:%d int:%d\n", eff->fixture.nrOfLeds, rgb1B, eff->fixture.nrOfLeds * (rgb1B?1:3), eff->fixture.nrOfLeds * web->ws.count()/200);
-          var["interval"] =  max(eff->fixture.nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
+        if (eff->fixture.mappingStatus == 0 && bytesPerPixel) { //not remapping
+          var["interval"] = max(eff->fixture.nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
 
-          web->sendDataWs([this](AsyncWebSocketMessageBuffer * wsBuf) {
-            byte* buffer;
-
-            buffer = wsBuf->get();
-
-            #define headerBytes 4
-
+          #define headerBytes 5
+          // ppf("(%d %d %d,%d,%d)", len, headerBytes + eff->fixture.nrOfLeds * bytesPerPixel, eff->fixture.fixSize.x, eff->fixture.fixSize.y, eff->fixture.fixSize.z);
+          size_t len = min(headerBytes + eff->fixture.nrOfLeds * bytesPerPixel, 4096);
+          AsyncWebSocketMessageBuffer *wsBuf= web->ws.makeBuffer(len); //global wsBuf causes crash in audio sync module!!!
+          if (wsBuf) {
+            wsBuf->lock();
+            byte* buffer = wsBuf->get();
             //new values
             buffer[0] = 2; //userFun id
             //rotations
@@ -88,22 +87,50 @@
               buffer[2] = eff->fixture.head.y;
               buffer[3] = eff->fixture.head.z;
             }
+            buffer[4] = bytesPerPixel;
+            uint16_t previewBufferIndex = headerBytes;
 
             // send leds preview to clients
-            for (size_t i = 0; i < eff->fixture.nrOfLeds; i++)
-            {
-              if (rgb1B) {
-                //encode rgb in 8 bits: 3 for red, 3 for green, 2 for blue
-                buffer[headerBytes + i] = (eff->fixture.ledsP[i].red & 0xE0) | ((eff->fixture.ledsP[i].green & 0xE0)>>3) | (eff->fixture.ledsP[i].blue >> 6);
+            for (size_t indexP = 0; indexP < eff->fixture.nrOfLeds; indexP++) {
+
+              if (previewBufferIndex + bytesPerPixel > 4096) {
+                //send the buffer and create a new one
+                web->sendBuffer(wsBuf, true);
+                delay(10);
+                buffer[0] = 2; //userFun id
+                buffer[1] = UINT8_MAX; //indicates follow up package
+                buffer[2] = indexP/256; //fixSize.x%256;
+                buffer[3] = indexP%256; //fixSize.x%256;
+                buffer[4] = bytesPerPixel;
+                // ppf("@");
+                // ppf("new buffer created i:%d p:%d r:%d r6:%d\n", indexP, previewBufferIndex, (eff->fixture.nrOfLeds - indexP), (eff->fixture.nrOfLeds - indexP) * 6);
+                previewBufferIndex = 5;
+              }
+
+              if (bytesPerPixel == 1) {
+                //encode rgb in 8 bits: 3 for red, 3 for green, 2 for blue (0xE0 = 01110000)
+                buffer[previewBufferIndex++] = (eff->fixture.ledsP[indexP].red & 0xE0) | ((eff->fixture.ledsP[indexP].green & 0xE0)>>3) | (eff->fixture.ledsP[indexP].blue >> 6);
+              }
+              else if (bytesPerPixel == 2) {
+                //encode rgb in 16 bits: 5 for red, 6 for green, 5 for blue
+                buffer[previewBufferIndex++] = (eff->fixture.ledsP[indexP].red & 0xF8) | (eff->fixture.ledsP[indexP].green >> 5); // Take 5 bits of Red component and 3 bits of G component
+                buffer[previewBufferIndex++] = ((eff->fixture.ledsP[indexP].green & 0x1C) << 3) | (eff->fixture.ledsP[indexP].blue  >> 3); // Take remaining 3 Bits of G component and 5 bits of Blue component
               }
               else {
-                buffer[headerBytes + i*3] = eff->fixture.ledsP[i].red;
-                buffer[headerBytes + i*3+1] = eff->fixture.ledsP[i].green;
-                buffer[headerBytes + i*3+2] = eff->fixture.ledsP[i].blue;
+                buffer[previewBufferIndex++] = eff->fixture.ledsP[indexP].red;
+                buffer[previewBufferIndex++] = eff->fixture.ledsP[indexP].green;
+                buffer[previewBufferIndex++] = eff->fixture.ledsP[indexP].blue;
               }
-            }
-          }, headerBytes + eff->fixture.nrOfLeds * (rgb1B?1:3), true);
+            } //loop
+
+            web->sendBuffer(wsBuf, true);
+
+            wsBuf->unlock();
+            web->ws._cleanBuffers();
+          }
+
         }
+
         return true;}
       default: return false;
     }});
@@ -122,7 +149,16 @@
       default: return false; 
     }});
 
-    ui->initCheckBox(currentVar, "1-byte RGB", &rgb1B);
+    ui->initSelect(currentVar, "PixelBytes", &bytesPerPixel, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      case onUI: {
+        JsonArray options = ui->setOptions(var);
+        options.add("None");
+        options.add("1-byte RGB");
+        options.add("2-byte RGB");
+        options.add("3-byte RGB");
+        return true; }
+      default: return false; 
+    }});
 
     currentVar = ui->initSelect(parentVar, "fixture", &eff->fixture.fixtureNr, false ,[](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
@@ -145,11 +181,11 @@
           leds->triggerMapping();
         }
 
-        char fileName[32] = "";
-        if (files->seqNrToName(fileName, eff->fixture.fixtureNr)) {
-          //send to preview a message to get file fileName
-          web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName, JsonString::Copied));
-        }
+        // char fileName[32] = "";
+        // if (files->seqNrToName(fileName, eff->fixture.fixtureNr)) {
+        //   //send to preview a message to get file fileName
+        //   web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName, JsonString::Copied));
+        // }
         return true; }
       default: return false; 
     }}); //fixture
