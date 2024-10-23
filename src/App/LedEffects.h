@@ -2693,6 +2693,78 @@ class LaserGEQEffect: public Effect {
   }
 }; //LaserGEQEffect
 
+// Author: @TroyHacks, from WLED MoonModules
+// @license GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
+class PaintbrushEffect: public Effect {
+  const char * name() {return "Paintbrush";}
+  uint8_t dim() {return _2D;}
+  const char * tags() {return "♫💡";}
+
+  void setup(LedsLayer &leds) {
+    leds.fadeToBlackBy(16);
+  }
+
+  void loop(LedsLayer &leds) {
+
+    //Binding of controls. Keep before binding of vars and keep in same order as in controls()
+    uint8_t oscillatorOffset = leds.effectData.read<uint8_t>();
+    uint8_t numLines = leds.effectData.read<uint8_t>();
+    uint8_t fadeRate = leds.effectData.read<uint8_t>();
+    uint8_t minLength = leds.effectData.read<uint8_t>();
+    bool color_chaos = leds.effectData.read<bool>();
+    bool soft = leds.effectData.read<bool>();
+    bool phase_chaos = leds.effectData.read<bool>();
+
+    //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
+    uint16_t *aux0Hue = leds.effectData.readWrite<uint16_t>();
+    uint16_t *aux1Chaos = leds.effectData.readWrite<uint16_t>();
+
+    const uint16_t cols = leds.size.x;
+    const uint16_t rows = leds.size.y;
+
+    // byte numLines = map8(nrOfLines,1,64);
+    
+    (*aux0Hue)++;  // hue
+    leds.fadeToBlackBy(fadeRate);
+
+    *aux1Chaos = phase_chaos?random8():0;
+
+    for (size_t i = 0; i < numLines; i++) {
+      byte bin = map(i,0,numLines,0,15);
+      
+      byte x1 = beatsin8(oscillatorOffset*1 + audioSync->fftResults[0]/16, 0, (cols-1), audioSync->fftResults[bin], *aux1Chaos);
+      byte x2 = beatsin8(oscillatorOffset*2 + audioSync->fftResults[0]/16, 0, (cols-1), audioSync->fftResults[bin], *aux1Chaos);
+      byte y1 = beatsin8(oscillatorOffset*3 + audioSync->fftResults[0]/16, 0, (rows-1), audioSync->fftResults[bin], *aux1Chaos);
+      byte y2 = beatsin8(oscillatorOffset*4 + audioSync->fftResults[0]/16, 0, (rows-1), audioSync->fftResults[bin], *aux1Chaos);
+
+      int length = sqrt((x2-x1) * (x2-x1) + (y2-y1) * (y2-y1));
+      length = map8(audioSync->fftResults[bin],0,length);
+
+      if (length > max(1, (int)minLength)) {
+        CRGB color;
+        if (color_chaos)
+          color = ColorFromPalette(leds.palette, i * 255 / numLines + ((*aux0Hue)&0xFF), 255);
+        else
+          color = ColorFromPalette(leds.palette, map(i, 0, numLines, 0, 255), 255);
+        leds.drawLine(x1, y1, x2, y2, color, soft, length);
+      }
+    }
+  }
+
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    ui->initSlider(parentVar, "Oscillator Offset", leds.effectData.write<uint8_t>(16 *  160/255), 0, 16);
+    ui->initSlider(parentVar, "# of lines", leds.effectData.write<uint8_t>(255), 2, 255);
+    ui->initSlider(parentVar, "Fade Rate", leds.effectData.write<uint8_t>(40), 0, 128);
+    ui->initSlider(parentVar, "Min Length", leds.effectData.write<uint8_t>(0));
+    ui->initCheckBox(parentVar, "Color Chaos", leds.effectData.write<bool>(false));
+    ui->initCheckBox(parentVar, "Anti-aliasing", leds.effectData.write<bool>(true));
+    ui->initCheckBox(parentVar, "Phase Chaos", leds.effectData.write<bool>(false));
+    // "Paintbrush ☾@Oscillator Offset,# of lines,Fade Rate,,Min Length,Color Chaos,Anti-aliasing,Phase Chaos;!,,Peaks;!;2f;sx=160,ix=255,c1=80,c2=255,c3=0,pal=72,o1=0,o2=1,o3=0";
+  }
+}; //PaintBrushEffect
+
+
 class FunkyPlankEffect: public Effect {
   const char * name() {return "Funky Plank";}
   uint8_t dim() {return _2D;}

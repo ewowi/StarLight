@@ -88,6 +88,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       effects.push_back(new FunkyPlankEffect);
       effects.push_back(new GEQEffect);
       effects.push_back(new LaserGEQEffect);
+      effects.push_back(new PaintbrushEffect);
       effects.push_back(new WaverlyEffect);
     #endif
     //3D

@@ -81,7 +81,7 @@
         }
         return true;
       case onLoop: {
-        if (mappingStatus == 0 && bytesPerPixel) { //not remapping
+        if (mappingStatus == 0 && bytesPerPixel && web->ws.getClients().length()) { //not remapping and clients exists
           var["interval"] = max(nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
 
           #define headerBytesPreview 5
