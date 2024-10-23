@@ -460,18 +460,39 @@ public:
     JsonObject currentVar = ui->initSelect(parentVar, "fixture", (uint8_t)0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         ui->setComment(var, "Predefined fixture");
-        JsonArray options1 = ui->setOptions(var); //See enum Fixtures for order of options
+        JsonArray options = ui->setOptions(var); //See enum Fixtures for order of options
 
-        //create 3 level select options
-        char jsonString[512] = "";
-        strlcat(jsonString, "[ {\"Strips\": [\"Spiral\", \"Helix\"]}", sizeof(jsonString));
-        strlcat(jsonString, ", {\"Matrices\": [\"Panel\", \"Panel2x2\", \"Panel4x1\", \"Sticks\"]}", sizeof(jsonString));
-        strlcat(jsonString, ", {\"Cubes\": [\"Human Sized Cube\", \"CubeBox\", \"Cube3D\"]}", sizeof(jsonString));
-        strlcat(jsonString, ", {\"Rings\": [\"Ring\", \"Audi\", \"Olympic\"]}", sizeof(jsonString));
-        strlcat(jsonString, ", {\"Shapes\": [\"Rings241\", {\"Hexagon\":[\"Hexagon\", \"HexaWall\"]}, \"Cone\", \"Cloud5416\"]}", sizeof(jsonString));
-        strlcat(jsonString, ", {\"Combinations\": [\"Wall\", \"6Rings\", \"SpaceStation\", \"Star\", \"Wheel\", \"Human\", \"Curtain\"]}", sizeof(jsonString));
-        strlcat(jsonString, ", {\"Spheres\": [\"Globe\", \"LeGlorb\", \"GeodesicDome WIP\"]}", sizeof(jsonString));
-        strlcat(jsonString, "]", sizeof(jsonString));
+        JsonObject mainOption = options.add<JsonObject>();
+        mainOption["Strips"].add("Spiral"); 
+        mainOption["Strips"].add("Helix");
+        mainOption["Matrices"].add("Panel"); 
+        mainOption["Matrices"].add("Panel2x2");
+        mainOption["Matrices"].add("Panel4x1");
+        mainOption["Matrices"].add("Sticks");
+        mainOption["Cubes"].add("Human Sized Cube");
+        mainOption["Cubes"].add("CubeBox");
+        mainOption["Cubes"].add("Cube3D");
+        mainOption["Rings"].add("Ring");
+        mainOption["Rings"].add("Audi");
+        mainOption["Rings"].add("Olympic");
+        mainOption["Shapes"].add("Rings241");
+        JsonObject subOption = mainOption["Shapes"].add<JsonObject>();
+                   subOption["Hexagon"].add("Hexagon");
+                   subOption["Hexagon"].add("HexaWall");
+        mainOption["Shapes"].add("Cone");
+        mainOption["Shapes"].add("Cloud5416");
+        mainOption["Combinations"].add("Wall");
+        mainOption["Combinations"].add("6Rings");
+        mainOption["Combinations"].add("SpaceStation");
+        mainOption["Combinations"].add("Star");
+        mainOption["Combinations"].add("Wheel");
+        mainOption["Combinations"].add("Human");
+        mainOption["Combinations"].add("Curtain");
+        mainOption["Spheres"].add("Globe");
+        mainOption["Spheres"].add("LeGlorb");
+        mainOption["Spheres"].add("GeodesicDome WIP");
+
+        print->printJson("ddd",options);
 
         // char jsonString[1024] = "";
         // strlcat(jsonString, "[ {\"Strips\": [\"Spiral 🧊\", \"Helix 🧊\"]}", sizeof(jsonString));
@@ -482,11 +503,6 @@ public:
         // strlcat(jsonString, ", {\"Spheres\": [\"Globe 🧊\", \"LeGlorb 🧊\", \"GeodesicDome WIP 🧊\"]}", sizeof(jsonString));
         // strlcat(jsonString, "]", sizeof(jsonString));
 
-        DeserializationError error = deserializeJson(options1, jsonString);
-        if (error)
-          ppf("Error %s %s\n", jsonString, error.c_str());
-        // else
-        //   print->printJson("OPTIONS", options1);
         return true; }
       case onChange:
         this->fixtureOnChange();

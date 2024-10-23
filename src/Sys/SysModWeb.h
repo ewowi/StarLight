@@ -82,8 +82,8 @@ public:
   void serveIndex(WebRequest *request);
   void serveNewUI(WebRequest *request);
   //mdl and WLED style state and info
-  void serializeState(JsonObject root);
-  void serializeInfo(JsonObject root);
+  void serializeState(JsonVariant root);
+  void serializeInfo(JsonVariant root);
   void serveJson(WebRequest *request);
 
 

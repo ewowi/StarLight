@@ -679,7 +679,7 @@ void SysModWeb::sendResponseObject(WebClient * client) {
   }
 }
 
-void SysModWeb::serializeState(JsonObject root) {
+void SysModWeb::serializeState(JsonVariant root) {
     const char* jsonState;// = "{\"transition\":7,\"ps\":9,\"pl\":-1,\"nl\":{\"on\":false,\"dur\":60,\"mode\":1,\"tbri\":0,\"rem\":-1},\"udpn\":{\"send\":false,\"recv\":true},\"lor\":0,\"mainseg\":0,\"seg\":[{\"id\":0,\"start\":0,\"stop\":144,\"len\":144,\"grp\":1,\"spc\":0,\"of\":0,\"on\":true,\"frz\":false,\"bri\":255,\"cct\":127,\"col\":[[182,15,98,0],[0,0,0,0],[255,224,160,0]],\"fx\":0,\"sx\":128,\"ix\":128,\"pal\":11,\"c1\":8,\"c2\":20,\"c3\":31,\"sel\":true,\"rev\":false,\"mi\":false,\"o1\":false,\"o2\":false,\"o3\":false,\"ssim\":0,\"mp12\":1}]}";
     jsonState = "{\"on\":true,\"bri\":60,\"transition\":7,\"ps\":1,\"pl\":-1,\"AudioReactive\":{\"on\":true},\"nl\":{\"on\":false,\"dur\":60,\"mode\":1,\"tbri\":0,\"rem\":-1},\"udpn\":{\"send\":false,\"recv\":true,\"sgrp\":1,\"rgrp\":1},\"lor\":0,\"mainseg\":0,\"seg\":[{\"id\":0,\"start\":0,\"stop\":16,\"startY\":0,\"stopY\":16,\"len\":16,\"grp\":1,\"spc\":0,\"of\":0,\"on\":true,\"frz\":false,\"bri\":255,\"cct\":127,\"set\":0,\"col\":[[255,160,0],[0,0,0],[0,255,200]],\"fx\":139,\"sx\":240,\"ix\":236,\"pal\":11,\"c1\":255,\"c2\":64,\"c3\":16,\"sel\":true,\"rev\":false,\"mi\":false,\"rY\":false,\"mY\":false,\"tp\":false,\"o1\":false,\"o2\":true,\"o3\":false,\"si\":0,\"m12\":0}],\"ledmap\":0}";
     JsonDocument docState;
@@ -690,7 +690,7 @@ void SysModWeb::serializeState(JsonObject root) {
     root["on"] = mdl->getValue("Fixture", "on").as<bool>();
 
 }
-void SysModWeb::serializeInfo(JsonObject root) {
+void SysModWeb::serializeInfo(JsonVariant root) {
     const char * jsonInfo = "{\"ver\":\"0.14.1-b30.36\",\"rel\":\"abc_wled_controller_v43_M\",\"vid\":2402252,\"leds\":{\"count\":1024,\"countP\":1024,\"pwr\":1124,\"fps\":32,\"maxpwr\":9500,\"maxseg\":32,\"matrix\":{\"w\":32,\"h\":32},\"seglc\":[1],\"lc\":1,\"rgbw\":false,\"wv\":0,\"cct\":0},\"str\":false,\"name\":\"WLED-Wladi\",\"udpport\":21324,\"live\":false,\"liveseg\":-1,\"lm\":\"\",\"lip\":\"\",\"ws\":2,\"fxcount\":195,\"palcount\":75,\"cpalcount\":0,\"maps\":[{\"id\":0}],\"outputs\":[1024],\"wifi\":{\"bssid\":\"\",\"rssi\":0,\"signal\":100,\"channel\":1},\"fs\":{\"u\":20,\"t\":983,\"pmt\":0},\"ndc\":16,\"arch\":\"esp32\",\"core\":\"v3.3.6-16-gcc5440f6a2\",\"lwip\":0,\"totalheap\":294784,\"getflash\":4194304,\"freeheap\":115988,\"freestack\":6668,\"minfreeheap\":99404,\"e32core0code\":12,\"e32core0text\":\"SW restart\",\"e32core1code\":12,\"e32core1text\":\"SW restart\",\"e32code\":4,\"e32text\":\"SW error (panic or exception)\",\"e32model\":\"ESP32-D0WDQ5 rev.3\",\"e32cores\":2,\"e32speed\":240,\"e32flash\":4,\"e32flashspeed\":80,\"e32flashmode\":2,\"e32flashtext\":\" (DIO)\",\"uptime\":167796,\"opt\":79,\"brand\":\"WLED\",\"product\":\"MoonModules\",\"mac\":\"08b61f6fa800\",\"ip\":\"192.168.8.171\"}";
     JsonDocument docInfo;
 
@@ -728,7 +728,7 @@ void SysModWeb::serveJson(WebRequest *request) {
   } else { //WLED compatible
     ppf("serveJson ...%d, %s\n", request->client()->remoteIP()[3], request->url().c_str());
     response = new AsyncJsonResponse(false); //object. removed size as ArduinoJson v7 doesnt care
-    JsonObject root = response->getRoot();
+    JsonVariant root = response->getRoot();
 
     //temporary set all WLED variables (as otherwise WLED-native does not show the instance): tbd: clean up (state still needed, info not)
 
@@ -739,8 +739,8 @@ void SysModWeb::serveJson(WebRequest *request) {
       serializeInfo(root);
     }
     else {
-      serializeState(root["state"].to<JsonObject>());
-      serializeInfo(root["info"].to<JsonObject>());
+      serializeState(root["state"]);
+      serializeInfo(root["info"]);
     }
   }
 

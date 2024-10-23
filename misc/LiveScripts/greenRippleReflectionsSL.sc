@@ -1,4 +1,4 @@
-//greenRippleReflectionsSL
+//greenRippleReflectionsSL.sc
 
 //https://github.com/MoonModules/WLED-Effects/blob/master/ARTIFX/wled/green_ripple_reflections.wled
 //original from https://patterns.electromage.com/pattern/Ktjben4j36Wqxnk8N
