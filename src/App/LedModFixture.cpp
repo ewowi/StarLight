@@ -23,14 +23,6 @@
   #include "../User/UserModAudioSync.h"
 #endif
 
-#ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-  #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
-    #include "I2SClockLessLedDriveresp32s3.h"
-  #else
-    #include "I2SClocklessLedDriver.h"
-  #endif
-#endif
-
 #ifdef STARBASE_USERMOD_LIVE
   #include "User/UserModLive.h"
   static void _addPixelsPre(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4, uint8_t a5, uint8_t a6) {
@@ -69,7 +61,7 @@
         uint8_t result = mdl->getValue("Fixture", "on").as<bool>()?mdl->linearToLogarithm(bri):0;
 
         #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-          eff->driver.setBrightness(result * setMaxPowerBrightness / 256);
+          driver.setBrightness(result * setMaxPowerBrightnessFactor / 256);
         #else
           FastLED.setBrightness(result);
         #endif
@@ -263,6 +255,12 @@
         return true;
       default: return false; 
     }});
+
+    #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+      fix->setMaxPowerBrightnessFactor = 90; //0..255
+    #else
+      FastLED.setMaxPowerInMilliWatts(10000); // 5v, 2000mA
+    #endif
 
   }
 
@@ -622,7 +620,7 @@
         pinNr++;
       } // for pins
       #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-        if (nb_pins>0) {
+        if (nb_pins > 0) {
           #if CONFIG_IDF_TARGET_ESP32S3 | CONFIG_IDF_TARGET_ESP32S2
             driver.initled((uint8_t*) ledsP, pinAssignment, nb_pins, lengths[0]); //s3 doesn't support lengths so we pick the first
             //void initled( uint8_t * leds, int * pins, int numstrip, int NUM_LED_PER_STRIP)
@@ -630,8 +628,8 @@
             driver.initled((uint8_t*) ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
             //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
           #endif
-          mdl->callVarOnChange(bri, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
-          // driver.setBrightness(setMaxPowerBrightness / 256); //not brighter then the set limit (WIP)
+          mdl->callVarOnChange(mdl->findVar("Fixture", "brightness"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+          // driver.setBrightness(setMaxPowerBrightnessFactor / 256); //not brighter then the set limit (WIP)
         }
       #endif
       doAllocPins = false;

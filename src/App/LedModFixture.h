@@ -16,6 +16,14 @@
 
 #include "FastLED.h"
 
+#ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+  #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
+    #include "I2SClockLessLedDriveresp32s3.h"
+  #else
+    #include "I2SClocklessLedDriver.h"
+  #endif
+#endif
+
 #define NUM_LEDS_Max 8192
 
 class LedModFixture: public SysModule {
@@ -41,6 +49,12 @@ public:
         pixelsToBlend.push_back(false);
     }
     ppf("Fixture constructor ptb:%d", pixelsToBlend.size());
+
+    #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+      #if !(CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2)
+        driver.total_leds = 0;
+      #endif
+    #endif
   };
 
   void setup();
@@ -91,7 +105,7 @@ public:
     #else
       I2SClocklessLedDriver driver;
     #endif
-    uint8_t setMaxPowerBrightness = 30; //tbd: implement driver.setMaxPowerInMilliWatts
+    uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
   #endif
 };
 

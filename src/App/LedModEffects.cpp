@@ -120,12 +120,6 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     projections.push_back(new AccelerationProjection);
     projections.push_back(new CheckerboardProjection);
     projections.push_back(new RotateProjection);
-
-    #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-      #if !(CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2)
-        driver.total_leds = 0;
-      #endif
-    #endif
   };
 
   void LedModEffects::setup() {
@@ -412,12 +406,6 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       // }
       // else
       //   ppf("e131 not enabled\n");
-    #endif
-
-    #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-      fix->setMaxPowerBrightness = 30;
-    #else
-      FastLED.setMaxPowerInMilliWatts(10000); // 5v, 2000mA
     #endif
 
     //for use in loop
