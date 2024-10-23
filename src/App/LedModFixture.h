@@ -23,6 +23,28 @@
     #include "I2SClocklessLedDriver.h"
   #endif
 #endif
+#ifdef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+  #define NUM_LEDS_PER_STRIP 256 //used in I2SClocklessVirtualLedDriver.h, should not be needed here...
+  #define CORE_DEBUG_LEVEL 1 //surpress ESP_LOGE compile error
+  #define USE_FASTLED //so CRGB is supported e.g. in initled
+  #define NB_DMA_BUFFER 10
+  #define BRIGHTNESS_BIT 5
+  #ifndef NBIS2SERIALPINS
+    #define NBIS2SERIALPINS 6 //6 shift registers
+  #endif
+  #ifndef SVCD_PINS
+    #define SVCD_PINS 14,12,13,25,33,32
+  #endif
+  // #include "esp_heap_caps.h"
+  #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) // (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY)
+  #include "I2SClocklessVirtualLedDriver.h"
+  #ifndef SCVD_CLOCK_PIN
+    #define SCVD_CLOCK_PIN 26
+  #endif
+  #ifndef SCVD_LATCH_PIN
+    #define SCVD_LATCH_PIN 27
+  #endif
+#endif
 
 #define NUM_LEDS_Max 8192
 
@@ -105,6 +127,10 @@ public:
     #else
       I2SClocklessLedDriver driver;
     #endif
+    uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
+  #endif
+  #ifdef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+    I2SClocklessVirtualLedDriver driver;
     uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
   #endif
 };

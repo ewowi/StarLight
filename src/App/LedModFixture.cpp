@@ -60,7 +60,7 @@
         //bri set by StarMod during onChange
         uint8_t result = mdl->getValue("Fixture", "on").as<bool>()?mdl->linearToLogarithm(bri):0;
 
-        #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+        #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
           driver.setBrightness(result * setMaxPowerBrightnessFactor / 256);
         #else
           FastLED.setBrightness(result);
@@ -246,7 +246,7 @@
 
     ui->initCheckBox(parentVar, "driverShow", &driverShow, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
-        #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+        #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
           ui->setLabel(var, "CLD Show");
         #else
           ui->setLabel(var, "FastLED Show");
@@ -256,7 +256,7 @@
       default: return false; 
     }});
 
-    #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+    #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
       fix->setMaxPowerBrightnessFactor = 90; //0..255
     #else
       FastLED.setMaxPowerInMilliWatts(10000); // 5v, 2000mA
@@ -282,6 +282,7 @@
     #endif
 
     if (driverShow) {
+      // if statement needed as we need to wait until the driver is initialised
       #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
         #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
           if (driver.ledsbuff != NULL)
@@ -290,6 +291,9 @@
           if (driver.total_leds > 0)
             driver.showPixels(WAIT);
         #endif
+      #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+        if (driver.driverInit)
+          driver.showPixels(WAIT);
       #else
         FastLED.show();
       #endif
@@ -394,6 +398,7 @@
         int lengths[16]; //max 16 pins
         int nb_pins=0;
       #endif
+      #ifndef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
       for (PinObject &pinObject: pinsM->pinObjects) {
 
         if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in projectAndMap)
@@ -619,6 +624,7 @@
         } //if pin owned by leds
         pinNr++;
       } // for pins
+      #endif //not virtual driver
       #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
         if (nb_pins > 0) {
           #if CONFIG_IDF_TARGET_ESP32S3 | CONFIG_IDF_TARGET_ESP32S2
@@ -631,6 +637,11 @@
           mdl->callVarOnChange(mdl->findVar("Fixture", "brightness"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
           // driver.setBrightness(setMaxPowerBrightnessFactor / 256); //not brighter then the set limit (WIP)
         }
+      #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+        int svcd_pins[6] = { SVCD_PINS };
+        driver.initled(ledsP, svcd_pins, SCVD_CLOCK_PIN, SCVD_LATCH_PIN);
+        // driver.setMapLed(&mapfunction);
+        driver.setBrightness(10);
       #endif
       doAllocPins = false;
     } //doAllocPins
