@@ -492,8 +492,6 @@ public:
         mainOption["Spheres"].add("LeGlorb");
         mainOption["Spheres"].add("GeodesicDome WIP");
 
-        print->printJson("ddd",options);
-
         // char jsonString[1024] = "";
         // strlcat(jsonString, "[ {\"Strips\": [\"Spiral 🧊\", \"Helix 🧊\"]}", sizeof(jsonString));
         // strlcat(jsonString, ", {\"Matrices\": [\"Panel ▦\", \"Panel2x2 ▦\", \"Panel4x1 ▦\", \"Human Sized Cube 🧊\", \"CubeBox 🧊\", \"Cube3D 🧊\", \"Sticks ▦\"]}", sizeof(jsonString));

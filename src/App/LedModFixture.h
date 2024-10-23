@@ -99,7 +99,8 @@ public:
   Coord3D head = {0,0,0};
 
   uint8_t mappingStatus = 0; //not mapping
-  bool fixtureChanged = false;
+  bool doAllocPins = false;
+  bool doSendFixtureDefinition = false;
 
   uint8_t globalBlend = 128;
 

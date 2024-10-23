@@ -75,8 +75,10 @@
 
     currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
-        if (bytesPerPixel)
+        if (bytesPerPixel) {
           mappingStatus = 1; //rebuild the fixture - so it is send to ui
+          doSendFixtureDefinition = true; //send fixture definition to ui
+        }
         return true;
       case onLoop: {
         if (mappingStatus == 0 && bytesPerPixel) { //not remapping
@@ -199,7 +201,8 @@
         }
         return true; }
       case onChange: {
-        fixtureChanged = true;
+        doAllocPins = true;
+        doSendFixtureDefinition = true;
 
         //remap all leds
         // for (std::vector<LedsLayer *>::iterator leds=layers.begin(); leds!=layers.end(); ++leds) {
@@ -391,7 +394,7 @@
 
     //connect allocated Pins to gpio
 
-    if (fixtureChanged) {
+    if (doAllocPins) {
       unsigned pinNr = 0;
 
       #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
@@ -644,8 +647,9 @@
         // driver.setMapLed(&mapfunction);
         driver.setBrightness(10);
       #endif
-      fixtureChanged = false;
-    } //fixtureChanged
+
+      doAllocPins = false;
+    } //doAllocPins
   } //mapInitAlloc
 
 #define headerBytesFixture 16 // so 680 pixels will fit in a 4096 package
@@ -662,7 +666,7 @@ void LedModFixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t le
   }
 
   //deallocate all led pins
-  if (fixtureChanged) {
+  if (doAllocPins) {
     // uint8_t pinNr = 0;
     // for (PinObject &pinObject: pinsM->pinObjects) {
     //   if (strncmp(pinObject.owner, "Leds", 5) == 0)
@@ -674,7 +678,7 @@ void LedModFixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t le
   indexP = 0;
   prevIndexP = 0; //for allocPins
 
-  if (bytesPerPixel && fixtureChanged) {
+  if (bytesPerPixel && doSendFixtureDefinition) {
     size_t len = min(nrOfLeds * 6 + headerBytesFixture, 4096);
     wsBuf = web->ws.makeBuffer(len);
     if (wsBuf) {
@@ -701,7 +705,7 @@ void LedModFixture::projectAndMapPixel(Coord3D pixel) {
 
   if (indexP < NUM_LEDS_Max) {
 
-    if (bytesPerPixel && fixtureChanged) {
+    if (bytesPerPixel && doSendFixtureDefinition) {
       //send pixel to ui ...
       if (wsBuf && indexP < nrOfLeds ) { //max index to process && indexP * 6 + headerBytesFixture + 5 < 2 * 8192
         byte* buffer = wsBuf->get();
@@ -743,7 +747,7 @@ void LedModFixture::projectAndMapPixel(Coord3D pixel) {
 }
 
 void LedModFixture::projectAndMapPin(uint16_t pin) {
-  if (fixtureChanged) {
+  if (doAllocPins) {
     //check if pin already allocated, if so, extend range in details
     PinObject pinObject = pinsM->pinObjects[pin];
     char details[32] = "";
@@ -780,7 +784,7 @@ void LedModFixture::projectAndMapPost() {
   ppf("projectAndMapPost indexP:%d\n", indexP);
   //after processing each led
 
-  if (bytesPerPixel && fixtureChanged) {
+  if (bytesPerPixel && doSendFixtureDefinition) {
     if (wsBuf) {
       byte* buffer = wsBuf->get();
       buffer[11] = previewBufferIndex/256; //last slot filled
@@ -795,6 +799,7 @@ void LedModFixture::projectAndMapPost() {
 
     ppf("projectAndMapPost after unlock and clean:%d\n", indexP);
   }
+  doSendFixtureDefinition = false; // it's now done
 
   uint8_t rowNr = 0;
 
