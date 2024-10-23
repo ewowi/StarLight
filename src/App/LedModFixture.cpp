@@ -75,7 +75,8 @@
 
     currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
-        mappingStatus = 1; //rebuild the fixture - so it is send to ui
+        if (bytesPerPixel)
+          mappingStatus = 1; //rebuild the fixture - so it is send to ui
         return true;
       case onLoop: {
         if (mappingStatus == 0 && bytesPerPixel) { //not remapping
@@ -673,23 +674,25 @@ void LedModFixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t le
   indexP = 0;
   prevIndexP = 0; //for allocPins
 
-  size_t len = min(nrOfLeds * 6 + headerBytesFixture, 4096);
-  wsBuf = web->ws.makeBuffer(len);
-  if (wsBuf) {
-    wsBuf->lock();
-    byte* buffer = wsBuf->get();
-    buffer[0] = 1; //userfun 1
-    buffer[1] = size.x/256;
-    buffer[2] = size.x%256;
-    buffer[3] = size.y/256;
-    buffer[4] = size.y%256;
-    buffer[5] = size.z/256;
-    buffer[6] = size.z%256;
-    buffer[7] = nrOfLeds/256;
-    buffer[8] = nrOfLeds%256;
-    buffer[9] = ledSize;
-    buffer[10] = shape;
-    previewBufferIndex = headerBytesFixture;
+  if (bytesPerPixel) {
+    size_t len = min(nrOfLeds * 6 + headerBytesFixture, 4096);
+    wsBuf = web->ws.makeBuffer(len);
+    if (wsBuf) {
+      wsBuf->lock();
+      byte* buffer = wsBuf->get();
+      buffer[0] = 1; //userfun 1
+      buffer[1] = size.x/256;
+      buffer[2] = size.x%256;
+      buffer[3] = size.y/256;
+      buffer[4] = size.y%256;
+      buffer[5] = size.z/256;
+      buffer[6] = size.z%256;
+      buffer[7] = nrOfLeds/256;
+      buffer[8] = nrOfLeds%256;
+      buffer[9] = ledSize;
+      buffer[10] = shape;
+      previewBufferIndex = headerBytesFixture;
+    }
   }
 }
 
@@ -698,33 +701,35 @@ void LedModFixture::projectAndMapPixel(Coord3D pixel) {
 
   if (indexP < NUM_LEDS_Max) {
 
-    //send pixel to ui ...
-    if (wsBuf && indexP < nrOfLeds ) { //max index to process && indexP * 6 + headerBytesFixture + 5 < 2 * 8192
-      byte* buffer = wsBuf->get();
-      if (previewBufferIndex + 6 > 4096) {
-        //add previewBufferIndex to package
-        buffer[11] = previewBufferIndex/256; //last slot filled
-        buffer[12] = previewBufferIndex%256; //last slot filled
-        //send the buffer and create a new one
-        web->sendBuffer(wsBuf, true);
-        delay(50);
+    if (bytesPerPixel) {
+      //send pixel to ui ...
+      if (wsBuf && indexP < nrOfLeds ) { //max index to process && indexP * 6 + headerBytesFixture + 5 < 2 * 8192
+        byte* buffer = wsBuf->get();
+        if (previewBufferIndex + 6 > 4096) {
+          //add previewBufferIndex to package
+          buffer[11] = previewBufferIndex/256; //last slot filled
+          buffer[12] = previewBufferIndex%256; //last slot filled
+          //send the buffer and create a new one
+          web->sendBuffer(wsBuf, true);
+          delay(50);
 
-        buffer[0] = 1; //userfun 1
-        buffer[1] = UINT8_MAX;
-        buffer[2] = indexP/256; //fixSize.x%256;
-        buffer[3] = indexP%256; //fixSize.x%256;
-        ppf("new buffer created i:%d p:%d r:%d r6:%d\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6);
-        previewBufferIndex = headerBytesFixture;
+          buffer[0] = 1; //userfun 1
+          buffer[1] = UINT8_MAX;
+          buffer[2] = indexP/256; //fixSize.x%256;
+          buffer[3] = indexP%256; //fixSize.x%256;
+          ppf("new buffer created i:%d p:%d r:%d r6:%d\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6);
+          previewBufferIndex = headerBytesFixture;
+        }
+
+        buffer[previewBufferIndex++] = pixel.x/256;
+        buffer[previewBufferIndex++] = pixel.x%256;
+        buffer[previewBufferIndex++] = pixel.y/256;
+        buffer[previewBufferIndex++] = pixel.y%256;
+        buffer[previewBufferIndex++] = pixel.z/256;
+        buffer[previewBufferIndex++] = pixel.z%256;
       }
-
-      buffer[previewBufferIndex++] = pixel.x/256;
-      buffer[previewBufferIndex++] = pixel.x%256;
-      buffer[previewBufferIndex++] = pixel.y/256;
-      buffer[previewBufferIndex++] = pixel.y%256;
-      buffer[previewBufferIndex++] = pixel.z/256;
-      buffer[previewBufferIndex++] = pixel.z%256;
     }
-    
+
     uint8_t rowNr = 0;
     for (LedsLayer *leds: layers) {
       leds->projectAndMapPixel(pixel, rowNr);
@@ -775,19 +780,21 @@ void LedModFixture::projectAndMapPost() {
   ppf("projectAndMapPost indexP:%d\n", indexP);
   //after processing each led
 
-  if (wsBuf) {
-    byte* buffer = wsBuf->get();
-    buffer[11] = previewBufferIndex/256; //last slot filled
-    buffer[12] = previewBufferIndex%256; //last slot filled
-    web->sendBuffer(wsBuf, true);
+  if (bytesPerPixel) {
+    if (wsBuf) {
+      byte* buffer = wsBuf->get();
+      buffer[11] = previewBufferIndex/256; //last slot filled
+      buffer[12] = previewBufferIndex%256; //last slot filled
+      web->sendBuffer(wsBuf, true);
 
-    ppf("projectAndMapPost before unlock and clean:%d\n", indexP);
-    wsBuf->unlock();
-    web->ws._cleanBuffers();
-    delay(50);
+      ppf("projectAndMapPost before unlock and clean:%d\n", indexP);
+      wsBuf->unlock();
+      web->ws._cleanBuffers();
+      delay(50);
+    }
+
+    ppf("projectAndMapPost after unlock and clean:%d\n", indexP);
   }
-
-  ppf("projectAndMapPost after unlock and clean:%d\n", indexP);
 
   uint8_t rowNr = 0;
 

@@ -63,30 +63,32 @@ void SysModPins::setup() {
     default: return false;
   }});
 
-  ui->initCanvas(parentVar, "board", UINT16_MAX, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-    case onUI:
-      ui->setComment(var, "Pin viewer 🚧");
-      return true;
-    case onLoop:
-      var["interval"] = 100; //every 100 ms
+//temporary disabled 
+  // ui->initCanvas(parentVar, "board", UINT16_MAX, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  //   case onUI:
+  //     ui->setComment(var, "Pin viewer 🚧");
+  //     return true;
+  //   case onLoop:
+  //     var["interval"] = 100; //every 100 ms
 
-      web->sendDataWs([](AsyncWebSocketMessageBuffer * wsBuf) {
-        byte* buffer = wsBuf->get();
+  //     size_t len = NUM_DIGITAL_PINS + 5;
+  //     AsyncWebSocketMessageBuffer *wsBuf= web->ws.makeBuffer(len); //global wsBuf causes crash in audio sync module!!!
+  //     if (wsBuf) {
+  //       wsBuf->lock();
+  //       byte* buffer = wsBuf->get();
+  //       // send pins to clients
+  //       for (size_t pin = 0; pin < NUM_DIGITAL_PINS; pin++)
+  //       {
+  //         buffer[pin+5] = random(8);// digitalRead(pin) * 255; // is only 0 or 1
+  //       }
+  //       // ppf("\n");
+  //       //new values
+  //       buffer[0] = 0; //userFun id
+  //     }
+  //     return true;
 
-        // send pins to clients
-        for (size_t pin = 0; pin < NUM_DIGITAL_PINS; pin++)
-        {
-          buffer[pin+5] = random(8);// digitalRead(pin) * 255; // is only 0 or 1
-        }
-        // ppf("\n");
-        //new values
-        buffer[0] = 0; //userFun id
-
-      }, NUM_DIGITAL_PINS + 5, true);
-      return true;
-
-    default: return false;
-  }});
+  //   default: return false;
+  // }});
 
 #if CONFIG_IDF_TARGET_ESP32
   // softhack007: configuring these pins on S3/C3/S2 may cause major problems (crashes included)
