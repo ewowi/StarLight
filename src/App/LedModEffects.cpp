@@ -256,8 +256,8 @@ inline uint16_t getRGBWsize(uint16_t nleds){
             else
               leds->projection = projections[proValue];
 
-            // leds->setupCached = &Projection::setup;
-            // leds->adjustXYZCached = &Projection::adjustXYZ;
+            // leds->projectAndMapPixelCached = &Projection::projectAndMapPixel;
+            // leds->XYZCached = &Projection::XYZ;
 
             ppf("initProjection leds[%d] effect:%s a:%d\n", rowNr, leds->effect->name(), leds->projectionData.bytesAllocated);
 
@@ -265,7 +265,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
             Variable(var).preDetails(); //set all positive var N orders to negative
             mdl->setValueRowNr = rowNr;
-            if (leds->projection) leds->projection->controls(*leds, var); //not if None projection
+            if (leds->projection) leds->projection->setup(*leds, var); //not if None projection
             Variable(var).postDetails(rowNr);
             mdl->setValueRowNr = UINT8_MAX;
 
@@ -513,12 +513,11 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       JsonObject var = mdl->findVar("layers", "effect");
       Variable(var).preDetails();
       mdl->setValueRowNr = rowNr;
-      leds.effect->controls(leds, var); //set all defaults in effectData
+      leds.effect->setup(leds, var); //if changed then run setup once (like call==0 in WLED) and set all defaults in effectData
       Variable(var).postDetails(rowNr);
       mdl->setValueRowNr = UINT8_MAX;
 
       leds.effectData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
 
-      leds.effect->setup(leds); //if changed then run setup once (like call==0 in WLED)
 
   }

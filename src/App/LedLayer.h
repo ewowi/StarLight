@@ -38,12 +38,9 @@ public:
   virtual const char * tags() {return "";}
   virtual uint8_t dim() {return _1D;};
 
-  virtual void setup(LedsLayer &leds) {}
+  virtual void setup(LedsLayer &leds, JsonObject parentVar);
 
   virtual void loop(LedsLayer &leds) {}
-
-  virtual void controls(LedsLayer &leds, JsonObject parentVar);
-
 };
 
 class Projection {
@@ -51,12 +48,11 @@ public:
   virtual const char * name() {return "noname";}
   virtual const char * tags() {return "";}
 
-  virtual void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {}
-  
-  virtual void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {}
-  
-  virtual void controls(LedsLayer &leds, JsonObject parentVar) {}
+  virtual void setup(LedsLayer &leds, JsonObject parentVar) {}
 
+  virtual void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {}
+  
+  virtual void XYZ(LedsLayer &leds, Coord3D &pixel) {}
 };
 
 enum mapType {
@@ -176,8 +172,8 @@ public:
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
       //setting cached virtual class methods! (By chatGPT so no source and don't understand how it works - scary!)
       //   (don't know how it works as it is not refering to derived classes, just to the base class but later it calls the derived class method)
-  void (Projection::*setupCached)(LedsLayer &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = &Projection::setup;
-  void (Projection::*adjustXYZCached)(LedsLayer &, Coord3D &) = &Projection::adjustXYZ;
+  void (Projection::*projectAndMapPixelCached)(LedsLayer &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = &Projection::projectAndMapPixel;
+  void (Projection::*XYZCached)(LedsLayer &, Coord3D &) = &Projection::XYZ;
 
   uint8_t effectDimension = -1;
   uint8_t projectionDimension = -1;

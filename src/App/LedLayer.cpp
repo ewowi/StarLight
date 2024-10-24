@@ -36,7 +36,7 @@ void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, uint8_t init
   fill_rainbow(targetArray, numToFill, initialhue, deltahue);
 }
 
-void Effect::controls(LedsLayer &leds, JsonObject parentVar) {
+void Effect::setup(LedsLayer &leds, JsonObject parentVar) {
     ui->initSelect(parentVar, "palette", 4, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         JsonArray options = ui->setOptions(var);
@@ -108,7 +108,7 @@ uint16_t LedsLayer::XYZ(Coord3D pixel) {
 
   //using cached virtual class methods! (so no need for if projectionNr optimizations!)
   if (projection)
-    (projection->*adjustXYZCached)(*this, pixel);
+    (projection->*XYZCached)(*this, pixel);
 
   return XYZUnprojected(pixel);
 }
@@ -289,17 +289,17 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
         if (sizeAdjusted.y > 1) projectionDimension++;
         if (sizeAdjusted.z > 1) projectionDimension++;
 
-        // setupCached = &Projection::setup;
-        // adjustXYZCached = &Projection::adjustXYZ;
+        // projectAndMapPixelCached = &Projection::projectAndMapPixel;
+        // XYZCached = &Projection::XYZ;
 
         mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
 
         uint16_t indexV = XYZUnprojected(pixelAdjusted); //default
 
         // Setup changes leds.size, mapped, indexV
-        if (projection) (projection->*setupCached)(*this, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
+        if (projection) (projection->*projectAndMapPixelCached)(*this, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
 
-        if (size == Coord3D{0,0,0}) size = sizeAdjusted; //first, not assigned in setupCached
+        if (size == Coord3D{0,0,0}) size = sizeAdjusted; //first, not assigned in projectAndMapPixelCached
         nrOfLeds = size.x * size.y * size.z;
 
         if (indexV != UINT16_MAX) {
