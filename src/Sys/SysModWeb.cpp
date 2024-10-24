@@ -674,7 +674,26 @@ void SysModWeb::sendResponseObject(WebClient * client) {
     //   }
     //   ppf("\n");
     // }
-    sendDataWs(responseObject, client);
+
+    size_t len = measureJson(responseObject);
+    AsyncWebSocketMessageBuffer * wsBuf = ws.makeBuffer(len); //assert failed: block_trim_free heap_tlsf.c:371 (block_is_free(block) && "block must be free"), AsyncWebSocket::makeBuffer(unsigned int)
+    if (wsBuf) {
+      wsBuf->lock();
+
+      serializeJson(responseObject, wsBuf->get(), len);
+
+      sendBuffer(wsBuf, false, client); //text
+
+      wsBuf->unlock();
+      ws._cleanBuffers();
+    }
+    else {
+      ppf("sendDataWs WS buffer allocation failed\n");
+      ws.closeAll(1013); //code 1013 = temporary overload, try again later
+      ws.cleanupClients(0); //disconnect ALL clients to release memory
+      ws._cleanBuffers();
+    }
+
     getResponseDoc()->to<JsonObject>(); //recreate!
   }
 }

@@ -20,6 +20,7 @@
 #include "../Sys/SysModSystem.h"
 #include "../Sys/SysModFiles.h"
 
+#include "../App/LedModFixture.h"
 // #define __RUN_CORE 0
 
 long time1;
@@ -34,6 +35,7 @@ static uint8_t loopState = 0; //waiting on Live Script
 
 //external function implementation (tbd: move into class)
 
+//tbd: move this to LedModFixture as show is Leds related...
 static void show()
 {
   frameCounter++;
@@ -80,15 +82,20 @@ static void show()
 static void preKill()
 {
   ppf("ELS preKill\n");
-  // driver.__enableDriver=false;
-  // while(driver.isDisplaying){};
-  // //delay(20);
+  //tbd: move this to LedModFixture...
+  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+    fix->driver.__enableDriver=false;
+    while(fix->driver.isDisplaying){};
+    //delay(20);
+  #endif
 }
 static void postKill()
 {
   ppf("ELS postKill\n");
-  //delay(10);
-  // driver.__enableDriver=true;
+  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+    // delay(10);
+    fix->driver.__enableDriver=true;
+  #endif
 }
 
 static void resetShowStats()
@@ -226,6 +233,8 @@ static float _time(float j) {
       case onChange:
         if (runningPrograms.execPtr[rowNr])
           kill(runningPrograms.execPtr[rowNr]->name.c_str());
+        else
+          ppf("dev try to kill a script which does not exist anymore... (%d)\n", rowNr);
         return true;
       default: return false;
     }});
@@ -325,7 +334,7 @@ static float _time(float j) {
   void UserModLive::run(const char *fileName, const char * main, const char * post) {
     ppf("live run n:%s o:%s (f:%d)\n", fileName, this->fileName);
 
-    kill(); //kill any old script
+    kill(fileName); //kill any old script
 
     File f = files->open(fileName, "r");
     if (!f)

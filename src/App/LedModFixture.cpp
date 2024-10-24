@@ -716,12 +716,12 @@ void LedModFixture::projectAndMapPixel(Coord3D pixel) {
           //send the buffer and create a new one
           web->sendBuffer(wsBuf, true);
           delay(50);
+          ppf("buffer sent i:%d p:%d r:%d r6:%d (1:%d)\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6, buffer[1]);
 
           buffer[0] = 1; //userfun 1
           buffer[1] = UINT8_MAX;
           buffer[2] = indexP/256; //fixSize.x%256;
           buffer[3] = indexP%256; //fixSize.x%256;
-          ppf("new buffer created i:%d p:%d r:%d r6:%d\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6);
           previewBufferIndex = headerBytesFixture;
         }
 
@@ -790,6 +790,8 @@ void LedModFixture::projectAndMapPost() {
       buffer[11] = previewBufferIndex/256; //last slot filled
       buffer[12] = previewBufferIndex%256; //last slot filled
       web->sendBuffer(wsBuf, true);
+
+      ppf("last buffer sent i:%d p:%d r:%d r6:%d (1:%d)\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6, buffer[1]);
 
       ppf("projectAndMapPost before unlock and clean:%d\n", indexP);
       wsBuf->unlock();

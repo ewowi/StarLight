@@ -52,12 +52,14 @@ function userFun(buffer) {
       // if (headerBytesFixture + 5 + i < previewVar.file.nrOfLeds * 6 + 11)
         output.leds.push([buffer[i]*256+buffer[i+1],buffer[i+2]*256+buffer[i+3],buffer[i+4]*256+buffer[i+5]]);
     }
-    previewVar.file.outputs.push(output);
-    // console.log("userFun Fixture definition", buffer, previewVar.file)
+    if (previewVar.file && previewVar.file.outputs)
+      previewVar.file.outputs.push(output);
+    else
+      console.log("dev no init received?", buffer);
   }
   else if (buffer[0] == 2) {
     let canvasNode = gId("Fixture.preview");
-    if (canvasNode) {
+    if (canvasNode && previewVar.file) {
       let headerBytesPreview = 5
       let bytesPerPixel = buffer[4]
       if (buffer[1] != 255) { //initial

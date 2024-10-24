@@ -372,7 +372,6 @@ public:
   }
 
   void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX) {
-    if (x0 >= size.x || x1 >= size.x || y0 >= size.y || y1 >= size.y) return;
 
     // WLEDMM shorten line according to depth
     if (depth < UINT8_MAX) {
