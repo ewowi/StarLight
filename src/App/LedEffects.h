@@ -2555,6 +2555,18 @@ class LaserGEQEffect: public Effect {
     leds.fadeToBlackBy(16);
   }
 
+  void controls(LedsLayer &leds, JsonObject parentVar) {
+    Effect::controls(leds, parentVar);
+    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(10), 1, 10);
+    ui->initSlider(parentVar, "frontFill", leds.effectData.write<uint8_t>(228));
+    ui->initSlider(parentVar, "horizon", leds.effectData.write<uint8_t>(0), 0, leds.size.x-1); //leds.size.x-1 is not always set here
+    ui->initSlider(parentVar, "depth", leds.effectData.write<uint8_t>(176));
+    ui->initSlider(parentVar, "numBands", leds.effectData.write<uint8_t>(16), 2, 16); // constrain NUM_BANDS between 2(for split) and cols (for small width segments)
+    ui->initCheckBox(parentVar, "borders", leds.effectData.write<bool>(true));
+    ui->initCheckBox(parentVar, "Soft hack", leds.effectData.write<bool>(true));
+    // "GEQ 3D ☾@Speed,Front Fill,Horizon,Depth,Num Bands,Borders,Soft,;!,,Peaks;!;2f;sx=255,ix=228,c1=255,c2=255,c3=15,pal=11";
+  }
+
   void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in controls()
     uint8_t speed = leds.effectData.read<uint8_t>();
@@ -2681,16 +2693,6 @@ class LaserGEQEffect: public Effect {
     }
   }
 
-  void controls(LedsLayer &leds, JsonObject parentVar) {
-    Effect::controls(leds, parentVar);
-    ui->initSlider(parentVar, "Speed", leds.effectData.write<uint8_t>(5), 1, 10);
-    ui->initSlider(parentVar, "Front Fill", leds.effectData.write<uint8_t>(16));
-    ui->initSlider(parentVar, "Horizon", leds.effectData.write<uint8_t>(leds.size.x / 2), 0, leds.size.x-1);
-    ui->initSlider(parentVar, "Depth", leds.effectData.write<uint8_t>(176));
-    ui->initSlider(parentVar, "Num bands", leds.effectData.write<uint8_t>(8), 2, 16); // constrain NUM_BANDS between 2(for split) and cols (for small width segments)
-    ui->initCheckBox(parentVar, "Borders", leds.effectData.write<bool>(false));
-    ui->initCheckBox(parentVar, "Soft hack", leds.effectData.write<bool>(true));
-  }
 }; //LaserGEQEffect
 
 // Author: @TroyHacks, from WLED MoonModules
