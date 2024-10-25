@@ -44,6 +44,7 @@ public:
   void loop1s();
 
   void run(const char *fileName, const char * main = "main", const char * post = nullptr);
+  void reRun(const char *fileName, const char * main = "main", const char * post = nullptr);
 
   void kill(const char * fileName = nullptr);
 

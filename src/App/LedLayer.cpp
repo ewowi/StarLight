@@ -267,7 +267,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
   }
 
   void LedsLayer::projectAndMapPixel(Coord3D pixel, uint8_t rowNr) {
-    if (projection && doMap) { //only real projections: add pixel in leds mappingtable
+    if (projection && doMap) { //only real projections: add pixel in leds mappingTable
 
       //set start and endPos between bounderies of fixture
       Coord3D startPosAdjusted = (startPos).minimum(fix->fixSize - Coord3D{1,1,1}) * 10;
@@ -384,7 +384,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
       print->fFormat(buf, sizeof(buf), "%d x %d x %d -> %d", size.x, size.y, size.z, nrOfLeds);
       mdl->setValue("layers", "size", JsonString(buf, JsonString::Copied), rowNr);
 
-      ppf("projectAndMapPost leds[%d].size = %d + m:(%d * %d) + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164
+      ppf("projectAndMapPost leds[%d].size = so:%d + m:(%d * %d) + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164
 
       doMap = false;
     } //doMap

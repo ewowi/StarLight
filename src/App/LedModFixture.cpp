@@ -308,8 +308,6 @@
     // projectAndMap();
     mappingStatus = 2; //mapping in progress
 
-    unsigned long start = millis();
-
     char fileName[32] = "";
 
     if (files->seqNrToName(fileName, fixtureNr, "F_")) { // get the fix->json
@@ -333,6 +331,7 @@
       } else 
     #endif
       {
+        unsigned long start = millis();
 
         StarJson starJson(fileName); //open fileName for deserialize
 
@@ -373,12 +372,13 @@
         if (starJson.deserialize()) { //this will call above function parameter for each led
           projectAndMapPost();
         } // if deserialize
+
+        ppf("projectAndMap done %d ms\n", millis()-start);
+
       }//Live Fixture
     } //if fileName
     else
       ppf("projectAndMap: Filename for fixture %d not found\n", fixtureNr);
-
-    ppf("projectAndMap done %d ms\n", millis()-start);
 
     //reinit the effect after an effect change causing a mapping change
     uint8_t rowNr = 0;
@@ -781,7 +781,7 @@ void LedModFixture::projectAndMapPin(uint16_t pin) {
 }
 
 void LedModFixture::projectAndMapPost() {
-  ppf("projectAndMapPost indexP:%d\n", indexP);
+  ppf("projectAndMapPost indexP:%d b:%d dsfd:%d\n", indexP, bytesPerPixel, doSendFixtureDefinition);
   //after processing each led
 
   if (bytesPerPixel && doSendFixtureDefinition) {
@@ -823,7 +823,7 @@ void LedModFixture::projectAndMapPost() {
       pixelsToBlend.push_back(false);
   }
 
-  ppf("projectAndMapPost fixture.size = %d + l:(%d * %d) B\n", sizeof(this) - NUM_LEDS_Max * sizeof(CRGB), NUM_LEDS_Max, sizeof(CRGB)); //56
+  ppf("projectAndMapPost fixture.size = so:%d + l:(%d * %d) B\n", sizeof(this), NUM_LEDS_Max, sizeof(CRGB)); //56
 
   mappingStatus = 0; //not mapping
 }

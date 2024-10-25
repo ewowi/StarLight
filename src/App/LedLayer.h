@@ -413,8 +413,12 @@ public:
         int y = int(intersectY);
         if (steep) std::swap(x,y);  // temporarily swap if steep
         // pixel coverage is determined by fractional part of y co-ordinate
-        setPixelColor(XY(x, y), blend(color, getPixelColor(XY(x, y)), keep));
-        setPixelColor(XY(x+int(steep), y+int(!steep)), blend(color, getPixelColor(XY(x+int(steep), y+int(!steep))), seep));
+        // WLEDMM added out-of-bounds check: "unsigned(x) < cols" catches negative numbers _and_ too large values
+        if ((unsigned(x) < unsigned(size.x)) && (unsigned(y) < unsigned(size.y))) setPixelColor(XY(x, y), blend(color, getPixelColor(XY(x, y)), keep));
+        int xx = x+int(steep);
+        int yy = y+int(!steep);
+        if ((unsigned(xx) < unsigned(size.x)) && (unsigned(yy) < unsigned(size.y))) setPixelColor(XY(xx, yy), blend(color, getPixelColor(XY(xx, yy)), seep));
+      
         intersectY += gradient;
         if (steep) std::swap(x,y);  // restore if steep
       }

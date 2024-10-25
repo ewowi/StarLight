@@ -184,6 +184,7 @@ static float _time(float j) {
 
     ui->initText(tableVar, "name", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
+        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
         for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
           if (runningPrograms.execPtr[rowNr]) {
             const char *name = runningPrograms.execPtr[rowNr]->name.c_str();
@@ -193,8 +194,10 @@ static float _time(float j) {
         return true;
       default: return false;
     }});
+
     ui->initCheckBox(tableVar, "running", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
+        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
         for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
           if (runningPrograms.execPtr[rowNr])
             mdl->setValue(var, runningPrograms.execPtr[rowNr]->isRunning(), rowNr);
@@ -202,8 +205,10 @@ static float _time(float j) {
         return true;
       default: return false;
     }});
+
     ui->initCheckBox(tableVar, "halted", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
+        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
         for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
           if (runningPrograms.execPtr[rowNr])
             mdl->setValue(var, runningPrograms.execPtr[rowNr]->isHalted, rowNr);
@@ -211,8 +216,10 @@ static float _time(float j) {
         return true;
       default: return false;
     }});
+
     ui->initCheckBox(tableVar, "exe", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
+        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
         for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
           if (runningPrograms.execPtr[rowNr])
             mdl->setValue(var, runningPrograms.execPtr[rowNr]->exeExist, rowNr);
@@ -220,8 +227,10 @@ static float _time(float j) {
         return true;
       default: return false;
     }});
+
     ui->initNumber(tableVar, "handle", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
+        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
         for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
           if (runningPrograms.execPtr[rowNr])
             mdl->setValue(var, runningPrograms.execPtr[rowNr]->__run_handle_index, rowNr);
@@ -390,6 +399,23 @@ static float _time(float j) {
     }
   }
 
+ void UserModLive::reRun(const char *fileName, const char * main, const char * post) {
+    ppf("live (re)Run n:%s o:%s (m:%s, p:%s)\n", fileName, this->fileName, main, post?post:"-");
+
+    bool found = false;
+    for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
+      if (runningPrograms.execPtr[rowNr] != nullptr) { // && !runningPrograms.execPtr[rowNr]->isRunning() status is still running, even if process has terminated...
+        if (strncmp(runningPrograms.execPtr[rowNr]->name.c_str(), fileName, 32) == 0) {
+          ppf("reRun %s\n", runningPrograms.execPtr[rowNr]->name.c_str());
+          runningPrograms.execPtr[rowNr]->executeAsTask(main);
+          found = true;
+        }
+      }
+    }
+    if (!found)
+      run(fileName, main, post);
+  }
+
   void UserModLive::kill(const char * fileName) {
     //tbd: kill specific task...
     for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
@@ -401,6 +427,7 @@ static float _time(float j) {
           fps = 0;
           strlcpy(this->fileName, "", sizeof(this->fileName));
           delete runningPrograms.execPtr[rowNr]; //delete the Execution created in Run
+          runningPrograms.execPtr[rowNr] = nullptr;
         }
       }
     }
