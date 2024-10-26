@@ -2348,8 +2348,8 @@ class WaverlyEffect: public Effect {
   
   void setup(LedsLayer &leds, JsonObject parentVar) {
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "amplification", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "sensitivity", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "fadeRate", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "amplification", leds.effectData.write<uint8_t>(30));
     ui->initCheckBox(parentVar, "noClouds", leds.effectData.write<bool>(false));
     // ui->initCheckBox(parentVar, "soundPressure", leds.effectData.write<bool>(false));
     // ui->initCheckBox(parentVar, "AGCDebug", leds.effectData.write<bool>(false));
@@ -2357,22 +2357,23 @@ class WaverlyEffect: public Effect {
 
   void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
+    uint8_t fadeRate = leds.effectData.read<uint8_t>();
     uint8_t amplification = leds.effectData.read<uint8_t>();
-    uint8_t sensitivity = leds.effectData.read<uint8_t>();
     bool noClouds = leds.effectData.read<bool>();
     // bool soundPressure = leds.effectData.read<bool>();
     // bool agcDebug = leds.effectData.read<bool>();
 
-    leds.fadeToBlackBy(amplification);
+    leds.fadeToBlackBy(fadeRate);
+    //netmindz: cannot find these in audio sync
     // if (agcDebug && soundPressure) soundPressure = false;                 // only one of the two at any time
     // if ((soundPressure) && (audioSync->sync.volumeSmth > 0.5f)) audioSync->sync.volumeSmth = audioSync->sync.soundPressure;    // show sound pressure instead of volume
     // if (agcDebug) audioSync->sync.volumeSmth = 255.0 - audioSync->sync.agcSensitivity;                    // show AGC level instead of volume
 
     long t = sys->now / 2; 
-    Coord3D pos;
+    Coord3D pos = {0,0,0}; //initialize z otherwise wrong results
     for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
-      uint16_t thisVal = audioSync->sync.volumeSmth*sensitivity/64 * inoise8(pos.x * 45 , t , t)/64;      // WLEDMM back to SR code
-      uint16_t thisMax = min(map(thisVal, 0, 512, 0, leds.size.y), (long)leds.size.x);
+      uint16_t thisVal = audioSync->sync.volumeSmth*amplification * inoise8(pos.x * 45 , t , t) / 4096;      // WLEDMM back to SR code
+      uint16_t thisMax = min(map(thisVal, 0, 512, 0, leds.size.y), (long)leds.size.y);
 
       for (pos.y = 0; pos.y < thisMax; pos.y++) {
         CRGB color = ColorFromPalette(leds.palette, map(pos.y, 0, thisMax, 250, 0));
