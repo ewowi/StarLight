@@ -191,8 +191,10 @@ public:
   SharedData projectionData;
 
   std::vector<PhysMap> mappingTable;
+  uint16_t mappingTableSizeUsed = 0;
   std::vector<std::vector<uint16_t>> mappingTableIndexes;
-
+  uint16_t mappingTableIndexesSizeUsed = 0;
+  
   uint16_t indexVLocal = 0; //set in operator[], used by operator=
 
   bool doMap = true; //so a mapping will be made
@@ -295,7 +297,7 @@ public:
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
   bool isMapped(uint16_t indexV) {
-    return indexV < mappingTable.size() && (mappingTable[indexV].mapType == m_onePixel || mappingTable[indexV].mapType == m_morePixels);
+    return indexV < mappingTableSizeUsed && (mappingTable[indexV].mapType == m_onePixel || mappingTable[indexV].mapType == m_morePixels);
   }
 
   void blur1d(fract8 blur_amount)

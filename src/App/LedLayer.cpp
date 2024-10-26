@@ -86,8 +86,13 @@ void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
       std::vector<uint16_t> newVector;
       newVector.push_back(oldIndexP);
       newVector.push_back(indexP);
-      leds.mappingTableIndexes.push_back(newVector);
-      indexes = leds.mappingTableIndexes.size() - 1;
+      leds.mappingTableIndexesSizeUsed++;
+      if (leds.mappingTableIndexes.size() < leds.mappingTableIndexesSizeUsed)
+        leds.mappingTableIndexes.push_back(newVector);
+      else
+        leds.mappingTableIndexes[leds.mappingTableIndexesSizeUsed-1] = newVector;
+
+      indexes = leds.mappingTableIndexesSizeUsed - 1; //array position
       mapType = m_morePixels;
       break; }
     case m_morePixels:
@@ -115,7 +120,7 @@ uint16_t LedsLayer::XYZ(Coord3D pixel) {
 
 // maps the virtual led to the physical led(s) and assign a color to it
 void LedsLayer::setPixelColor(uint16_t indexV, CRGB color) {
-  if (indexV < mappingTable.size()) {
+  if (indexV < mappingTableSizeUsed) {
     switch (mappingTable[indexV].mapType) {
       case m_color:{
         mappingTable[indexV].rgb14 = ((min(color.r + 3, 255) >> 3) << 9) + 
@@ -152,7 +157,7 @@ void LedsLayer::blendPixelColor(uint16_t indexV, CRGB color, uint8_t blendAmount
 }
 
 CRGB LedsLayer::getPixelColor(uint16_t indexV) {
-  if (indexV < mappingTable.size()) {
+  if (indexV < mappingTableSizeUsed) {
     switch (mappingTable[indexV].mapType) {
       case m_onePixel:
         return fix->ledsP[mappingTable[indexV].indexP]; 
@@ -179,7 +184,7 @@ void LedsLayer::fadeToBlackBy(uint8_t fadeBy) {
   if (!projection || (fix->layers.size() == 1)) { //faster, else manual 
     fastled_fadeToBlackBy(fix->ledsP, fix->nrOfLeds, fadeBy);
   } else {
-    for (uint16_t index = 0; index < mappingTable.size(); index++) {
+    for (uint16_t index = 0; index < mappingTableSizeUsed; index++) {
       CRGB color = getPixelColor(index);
       color.nscale8(255-fadeBy);
       setPixelColor(index, color);
@@ -191,7 +196,7 @@ void LedsLayer::fill_solid(const struct CRGB& color) {
   if (!projection || (fix->layers.size() == 1)) { //faster, else manual 
     fastled_fill_solid(fix->ledsP, fix->nrOfLeds, color);
   } else {
-    for (uint16_t index = 0; index < mappingTable.size(); index++)
+    for (uint16_t index = 0; index < mappingTableSizeUsed; index++)
       setPixelColor(index, color);
   }
 }
@@ -205,7 +210,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
     hsv.val = 255;
     hsv.sat = 240;
 
-    for (uint16_t index = 0; index < mappingTable.size(); index++) {
+    for (uint16_t index = 0; index < mappingTableSizeUsed; index++) {
       setPixelColor(index, hsv);
       hsv.hue += deltahue;
     }
@@ -261,8 +266,12 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
       for (std::vector<uint16_t> mappingTableIndex: mappingTableIndexes) {
         mappingTableIndex.clear();
       }
-      mappingTableIndexes.clear();
-      mappingTable.clear();
+      mappingTableIndexesSizeUsed = 0;
+
+      for (size_t i = 0; i < mappingTable.size(); i++) {
+        mappingTable[i] = PhysMap();
+      }
+      mappingTableSizeUsed = 0;
     }
   }
 
@@ -304,7 +313,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
 
         if (indexV != UINT16_MAX) {
           if (indexV >= nrOfLeds || indexV >= NUM_VLEDS_Max)
-            ppf("dev leds[%d] pre indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, nrOfLeds, NUM_VLEDS_Max, mappingTable.size(), fix->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
+            ppf("dev leds[%d] pre indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, nrOfLeds, NUM_VLEDS_Max, mappingTableSizeUsed, fix->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
           else {
 
             //create new physMaps if needed
@@ -312,11 +321,14 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
               for (size_t i = mappingTable.size(); i <= indexV; i++) {
                 // ppf("mapping %d,%d,%d add physMap before %d %d\n", pixel.y, pixel.y, pixel.z, indexV, mappingTable.size());
                 mappingTable.push_back(PhysMap());
+                // mappingTableIndexesSizeUsed++;
               }
             }
 
+            if (indexV >= mappingTableSizeUsed) mappingTableSizeUsed = indexV + 1;
+
             mappingTable[indexV].addIndexP(*this, fix->indexP);
-            // ppf("mapping b:%d t:%d V:%d\n", indexV, indexP, mappingTable.size());
+            // ppf("mapping b:%d t:%d V:%d\n", indexV, indexP, mappingTableSizeUsed);
           } //indexV not too high
         } //indexV
 
@@ -345,15 +357,17 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
       } else {
 
         if (mappingTable.size() < size.x * size.y * size.z)
-          ppf("projectAndMapPost add extra physMap %d to %d size: %d,%d,%d\n", mappingTable.size(), size.x * size.y * size.z, size.x, size.y, size.z);
+          ppf("projectAndMapPost add extra physMap %d to %d size: %d,%d,%d\n", mappingTableSizeUsed, size.x * size.y * size.z, size.x, size.y, size.z);
         for (size_t i = mappingTable.size(); i < size.x * size.y * size.z; i++) {
           mappingTable.push_back(PhysMap());
+          mappingTableSizeUsed++;
         }
 
-        nrOfLeds = mappingTable.size();
+        nrOfLeds = mappingTableSizeUsed;
 
         //debug info + summary values
-        for (PhysMap &map:mappingTable) {
+        for (size_t i = 0; i< mappingTableSizeUsed; i++) {
+          PhysMap &map = mappingTable[i];
           switch (map.mapType) {
             case m_color:
               nrOfColor++;
@@ -378,13 +392,13 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
         }
       }
 
-      ppf("projectAndMapPost leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d c:%d)\n", rowNr, size.x, size.y, size.z, nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, nrOfColor);
+      ppf("projectAndMapPost leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d of %d c:%d)\n", rowNr, size.x, size.y, size.z, nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, mappingTableIndexesSizeUsed, nrOfColor);
 
       char buf[32];
       print->fFormat(buf, sizeof(buf), "%d x %d x %d -> %d", size.x, size.y, size.z, nrOfLeds);
       mdl->setValue("layers", "size", JsonString(buf, JsonString::Copied), rowNr);
 
-      ppf("projectAndMapPost leds[%d].size = so:%d + m:(%d * %d) + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164
+      ppf("projectAndMapPost leds[%d].size = so:%d + m:(%d of %d) * %d + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTableSizeUsed, mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164
 
       doMap = false;
     } //doMap
