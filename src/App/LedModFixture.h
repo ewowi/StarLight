@@ -117,10 +117,10 @@ public:
   //load fixture json file, parse it and depending on the projection, create a mapping for it
   uint16_t previewBufferIndex = 0;
   AsyncWebSocketMessageBuffer * wsBuf; //buffer for preview create fixture
-  void projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize = 5, uint8_t shape = 0);
-  void projectAndMapPixel(Coord3D pixel);
-  void projectAndMapPin(uint16_t pin);
-  void projectAndMapPost();
+  void addPixelsPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize = 5, uint8_t shape = 0);
+  void addPixel(Coord3D pixel);
+  void addPin(uint16_t pin);
+  void addPixelsPost();
 
   #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
     #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2

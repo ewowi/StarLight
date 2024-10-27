@@ -32,11 +32,11 @@
     fix->nrOfLeds = a4;
     fix->ledSize = a5;
     fix->shape = a6;
-    fix->projectAndMapPre(fix->fixSize, fix->nrOfLeds, fix->ledSize, fix->shape);
+    fix->addPixelsPre(fix->fixSize, fix->nrOfLeds, fix->ledSize, fix->shape);
   }
-  static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {fix->projectAndMapPixel({a1, a2, a3});}
-  static void _addPin(uint8_t a1) {fix->projectAndMapPin(a1);}
-  static void _addPixelsPost() {fix->projectAndMapPost();
+  static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {fix->addPixel({a1, a2, a3});}
+  static void _addPin(uint8_t a1) {fix->addPin(a1);}
+  static void _addPixelsPost() {fix->addPixelsPost();
     ppf("_addPixelsPost done\n");
   }
 #endif
@@ -350,7 +350,7 @@
         starJson.lookFor("leds", [this, &first](std::vector<uint16_t> uint16CollectList) { //this will be called for each tuple of coordinates!
 
           if (first) { 
-            projectAndMapPre({fixSize.x, fixSize.y, fixSize.z}, nrOfLeds, ledSize, shape);
+            addPixelsPre({fixSize.x, fixSize.y, fixSize.z}, nrOfLeds, ledSize, shape);
             first = false;
           }
 
@@ -361,16 +361,16 @@
             pixel.y = (uint16CollectList.size()>=2)?uint16CollectList[1]: 0;
             pixel.z = (uint16CollectList.size()>=3)?uint16CollectList[2]: 0;
 
-            projectAndMapPixel(pixel);
+            addPixel(pixel);
           } //if 1D-3D pixel
 
           else { // end of leds array
-            projectAndMapPin(currPin);
+            addPin(currPin);
           }
         }); //starJson.lookFor("leds" (create the right type, otherwise crash)
 
         if (starJson.deserialize()) { //this will call above function parameter for each led
-          projectAndMapPost();
+          addPixelsPost();
         } // if deserialize
 
         ppf("projectAndMap done %d ms\n", millis()-start);
@@ -654,13 +654,13 @@
 
 #define headerBytesFixture 16 // so 680 pixels will fit in a 4096 package
 
-void LedModFixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize, uint8_t shape) {
-  ppf("projectAndMapPre %d,%d,%d -> %d s:%d s:%d\n", size.x, size.y, size.z, nrOfLeds, ledSize, shape);
+void LedModFixture::addPixelsPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize, uint8_t shape) {
+  ppf("addPixelsPre %d,%d,%d -> %d s:%d s:%d\n", size.x, size.y, size.z, nrOfLeds, ledSize, shape);
   // reset leds
   uint8_t rowNr = 0;
   for (LedsLayer *leds: layers) {
     if (leds->doMap) {
-      leds->projectAndMapPre(rowNr);
+      leds->addPixelsPre(rowNr);
     }
     rowNr++;
   }
@@ -700,8 +700,8 @@ void LedModFixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t le
   }
 }
 
-void LedModFixture::projectAndMapPixel(Coord3D pixel) {
-  // ppf("led %d,%d,%d start %d,%d,%d end %d,%d,%d\n",x,y,z, startPos.x, startPos.y, startPos.z, endPos.x, endPos.y, endPos.z);
+void LedModFixture::addPixel(Coord3D pixel) {
+  // ppf("led %d,%d,%d start %d,%d,%d end %d,%d,%d\n",x,y,z, start.x, start.y, start.z, end.x, end.y, end.z);
 
   if (indexP < NUM_LEDS_Max) {
 
@@ -736,7 +736,7 @@ void LedModFixture::projectAndMapPixel(Coord3D pixel) {
 
     uint8_t rowNr = 0;
     for (LedsLayer *leds: layers) {
-      leds->projectAndMapPixel(pixel, rowNr);
+      leds->addPixel(pixel, rowNr);
       rowNr++;
     } //for layers
   } //indexP < max
@@ -746,7 +746,7 @@ void LedModFixture::projectAndMapPixel(Coord3D pixel) {
   indexP++; //also increase if no buffer created
 }
 
-void LedModFixture::projectAndMapPin(uint16_t pin) {
+void LedModFixture::addPin(uint16_t pin) {
   if (doAllocPins) {
     //check if pin already allocated, if so, extend range in details
     PinObject pinObject = pinsM->pinObjects[pin];
@@ -780,8 +780,8 @@ void LedModFixture::projectAndMapPin(uint16_t pin) {
   }
 }
 
-void LedModFixture::projectAndMapPost() {
-  ppf("projectAndMapPost indexP:%d b:%d dsfd:%d\n", indexP, bytesPerPixel, doSendFixtureDefinition);
+void LedModFixture::addPixelsPost() {
+  ppf("addPixelsPost indexP:%d b:%d dsfd:%d\n", indexP, bytesPerPixel, doSendFixtureDefinition);
   //after processing each led
 
   if (bytesPerPixel && doSendFixtureDefinition) {
@@ -793,13 +793,13 @@ void LedModFixture::projectAndMapPost() {
 
       ppf("last buffer sent i:%d p:%d r:%d r6:%d (1:%d)\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6, buffer[1]);
 
-      ppf("projectAndMapPost before unlock and clean:%d\n", indexP);
+      ppf("addPixelsPost before unlock and clean:%d\n", indexP);
       wsBuf->unlock();
       web->ws._cleanBuffers();
       delay(50);
     }
 
-    ppf("projectAndMapPost after unlock and clean:%d\n", indexP);
+    ppf("addPixelsPost after unlock and clean:%d\n", indexP);
   }
   doSendFixtureDefinition = false; // it's now done
 
@@ -807,12 +807,12 @@ void LedModFixture::projectAndMapPost() {
 
   for (LedsLayer *leds: layers) {
     if (leds->doMap) {
-      leds->projectAndMapPost(rowNr);
+      leds->addPixelsPost(rowNr);
     }
     rowNr++;
   } // leds
 
-  ppf("projectAndMapPost fixture P:%dx%dx%d -> %d\n", fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
+  ppf("addPixelsPost fixture P:%dx%dx%d -> %d\n", fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
 
   mdl->setValue("fixture", "size", fixSize);
   mdl->setValue("fixture", "count", nrOfLeds);
@@ -823,7 +823,7 @@ void LedModFixture::projectAndMapPost() {
       pixelsToBlend.push_back(false);
   }
 
-  ppf("projectAndMapPost fixture.size = so:%d + l:(%d * %d) B\n", sizeof(this), NUM_LEDS_Max, sizeof(CRGB)); //56
+  ppf("addPixelsPost fixture.size = so:%d + l:(%d * %d) B\n", sizeof(this), NUM_LEDS_Max, sizeof(CRGB)); //56
 
   mappingStatus = 0; //not mapping
 }

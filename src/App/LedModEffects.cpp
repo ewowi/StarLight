@@ -256,7 +256,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
             else
               leds->projection = projections[proValue];
 
-            // leds->projectAndMapPixelCached = &Projection::projectAndMapPixel;
+            // leds->addPixelCached = &Projection::addPixel;
             // leds->XYZCached = &Projection::XYZ;
 
             ppf("initProjection leds[%d] effect:%s a:%d\n", rowNr, leds->effect->name(), leds->projectionData.bytesAllocated);
@@ -286,8 +286,8 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       case onSetValue:
         //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
-          ppf("ledsStart[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->startPos.x, fix->layers[rowNr]->startPos.y, fix->layers[rowNr]->startPos.z);
-          mdl->setValue(var, fix->layers[rowNr]->startPos, rowNr);
+          ppf("ledsStart[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->start.x, fix->layers[rowNr]->start.y, fix->layers[rowNr]->start.z);
+          mdl->setValue(var, fix->layers[rowNr]->start, rowNr);
         }
         return true;
       case onUI:
@@ -295,9 +295,9 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true;
       case onChange:
         if (rowNr < fix->layers.size()) {
-          fix->layers[rowNr]->startPos = mdl->getValue(var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+          fix->layers[rowNr]->start = mdl->getValue(var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
-          ppf("ledsStart[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->startPos.x, fix->layers[rowNr]->startPos.y, fix->layers[rowNr]->startPos.z);
+          ppf("ledsStart[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->start.x, fix->layers[rowNr]->start.y, fix->layers[rowNr]->start.z);
 
           fix->layers[rowNr]->fadeToBlackBy();
           fix->layers[rowNr]->triggerMapping();
@@ -313,8 +313,8 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       case onSetValue:
         //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
-          ppf("ledsMid[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->midPos.x, fix->layers[rowNr]->midPos.y, fix->layers[rowNr]->midPos.z);
-          mdl->setValue(var, fix->layers[rowNr]->midPos, rowNr);
+          ppf("ledsMid[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->middle.x, fix->layers[rowNr]->middle.y, fix->layers[rowNr]->middle.z);
+          mdl->setValue(var, fix->layers[rowNr]->middle, rowNr);
         }
         return true;
       case onUI:
@@ -322,9 +322,9 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true;
       case onChange:
         if (rowNr < fix->layers.size()) {
-          fix->layers[rowNr]->midPos = mdl->getValue(var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+          fix->layers[rowNr]->middle = mdl->getValue(var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
-          ppf("ledsMid[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->midPos.x, fix->layers[rowNr]->midPos.y, fix->layers[rowNr]->midPos.z);
+          ppf("ledsMid[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->middle.x, fix->layers[rowNr]->middle.y, fix->layers[rowNr]->middle.z);
 
           fix->layers[rowNr]->fadeToBlackBy();
           fix->layers[rowNr]->triggerMapping();
@@ -340,8 +340,8 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       case onSetValue:
         //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
-          ppf("ledsEnd[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->endPos.x, fix->layers[rowNr]->endPos.y, fix->layers[rowNr]->endPos.z);
-          mdl->setValue(var, fix->layers[rowNr]->endPos, rowNr);
+          ppf("ledsEnd[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->end.x, fix->layers[rowNr]->end.y, fix->layers[rowNr]->end.z);
+          mdl->setValue(var, fix->layers[rowNr]->end, rowNr);
         }
         return true;
       case onUI:
@@ -349,9 +349,9 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true;
       case onChange:
         if (rowNr < fix->layers.size()) {
-          fix->layers[rowNr]->endPos = mdl->getValue(var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+          fix->layers[rowNr]->end = mdl->getValue(var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
-          ppf("ledsEnd[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->endPos.x, fix->layers[rowNr]->endPos.y, fix->layers[rowNr]->endPos.z);
+          ppf("ledsEnd[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->end.x, fix->layers[rowNr]->end.y, fix->layers[rowNr]->end.z);
 
           fix->layers[rowNr]->fadeToBlackBy();
           fix->layers[rowNr]->triggerMapping();
@@ -440,7 +440,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       uint8_t rowNr = 0;
       for (LedsLayer *leds: fix->layers) {
         if (leds->effect && !leds->doMap) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
-          // ppf(" %s %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->effect->name(), leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
+          // ppf(" %s %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->effect->name(), leds->start.x, leds->start.y, leds->start.z, leds->end.x, leds->end.y, leds->end.z, leds->size.x, leds->size.y, leds->size.z );
 
           leds->effectData.begin(); //sets the effectData pointer back to 0 so loop effect can go through it
 
@@ -486,7 +486,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
         Coord3D midCoord; //placeHolder for mid
 
-        Coord3D *newCoord = isStart? &fix->layers[rowNr]->startPos: isEnd? &fix->layers[rowNr]->endPos : &midCoord;
+        Coord3D *newCoord = isStart? &fix->layers[rowNr]->start: isEnd? &fix->layers[rowNr]->end : &midCoord;
 
         if (newCoord) {
           token = strtok(NULL, ",");

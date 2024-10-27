@@ -256,11 +256,11 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
     }
   }
 
-  void LedsLayer::projectAndMapPre(uint8_t rowNr) {
+  void LedsLayer::addPixelsPre(uint8_t rowNr) {
     if (doMap) {
       fill_solid(CRGB::Black);
 
-      ppf("projectAndMapPre clear leds[x] effect:%s pro:%s\n", effect?effect->name():"None", projection?projection->name():"None");
+      ppf("addPixelsPre clear leds[x] effect:%s pro:%s\n", effect?effect->name():"None", projection?projection->name():"None");
       size = Coord3D{0,0,0};
       //vectors really gone now?
       for (std::vector<uint16_t> mappingTableIndex: mappingTableIndexes) {
@@ -274,18 +274,18 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
       mappingTableSizeUsed = 0;
 
       //new fix size: update leds
-      startPos = mdl->getValue("layers", "start", rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
-      midPos = mdl->getValue("layers", "middle", rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
-      endPos = mdl->getValue("layers", "end", rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+      start = mdl->getValue("layers", "start", rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+      middle = mdl->getValue("layers", "middle", rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+      end = mdl->getValue("layers", "end", rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
-      if (midPos == Coord3D{0,0,0}) 
-        midPos = fix->fixSize / 2; //so pinWheel shows a midpoint
-      if (endPos == Coord3D{0,0,0}) 
-        endPos = fix->fixSize - Coord3D{1,1,1};
+      if (middle == Coord3D{0,0,0}) 
+        middle = fix->fixSize / 2; //so pinWheel shows a midpoint
+      if (end == Coord3D{0,0,0}) 
+        end = fix->fixSize - Coord3D{1,1,1};
 
-      size = (endPos - startPos) + Coord3D{1,1,1};
+      size = (end - start) + Coord3D{1,1,1};
 
-      // 0 to 3D depending on start and endpos (e.g. to display ScrollingText on one side of a cube)
+      // 0 to 3D depending on start and end (e.g. to display ScrollingText on one side of a cube)
       projectionDimension = 0;
       if (size.x > 1) projectionDimension++;
       if (size.y > 1) projectionDimension++;
@@ -293,7 +293,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
 
       if (projection) {
         mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
-        (projection->*projectAndMapPreCached)(*this);
+        (projection->*addPixelsPreCached)(*this);
         mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
       }
 
@@ -301,21 +301,21 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
     }
   }
 
-  void LedsLayer::projectAndMapPixel(Coord3D pixel, uint8_t rowNr) {
+  void LedsLayer::addPixel(Coord3D pixel, uint8_t rowNr) {
     if (projection && doMap) { //only real projections: add pixel in leds mappingTable
 
-      if (pixel >= startPos * 10 && pixel <= endPos * 10 ) { //if pixel between start and end pos
+      if (pixel >= start * 10 && pixel <= end * 10 ) { //if pixel between start and end pos
 
-        Coord3D pixelAdjusted = pixel / 10 - startPos; //pixel also rounded to a 1x1 grid space
+        Coord3D pixelAdjusted = pixel / 10 - start; //pixel also rounded to a 1x1 grid space
 
-        // projectAndMapPixelCached = &Projection::projectAndMapPixel;
+        // addPixelCached = &Projection::addPixel;
         // XYZCached = &Projection::XYZ;
 
         uint16_t indexV = XYZUnprojected(pixelAdjusted); //default
 
         // Setup changes leds.size, mapped, indexV
         mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
-        (projection->*projectAndMapPixelCached)(*this, pixelAdjusted, indexV);
+        (projection->*addPixelCached)(*this, pixelAdjusted, indexV);
         mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
 
         if (indexV != UINT16_MAX) {
@@ -339,13 +339,13 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
           } //indexV not too high
         } //indexV
 
-      } //if x,y,z between start and endpos
+      } //if x,y,z between start and end
     } //if projection && doMap
-  } //projectAndMapPixel
+  } //addPixel
 
-  void LedsLayer::projectAndMapPost(uint8_t rowNr) {
+  void LedsLayer::addPixelsPost(uint8_t rowNr) {
     if (doMap) {
-      ppf("projectAndMapPost leds[%d] effect:%s pro:%s\n", rowNr, effect?effect->name():"None", projection?projection->name():"None");
+      ppf("addPixelsPost leds[%d] effect:%s pro:%s\n", rowNr, effect?effect->name():"None", projection?projection->name():"None");
 
       uint16_t nrOfLogical = 0;
       uint16_t nrOfPhysical = 0;
@@ -362,7 +362,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
       } else {
 
         if (mappingTable.size() < size.x * size.y * size.z)
-          ppf("projectAndMapPost add extra physMap %d to %d size: %d,%d,%d\n", mappingTableSizeUsed, size.x * size.y * size.z, size.x, size.y, size.z);
+          ppf("addPixelsPost add extra physMap %d to %d size: %d,%d,%d\n", mappingTableSizeUsed, size.x * size.y * size.z, size.x, size.y, size.z);
         for (size_t i = mappingTable.size(); i < size.x * size.y * size.z; i++) {
           mappingTable.push_back(PhysMap());
           mappingTableSizeUsed++;
@@ -397,13 +397,13 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
         }
       }
 
-      ppf("projectAndMapPost leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d of %d c:%d)\n", rowNr, size.x, size.y, size.z, nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, mappingTableIndexesSizeUsed, nrOfColor);
+      ppf("addPixelsPost leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d of %d c:%d)\n", rowNr, size.x, size.y, size.z, nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, mappingTableIndexesSizeUsed, nrOfColor);
 
       char buf[32];
       print->fFormat(buf, sizeof(buf), "%d x %d x %d -> %d", size.x, size.y, size.z, nrOfLeds);
       mdl->setValue("layers", "size", JsonString(buf, JsonString::Copied), rowNr);
 
-      ppf("projectAndMapPost leds[%d].size = so:%d + m:(%d of %d) * %d + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTableSizeUsed, mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164
+      ppf("addPixelsPost leds[%d].size = so:%d + m:(%d of %d) * %d + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTableSizeUsed, mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164
 
       doMap = false;
     } //doMap
