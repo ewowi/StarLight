@@ -256,7 +256,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
     }
   }
 
-  void LedsLayer::projectAndMapPre() {
+  void LedsLayer::projectAndMapPre(uint8_t rowNr) {
     if (doMap) {
       fill_solid(CRGB::Black);
 
@@ -272,44 +272,51 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
         mappingTable[i] = PhysMap();
       }
       mappingTableSizeUsed = 0;
+
+      //new fix size: update leds
+      startPos = mdl->getValue("layers", "start", rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+      midPos = mdl->getValue("layers", "middle", rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+      endPos = mdl->getValue("layers", "end", rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+
+      if (midPos == Coord3D{0,0,0}) 
+        midPos = fix->fixSize / 2; //so pinWheel shows a midpoint
+      if (endPos == Coord3D{0,0,0}) 
+        endPos = fix->fixSize - Coord3D{1,1,1};
+
+      size = (endPos - startPos) + Coord3D{1,1,1};
+
+      // 0 to 3D depending on start and endpos (e.g. to display ScrollingText on one side of a cube)
+      projectionDimension = 0;
+      if (size.x > 1) projectionDimension++;
+      if (size.y > 1) projectionDimension++;
+      if (size.z > 1) projectionDimension++;
+
+      if (projection) {
+        mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
+        (projection->*projectAndMapPreCached)(*this);
+        mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
+      }
+
+      nrOfLeds = size.x * size.y * size.z;
     }
   }
 
   void LedsLayer::projectAndMapPixel(Coord3D pixel, uint8_t rowNr) {
     if (projection && doMap) { //only real projections: add pixel in leds mappingTable
 
-      //set start and endPos between bounderies of fixture
-      Coord3D startPosAdjusted = (startPos).minimum(fix->fixSize - Coord3D{1,1,1}) * 10;
-      Coord3D endPosAdjusted = (endPos).minimum(fix->fixSize - Coord3D{1,1,1}) * 10;
-      Coord3D midPosAdjusted = (midPos).minimum(fix->fixSize - Coord3D{1,1,1}); //not * 10
+      if (pixel >= startPos * 10 && pixel <= endPos * 10 ) { //if pixel between start and end pos
 
-      // mdl->setValue("start", startPosAdjusted/10, rowNr); //rowNr
-      // mdl->setValue("end", endPosAdjusted/10, rowNr); //rowNr
-
-      if (pixel >= startPosAdjusted && pixel <= endPosAdjusted ) { //if pixel between start and end pos
-
-        Coord3D pixelAdjusted = (pixel - startPosAdjusted)/10; //pixelRelative to startPos in cm
-
-        Coord3D sizeAdjusted = (endPosAdjusted - startPosAdjusted)/10 + Coord3D{1,1,1}; // in cm
-
-        // 0 to 3D depending on start and endpos (e.g. to display ScrollingText on one side of a cube)
-        projectionDimension = 0;
-        if (sizeAdjusted.x > 1) projectionDimension++;
-        if (sizeAdjusted.y > 1) projectionDimension++;
-        if (sizeAdjusted.z > 1) projectionDimension++;
+        Coord3D pixelAdjusted = pixel / 10 - startPos; //pixel also rounded to a 1x1 grid space
 
         // projectAndMapPixelCached = &Projection::projectAndMapPixel;
         // XYZCached = &Projection::XYZ;
 
-        mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
-
         uint16_t indexV = XYZUnprojected(pixelAdjusted); //default
 
         // Setup changes leds.size, mapped, indexV
-        if (projection) (projection->*projectAndMapPixelCached)(*this, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
-
-        if (size == Coord3D{0,0,0}) size = sizeAdjusted; //first, not assigned in projectAndMapPixelCached
-        nrOfLeds = size.x * size.y * size.z;
+        mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
+        (projection->*projectAndMapPixelCached)(*this, pixelAdjusted, indexV);
+        mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
 
         if (indexV != UINT16_MAX) {
           if (indexV >= nrOfLeds || indexV >= NUM_VLEDS_Max)
@@ -332,10 +339,8 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
           } //indexV not too high
         } //indexV
 
-        mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
-
       } //if x,y,z between start and endpos
-    } //if doMap
+    } //if projection && doMap
   } //projectAndMapPixel
 
   void LedsLayer::projectAndMapPost(uint8_t rowNr) {

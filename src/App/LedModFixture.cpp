@@ -660,7 +660,7 @@ void LedModFixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t le
   uint8_t rowNr = 0;
   for (LedsLayer *leds: layers) {
     if (leds->doMap) {
-      leds->projectAndMapPre();
+      leds->projectAndMapPre(rowNr);
     }
     rowNr++;
   }

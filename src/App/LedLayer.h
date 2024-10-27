@@ -50,7 +50,8 @@ public:
 
   virtual void setup(LedsLayer &leds, JsonObject parentVar) {}
 
-  virtual void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {}
+  virtual void projectAndMapPre(LedsLayer &leds) {}
+  virtual void projectAndMapPixel(LedsLayer &leds, Coord3D &pixelAdjusted, uint16_t &indexV) {}
   
   virtual void XYZ(LedsLayer &leds, Coord3D &pixel) {}
 };
@@ -172,14 +173,15 @@ public:
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
       //setting cached virtual class methods! (By chatGPT so no source and don't understand how it works - scary!)
       //   (don't know how it works as it is not refering to derived classes, just to the base class but later it calls the derived class method)
-  void (Projection::*projectAndMapPixelCached)(LedsLayer &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = &Projection::projectAndMapPixel;
+  void (Projection::*projectAndMapPreCached)(LedsLayer &) = &Projection::projectAndMapPre;
+  void (Projection::*projectAndMapPixelCached)(LedsLayer &, Coord3D &, uint16_t &) = &Projection::projectAndMapPixel;
   void (Projection::*XYZCached)(LedsLayer &, Coord3D &) = &Projection::XYZ;
 
-  uint8_t effectDimension = -1;
-  uint8_t projectionDimension = -1;
+  uint8_t effectDimension = UINT8_MAX;
+  uint8_t projectionDimension = UINT8_MAX;
 
-  Coord3D startPos = {0,0,0}, endPos = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
-  Coord3D midPos = {0,0,0};
+  Coord3D startPos = {0,0,0}, midPos = {0,0,0}, endPos = {0,0,0};//{UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
+
   #ifdef STARBASE_USERMOD_MPU6050
     bool proGyro = false;
   #endif
@@ -448,7 +450,7 @@ public:
     }
   }
 
-  void projectAndMapPre();
+  void projectAndMapPre(uint8_t rowNr);
 
   void projectAndMapPixel(Coord3D pixel, uint8_t rowNr);
 

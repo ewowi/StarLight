@@ -284,6 +284,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
     ui->initCoord3D(tableVar, "start", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
+        //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
           ppf("ledsStart[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->startPos.x, fix->layers[rowNr]->startPos.y, fix->layers[rowNr]->startPos.z);
           mdl->setValue(var, fix->layers[rowNr]->startPos, rowNr);
@@ -294,7 +295,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true;
       case onChange:
         if (rowNr < fix->layers.size()) {
-          fix->layers[rowNr]->startPos = mdl->getValue(var, rowNr).as<Coord3D>();
+          fix->layers[rowNr]->startPos = mdl->getValue(var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
           ppf("ledsStart[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->startPos.x, fix->layers[rowNr]->startPos.y, fix->layers[rowNr]->startPos.z);
 
@@ -310,6 +311,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
     ui->initCoord3D(tableVar, "middle", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
+        //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
           ppf("ledsMid[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->midPos.x, fix->layers[rowNr]->midPos.y, fix->layers[rowNr]->midPos.z);
           mdl->setValue(var, fix->layers[rowNr]->midPos, rowNr);
@@ -320,7 +322,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true;
       case onChange:
         if (rowNr < fix->layers.size()) {
-          fix->layers[rowNr]->midPos = mdl->getValue(var, rowNr).as<Coord3D>();
+          fix->layers[rowNr]->midPos = mdl->getValue(var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
           ppf("ledsMid[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->midPos.x, fix->layers[rowNr]->midPos.y, fix->layers[rowNr]->midPos.z);
 
@@ -336,6 +338,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
     ui->initCoord3D(tableVar, "end", {8,8,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
+        //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
           ppf("ledsEnd[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->endPos.x, fix->layers[rowNr]->endPos.y, fix->layers[rowNr]->endPos.z);
           mdl->setValue(var, fix->layers[rowNr]->endPos, rowNr);
@@ -346,7 +349,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true;
       case onChange:
         if (rowNr < fix->layers.size()) {
-          fix->layers[rowNr]->endPos = mdl->getValue(var, rowNr).as<Coord3D>();
+          fix->layers[rowNr]->endPos = mdl->getValue(var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
           ppf("ledsEnd[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->endPos.x, fix->layers[rowNr]->endPos.y, fix->layers[rowNr]->endPos.z);
 
@@ -438,12 +441,13 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       for (LedsLayer *leds: fix->layers) {
         if (leds->effect && !leds->doMap) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
           // ppf(" %s %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->effect->name(), leds->startPos.x, leds->startPos.y, leds->startPos.z, leds->endPos.x, leds->endPos.y, leds->endPos.z, leds->size.x, leds->size.y, leds->size.z );
-          mdl->getValueRowNr = rowNr++;
 
           leds->effectData.begin(); //sets the effectData pointer back to 0 so loop effect can go through it
-          leds->effect->loop(*leds);
 
+          mdl->getValueRowNr = rowNr++;
+          leds->effect->loop(*leds);
           mdl->getValueRowNr = UINT8_MAX;
+
           // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
           //   leds->fadeToBlackBy(50);
 
