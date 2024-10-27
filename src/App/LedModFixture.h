@@ -83,16 +83,18 @@ public:
 
   void loop();
 
+  Coord3D fixSize = {8,8,1};
+  uint16_t nrOfLeds = 64; //amount of physical leds
+  uint16_t ledSize = 5; //mm
+  uint16_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
+  uint16_t factor = 10;
+
   unsigned long lastMappingMillis = 0;
   uint8_t viewRotation = 0;
   uint8_t bri = 10;
   uint8_t bytesPerPixel = 2;
 
-  uint16_t nrOfLeds = 64; //amount of physical leds
-  uint8_t fixtureNr = -1;
-  Coord3D fixSize = {8,8,1};
-  uint16_t ledSize = 5; //mm
-  uint16_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
+  uint8_t fixtureNr = UINT8_MAX;
 
   std::vector<LedsLayer *> layers; //virtual leds
 
@@ -117,7 +119,7 @@ public:
   //load fixture json file, parse it and depending on the projection, create a mapping for it
   uint16_t previewBufferIndex = 0;
   AsyncWebSocketMessageBuffer * wsBuf; //buffer for preview create fixture
-  void addPixelsPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize = 5, uint8_t shape = 0);
+  void addPixelsPre(Coord3D size, uint16_t nrOfLeds, uint8_t factor = 10, uint8_t ledSize = 5, uint8_t shape = 0);
   void addPixel(Coord3D pixel);
   void addPin(uint16_t pin);
   void addPixelsPost();

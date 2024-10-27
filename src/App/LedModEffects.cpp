@@ -490,11 +490,11 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
         if (newCoord) {
           token = strtok(NULL, ",");
-          if (token != NULL) newCoord->x = atoi(token) / 10; else newCoord->x = 0; //should never happen
+          if (token != NULL) newCoord->x = atoi(token) / fix->factor; else newCoord->x = 0; //should never happen
           token = strtok(NULL, ",");
-          if (token != NULL) newCoord->y = atoi(token) / 10; else newCoord->y = 0;
+          if (token != NULL) newCoord->y = atoi(token) / fix->factor; else newCoord->y = 0;
           token = strtok(NULL, ",");
-          if (token != NULL) newCoord->z = atoi(token) / 10; else newCoord->z = 0;
+          if (token != NULL) newCoord->z = atoi(token) / fix->factor; else newCoord->z = 0;
 
           mdl->setValue("layers", isStart?"start":isEnd?"end":"middle", *newCoord, 0); //assuming row 0 for the moment
 

@@ -304,9 +304,9 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
   void LedsLayer::addPixel(Coord3D pixel, uint8_t rowNr) {
     if (projection && doMap) { //only real projections: add pixel in leds mappingTable
 
-      if (pixel >= start * 10 && pixel <= end * 10 ) { //if pixel between start and end pos
+      if (pixel >= start * fix->factor && pixel <= end * fix->factor ) { //if pixel between start and end pos
 
-        Coord3D pixelAdjusted = pixel / 10 - start; //pixel also rounded to a 1x1 grid space
+        Coord3D pixelAdjusted = pixel / fix->factor - start; //pixel also rounded to a 1x1 grid space
 
         // addPixelCached = &Projection::addPixel;
         // XYZCached = &Projection::XYZ;

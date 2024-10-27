@@ -25,15 +25,7 @@
 
 #ifdef STARBASE_USERMOD_LIVE
   #include "User/UserModLive.h"
-  static void _addPixelsPre(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4, uint8_t a5, uint8_t a6) {
-    fix->fixSize.x = a1;
-    fix->fixSize.y = a2;
-    fix->fixSize.z = a3;
-    fix->nrOfLeds = a4;
-    fix->ledSize = a5;
-    fix->shape = a6;
-    fix->addPixelsPre(fix->fixSize, fix->nrOfLeds, fix->ledSize, fix->shape);
-  }
+  static void _addPixelsPre(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4, uint8_t a5, uint8_t a6, uint8_t a7) {fix->addPixelsPre(Coord3D{a1, a2, a3}, a4, a5, a6, a7);}
   static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {fix->addPixel({a1, a2, a3});}
   static void _addPin(uint8_t a1) {fix->addPin(a1);}
   static void _addPixelsPost() {fix->addPixelsPost();
@@ -321,7 +313,7 @@
         liveM->addExternals();
 
         //adding to scPreBaseScript
-        liveM->addExternalFun("void", "addPixelsPre", "(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4, uint8_t a5, uint8_t a6)", (void *)_addPixelsPre);
+        liveM->addExternalFun("void", "addPixelsPre", "(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4, uint8_t a5, uint8_t a6, uint8_t a7)", (void *)_addPixelsPre);
         liveM->addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
         liveM->addExternalFun("void", "addPin", "(uint16_t a1)", (void *)_addPin);
         liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
@@ -350,7 +342,7 @@
         starJson.lookFor("leds", [this, &first](std::vector<uint16_t> uint16CollectList) { //this will be called for each tuple of coordinates!
 
           if (first) { 
-            addPixelsPre({fixSize.x, fixSize.y, fixSize.z}, nrOfLeds, ledSize, shape);
+            addPixelsPre({fixSize.x, fixSize.y, fixSize.z}, nrOfLeds, 10, ledSize, shape);
             first = false;
           }
 
@@ -654,8 +646,14 @@
 
 #define headerBytesFixture 16 // so 680 pixels will fit in a 4096 package
 
-void LedModFixture::addPixelsPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize, uint8_t shape) {
-  ppf("addPixelsPre %d,%d,%d -> %d s:%d s:%d\n", size.x, size.y, size.z, nrOfLeds, ledSize, shape);
+void LedModFixture::addPixelsPre(Coord3D size, uint16_t nrOfLeds, uint8_t factor, uint8_t ledSize, uint8_t shape) {
+  ppf("addPixelsPre %d,%d,%d -> %d f:%d s:%d s:%d\n", size.x, size.y, size.z, nrOfLeds, factor, ledSize, shape);
+
+  fixSize = size;
+  this->nrOfLeds = nrOfLeds;
+  this->factor = factor;
+  this->ledSize = ledSize;
+  this->shape = shape;
   // reset leds
   uint8_t rowNr = 0;
   for (LedsLayer *leds: layers) {
@@ -695,6 +693,7 @@ void LedModFixture::addPixelsPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSiz
       buffer[8] = nrOfLeds%256;
       buffer[9] = ledSize;
       buffer[10] = shape;
+      buffer[11] = factor;
       previewBufferIndex = headerBytesFixture;
     }
   }
@@ -711,8 +710,8 @@ void LedModFixture::addPixel(Coord3D pixel) {
         byte* buffer = wsBuf->get();
         if (previewBufferIndex + ((fixSize.x > 1)?2:0 + (fixSize.y > 1)?2:0 + (fixSize.z > 1)?2:0) > 4096) { //2, 4, or 6 bytes (1D, 2D, 3D)
           //add previewBufferIndex to package
-          buffer[11] = previewBufferIndex/256; //first empty slot
-          buffer[12] = previewBufferIndex%256;
+          buffer[12] = previewBufferIndex/256; //first empty slot
+          buffer[13] = previewBufferIndex%256;
           //send the buffer and create a new one
           web->sendBuffer(wsBuf, true);
           delay(50);
@@ -726,15 +725,15 @@ void LedModFixture::addPixel(Coord3D pixel) {
         }
 
         if (fixSize.x > 1) {
-          buffer[previewBufferIndex++] = pixel.x/256;
+          if (fixSize.x * factor > 255) buffer[previewBufferIndex++] = pixel.x/256;
           buffer[previewBufferIndex++] = pixel.x%256;
         }
         if (fixSize.y > 1) {
-          buffer[previewBufferIndex++] = pixel.y/256;
+          if (fixSize.y * factor > 255) buffer[previewBufferIndex++] = pixel.y/256;
           buffer[previewBufferIndex++] = pixel.y%256;
         }
         if (fixSize.z > 1) {
-          buffer[previewBufferIndex++] = pixel.z/256;
+          if (fixSize.z * factor > 255) buffer[previewBufferIndex++] = pixel.z/256;
           buffer[previewBufferIndex++] = pixel.z%256;
         }
       }
@@ -793,8 +792,8 @@ void LedModFixture::addPixelsPost() {
   if (bytesPerPixel && doSendFixtureDefinition) {
     if (wsBuf) {
       byte* buffer = wsBuf->get();
-      buffer[11] = previewBufferIndex/256; //last slot filled
-      buffer[12] = previewBufferIndex%256; //last slot filled
+      buffer[12] = previewBufferIndex/256; //last slot filled
+      buffer[13] = previewBufferIndex%256; //last slot filled
       web->sendBuffer(wsBuf, true);
 
       ppf("last buffer sent i:%d p:%d r:%d r6:%d (1:%d)\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6, buffer[1]);

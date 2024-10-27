@@ -163,9 +163,8 @@ class LedsLayer {
 
 public:
 
-  uint16_t nrOfLeds = 64;  //amount of virtual leds (calculated by projection)
-
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
+  uint16_t nrOfLeds = 64;  //amount of virtual leds (calculated by projection)
 
   Effect *effect = nullptr;
   Projection *projection = nullptr;
