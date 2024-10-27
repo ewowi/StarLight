@@ -5,7 +5,7 @@ define ledCount 100
 
 void main()
 {
-  addPixelsPre(20, 20, 20, ledCount*20, 10, 2, 0);
+  addPixelsPre(20, 20, 20, ledCount*20, 2, 0);
   for (int radius = 0; radius < 200; radius = radius + 10) {
     for (int i=0; i<radius; i++) {
       int x = radius + sin(i/radius * 2 * PI) * radius;

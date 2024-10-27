@@ -28,46 +28,56 @@ class DefaultProjection: public Projection {
 
   public:
 
-  void addPixelsPre(LedsLayer &leds) {
-      ppf ("Default Projection %dD -> %dD Effect  Size: %d,%d,%d ->", leds.projectionDimension, leds.effectDimension, leds.size.x, leds.size.y, leds.size.z);
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
+    if (leds.size == Coord3D{0,0,0}) { //first
+      adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+      leds.size = sizeAdjusted;
+    }
+    Coord3D mapped;
+    adjustMapped(leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    indexV = leds.XYZUnprojected(mapped);
+  }
+
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    // ppf ("Default Projection %dD -> %dD Effect  Size: %d,%d,%d Pixel: %d,%d,%d ->", leds.projectionDimension, leds.effectDimension, sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
     switch (leds.effectDimension) {
       case _1D: // effectDimension 1DxD
-          leds.size.x = sqrt(sq(max(leds.size.x - leds.middle.x, leds.middle.x)) + 
-                                sq(max(leds.size.y - leds.middle.y, leds.middle.y)) + 
-                                sq(max(leds.size.z - leds.middle.z, leds.middle.z))) + 1;
-          leds.size.y = 1;
-          leds.size.z = 1;
+          sizeAdjusted.x = sqrt(sq(max(sizeAdjusted.x - midPosAdjusted.x, midPosAdjusted.x)) + 
+                                sq(max(sizeAdjusted.y - midPosAdjusted.y, midPosAdjusted.y)) + 
+                                sq(max(sizeAdjusted.z - midPosAdjusted.z, midPosAdjusted.z))) + 1;
+          sizeAdjusted.y = 1;
+          sizeAdjusted.z = 1;
           break;
       case _2D: // effectDimension 2D
           switch (leds.projectionDimension) {
               case _1D: // 2D1D
-                  leds.size.x = sqrt(leds.size.x * leds.size.y * leds.size.z); // only one is > 1, square root
-                  leds.size.y = leds.size.x * leds.size.y * leds.size.z / leds.size.x;
-                  leds.size.z = 1;
+                  sizeAdjusted.x = sqrt(sizeAdjusted.x * sizeAdjusted.y * sizeAdjusted.z); // only one is > 1, square root
+                  sizeAdjusted.y = sizeAdjusted.x * sizeAdjusted.y * sizeAdjusted.z / sizeAdjusted.x;
+                  sizeAdjusted.z = 1;
                   break;
               case _2D: // 2D2D
                   // find the 2 axes
-                  if (leds.size.x > 1) {
-                      if (leds.size.y <= 1) {
-                          leds.size.y = leds.size.z;
+                  if (sizeAdjusted.x > 1) {
+                      if (sizeAdjusted.y <= 1) {
+                          sizeAdjusted.y = sizeAdjusted.z;
                       }
                   } else {
-                      leds.size.x = leds.size.y;
-                      leds.size.y = leds.size.z;
+                      sizeAdjusted.x = sizeAdjusted.y;
+                      sizeAdjusted.y = sizeAdjusted.z;
                   }
-                  leds.size.z = 1;
+                  sizeAdjusted.z = 1;
                   break;
               case _3D: // 2D3D
-                  leds.size.x = leds.size.x + leds.size.y / 2;
-                  leds.size.y = leds.size.y / 2 + leds.size.z;
-                  leds.size.z = 1;
+                  sizeAdjusted.x = sizeAdjusted.x + sizeAdjusted.y / 2;
+                  sizeAdjusted.y = sizeAdjusted.y / 2 + sizeAdjusted.z;
+                  sizeAdjusted.z = 1;
                   break;
           }
           break;
       case _3D: // effectDimension 3D
           switch (leds.projectionDimension) {
               case _1D:
-                  leds.size.x = std::pow(leds.size.x * leds.size.y * leds.size.z, 1/3); // only one is > 1, cube root
+                  sizeAdjusted.x = std::pow(sizeAdjusted.x * sizeAdjusted.y * sizeAdjusted.z, 1/3); // only one is > 1, cube root
                   break;
               case _2D:
                   break;
@@ -76,50 +86,49 @@ class DefaultProjection: public Projection {
           }
           break;
     }
+    // ppf (" Size: %d,%d,%d Pixel: %d,%d,%d\n", sizeAdjusted.x, sizeAdjusted.y, sizeAdjusted.z, pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
-    Coord3D mapped;
+  void adjustMapped(LedsLayer &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
     switch (leds.effectDimension) {
       case _1D: // effectDimension 1DxD
-          mapped.x = pixel.distance(leds.middle);
+          mapped.x = pixelAdjusted.distance(midPosAdjusted);
           mapped.y = 0;
           mapped.z = 0;
           break;
       case _2D: // effectDimension 2D
           switch (leds.projectionDimension) {
               case _1D: // 2D1D
-                  mapped.x = (pixel.x + pixel.y + pixel.z) % leds.size.x; // only one > 0
-                  mapped.y = (pixel.x + pixel.y + pixel.z) / leds.size.x; // all rows next to each other
+                  mapped.x = (pixelAdjusted.x + pixelAdjusted.y + pixelAdjusted.z) % leds.size.x; // only one > 0
+                  mapped.y = (pixelAdjusted.x + pixelAdjusted.y + pixelAdjusted.z) / leds.size.x; // all rows next to each other
                   mapped.z = 0;
                   break;
               case _2D: // 2D2D
-                  if (leds.size.x > 1) {
-                      mapped.x = pixel.x;
-                      if (leds.size.y > 1) {
-                          mapped.y = pixel.y;
+                  if (sizeAdjusted.x > 1) {
+                      mapped.x = pixelAdjusted.x;
+                      if (sizeAdjusted.y > 1) {
+                          mapped.y = pixelAdjusted.y;
                       } else {
-                          mapped.y = pixel.z;
+                          mapped.y = pixelAdjusted.z;
                       }
                   } else {
-                      mapped.x = pixel.y;
-                      mapped.y = pixel.z;
+                      mapped.x = pixelAdjusted.y;
+                      mapped.y = pixelAdjusted.z;
                   }
                   mapped.z = 0;
                   break;
               case _3D: // 2D3D
-                  mapped.x = pixel.x + pixel.y / 2;
-                  mapped.y = pixel.y / 2 + pixel.z;
+                  mapped.x = pixelAdjusted.x + pixelAdjusted.y / 2;
+                  mapped.y = pixelAdjusted.y / 2 + pixelAdjusted.z;
                   mapped.z = 0;
                   break;
           }
           break;
       case _3D: // effectDimension 3D
-          mapped = pixel;
+          mapped = pixelAdjusted;
           break;
     }
-
-    indexV = leds.XYZUnprojected(mapped);
+    // ppf("Default %dD Effect -> %dD   %d,%d,%d -> %d,%d,%d\n", leds.effectDimension, leds.projectionDimension, pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, mapped.x, mapped.y, mapped.z);
   }
 
 }; //DefaultProjection
@@ -131,7 +140,7 @@ class PinwheelProjection: public Projection {
   public:
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
-    uint8_t *petals   = leds.projectionData.write<uint8_t>(60); // Initalize petal first for addPixel
+    uint8_t *petals   = leds.projectionData.write<uint8_t>(60); // Initalize petal first for adjustSizeAndPixel
     uint8_t *swirlVal = leds.projectionData.write<uint8_t>(30);
     bool    *reverse  = leds.projectionData.write<bool>(false);
     uint8_t *symmetry = leds.projectionData.write<uint8_t>(1);
@@ -174,24 +183,34 @@ class PinwheelProjection: public Projection {
     }});
   }
 
-  void addPixelsPre(LedsLayer &leds) {
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
+    if (leds.size == Coord3D{0,0,0}) {
+      adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+      leds.size = sizeAdjusted;
+    }
+    Coord3D mapped;
+    adjustMapped(leds, mapped, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    indexV = leds.XYZUnprojected(mapped);
+  }
+
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    if (leds.size != Coord3D{0,0,0}) return; // Adjust only on first call
     leds.projectionData.begin();
     const int petals = leds.projectionData.read<uint8_t>();
     if (leds.projectionDimension > _1D && leds.effectDimension > _1D) {
-      leds.size.y = sqrt(sq(max(leds.size.x - leds.middle.x, leds.middle.x)) + 
-                            sq(max(leds.size.y - leds.middle.y, leds.middle.y))) + 1; // Adjust y before x
-      leds.size.x = petals;
-      leds.size.z = 1;
+      sizeAdjusted.y = sqrt(sq(max(sizeAdjusted.x - midPosAdjusted.x, midPosAdjusted.x)) + 
+                            sq(max(sizeAdjusted.y - midPosAdjusted.y, midPosAdjusted.y))) + 1; // Adjust y before x
+      sizeAdjusted.x = petals;
+      sizeAdjusted.z = 1;
     }
     else {
-      leds.size.x = petals;
-      leds.size.y = 1;
-      leds.size.z = 1;
+      sizeAdjusted.x = petals;
+      sizeAdjusted.y = 1;
+      sizeAdjusted.z = 1;
     }
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
-    Coord3D mapped;
+  void adjustMapped(LedsLayer &leds, Coord3D &mapped, Coord3D sizeAdjusted, Coord3D pixelAdjusted, Coord3D midPosAdjusted) {
     // factors of 360
     const int FACTORS[24] = {360, 180, 120, 90, 72, 60, 45, 40, 36, 30, 24, 20, 18, 15, 12, 10, 9, 8, 6, 5, 4, 3, 2};
     // UI Variables
@@ -202,14 +221,14 @@ class PinwheelProjection: public Projection {
     const int symmetry = FACTORS[leds.projectionData.read<uint8_t>()-1];
     const int zTwist   = leds.projectionData.read<uint8_t>();
          
-    const int dx = pixel.x - leds.middle.x;
-    const int dy = pixel.y - leds.middle.y;
+    const int dx = pixelAdjusted.x - midPosAdjusted.x;
+    const int dy = pixelAdjusted.y - midPosAdjusted.y;
     const int swirlFactor = swirlVal == 0 ? 0 : hypot(dy, dx) * abs(swirlVal); // Only calculate if swirlVal != 0
     int angle = degrees(atan2(dy, dx)) + 180;  // 0 - 360
     
     if (swirlVal < 0) angle = 360 - angle; // Reverse Swirl
 
-    int value = angle + swirlFactor + (zTwist * pixel.z);
+    int value = angle + swirlFactor + (zTwist * pixelAdjusted.z);
     float petalWidth = symmetry / float(petals);
     value /= petalWidth;
     value %= petals;
@@ -223,10 +242,8 @@ class PinwheelProjection: public Projection {
     }
     mapped.z = 0;
 
-    // if (pixel.x == 0 && pixel.y == 0 && pixel.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %d Symmetry: %d Petals: %d zTwist: %d\n", leds.middle.x, leds.middle.y, swirlVal, symmetry, petals, zTwist);
-    // ppf("pixel %2d,%2d,%2d -> %2d,%2d,%2d Angle: %3d Petal: %2d\n", pixel.x, pixel.y, pixel.z, mapped.x, mapped.y, mapped.z, angle, value);
-
-    indexV = leds.XYZUnprojected(mapped);
+    // if (pixelAdjusted.x == 0 && pixelAdjusted.y == 0 && pixelAdjusted.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %d Symmetry: %d Petals: %d zTwist: %d\n", midPosAdjusted.x, midPosAdjusted.y, swirlVal, symmetry, petals, zTwist);
+    // ppf("pixelAdjusted %2d,%2d,%2d -> %2d,%2d,%2d Angle: %3d Petal: %2d\n", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z, mapped.x, mapped.y, mapped.z, angle, value);
   }
 }; //PinwheelProjection
 
@@ -253,7 +270,14 @@ class MultiplyProjection: public Projection {
     }});
   }
 
-  void addPixelsPre(LedsLayer &leds) {
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    DefaultProjection dp;
+    dp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
+  }
+
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    // UI Variables
     leds.projectionData.begin();
     Coord3D proMulti = leds.projectionData.read<Coord3D>();
     bool    mirror   = leds.projectionData.read<bool>();
@@ -261,32 +285,18 @@ class MultiplyProjection: public Projection {
     proMulti = proMulti.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
     if (proMulti == Coord3D{1, 1, 1}) return;      // No need to adjust if proMulti is {1, 1, 1}
     
-    leds.size = (leds.size + proMulti - Coord3D({1,1,1})) / proMulti; // Round up
-    leds.middle /= proMulti;
-
-    DefaultProjection dp;
-    dp.addPixelsPre(leds);
-  }
-
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
-    // UI Variables
-    leds.projectionData.begin();
-    Coord3D proMulti = leds.projectionData.read<Coord3D>();
-    bool    mirror   = leds.projectionData.read<bool>();
+    sizeAdjusted = (sizeAdjusted + proMulti - Coord3D({1,1,1})) / proMulti; // Round up
+    midPosAdjusted /= proMulti;
 
     if (mirror) {
-      Coord3D mirrors = pixel / leds.size; // Place the pixel in the right quadrant
-      pixel = pixel % leds.size;
-      if (mirrors.x %2 != 0) pixel.x = leds.size.x - 1 - pixel.x;
-      if (mirrors.y %2 != 0) pixel.y = leds.size.y - 1 - pixel.y;
-      if (mirrors.z %2 != 0) pixel.z = leds.size.z - 1 - pixel.z;
+      Coord3D mirrors = pixelAdjusted / sizeAdjusted; // Place the pixel in the right quadrant
+      pixelAdjusted = pixelAdjusted % sizeAdjusted;
+      if (mirrors.x %2 != 0) pixelAdjusted.x = sizeAdjusted.x - 1 - pixelAdjusted.x;
+      if (mirrors.y %2 != 0) pixelAdjusted.y = sizeAdjusted.y - 1 - pixelAdjusted.y;
+      if (mirrors.z %2 != 0) pixelAdjusted.z = sizeAdjusted.z - 1 - pixelAdjusted.z;
     }
-    else pixel = pixel % leds.size;
-
-    DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    else pixelAdjusted = pixelAdjusted % sizeAdjusted;
   }
-
 }; //MultiplyProjection
 
 class TiltPanRollProjection: public Projection {
@@ -328,21 +338,21 @@ class TiltPanRollProjection: public Projection {
     }});
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
-    // adjustSizeAndPixel(leds, pixel); // Uncomment to expand grid to fill corners
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
+    // adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted); // Uncomment to expand grid to fill corners
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    dp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
-  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &pixel) {
-    uint8_t size = max(leds.size.x, max(leds.size.y, leds.size.z));
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    uint8_t size = max(sizeAdjusted.x, max(sizeAdjusted.y, sizeAdjusted.z));
     size = sqrt(size * size * 2) + 1;
-    Coord3D offset = {(size - leds.size.x) / 2, (size - leds.size.y) / 2, 0};
-    leds.size = Coord3D{size, size, 1};
+    Coord3D offset = {(size - sizeAdjusted.x) / 2, (size - sizeAdjusted.y) / 2, 0};
+    sizeAdjusted = Coord3D{size, size, 1};
 
-    pixel.x += offset.x;
-    pixel.y += offset.y;
-    pixel.z += offset.z;
+    pixelAdjusted.x += offset.x;
+    pixelAdjusted.y += offset.y;
+    pixelAdjusted.z += offset.z;
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
@@ -369,9 +379,9 @@ class DistanceFromPointProjection: public Projection {
 
   public:
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    dp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
     if (leds.projectionDimension == _2D && leds.effectDimension == _2D) postProcessing(leds, indexV);
   }
 
@@ -429,23 +439,15 @@ class Preset1Projection: public Projection {
     tp.setup(leds, parentVar);
   }
 
-  void addPixelsPre(LedsLayer &leds) {
-    MultiplyProjection mp;
-    mp.addPixelsPre(leds);
-
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
-    dp.addPixelsPre(leds);
-
-    TiltPanRollProjection tp;
-    tp.addPixelsPre(leds);
+    dp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     MultiplyProjection mp;
-    mp.addPixel(leds, pixel, indexV);
-
-    DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    mp.adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
@@ -501,20 +503,23 @@ class ReverseProjection: public Projection {
     }
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) { 
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) { 
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    DefaultProjection dp;
+    dp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
+  }
+
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    // UI Variables
     leds.projectionData.begin();
     bool reverseX = leds.projectionData.read<bool>();
     bool reverseY = leds.projectionData.read<bool>();
     bool reverseZ = leds.projectionData.read<bool>();
 
-    if (reverseX) pixel.x = leds.size.x - pixel.x - 1;
-    if (reverseY) pixel.y = leds.size.y - pixel.y - 1;
-    if (reverseZ) pixel.z = leds.size.z - pixel.z - 1;
-
-    DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    if (reverseX) pixelAdjusted.x = sizeAdjusted.x - pixelAdjusted.x - 1;
+    if (reverseY) pixelAdjusted.y = sizeAdjusted.y - pixelAdjusted.y - 1;
+    if (reverseZ) pixelAdjusted.z = sizeAdjusted.z - pixelAdjusted.z - 1;
   }
-
 }; //ReverseProjection
 
 class MirrorProjection: public Projection {
@@ -551,19 +556,13 @@ class MirrorProjection: public Projection {
     }
   }
 
-  void addPixelsPre(LedsLayer &leds) {
-    // UI Variables
-    leds.projectionData.begin();
-    bool mirrorX = leds.projectionData.read<bool>();
-    bool mirrorY = leds.projectionData.read<bool>();
-    bool mirrorZ = leds.projectionData.read<bool>();
-
-    if (mirrorX) leds.size.x = (leds.size.x + 1) / 2;
-    if (mirrorY) leds.size.y = (leds.size.y + 1) / 2;
-    if (mirrorZ) leds.size.z = (leds.size.z + 1) / 2;
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    DefaultProjection dp;
+    dp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
     leds.projectionData.begin();
     bool mirrorX = leds.projectionData.read<bool>();
@@ -571,19 +570,18 @@ class MirrorProjection: public Projection {
     bool mirrorZ = leds.projectionData.read<bool>();
 
     if (mirrorX) {
-      if (pixel.x >= leds.size.x / 2) pixel.x = leds.size.x - 1 - pixel.x;
+      if (pixelAdjusted.x >= sizeAdjusted.x / 2) pixelAdjusted.x = sizeAdjusted.x - 1 - pixelAdjusted.x;
+      sizeAdjusted.x = (sizeAdjusted.x + 1) / 2;
     }
     if (mirrorY) {
-      if (pixel.y >= leds.size.y / 2) pixel.y = leds.size.y - 1 - pixel.y;
+      if (pixelAdjusted.y >= sizeAdjusted.y / 2) pixelAdjusted.y = sizeAdjusted.y - 1 - pixelAdjusted.y;
+      sizeAdjusted.y = (sizeAdjusted.y + 1) / 2;
     }
     if (mirrorZ) {
-      if (pixel.z >= leds.size.z / 2) pixel.z = leds.size.z - 1 - pixel.z;
+      if (pixelAdjusted.z >= sizeAdjusted.z / 2) pixelAdjusted.z = sizeAdjusted.z - 1 - pixelAdjusted.z;
+      sizeAdjusted.z = (sizeAdjusted.z + 1) / 2;
     }
-
-    DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
   }
-
 }; //MirrorProjection
 
 class GroupingProjection: public Projection {
@@ -602,28 +600,23 @@ class GroupingProjection: public Projection {
     }});
   }
 
-  void addPixelsPre(LedsLayer &leds) {
-    // UI Variables
-    leds.projectionData.begin();
-    Coord3D grouping = leds.projectionData.read<Coord3D>();
-    grouping = grouping.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
-    if (grouping == Coord3D{1, 1, 1}) return;
-
-    leds.middle /= grouping;
-    leds.size = (leds.size + grouping - Coord3D{1,1,1}) / grouping; // round up
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    DefaultProjection dp;
+    dp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
     leds.projectionData.begin();
     Coord3D grouping = leds.projectionData.read<Coord3D>();
     grouping = grouping.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
     if (grouping == Coord3D{1, 1, 1}) return;
 
-    pixel /= grouping;
+    midPosAdjusted /= grouping;
+    pixelAdjusted /= grouping;
 
-    DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    sizeAdjusted = (sizeAdjusted + grouping - Coord3D{1,1,1}) / grouping; // round up
   }
 }; //GroupingProjection
 
@@ -641,36 +634,28 @@ class SpacingProjection: public Projection {
     }});
   }
 
-  void addPixelsPre(LedsLayer &leds) {
-    // UI Variables
-    leds.projectionData.begin();
-    Coord3D spacing = leds.projectionData.read<Coord3D>();
-
-    // ppf ("pixel: %d,%d,%d -> ", pixel.x, pixel.y, pixel.z);
-    spacing = spacing.maximum(Coord3D{0, 0, 0}) + Coord3D{1,1,1}; // {1, 1, 1} is the minimum value
-
-    leds.size = (leds.size + spacing - Coord3D{1,1,1}) / spacing; // round up
-    leds.middle /= spacing;
-
-    // ppf ("%d,%d,%d\n", pixel.x, pixel.y, pixel.z);
-
-  }
-
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
-    // UI Variables
-    leds.projectionData.begin();
-    Coord3D spacing = leds.projectionData.read<Coord3D>();
-
-    // ppf ("pixel: %d,%d,%d -> ", pixel.x, pixel.y, pixel.z);
-    spacing = spacing.maximum(Coord3D{0, 0, 0}) + Coord3D{1,1,1}; // {1, 1, 1} is the minimum value
-
-    if (pixel % spacing == Coord3D{0,0,0}) pixel /= spacing; 
-    else pixel = Coord3D{UINT16_MAX, UINT16_MAX, UINT16_MAX};
-
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    dp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    // UI Variables
+    leds.projectionData.begin();
+    Coord3D spacing = leds.projectionData.read<Coord3D>();
+
+    // ppf ("pixel: %d,%d,%d -> ", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
+    spacing = spacing.maximum(Coord3D{0, 0, 0}) + Coord3D{1,1,1}; // {1, 1, 1} is the minimum value
+
+    if (pixelAdjusted % spacing == Coord3D{0,0,0}) pixelAdjusted /= spacing; 
+    else pixelAdjusted = Coord3D{UINT16_MAX, UINT16_MAX, UINT16_MAX};
+
+    // ppf ("%d,%d,%d\n", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
+
+    sizeAdjusted = (sizeAdjusted + spacing - Coord3D{1,1,1}) / spacing; // round up
+    midPosAdjusted /= spacing;
+  }
 }; //SpacingProjection
 
 class TransposeProjection: public Projection {
@@ -706,21 +691,23 @@ class TransposeProjection: public Projection {
     }
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    DefaultProjection dp;
+    dp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
+  }
+
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     // UI Variables
     leds.projectionData.begin();
     bool transposeXY = leds.projectionData.read<bool>();
     bool transposeXZ = leds.projectionData.read<bool>();
     bool transposeYZ = leds.projectionData.read<bool>();
 
-    if (transposeXY) { int temp = pixel.x; pixel.x = pixel.y; pixel.y = temp; }
-    if (transposeXZ) { int temp = pixel.x; pixel.x = pixel.z; pixel.z = temp; }
-    if (transposeYZ) { int temp = pixel.y; pixel.y = pixel.z; pixel.z = temp; }
-
-    DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    if (transposeXY) { int temp = pixelAdjusted.x; pixelAdjusted.x = pixelAdjusted.y; pixelAdjusted.y = temp; }
+    if (transposeXZ) { int temp = pixelAdjusted.x; pixelAdjusted.x = pixelAdjusted.z; pixelAdjusted.z = temp; }
+    if (transposeYZ) { int temp = pixelAdjusted.y; pixelAdjusted.y = pixelAdjusted.z; pixelAdjusted.z = temp; }
   }
-
 }; //TransposeProjection
 
 class KaleidoscopeProjection: public Projection {
@@ -749,9 +736,9 @@ class ScrollingProjection: public Projection {
     if (leds.projectionDimension == _3D) ui->initSlider(parentVar, "zSpeed", zSpeed, 0, 255, false);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     MirrorProjection mp;
-    mp.addPixel(leds, pixel, indexV);
+    mp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
@@ -786,9 +773,9 @@ class AccelerationProjection: public Projection {
     ui->initSlider(parentVar, "deadzone", deadzone, 0, 100, false);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    dp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
@@ -845,27 +832,36 @@ class CheckerboardProjection: public Projection {
     }});
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
     leds.projectionData.begin();
     Coord3D size = leds.projectionData.read<Coord3D>();
     bool invert = leds.projectionData.read<bool>();
     bool group = leds.projectionData.read<bool>();
-
-    // ppf ("pixel: %d,%d,%d -> ", pixel.x, pixel.y, pixel.z);
-    size = size.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
-
-    Coord3D check = pixel / size;
-    if ((check.x + check.y + check.z) % 2 == 0) {
-      if (invert) pixel = {UINT16_MAX, UINT16_MAX, UINT16_MAX};
-    }
-    else {
-      if (!invert) pixel = {UINT16_MAX, UINT16_MAX, UINT16_MAX};
-    }
-
-    if (group) {GroupingProjection gp; gp.addPixel(leds, pixel, indexV);}
-    else       {DefaultProjection  dp; dp.addPixel(leds, pixel, indexV);}
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    if (group) {GroupingProjection gp; gp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);}
+    else       {DefaultProjection  dp; dp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);}
   }
 
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
+    // UI Variables
+    leds.projectionData.begin();
+    Coord3D size = leds.projectionData.read<Coord3D>();
+    bool invert = leds.projectionData.read<bool>();
+
+    // ppf ("pixel: %d,%d,%d -> ", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
+    size = size.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
+
+    Coord3D check = pixelAdjusted / size;
+    if ((check.x + check.y + check.z) % 2 == 0) {
+      if (invert) pixelAdjusted = {UINT16_MAX, UINT16_MAX, UINT16_MAX};
+    }
+    else {
+      if (!invert) pixelAdjusted = {UINT16_MAX, UINT16_MAX, UINT16_MAX};
+    }
+      
+    // ppf ("%d,%d,%d", pixelAdjusted.x, pixelAdjusted.y, pixelAdjusted.z);
+    // ppf (" Check: %d,%d,%d  Even: %d\n", check.x, check.y, check.z, (check.x + check.y + check.z) % 2 == 0);
+  }
 }; //CheckerboardProjection
 
 class RotateProjection: public Projection {
@@ -927,39 +923,32 @@ class RotateProjection: public Projection {
     }});
   }
 
-  void addPixelsPre(LedsLayer &leds) {
-    leds.projectionData.begin();
-    RotateData *data = leds.projectionData.readWrite<RotateData>();
-    data->expand = mdl->getValue("projection", "Expand");
-
-    if (data->expand) {
-      uint8_t size = max(leds.size.x, max(leds.size.y, leds.size.z));
-      size = sqrt(size * size * 2) + 1;
-      Coord3D offset = {(size - leds.size.x) / 2, (size - leds.size.y) / 2, 0};
-
-      leds.size = Coord3D{size, size, 1};
-    }
-
-    data->midX = leds.size.x / 2;
-    data->midY = leds.size.y / 2;
+  void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {
+    adjustSizeAndPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted);
+    DefaultProjection dp;
+    dp.projectAndMapPixel(leds, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void adjustSizeAndPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted) {
     leds.projectionData.begin();
     RotateData *data = leds.projectionData.readWrite<RotateData>();
-
-    if (data->expand) {
-      uint8_t size = max(leds.size.x, max(leds.size.y, leds.size.z));
-      size = sqrt(size * size * 2) + 1;
-      Coord3D offset = {(size - leds.size.x) / 2, (size - leds.size.y) / 2, 0};
-
-      pixel.x += offset.x;
-      pixel.y += offset.y;
-      pixel.z += offset.z;
+    if (leds.size == Coord3D{0, 0, 0}) {
+      data->expand = mdl->getValue("projection", "Expand");
     }
-
-    DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    if (data->expand) {
+      uint8_t size = max(sizeAdjusted.x, max(sizeAdjusted.y, sizeAdjusted.z));
+      size = sqrt(size * size * 2) + 1;
+      Coord3D offset = {(size - sizeAdjusted.x) / 2, (size - sizeAdjusted.y) / 2, 0};
+      sizeAdjusted = Coord3D{size, size, 1};
+      pixelAdjusted.x += offset.x;
+      pixelAdjusted.y += offset.y;
+      pixelAdjusted.z += offset.z;
+    }
+    if (leds.size == Coord3D{0, 0, 0}) {
+      data->midX = sizeAdjusted.x / 2;
+      data->midY = sizeAdjusted.y / 2;
+      return;
+    }
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {

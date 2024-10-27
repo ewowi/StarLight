@@ -50,8 +50,7 @@ public:
 
   virtual void setup(LedsLayer &leds, JsonObject parentVar) {}
 
-  virtual void addPixelsPre(LedsLayer &leds) {}
-  virtual void addPixel(LedsLayer &leds, Coord3D &pixelAdjusted, uint16_t &indexV) {}
+  virtual void projectAndMapPixel(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {}
   
   virtual void XYZ(LedsLayer &leds, Coord3D &pixel) {}
 };
@@ -163,8 +162,9 @@ class LedsLayer {
 
 public:
 
-  Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
   uint16_t nrOfLeds = 64;  //amount of virtual leds (calculated by projection)
+
+  Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
 
   Effect *effect = nullptr;
   Projection *projection = nullptr;
@@ -172,15 +172,14 @@ public:
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
       //setting cached virtual class methods! (By chatGPT so no source and don't understand how it works - scary!)
       //   (don't know how it works as it is not refering to derived classes, just to the base class but later it calls the derived class method)
-  void (Projection::*addPixelsPreCached)(LedsLayer &) = &Projection::addPixelsPre;
-  void (Projection::*addPixelCached)(LedsLayer &, Coord3D &, uint16_t &) = &Projection::addPixel;
+  void (Projection::*projectAndMapPixelCached)(LedsLayer &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = &Projection::projectAndMapPixel;
   void (Projection::*XYZCached)(LedsLayer &, Coord3D &) = &Projection::XYZ;
 
-  uint8_t effectDimension = UINT8_MAX;
-  uint8_t projectionDimension = UINT8_MAX;
+  uint8_t effectDimension = -1;
+  uint8_t projectionDimension = -1;
 
-  Coord3D start = {0,0,0}, middle = {0,0,0}, end = {0,0,0};//{UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
-
+  Coord3D startPos = {0,0,0}, endPos = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
+  Coord3D midPos = {0,0,0};
   #ifdef STARBASE_USERMOD_MPU6050
     bool proGyro = false;
   #endif
@@ -449,9 +448,11 @@ public:
     }
   }
 
-  void addPixelsPre(uint8_t rowNr);
-  void addPixel(Coord3D pixel, uint8_t rowNr);
-  void addPixelsPost(uint8_t rowNr);
+  void projectAndMapPre();
+
+  void projectAndMapPixel(Coord3D pixel, uint8_t rowNr);
+
+  void projectAndMapPost(uint8_t rowNr);
 
 }; //LedsLayer
 
