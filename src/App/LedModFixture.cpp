@@ -326,7 +326,8 @@
         liveM->addExternalFun("void", "addPin", "(uint16_t a1)", (void *)_addPin);
         liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
 
-        liveM->run(fileName);
+        liveM->compile(fileName,"fixture");
+        liveM->run("fixture");
 
       } else 
     #endif
