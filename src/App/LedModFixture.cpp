@@ -709,10 +709,10 @@ void LedModFixture::addPixel(Coord3D pixel) {
       //send pixel to ui ...
       if (wsBuf && indexP < nrOfLeds ) { //max index to process && indexP * 6 + headerBytesFixture + 5 < 2 * 8192
         byte* buffer = wsBuf->get();
-        if (previewBufferIndex + 6 > 4096) {
+        if (previewBufferIndex + ((fixSize.x > 1)?2:0 + (fixSize.y > 1)?2:0 + (fixSize.z > 1)?2:0) > 4096) { //2, 4, or 6 bytes (1D, 2D, 3D)
           //add previewBufferIndex to package
-          buffer[11] = previewBufferIndex/256; //last slot filled
-          buffer[12] = previewBufferIndex%256; //last slot filled
+          buffer[11] = previewBufferIndex/256; //first empty slot
+          buffer[12] = previewBufferIndex%256;
           //send the buffer and create a new one
           web->sendBuffer(wsBuf, true);
           delay(50);
@@ -725,12 +725,18 @@ void LedModFixture::addPixel(Coord3D pixel) {
           previewBufferIndex = headerBytesFixture;
         }
 
-        buffer[previewBufferIndex++] = pixel.x/256;
-        buffer[previewBufferIndex++] = pixel.x%256;
-        buffer[previewBufferIndex++] = pixel.y/256;
-        buffer[previewBufferIndex++] = pixel.y%256;
-        buffer[previewBufferIndex++] = pixel.z/256;
-        buffer[previewBufferIndex++] = pixel.z%256;
+        if (fixSize.x > 1) {
+          buffer[previewBufferIndex++] = pixel.x/256;
+          buffer[previewBufferIndex++] = pixel.x%256;
+        }
+        if (fixSize.y > 1) {
+          buffer[previewBufferIndex++] = pixel.y/256;
+          buffer[previewBufferIndex++] = pixel.y%256;
+        }
+        if (fixSize.z > 1) {
+          buffer[previewBufferIndex++] = pixel.z/256;
+          buffer[previewBufferIndex++] = pixel.z%256;
+        }
       }
     }
 

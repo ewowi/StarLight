@@ -44,16 +44,23 @@ function userFun(buffer) {
       console.log("userFun Fixture definition - new buffer", buffer)
     }
 
-    previewBufferIndex = buffer[11]*256 + buffer[12];
+    if (previewVar.file) {
+      previewBufferIndex = buffer[11]*256 + buffer[12];
 
-    let output = {};
-    output.leds = [];
-    for (let i = headerBytesFixture; i+5<=previewBufferIndex-1; i+=6) { //steps of 6
-      // if (headerBytesFixture + 5 + i < previewVar.file.nrOfLeds * 6 + 11)
-        output.leds.push([buffer[i]*256+buffer[i+1],buffer[i+2]*256+buffer[i+3],buffer[i+4]*256+buffer[i+5]]);
-    }
-    if (previewVar.file && previewVar.file.outputs)
+      let output = {};
+      output.leds = [];
+      for (let i = headerBytesFixture; i<previewBufferIndex; ) { //steps of 2, 4, or 6 (1D, 2D or 3D)
+        //add 3D coordinates
+        let led = [];
+        if (previewVar.file.width > 1 && i+1<previewBufferIndex) led.push(buffer[i++]*256+buffer[i++]); else led.push(0);
+        if (previewVar.file.height > 1 && i+1<previewBufferIndex) led.push(buffer[i++]*256+buffer[i++]); else led.push(0);
+        if (previewVar.file.depth > 1 && i+1<previewBufferIndex) led.push(buffer[i++]*256+buffer[i++]); else led.push(0);
+
+        output.leds.push(led);
+      }
+
       previewVar.file.outputs.push(output);
+    }
     else
       console.log("dev no init received?", buffer);
   }
