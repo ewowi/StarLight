@@ -54,8 +54,8 @@ public:
   void kill(const char * fileName = nullptr);
 
   bool taskExists(const char *fileName);
-  void execute(const char * fileName, const char * function = nullptr);
-  void executeAsTask(const char * fileName, const char * function = nullptr);
+  void executeTask(const char * fileName, const char * function = nullptr);
+  void executeBackgroundTask(const char * fileName, const char * function = nullptr);
 
 };
 

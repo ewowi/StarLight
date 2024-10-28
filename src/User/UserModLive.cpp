@@ -160,7 +160,7 @@ static float _time(float j) {
 
             compile(fileName,NULL ,"void main(){resetStat();setup();while(2>1){loop();sync();}}");
           }
-          execute(fileName);
+          executeTask(fileName);
         }
         else {
           // kill();
@@ -356,14 +356,14 @@ static float _time(float j) {
   //   scriptRuntime.execute(string(programName),string(function));
   // }
 
-  void UserModLive::execute(const char * fileName, const char * function)
+  void UserModLive::executeTask(const char * fileName, const char * function)
   {
     if (function)
       scriptRuntime.execute(string(fileName), string(function));
     else
       scriptRuntime.execute(string(fileName));
   }
-  void UserModLive::executeAsTask(const char * fileName, const char * function)
+  void UserModLive::executeBackgroundTask(const char * fileName, const char * function)
   {
     if (function)
       scriptRuntime.executeAsTask(string(fileName), string(function));
@@ -456,8 +456,8 @@ static float _time(float j) {
   }
 
   bool UserModLive::taskExists(const char *fileName) {
-    for (auto &executable: scriptRuntime._scExecutables)
-      if (strncmp(executable.name.c_str(), fileName, 32) == 0)
-        return true;
-    return false;
+    // for (auto &executable: scriptRuntime._scExecutables)
+    //   if (strncmp(executable.name.c_str(), fileName, 32) == 0)
+    //     return true;
+    return scriptRuntime.findExecutable(string(fileName)) != nullptr;
   }

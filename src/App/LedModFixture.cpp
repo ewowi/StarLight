@@ -334,7 +334,7 @@
           liveM->compile(fileName);
         }
         
-        liveM->execute(fileName);
+        liveM->executeTask(fileName);
 
       } else 
     #endif

@@ -3024,7 +3024,7 @@ class LiveEffect: public Effect {
 
                 liveM->compile(fileName, nullptr, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
               }
-              liveM->execute(fileName);
+              liveM->executeBackgroundTask(fileName);
           }
         }
         else {
