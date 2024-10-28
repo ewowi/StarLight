@@ -2995,7 +2995,9 @@ class LiveEffect: public Effect {
             if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
               ppf("projectAndMap Live Fixture %s\n", fileName);
 
-              liveM->scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
+              if (!liveM->taskExists(fileName))
+
+                liveM->scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
 
                 liveM->addExternals();
 
@@ -3018,15 +3020,15 @@ class LiveEffect: public Effect {
                 liveM->scPreBaseScript += "define width " + std::to_string(leds.size.x) + "\n";
                 liveM->scPreBaseScript += "define height " + std::to_string(leds.size.y) + "\n";
                 liveM->scPreBaseScript += "define NUM_LEDS " + std::to_string(leds.nrOfLeds) + "\n";
-              liveM->scPreBaseScript += "define panel_width " + std::to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
+                liveM->scPreBaseScript += "define panel_width " + std::to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
 
-              liveM->compile(fileName, nullptr, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
-              liveM->runAsTask(fileName);
-            }
+                liveM->compile(fileName, nullptr, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
+              }
+              liveM->execute(fileName);
           }
         }
         else {
-          liveM->kill();
+          // liveM->kill();
           leds.fadeToBlackBy(255);
           ppf("effect.script.onChange set to None:%d\n", fileNr);
         }

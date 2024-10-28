@@ -147,19 +147,23 @@ static float _time(float j) {
           files->seqNrToName(fileName, fileNr, ".sc");
           ppf("script.onChange f:%d n:%s\n", fileNr, fileName);
 
-          scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
+          if (!liveM->taskExists(fileName)) {
 
-          addExternals();
+            scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
 
-          //to run blinkSL.sc
-          addExternalFun("void", "pinMode", "(int a1, int a2)", (void *)&pinMode);
-          addExternalFun("void", "digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
-          addExternalFun("void", "delay", "(int a1)", (void *)&delay);
+            addExternals();
 
-          compile(fileName,NULL ,"void main(){resetStat();setup();while(2>1){loop();show();}}");
-         }
+            //to run blinkSL.sc
+            addExternalFun("void", "pinMode", "(int a1, int a2)", (void *)&pinMode);
+            addExternalFun("void", "digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
+            addExternalFun("void", "delay", "(int a1)", (void *)&delay);
+
+            compile(fileName,NULL ,"void main(){resetStat();setup();while(2>1){loop();sync();}}");
+          }
+          execute(fileName);
+        }
         else {
-          kill();
+          // kill();
           ppf("script.onChange set to None\n");
         }
 
@@ -187,10 +191,8 @@ static float _time(float j) {
       case onSetValue:
         var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
         for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
-          //if (scriptRuntime._scExecutables[rowNr]) {
-            const char *name = scriptRuntime._scExecutables[rowNr].name.c_str();
-            mdl->setValue(var, JsonString(name?name:"xx", JsonString::Copied), rowNr);
-          //}
+          const char *name = scriptRuntime._scExecutables[rowNr].name.c_str();
+          mdl->setValue(var, JsonString(name?name:"xx", JsonString::Copied), rowNr);
         }
         return true;
       default: return false;
@@ -200,7 +202,6 @@ static float _time(float j) {
       case onSetValue:
         var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
         for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
-        // if (runningPrograms.execPtr[rowNr])
            mdl->setValue(var, scriptRuntime._scExecutables[rowNr].isRunning(), rowNr);
         }
         return true;
@@ -211,8 +212,7 @@ static float _time(float j) {
       case onSetValue:
         var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
         for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
-         // if (runningPrograms.execPtr[rowNr])
-            mdl->setValue(var, scriptRuntime._scExecutables[rowNr].isHalted, rowNr);
+           mdl->setValue(var, scriptRuntime._scExecutables[rowNr].isHalted, rowNr);
         }
         return true;
       default: return false;
@@ -222,7 +222,6 @@ static float _time(float j) {
       case onSetValue:
         var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
         for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
-          //if(runningPrograms.execPtr[rowNr])
           mdl->setValue(var, scriptRuntime._scExecutables[rowNr].exeExist, rowNr);
         }
         return true;
@@ -233,20 +232,17 @@ static float _time(float j) {
       case onSetValue:
         var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
         for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
-          //if(runningPrograms.execPtr[rowNr])
-          mdl->setValue(var, scriptRuntime._scExecutables[rowNr].__run_handle_index, rowNr);
+           mdl->setValue(var, scriptRuntime._scExecutables[rowNr].__run_handle_index, rowNr);
         }
         return true;
       default: return false;
     }});
     ui->initButton(tableVar, "Kill", false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        // if (runningPrograms.execPtr[rowNr])
-        for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
-          kill(runningPrograms.execPtr[rowNr]->name.c_str());
-        }
-        //else
-        //  ppf("dev try to kill a script which does not exist anymore... (%d)\n", rowNr);
+        if (rowNr < scriptRuntime._scExecutables.size())
+          kill(scriptRuntime._scExecutables[rowNr].name.c_str());
+        else
+          ppf("dev try to kill a script which does not exist anymore... (%d)\n", rowNr);
         return true;
       default: return false;
     }});
@@ -343,29 +339,44 @@ static float _time(float j) {
       ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
   }
 
-  void UserModLive::runAsTask(const char * programName)
+  // void UserModLive::runAsTask(const char * programName)
+  // {
+  //   scriptRuntime.executeAsTask(string(programName));
+  // }
+  // void UserModLive::runAsTask(const char * programName,const char * function)
+  // {
+  //   scriptRuntime.executeAsTask(string(programName),string(function));
+  // }
+  // void UserModLive::run(const char * programName)
+  // {
+  //   scriptRuntime.execute(string(programName));
+  // }
+  // void UserModLive::run(const char * programName,const char * function)
+  // {
+  //   scriptRuntime.execute(string(programName),string(function));
+  // }
+
+  void UserModLive::execute(const char * fileName, const char * function)
   {
-    scriptRuntime.executeAsTask(string(programName));
+    if (function)
+      scriptRuntime.execute(string(fileName), string(function));
+    else
+      scriptRuntime.execute(string(fileName));
   }
-  void UserModLive::runAsTask(const char * programName,const char * function)
+  void UserModLive::executeAsTask(const char * fileName, const char * function)
   {
-    scriptRuntime.executeAsTask(string(programName),string(function));
-  }
-  void UserModLive::run(const char * programName)
-  {
-    scriptRuntime.execute(string(programName));
-  }
-  void UserModLive::run(const char * programName,const char * function)
-  {
-    scriptRuntime.execute(string(programName),string(function));
+    if (function)
+      scriptRuntime.executeAsTask(string(fileName), string(function));
+    else
+      scriptRuntime.executeAsTask(string(fileName));
   }
 
-  bool UserModLive::compile(const char *fileName, const char * progName,const char * post) {
-    ppf("live run n:%s o:%s \n", fileName, this->fileName);
+  bool UserModLive::compile(const char *fileName, const char * progName, const char * post) {
+    ppf("live compile n:%s o:%s \n", fileName, this->fileName);
     if (progName == nullptr)
-      progName=fileName;
+      progName = fileName;
     //if(this->fileName!=NULL)
-    kill();
+    kill(); //doesn't this kill running scripts, e.g. when changing a Live Fixture, a running Live Effect will be killed !
     kill(fileName); //kill any old script
     
     //this->fileName=(char *)_fileName;
@@ -416,8 +427,10 @@ static float _time(float j) {
       {
         ppf("parsing %s done\n", fileName);
         ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
-    scriptRuntime.addExe(*executable);
-    ppf("exe created %d\n",scriptRuntime._scExecutables.size());
+
+        scriptRuntime.addExe(*executable);
+        ppf("exe created %d\n", scriptRuntime._scExecutables.size());
+
         return true;
         // ppf("setup done\n");
         // strlcpy(this->fileName, fileName, sizeof(this->fileName));
@@ -429,27 +442,9 @@ static float _time(float j) {
     }
   }
 
-/*
- void UserModLive::reRun(const char *fileName, const char * main, const char * post) {
-    ppf("live (re)Run n:%s o:%s (m:%s, p:%s)\n", fileName, this->fileName, main, post?post:"-");
-
-    bool found = false;
-    for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
-      if (runningPrograms.execPtr[rowNr] != nullptr) { // && !runningPrograms.execPtr[rowNr]->isRunning() status is still running, even if process has terminated...
-        if (strncmp(runningPrograms.execPtr[rowNr]->name.c_str(), fileName, 32) == 0) {
-          ppf("reRun %s\n", runningPrograms.execPtr[rowNr]->name.c_str());
-          runningPrograms.execPtr[rowNr]->executeAsTask(main);
-          found = true;
-        }
-      }
-    }
-    if (!found)
-      run(fileName, main, post);
-  }
-*/
   void UserModLive::kill(const char * name) {
     //tbd: kill specific task...
-    if(name!=NULL)
+    if (name != NULL)
     { 
       scriptRuntime.kill(string(name));
       scriptRuntime.deleteExe(string(name));
@@ -458,4 +453,11 @@ static float _time(float j) {
     {
       scriptRuntime.killAndFreeRunningProgram();
     }
+  }
+
+  bool UserModLive::taskExists(const char *fileName) {
+    for (auto &executable: scriptRuntime._scExecutables)
+      if (strncmp(executable.name.c_str(), fileName, 32) == 0)
+        return true;
+    return false;
   }

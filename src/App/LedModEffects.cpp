@@ -193,7 +193,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
             // if (leds->effectNr < effects.size()) {
             //   Effect* effect = effects[leds->effectNr];
               if (leds->effect && strncmp(leds->effect->name(), "Live Effect", 12) == 0) {
-                liveM->kill();
+                // liveM->kill();
               }
             // }
           #endif

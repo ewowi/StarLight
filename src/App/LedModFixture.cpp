@@ -318,18 +318,23 @@
       if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
         ppf("projectAndMap Live Fixture %s\n", fileName);
 
-        liveM->scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
+        if (!liveM->taskExists(fileName)) {
+          //if the file is already compiled, use it, otherwise compile new one
+
+          liveM->scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
 
           liveM->addExternals();
 
           //adding to scPreBaseScript
           liveM->addExternalFun("void", "addPixelsPre", "(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4, uint8_t a5, uint8_t a6, uint8_t a7)", (void *)_addPixelsPre);
           liveM->addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
-        liveM->addExternalFun("void", "addPin", "(uint16_t a1)", (void *)_addPin);
-        liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
+          liveM->addExternalFun("void", "addPin", "(uint16_t a1)", (void *)_addPin);
+          liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
 
-        liveM->compile(fileName,"fixture");
-        liveM->run("fixture");
+          liveM->compile(fileName);
+        }
+        
+        liveM->execute(fileName);
 
       } else 
     #endif

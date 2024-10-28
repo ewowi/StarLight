@@ -43,17 +43,19 @@ public:
 
   void loop1s();
 
-  void run(const char * programName);
-  void run(const char * programName,const char * function);
+  // void run(const char * programName);
+  // void run(const char * programName,const char * function);
 
-  void runAsTask(const char * programName);
-  void runAsTask(const char * programName,const char * function);
+  // void runAsTask(const char * programName);
+  // void runAsTask(const char * programName,const char * function);
   //bool compile(const char *fileName, const char * post);
   bool compile(const char *fileName, const char * progName=nullptr,const char * post=nullptr);
-  //void run(const char *fileName, const char * main = "main", const char * post = nullptr);
-   void reRun(const char *fileName, const char * main = "main", const char * post = nullptr);
 
   void kill(const char * fileName = nullptr);
+
+  bool taskExists(const char *fileName);
+  void execute(const char * fileName, const char * function = nullptr);
+  void executeAsTask(const char * fileName, const char * function = nullptr);
 
 };
 
