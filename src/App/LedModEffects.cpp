@@ -90,6 +90,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       effects.push_back(new LaserGEQEffect);
       effects.push_back(new PaintbrushEffect);
       effects.push_back(new WaverlyEffect);
+      effects.push_back(new VUMeterEffect);
     #endif
     //3D
     effects.push_back(new RipplesEffect);
@@ -202,6 +203,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           if (effectNr < effects.size()) {
             leds->effect = effects[effectNr];
             ppf("setEffect effect[%d]: %s\n", rowNr, leds->effect->name());
+            strlcat(fix->infoText, leds->effect->name(), sizeof(fix->infoText));
 
             if (leds->effect->dim() != leds->effectDimension) {
               leds->effectDimension = leds->effect->dim();
@@ -437,16 +439,22 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
       //for each programmed effect
       //  run the next frame of the effect
-      uint8_t rowNr = 0;
-      for (LedsLayer *leds: fix->layers) {
+      for (uint8_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
+        LedsLayer *leds = fix->layers[rowNr];
         if (leds->effect && !leds->doMap) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
           // ppf(" %s %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->effect->name(), leds->start.x, leds->start.y, leds->start.z, leds->end.x, leds->end.y, leds->end.z, leds->size.x, leds->size.y, leds->size.z );
 
           leds->effectData.begin(); //sets the effectData pointer back to 0 so loop effect can go through it
 
-          mdl->getValueRowNr = rowNr++;
+          mdl->getValueRowNr = rowNr;
           leds->effect->loop(*leds);
           mdl->getValueRowNr = UINT8_MAX;
+
+          if (fix->showInfo && rowNr == fix->layers.size() -1) { //last effect, add sysinfo
+            char text[20];
+            print->fFormat(text, sizeof(text), "%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->infoText);
+            leds->drawText(text, 16, 0, 1);
+          }
 
           // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
           //   leds->fadeToBlackBy(50);

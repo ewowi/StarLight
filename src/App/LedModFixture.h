@@ -9,6 +9,7 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
+#pragma once
 #include "SysModule.h"
 #include "../Sys/SysModModel.h"
 
@@ -82,6 +83,7 @@ public:
   void setup();
 
   void loop();
+  void loop1s();
 
   Coord3D fixSize = {8,8,1};
   uint16_t nrOfLeds = 64; //amount of physical leds
@@ -107,6 +109,9 @@ public:
   uint8_t globalBlend = 128;
 
   uint16_t fps = 60;
+  uint16_t realFps = 60;
+  bool showInfo = true;
+  char infoText[20] = "";
   bool driverShow = true;
 
   //temporary here  

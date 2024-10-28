@@ -9,6 +9,8 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
+#include "LedModFixture.h"
+
 #ifdef STARLIGHT_USERMOD_AUDIOSYNC
   #include "../User/UserModAudioSync.h"
 #endif
@@ -810,7 +812,7 @@ class NoiseMeterEffect: public Effect {
     // if (maxLen >leds.nrOfLeds) maxLen = leds.nrOfLeds;
 
     for (int i=0; i<maxLen; i++) {                                    // The louder the sound, the wider the soundbar. By Andrew Tuline.
-      uint8_t index = inoise8(i*audioSync->sync.volumeSmth+*aux0, *aux1+i*audioSync->sync.volumeSmth);  // Get a value from the noise function. I'm using both x and y axis.
+      uint8_t index = inoise8(i * audioSync->sync.volumeSmth + (*aux0), (*aux1) + i * audioSync->sync.volumeSmth);  // Get a value from the noise function. I'm using both x and y axis.
       leds.setPixelColor(i, ColorFromPalette(leds.palette, index));//, 255, PALETTE_SOLID_WRAP));
     }
 
@@ -1164,43 +1166,46 @@ class OctopusEffect: public Effect {
     Map_t    *rMap = leds.effectData.readWrite<Map_t>(leds.size.x * leds.size.y); //array
     uint32_t *step = leds.effectData.readWrite<uint32_t>();
 
-    const uint8_t mapp = 180 / max(leds.size.x,leds.size.y);
+    if (leds.effectData.success()) { //octopus allocates quite a lot, so worth checking
 
-    Coord3D pos = {0,0,0};
+      const uint8_t mapp = 180 / max(leds.size.x,leds.size.y);
 
-    if (*setup || *prevLedSize != leds.size) { // Setup map if leds.size or offset changes
-      *setup = false;
-      *prevLedSize = leds.size;
-      const uint8_t C_X = leds.size.x / 2 + (offsetX - 128)*leds.size.x/255;
-      const uint8_t C_Y = leds.size.y / 2 + (offsetY - 128)*leds.size.y/255;
-      for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
-        for (pos.y = 0; pos.y < leds.size.y; pos.y++) {
-          uint16_t indexV = leds.XYZUnprojected(pos);
-          if (indexV < leds.size.x * leds.size.y) { //excluding UINT16_MAX from XY if out of bounds due to projection
-            rMap[indexV].angle = 40.7436f * atan2f(pos.y - C_Y, pos.x - C_X); // avoid 128*atan2()/PI
-            rMap[indexV].radius = hypotf(pos.x - C_X, pos.y - C_Y) * mapp; //thanks Sutaburosu
+      Coord3D pos = {0,0,0};
+
+      if (*setup || *prevLedSize != leds.size) { // Setup map if leds.size or offset changes
+        *setup = false;
+        *prevLedSize = leds.size;
+        const uint8_t C_X = leds.size.x / 2 + (offsetX - 128)*leds.size.x/255;
+        const uint8_t C_Y = leds.size.y / 2 + (offsetY - 128)*leds.size.y/255;
+        for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
+          for (pos.y = 0; pos.y < leds.size.y; pos.y++) {
+            uint16_t indexV = leds.XYZUnprojected(pos);
+            if (indexV < leds.size.x * leds.size.y) { //excluding UINT16_MAX from XY if out of bounds due to projection
+              rMap[indexV].angle = 40.7436f * atan2f(pos.y - C_Y, pos.x - C_X); // avoid 128*atan2()/PI
+              rMap[indexV].radius = hypotf(pos.x - C_X, pos.y - C_Y) * mapp; //thanks Sutaburosu
+            }
           }
         }
       }
-    }
 
-    *step = sys->now * speed / 32 / 10;//mdl->getValue("realFps").as<int>();  // WLEDMM 40fps
+      *step = sys->now * speed / 32 / 10;//fix->realFps;  // WLEDMM 40fps
 
-    for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
-      for (pos.y = 0; pos.y < leds.size.y; pos.y++) {
-        // uint16_t indexV = leds.XYZ(pos);
-        uint16_t indexV = leds.XYZUnprojected(pos);
-        if (indexV < leds.size.x * leds.size.y) { //excluding UINT16_MAX from XY if out of bounds due to projection
-          byte angle = rMap[indexV].angle;
-          byte radius = rMap[indexV].radius;
-          //CRGB c = CHSV(*step / 2 - radius, 255, sin8(sin8((angle * 4 - radius) / 4 + *step) + radius - *step * 2 + angle * (SEGMENT.custom3/3+1)));
-          uint16_t intensity = sin8(sin8((angle * 4 - radius) / 4 + *step/2) + radius - *step + angle * legs);
-          intensity = map(intensity*intensity, 0, UINT16_MAX, 0, 255); // add a bit of non-linearity for cleaner display
-          CRGB color = ColorFromPalette(leds.palette, *step / 2 - radius, intensity);
-          leds[pos] = color;
+      for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
+        for (pos.y = 0; pos.y < leds.size.y; pos.y++) {
+          // uint16_t indexV = leds.XYZ(pos);
+          uint16_t indexV = leds.XYZUnprojected(pos);
+          if (indexV < leds.size.x * leds.size.y) { //excluding UINT16_MAX from XY if out of bounds due to projection
+            byte angle = rMap[indexV].angle;
+            byte radius = rMap[indexV].radius;
+            //CRGB c = CHSV(*step / 2 - radius, 255, sin8(sin8((angle * 4 - radius) / 4 + *step) + radius - *step * 2 + angle * (SEGMENT.custom3/3+1)));
+            uint16_t intensity = sin8(sin8((angle * 4 - radius) / 4 + *step/2) + radius - *step + angle * legs);
+            intensity = map(intensity*intensity, 0, UINT16_MAX, 0, 255); // add a bit of non-linearity for cleaner display
+            CRGB color = ColorFromPalette(leds.palette, *step / 2 - radius, intensity);
+            leds[pos] = color;
+          }
         }
       }
-    }
+    } //if (leds.effectData.success())
   }
   
 }; // Octopus
@@ -2372,7 +2377,7 @@ class WaverlyEffect: public Effect {
     long t = sys->now / 2; 
     Coord3D pos = {0,0,0}; //initialize z otherwise wrong results
     for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
-      uint16_t thisVal = audioSync->sync.volumeSmth*amplification * inoise8(pos.x * 45 , t , t) / 4096;      // WLEDMM back to SR code
+      uint16_t thisVal = audioSync->sync.volumeSmth * amplification * inoise8(pos.x * 45 , t , t) / 4096;      // WLEDMM back to SR code
       uint16_t thisMax = min(map(thisVal, 0, 512, 0, leds.size.y), (long)leds.size.y);
 
       for (pos.y = 0; pos.y < thisMax; pos.y++) {
@@ -2763,6 +2768,52 @@ class FunkyPlankEffect: public Effect {
   }
 }; //FunkyPlank
 
+class VUMeterEffect: public Effect {
+  const char * name() {return "VU Meter";}
+  uint8_t dim() {return _2D;}
+  const char * tags() {return "♫💫";}
+
+  void drawNeedle(LedsLayer &leds, float angle, Coord3D topLeft, Coord3D size, CRGB color) {
+      int x0 = topLeft.x + size.x / 2; // Center of the needle
+      int y0 = topLeft.y + size.y - 1; // Bottom of the needle
+
+      leds.drawCircle(topLeft.x + size.x / 2, topLeft.y + size.y / 2, size.x/2, ColorFromPalette(leds.palette, 35, 128), false);
+
+      // Calculate needle end position
+      int x1 = x0 - round(size.y * 0.7 * cos((angle + 30) * PI / 180));
+      int y1 = y0 - round(size.y * 0.7 * sin((angle + 30) * PI / 180));
+
+      // Draw the needle
+      leds.drawLine(x0, y0, x1, y1, color, true);
+  }
+
+  void setup(LedsLayer &leds, JsonObject parentVar) {
+    Effect::setup(leds, parentVar); //palette
+    leds.fill_solid(CRGB::Black);
+    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(255));
+    ui->initSlider(parentVar, "bands", leds.effectData.write<uint8_t>(NUM_GEQ_CHANNELS), 1, NUM_GEQ_CHANNELS);
+  }
+
+  void loop(LedsLayer &leds) {
+    //Binding of controls. Keep before binding of vars and keep in same order as in setup()
+    uint8_t speed = leds.effectData.read<uint8_t>();
+    uint8_t num_bands = leds.effectData.read<uint8_t>();
+    leds.fadeToBlackBy(200);
+
+    uint8_t nHorizontal = 4;
+    uint8_t nVertical = 2;
+
+    uint8_t band = 0;
+    for (int h = 0; h < nHorizontal; h++) {
+      for (int v = 0; v < nVertical; v++) {
+        drawNeedle(leds, (float)audioSync->fftResults[2*(band++)] / 2.0, {leds.size.x * h / nHorizontal, leds.size.y * v / nVertical, 0}, {leds.size.x / nHorizontal, leds.size.y / nVertical, 0}, 
+                ColorFromPalette(leds.palette, 255 / (nHorizontal * nVertical) * band));
+      } //audioSync->fftResults[band++] / 200
+    }
+    // ppf(" v:%f, f:%f", audioSync->volumeSmth, (float) audioSync->fftResults[5]);
+  }
+}; //VUMeter
+
 
 #endif // End Audio Effects
 
@@ -2946,27 +2997,27 @@ class LiveEffect: public Effect {
 
               liveM->scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
 
-              liveM->addExternals();
+                liveM->addExternals();
 
-              liveM->addExternalFun("CRGB", "hsv", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)hsv);
-              liveM->addExternalFun("CRGB", "rgb", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)rgb);
-              liveM->addExternalFun("uint8_t", "beatSin8", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)_beatSin8);
-              liveM->addExternalFun("uint8_t", "inoise8", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_inoise8);
-              liveM->addExternalFun("uint8_t", "random8", "()", (void *)_random8);
-              liveM->addExternalFun("uint16_t", "random16", "(uint16_t a1)", (void *)_random16);
-              liveM->addExternalFun("uint8_t", "sin8", "(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
-              liveM->addExternalFun("uint8_t", "cos8", "(uint8_t a1)",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
-              liveM->addExternalFun("void", "sPC", "(uint16_t a1, CRGB a2)", (void *)sPCLive);
-              liveM->addExternalFun("void", "sCFP", "(uint16_t a1, uint8_t a2, uint8_t a3)", (void *)sCFPLive);
-              liveM->addExternalFun("void", "fadeToBlackBy", "(uint8_t a1)", (void *)_fadeToBlackBy);
+                liveM->addExternalFun("CRGB", "hsv", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)hsv);
+                liveM->addExternalFun("CRGB", "rgb", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)rgb);
+                liveM->addExternalFun("uint8_t", "beatSin8", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)_beatSin8);
+                liveM->addExternalFun("uint8_t", "inoise8", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_inoise8);
+                liveM->addExternalFun("uint8_t", "random8", "()", (void *)_random8);
+                liveM->addExternalFun("uint16_t", "random16", "(uint16_t a1)", (void *)_random16);
+                liveM->addExternalFun("uint8_t", "sin8", "(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
+                liveM->addExternalFun("uint8_t", "cos8", "(uint8_t a1)",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
+                liveM->addExternalFun("void", "sPC", "(uint16_t a1, CRGB a2)", (void *)sPCLive);
+                liveM->addExternalFun("void", "sCFP", "(uint16_t a1, uint8_t a2, uint8_t a3)", (void *)sCFPLive);
+                liveM->addExternalFun("void", "fadeToBlackBy", "(uint8_t a1)", (void *)_fadeToBlackBy);
 
-              liveM->addExternalVal("uint8_t", "slider1", &slider1); //used in map function
-              liveM->addExternalVal("uint8_t", "slider2", &slider2); //used in map function
-              liveM->addExternalVal("uint8_t", "slider3", &slider3); //used in map function
+                liveM->addExternalVal("uint8_t", "slider1", &slider1); //used in map function
+                liveM->addExternalVal("uint8_t", "slider2", &slider2); //used in map function
+                liveM->addExternalVal("uint8_t", "slider3", &slider3); //used in map function
 
-              liveM->scPreBaseScript += "define width " + std::to_string(leds.size.x) + "\n";
-              liveM->scPreBaseScript += "define height " + std::to_string(leds.size.y) + "\n";
-              liveM->scPreBaseScript += "define NUM_LEDS " + std::to_string(leds.nrOfLeds) + "\n";
+                liveM->scPreBaseScript += "define width " + std::to_string(leds.size.x) + "\n";
+                liveM->scPreBaseScript += "define height " + std::to_string(leds.size.y) + "\n";
+                liveM->scPreBaseScript += "define NUM_LEDS " + std::to_string(leds.nrOfLeds) + "\n";
               liveM->scPreBaseScript += "define panel_width " + std::to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
 
               liveM->compile(fileName, nullptr, "void main(){resetStat();setup();while(2>1){loop();sync();}}");

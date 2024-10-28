@@ -69,11 +69,12 @@
       case onUI:
         if (bytesPerPixel) {
           mappingStatus = 1; //rebuild the fixture - so it is send to ui
-          doSendFixtureDefinition = true; //send fixture definition to ui
+          if (web->ws.getClients().length())
+            doSendFixtureDefinition = true; //send fixture definition to ui
         }
         return true;
       case onLoop: {
-        if (mappingStatus == 0 && bytesPerPixel && web->ws.getClients().length()) { //not remapping and clients exists
+        if (mappingStatus == 0 && bytesPerPixel && !doSendFixtureDefinition && web->ws.getClients().length()) { //not remapping and clients exists
           var["interval"] = max(nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
 
           #define headerBytesPreview 5
@@ -194,7 +195,8 @@
         return true; }
       case onChange: {
         doAllocPins = true;
-        doSendFixtureDefinition = true;
+        if (web->ws.getClients().length())
+          doSendFixtureDefinition = true;
 
         //remap all leds
         // for (std::vector<LedsLayer *>::iterator leds=layers.begin(); leds!=layers.end(); ++leds) {
@@ -229,7 +231,7 @@
       default: return false; 
     }});
 
-    ui->initNumber(parentVar, "realFps", uint16_t(0), 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "realFps", &realFps, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
         web->addResponse(var, "comment", "f(%d leds)", nrOfLeds, 0); //0 is to force format overload used
         return true;
@@ -240,10 +242,14 @@
       default: return false;
     }});
 
+    ui->initCheckBox(parentVar, "info", &showInfo);
+
     ui->initCheckBox(parentVar, "driverShow", &driverShow, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
-        #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+        #if STARLIGHT_CLOCKLESS_LED_DRIVER
           ui->setLabel(var, "CLD Show");
+        #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+          ui->setLabel(var, "CLVD Show");
         #else
           ui->setLabel(var, "FastLED Show");
         #endif
@@ -296,6 +302,10 @@
     }
   }
 
+  void LedModFixture::loop1s() {
+    memmove(infoText, infoText+1, strlen(infoText)); //no memory leak ?
+  }
+
   void LedModFixture::mapInitAlloc() {
     // projectAndMap();
     mappingStatus = 2; //mapping in progress
@@ -310,11 +320,11 @@
 
         liveM->scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
 
-        liveM->addExternals();
+          liveM->addExternals();
 
-        //adding to scPreBaseScript
-        liveM->addExternalFun("void", "addPixelsPre", "(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4, uint8_t a5, uint8_t a6, uint8_t a7)", (void *)_addPixelsPre);
-        liveM->addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
+          //adding to scPreBaseScript
+          liveM->addExternalFun("void", "addPixelsPre", "(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4, uint8_t a5, uint8_t a6, uint8_t a7)", (void *)_addPixelsPre);
+          liveM->addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
         liveM->addExternalFun("void", "addPin", "(uint16_t a1)", (void *)_addPin);
         liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
 
@@ -678,6 +688,7 @@ void LedModFixture::addPixelsPre(Coord3D size, uint16_t nrOfLeds, uint8_t factor
   prevIndexP = 0; //for allocPins
 
   if (bytesPerPixel && doSendFixtureDefinition) {
+    for (auto &client:web->ws.getClients()) while (client->queueLen() > 3) delay(10); //ui refresh, wait a bit
     size_t len = min(nrOfLeds * 6 + headerBytesFixture, 4096);
     wsBuf = web->ws.makeBuffer(len);
     if (wsBuf) {
@@ -714,9 +725,9 @@ void LedModFixture::addPixel(Coord3D pixel) {
           buffer[12] = previewBufferIndex/256; //first empty slot
           buffer[13] = previewBufferIndex%256;
           //send the buffer and create a new one
-          web->sendBuffer(wsBuf, true);
+          web->sendBuffer(wsBuf, true, nullptr, false);
           delay(50);
-          ppf("buffer sent i:%d p:%d r:%d r6:%d (1:%d)\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6, buffer[1]);
+          ppf("buffer sent i:%d p:%d r:%d r6:%d (1:%d m:%u)\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6, buffer[1], millis());
 
           buffer[0] = 1; //userfun 1
           buffer[1] = UINT8_MAX;
@@ -795,14 +806,14 @@ void LedModFixture::addPixelsPost() {
       byte* buffer = wsBuf->get();
       buffer[12] = previewBufferIndex/256; //last slot filled
       buffer[13] = previewBufferIndex%256; //last slot filled
-      web->sendBuffer(wsBuf, true);
+      web->sendBuffer(wsBuf, true, nullptr, false);
 
-      ppf("last buffer sent i:%d p:%d r:%d r6:%d (1:%d)\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6, buffer[1]);
+      ppf("last buffer sent i:%d p:%d r:%d r6:%d (1:%d m:%u)\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6, buffer[1], millis());
 
       ppf("addPixelsPost before unlock and clean:%d\n", indexP);
       wsBuf->unlock();
       web->ws._cleanBuffers();
-      delay(50);
+      // delay(50);
     }
 
     ppf("addPixelsPost after unlock and clean:%d\n", indexP);

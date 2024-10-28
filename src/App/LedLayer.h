@@ -88,6 +88,7 @@ class SharedData {
   private:
     byte *data = nullptr;
     uint16_t index = 0;
+    bool dataAllocated = true;
 
   public:
     uint16_t bytesAllocated = 0;
@@ -109,6 +110,7 @@ class SharedData {
     }
     bytesAllocated = 0;
     alertIfChanged = false;
+    dataAllocated = true;
     begin();
   }
 
@@ -120,6 +122,7 @@ class SharedData {
   //returns the next pointer to a specified type (length for arrays)
   template <typename Type>
   Type * readWrite(int length = 1) {
+    if (!dataAllocated) return nullptr;
     size_t newIndex = index + length * sizeof(Type);
     if (newIndex > bytesAllocated) {
       size_t newSize = bytesAllocated + (1 + ( newIndex - bytesAllocated)/32) * 32; // add a multitude of 32 bytes
@@ -134,7 +137,10 @@ class SharedData {
           ppf("dev sharedData.readWrite reallocating, this should not happen ! %d -> %d\n", bytesAllocated, newSize);
         bytesAllocated = newSize;
       }
-      else ppf("dev sharedData.readWrite, alloc not successful %d->%d %d->%d\n", index, newIndex, bytesAllocated, newSize);
+      else {
+        ppf("dev sharedData.readWrite, alloc not successful %d->%d %d->%d\n", index, newIndex, bytesAllocated, newSize);
+        dataAllocated = false;
+      }
     }
     // ppf("bind %d->%d %d\n", index, newIndex, bytesAllocated);
     Type * returnValue  = reinterpret_cast<Type *>(data + index);
@@ -155,6 +161,10 @@ class SharedData {
   Type read() {
     Type *result = readWrite<Type>(); //not supported for arrays yet
     return *result;
+  }
+
+  bool success() {
+    return dataAllocated;
   }
 
 };
@@ -435,6 +445,61 @@ public:
         int e2 = err;
         if (e2 >-dx) { err -= dy; x0 += sx; }
         if (e2 < dy) { err += dx; y0 += sy; }
+      }
+    }
+  }
+
+  void drawCircle(uint16_t cx, uint16_t cy, uint8_t radius, CRGB col, bool soft) {
+    if (radius == 0) return;
+    if (soft) {
+      // Xiaolin Wu’s algorithm
+      int rsq = radius*radius;
+      int x = 0;
+      int y = radius;
+      unsigned oldFade = 0;
+      while (x < y) {
+        float yf = sqrtf(float(rsq - x*x)); // needs to be floating point
+        unsigned fade = float(0xFFFF) * (ceilf(yf) - yf); // how much color to keep
+        if (oldFade > fade) y--;
+        oldFade = fade;
+        setPixelColor(XY(cx+x, cy+y), blend(col, getPixelColor(XY(cx+x, cy+y)), fade));
+        setPixelColor(XY(cx-x, cy+y), blend(col, getPixelColor(XY(cx-x, cy+y)), fade));
+        setPixelColor(XY(cx+x, cy-y), blend(col, getPixelColor(XY(cx+x, cy-y)), fade));
+        setPixelColor(XY(cx-x, cy-y), blend(col, getPixelColor(XY(cx-x, cy-y)), fade));
+        setPixelColor(XY(cx+y, cy+x), blend(col, getPixelColor(XY(cx+y, cy+x)), fade));
+        setPixelColor(XY(cx-y, cy+x), blend(col, getPixelColor(XY(cx-y, cy+x)), fade));
+        setPixelColor(XY(cx+y, cy-x), blend(col, getPixelColor(XY(cx+y, cy-x)), fade));
+        setPixelColor(XY(cx-y, cy-x), blend(col, getPixelColor(XY(cx-y, cy-x)), fade));
+        setPixelColor(XY(cx+x, cy+y-1), blend(getPixelColor(XY(cx+x, cy+y-1)), col, fade));
+        setPixelColor(XY(cx-x, cy+y-1), blend(getPixelColor(XY(cx-x, cy+y-1)), col, fade));
+        setPixelColor(XY(cx+x, cy-y+1), blend(getPixelColor(XY(cx+x, cy-y+1)), col, fade));
+        setPixelColor(XY(cx-x, cy-y+1), blend(getPixelColor(XY(cx-x, cy-y+1)), col, fade));
+        setPixelColor(XY(cx+y-1, cy+x), blend(getPixelColor(XY(cx+y-1, cy+x)), col, fade));
+        setPixelColor(XY(cx-y+1, cy+x), blend(getPixelColor(XY(cx-y+1, cy+x)), col, fade));
+        setPixelColor(XY(cx+y-1, cy-x), blend(getPixelColor(XY(cx+y-1, cy-x)), col, fade));
+        setPixelColor(XY(cx-y+1, cy-x), blend(getPixelColor(XY(cx-y+1, cy-x)), col, fade));
+        x++;
+      }
+    } else {
+      // Bresenham’s Algorithm
+      int d = 3 - (2*radius);
+      int y = radius, x = 0;
+      while (y >= x) {
+        setPixelColor(XY(cx+x, cy+y), col);
+        setPixelColor(XY(cx-x, cy+y), col);
+        setPixelColor(XY(cx+x, cy-y), col);
+        setPixelColor(XY(cx-x, cy-y), col);
+        setPixelColor(XY(cx+y, cy+x), col);
+        setPixelColor(XY(cx-y, cy+x), col);
+        setPixelColor(XY(cx+y, cy-x), col);
+        setPixelColor(XY(cx-y, cy-x), col);
+        x++;
+        if (d > 0) {
+          y--;
+          d += 4 * (x - y) + 10;
+        } else {
+          d += 4 * x + 6;
+        }
       }
     }
   }

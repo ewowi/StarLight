@@ -416,11 +416,11 @@ void SysModWeb::sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fi
   xSemaphoreGive(wsMutex);
 }
 
-void SysModWeb::sendBuffer(AsyncWebSocketMessageBuffer * wsBuf, bool isBinary, WebClient * client) {
+void SysModWeb::sendBuffer(AsyncWebSocketMessageBuffer * wsBuf, bool isBinary, WebClient * client, bool lossless) {
   for (auto &loopClient:ws.getClients()) {
     if (!client || client == loopClient) {
       if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
-        if (!isBinary || loopClient->queueLen() <= 3) {
+        if (!isBinary || !lossless || loopClient->queueLen() <= 3) {
           isBinary?loopClient->binary(wsBuf): loopClient->text(wsBuf);
           sendWsCounter++;
           if (isBinary)
@@ -428,6 +428,7 @@ void SysModWeb::sendBuffer(AsyncWebSocketMessageBuffer * wsBuf, bool isBinary, W
           else 
             sendWsTBytes+=wsBuf->length();
         }
+        else if (!lossless) ppf("sendBuffer not successful l:%d b:%d q:%d", wsBuf->length(), isBinary, loopClient->queueLen());
       }
       else {
         printClient("sendDataWs client full or not connected", loopClient);
