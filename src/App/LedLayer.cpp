@@ -83,14 +83,14 @@ void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
       break;
     case m_onePixel: {
       uint16_t oldIndexP = this->indexP;
-      std::vector<uint16_t> newVector;
-      newVector.push_back(oldIndexP);
-      newVector.push_back(indexP);
+      // std::vector<uint16_t> newVector;
+      // newVector.push_back(oldIndexP);
+      // newVector.push_back(indexP);
       leds.mappingTableIndexesSizeUsed++;
       if (leds.mappingTableIndexes.size() < leds.mappingTableIndexesSizeUsed)
-        leds.mappingTableIndexes.push_back(newVector);
+        leds.mappingTableIndexes.push_back({oldIndexP, indexP});
       else
-        leds.mappingTableIndexes[leds.mappingTableIndexesSizeUsed-1] = newVector;
+        leds.mappingTableIndexes[leds.mappingTableIndexesSizeUsed-1] = {oldIndexP, indexP};
 
       indexes = leds.mappingTableIndexesSizeUsed - 1; //array position
       mapType = m_morePixels;
@@ -266,7 +266,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
       for (std::vector<uint16_t> mappingTableIndex: mappingTableIndexes) {
         mappingTableIndex.clear();
       }
-      mappingTableIndexesSizeUsed = 0;
+      mappingTableIndexesSizeUsed = 0; //do not clear mappingTableIndexes, reuse it
 
       for (size_t i = 0; i < mappingTable.size(); i++) {
         mappingTable[i] = PhysMap();

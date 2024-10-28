@@ -23,7 +23,11 @@
 
 #include "../Sys/SysModModel.h" //for Coord3D
 
-#define NUM_VLEDS_Max 8192
+#ifndef STARLIGHT_MAXLEDS
+  #define STARLIGHT_MAXLEDS 8192
+#endif
+
+#define NUM_VLEDS_Max STARLIGHT_MAXLEDS
 
 class LedsLayer; //forward
 

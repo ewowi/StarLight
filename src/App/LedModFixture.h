@@ -47,7 +47,7 @@
   #endif
 #endif
 
-#define NUM_LEDS_Max 8192
+#define NUM_LEDS_Max STARLIGHT_MAXLEDS
 
 class LedModFixture: public SysModule {
 
