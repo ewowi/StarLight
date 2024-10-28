@@ -561,6 +561,9 @@ class MirrorProjection: public Projection {
     if (mirrorX) leds.size.x = (leds.size.x + 1) / 2;
     if (mirrorY) leds.size.y = (leds.size.y + 1) / 2;
     if (mirrorZ) leds.size.z = (leds.size.z + 1) / 2;
+
+    DefaultProjection dp;
+    dp.addPixelsPre(leds);
   }
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
@@ -570,16 +573,10 @@ class MirrorProjection: public Projection {
     bool mirrorY = leds.projectionData.read<bool>();
     bool mirrorZ = leds.projectionData.read<bool>();
 
-    if (mirrorX) {
-      if (pixel.x >= leds.size.x / 2) pixel.x = leds.size.x - 1 - pixel.x;
-    }
-    if (mirrorY) {
-      if (pixel.y >= leds.size.y / 2) pixel.y = leds.size.y - 1 - pixel.y;
-    }
-    if (mirrorZ) {
-      if (pixel.z >= leds.size.z / 2) pixel.z = leds.size.z - 1 - pixel.z;
-    }
-
+    if (mirrorX && pixel.x >= leds.size.x) pixel.x = leds.size.x * 2 - 1 - pixel.x;
+    if (mirrorY && pixel.y >= leds.size.y) pixel.y = leds.size.y * 2 - 1 - pixel.y;
+    if (mirrorZ && pixel.z >= leds.size.z) pixel.z = leds.size.z * 2 - 1 - pixel.z;
+    
     DefaultProjection dp;
     dp.addPixel(leds, pixel, indexV);
   }
@@ -747,6 +744,11 @@ class ScrollingProjection: public Projection {
     //ewowi: 2D/3D inits will be done automatically in the future, then the if's are not needed here
     if (leds.projectionDimension >= _2D) ui->initSlider(parentVar, "ySpeed", ySpeed, 0, 255, false);
     if (leds.projectionDimension == _3D) ui->initSlider(parentVar, "zSpeed", zSpeed, 0, 255, false);
+  }
+
+  void addPixelsPre(LedsLayer &leds) {
+    MirrorProjection mp;
+    mp.addPixelsPre(leds);
   }
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
