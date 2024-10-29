@@ -460,7 +460,7 @@ public:
     JsonObject currentVar = ui->initSelect(parentVar, "fixture", (uint8_t)0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         ui->setComment(var, "Predefined fixture");
-        JsonArray options1 = ui->setOptions(var); //See enum Fixtures for order of options
+        JsonVariant options1 = ui->setOptions(var); //See enum Fixtures for order of options
 
         //create 3 level select options
         char jsonString[512] = "";

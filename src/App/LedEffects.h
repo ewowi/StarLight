@@ -2951,12 +2951,12 @@ class LiveEffect: public Effect {
               liveM->scPreBaseScript += "define NUM_LEDS " + std::to_string(leds.nrOfLeds) + "\n";
               liveM->scPreBaseScript += "define panel_width " + std::to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
 
-              liveM->run(fileName, "main", "void main(){resetStat();setup();while(2>1){loop();show();}}");
+              liveM->compile(fileName, "main", "void main(){resetStat();setup();while(2>1){loop();show();}}");
             }
           }
         }
         else {
-          liveM->kill();
+          liveM->killAndDelete();
           leds.fadeToBlackBy(255);
           ppf("effect.script.onChange set to None:%d\n", fileNr);
         }
