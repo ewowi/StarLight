@@ -216,22 +216,16 @@ public:
 
   CRGBPalette16 palette;
 
-  uint16_t XY(uint16_t x, uint16_t y) {
+  int XY(int x, int y) {
     return XYZ(x, y, 0);
   }
 
-  uint16_t XYZUnprojected(Coord3D pixel) {
-    if (pixel >= 0 && pixel < size)
-      return pixel.x + pixel.y * size.x + pixel.z * size.x * size.y;
-    else
-      return UINT16_MAX;
-  }
+  bool inBounds(int x, int y, int z = 0);
+  bool inBounds(Coord3D pos);
 
-  uint16_t XYZ(uint16_t x, uint16_t y, uint16_t z) {
-    return XYZ({x, y, z});
-  }
-
-  uint16_t XYZ(Coord3D pixel);
+  int XYZUnprojected(Coord3D pixel);
+  int XYZ(int x, int y, int z);
+  int XYZ(Coord3D pixel);
 
   LedsLayer() {
     ppf("LedsLayer constructor (PhysMap:%d)\n", sizeof(PhysMap));
@@ -290,20 +284,20 @@ public:
 
 
   // maps the virtual led to the physical led(s) and assign a color to it
-  void setPixelColor(uint16_t indexV, CRGB color);
+  void setPixelColor(int indexV, CRGB color);
   void setPixelColor(Coord3D pixel, CRGB color) {setPixelColor(XYZ(pixel), color);}
 
   // temp methods until all effects have been converted to Palette / 2 byte mapping mode
-  void setPixelColorPal(uint16_t indexV, uint8_t palIndex, uint8_t palBri = 255);
+  void setPixelColorPal(int indexV, uint8_t palIndex, uint8_t palBri = 255);
   void setPixelColorPal(Coord3D pixel, uint8_t palIndex, uint8_t palBri = 255) {setPixelColorPal(XYZ(pixel), palIndex, palBri);}
 
-  void blendPixelColor(uint16_t indexV, CRGB color, uint8_t blendAmount);
+  void blendPixelColor(int indexV, CRGB color, uint8_t blendAmount);
   void blendPixelColor(Coord3D pixel, CRGB color, uint8_t blendAmount) {blendPixelColor(XYZ(pixel), color, blendAmount);}
 
-  CRGB getPixelColor(uint16_t indexV);
+  CRGB getPixelColor(int indexV);
   CRGB getPixelColor(Coord3D pixel) {return getPixelColor(XYZ(pixel));}
 
-  void addPixelColor(uint16_t indexV, CRGB color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
+  void addPixelColor(int indexV, CRGB color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
   void addPixelColor(Coord3D pixel, CRGB color) {setPixelColor(pixel, getPixelColor(pixel) + color);}
 
   void fadeToBlackBy(uint8_t fadeBy = 255);
@@ -311,7 +305,7 @@ public:
   void fill_rainbow(uint8_t initialhue, uint8_t deltahue);
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
-  bool isMapped(uint16_t indexV) {
+  bool isMapped(int indexV) {
     return indexV < mappingTableSizeUsed && (mappingTable[indexV].mapType == m_onePixel || mappingTable[indexV].mapType == m_morePixels);
   }
 
@@ -384,7 +378,7 @@ public:
       }
   }
 
-  void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX) {
+  void drawLine(int x0, int y0, int x1, int y1, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX) {
 
     // WLEDMM shorten line according to depth
     if (depth < UINT8_MAX) {
@@ -405,7 +399,7 @@ public:
 
     // single pixel (line length == 0)
     if (dx+dy == 0) {
-      setPixelColor(XY(x0, y0), color);
+      setPixelColor(XY(x0, y0), color); //no check on out of bounds yet
       return;
     }
 
@@ -431,10 +425,10 @@ public:
         if (steep) std::swap(x,y);  // temporarily swap if steep
         // pixel coverage is determined by fractional part of y co-ordinate
         // WLEDMM added out-of-bounds check: "unsigned(x) < cols" catches negative numbers _and_ too large values
-        if ((unsigned(x) < unsigned(size.x)) && (unsigned(y) < unsigned(size.y))) setPixelColor(XY(x, y), blend(color, getPixelColor(XY(x, y)), keep));
+        if (inBounds(x,y)) setPixelColor(XY(x, y), blend(color, getPixelColor(XY(x, y)), keep));
         int xx = x+int(steep);
         int yy = y+int(!steep);
-        if ((unsigned(xx) < unsigned(size.x)) && (unsigned(yy) < unsigned(size.y))) setPixelColor(XY(xx, yy), blend(color, getPixelColor(XY(xx, yy)), seep));
+        if (inBounds(xx,yy)) setPixelColor(XY(xx, yy), blend(color, getPixelColor(XY(xx, yy)), seep));
       
         intersectY += gradient;
         if (steep) std::swap(x,y);  // restore if steep
@@ -444,7 +438,7 @@ public:
       int err = (dx>dy ? dx : -dy)/2;   // error direction
       for (;;) {
         // if (x0 >= cols || y0 >= rows) break; // WLEDMM we hit the edge - should never happen
-        setPixelColor(XY(x0, y0), color);
+        if (inBounds(x0, y0)) setPixelColor(XY(x0, y0), color);
         if (x0==x1 && y0==y1) break;
         int e2 = err;
         if (e2 >-dx) { err -= dy; x0 += sx; }
@@ -453,7 +447,7 @@ public:
     }
   }
 
-  void drawCircle(uint16_t cx, uint16_t cy, uint8_t radius, CRGB col, bool soft) {
+  void drawCircle(int cx, int cy, uint8_t radius, CRGB col, bool soft) {
     if (radius == 0) return;
     if (soft) {
       // Xiaolin Wu’s algorithm
@@ -509,9 +503,9 @@ public:
   }
 
   //shift is used by drawText indicating which letter it is drawing
-  void drawCharacter(unsigned char chr, int x = 0, int16_t y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0, uint16_t shiftChr = 0);
+  void drawCharacter(unsigned char chr, int x = 0, int y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0, uint16_t shiftChr = 0);
 
-  void drawText(const char * text, int x = 0, int16_t y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0) {
+  void drawText(const char * text, int x = 0, int y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0) {
     const int numberOfChr = text?strnlen(text, 256):0; //max 256 charcters
     for (int shiftChr = 0; shiftChr < numberOfChr; shiftChr++) {
       drawCharacter(text[shiftChr], x, y, font, col, shiftPixel, shiftChr);

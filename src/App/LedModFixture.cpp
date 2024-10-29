@@ -242,7 +242,7 @@
       default: return false;
     }});
 
-    ui->initCheckBox(parentVar, "info", &showInfo);
+    ui->initCheckBox(parentVar, "tickerTape", &showTicker);
 
     ui->initCheckBox(parentVar, "driverShow", &driverShow, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
@@ -303,7 +303,7 @@
   }
 
   void LedModFixture::loop1s() {
-    memmove(infoText, infoText+1, strlen(infoText)); //no memory leak ?
+    memmove(tickerTape, tickerTape+1, strlen(tickerTape)); //no memory leak ?
   }
 
   void LedModFixture::mapInitAlloc() {

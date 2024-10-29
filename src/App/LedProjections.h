@@ -951,7 +951,7 @@ class RotateProjection: public Projection {
     RotateData *data = leds.projectionData.readWrite<RotateData>();
 
     if (data->expand) {
-      uint8_t size = max(leds.size.x, max(leds.size.y, leds.size.z));
+      int size = max(leds.size.x, max(leds.size.y, leds.size.z));
       size = sqrt(size * size * 2) + 1;
       Coord3D offset = {(size - leds.size.x) / 2, (size - leds.size.y) / 2, 0};
 

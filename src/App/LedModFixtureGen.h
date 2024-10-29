@@ -120,9 +120,9 @@ public:
     {
       f.printf("%s[%d,%d,%d]", pixelSep, x, y, z);
       strlcpy(pixelSep, ",", sizeof(pixelSep));
-      fixSize.x = max((uint16_t)fixSize.x, x);
-      fixSize.y = max((uint16_t)fixSize.y, y);
-      fixSize.z = max((uint16_t)fixSize.z, z);
+      fixSize.x = _max(fixSize.x, x);
+      fixSize.y = _max(fixSize.y, y);
+      fixSize.z = _max(fixSize.z, z);
       nrOfLeds++;
     }
 
@@ -558,9 +558,9 @@ public:
     }
     else if (strnstr(fgText, "Sticks", 32) != nullptr) {
       for (uint8_t fixNr = 0; fixNr < width; fixNr++) {
-        mdl->setValue("elements", "firstLed", Coord3D{(uint16_t)(fixNr*5), height, 0}, fixNr);
-        mdl->setValue("elements", "rowEnd", Coord3D{(uint16_t)(fixNr*5), height, 0}, fixNr);
-        mdl->setValue("elements", "columnEnd", Coord3D{(uint16_t)(fixNr*5), 0, 0}, fixNr);
+        mdl->setValue("elements", "firstLed", Coord3D{fixNr*5, height, 0}, fixNr);
+        mdl->setValue("elements", "rowEnd", Coord3D{fixNr*5, height, 0}, fixNr);
+        mdl->setValue("elements", "columnEnd", Coord3D{fixNr*5, 0, 0}, fixNr);
         mdl->setValue("elements", "pin", 2, fixNr);
       }
     }
@@ -594,9 +594,9 @@ public:
     else if (strnstr(fgText, "Cube3D", 32) != nullptr) {
       uint8_t size = length -1;
       for (uint8_t fixNr = 0; fixNr < length; fixNr++) {
-        mdl->setValue("elements", "firstLed", Coord3D{0,0,(uint16_t)fixNr}, fixNr);
-        mdl->setValue("elements", "rowEnd", Coord3D{0, length -1,(uint16_t)fixNr}, fixNr);
-        mdl->setValue("elements", "columnEnd", Coord3D{length -1, length -1,(uint16_t)fixNr}, fixNr);
+        mdl->setValue("elements", "firstLed", Coord3D{0,0,fixNr}, fixNr);
+        mdl->setValue("elements", "rowEnd", Coord3D{0, length -1,fixNr}, fixNr);
+        mdl->setValue("elements", "columnEnd", Coord3D{length -1, length -1,fixNr}, fixNr);
         mdl->setValue("elements", "pin", 12, fixNr);
       }
     }

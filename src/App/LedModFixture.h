@@ -110,8 +110,8 @@ public:
 
   uint16_t fps = 60;
   uint16_t realFps = 60;
-  bool showInfo = true;
-  char infoText[20] = "";
+  bool showTicker = true;
+  char tickerTape[20] = "";
   bool driverShow = true;
 
   //temporary here  

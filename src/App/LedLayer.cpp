@@ -103,13 +103,27 @@ void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
   // ppf("\n");
 }
 
-
 void LedsLayer::triggerMapping() {
     doMap = true; //specify which leds to remap
     fix->mappingStatus = 1; //start mapping
-  }
+}
 
-uint16_t LedsLayer::XYZ(Coord3D pixel) {
+bool LedsLayer::inBounds(int x, int y, int z) {
+  return x >= 0 && x < size.x && y >= 0 && y < size.y && z >= 0 && z < size.z;
+}
+bool LedsLayer::inBounds(Coord3D pos) {
+  return pos >= 0 && pos < size;
+}
+
+int LedsLayer::XYZUnprojected(Coord3D pixel) {
+  return pixel.x + pixel.y * size.x + pixel.z * size.x * size.y;
+}
+
+int LedsLayer::XYZ(int x, int y, int z) {
+  return XYZ({x, y, z});
+}
+
+int LedsLayer::XYZ(Coord3D pixel) {
 
   //using cached virtual class methods! (so no need for if projectionNr optimizations!)
   if (projection)
@@ -119,8 +133,10 @@ uint16_t LedsLayer::XYZ(Coord3D pixel) {
 }
 
 // maps the virtual led to the physical led(s) and assign a color to it
-void LedsLayer::setPixelColor(uint16_t indexV, CRGB color) {
-  if (indexV < mappingTableSizeUsed) {
+void LedsLayer::setPixelColor(int indexV, CRGB color) {
+  if (indexV < 0)
+    return;
+  else if (indexV < mappingTableSizeUsed) {
     switch (mappingTable[indexV].mapType) {
       case m_color:{
         mappingTable[indexV].rgb14 = ((min(color.r + 3, 255) >> 3) << 9) + 
@@ -137,27 +153,29 @@ void LedsLayer::setPixelColor(uint16_t indexV, CRGB color) {
           for (uint16_t indexP: mappingTableIndexes[mappingTable[indexV].indexes]) {
             fix->ledsP[indexP] = fix->pixelsToBlend[indexP]?blend(color, fix->ledsP[indexP], fix->globalBlend): color;
           }
-        // else
-        //   ppf("dev setPixelColor2 i:%d m:%d s:%d\n", indexV, mappingTable[indexV].indexes, mappingTableIndexes.size());
+        else
+          ppf("dev setPixelColor i:%d m:%d s:%d\n", indexV, mappingTable[indexV].indexes, mappingTableIndexes.size());
         break;
     }
   }
   else if (indexV < NUM_LEDS_Max) //no projection
     fix->ledsP[indexV] = fix->pixelsToBlend[indexV]?blend(color, fix->ledsP[indexV], fix->globalBlend): color;
-  else if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
+  else //if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
     ppf(" dev sPC %d >= %d", indexV, NUM_LEDS_Max);
 }
 
-void LedsLayer::setPixelColorPal(uint16_t indexV, uint8_t palIndex, uint8_t palBri) {
+void LedsLayer::setPixelColorPal(int indexV, uint8_t palIndex, uint8_t palBri) {
   setPixelColor(indexV, ColorFromPalette(palette, palIndex, palBri));
 }
 
-void LedsLayer::blendPixelColor(uint16_t indexV, CRGB color, uint8_t blendAmount) {
+void LedsLayer::blendPixelColor(int indexV, CRGB color, uint8_t blendAmount) {
   setPixelColor(indexV, blend(color, getPixelColor(indexV), blendAmount));
 }
 
-CRGB LedsLayer::getPixelColor(uint16_t indexV) {
-  if (indexV < mappingTableSizeUsed) {
+CRGB LedsLayer::getPixelColor(int indexV) {
+  if (indexV < 0)
+    return CRGB::Black;
+  else if (indexV < mappingTableSizeUsed) {
     switch (mappingTable[indexV].mapType) {
       case m_onePixel:
         return fix->ledsP[mappingTable[indexV].indexP]; 
@@ -217,7 +235,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
   }
 }
 
-  void LedsLayer::drawCharacter(unsigned char chr, int x, int16_t y, uint8_t font, CRGB col, uint16_t shiftPixel, uint16_t shiftChr) {
+  void LedsLayer::drawCharacter(unsigned char chr, int x, int y, uint8_t font, CRGB col, uint16_t shiftPixel, uint16_t shiftChr) {
     if (chr < 32 || chr > 126) return; // only ASCII 32-126 supported
     chr -= 32; // align with font table entries
 

@@ -203,7 +203,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           if (effectNr < effects.size()) {
             leds->effect = effects[effectNr];
             ppf("setEffect effect[%d]: %s\n", rowNr, leds->effect->name());
-            strlcat(fix->infoText, leds->effect->name(), sizeof(fix->infoText));
+            strlcat(fix->tickerTape, leds->effect->name(), sizeof(fix->tickerTape));
 
             if (leds->effect->dim() != leds->effectDimension) {
               leds->effectDimension = leds->effect->dim();
@@ -450,10 +450,13 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           leds->effect->loop(*leds);
           mdl->getValueRowNr = UINT8_MAX;
 
-          if (fix->showInfo && rowNr == fix->layers.size() -1) { //last effect, add sysinfo
+          if (fix->showTicker && rowNr == fix->layers.size() -1) { //last effect, add sysinfo
             char text[20];
-            print->fFormat(text, sizeof(text), "%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->infoText);
-            leds->drawText(text, 16, 0, 1);
+            if (leds->size.x > 48)
+              print->fFormat(text, sizeof(text), "%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
+            else
+              print->fFormat(text, sizeof(text), "%.3d %s", fix->realFps, fix->tickerTape);
+            leds->drawText(text, 16, 0, 1); //16 should be 0 after I have my first panel working ;-)
           }
 
           // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)

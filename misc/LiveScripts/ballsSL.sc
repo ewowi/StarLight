@@ -82,7 +82,7 @@ ball tmpball;
 
 void setup()
 {
-   for(int i=0;i<nb_balls;i++)
+   for(int i=0;i<max_nb_balls;i++)
    {
       tmpball.vx = rand(300)/255+0.7;
       tmpball.vy = rand(280)/255+0.5;
@@ -112,23 +112,19 @@ void loop()
 {
    uint32_t h = 1;
   
-   while (h > 0)
+   for(int i=0;i<width;i++)
    {
-
-     for(int i=0;i<width;i++)
-     {
-        for(int j=0;j<height;j++)
-        {
-            sPC(i+panel_width*j, hsv(i+h+j,255,180));
-        }
-     }
-       updateParams();
-      for (int i = 0; i < nb_balls; i++)
+      for(int j=0;j<height;j++)
       {
-         Balls[i].updateBall();
+         sPC(i+panel_width*j, hsv(i+h+j,255,180));
       }
-
-     // sync();
-      h++;
    }
+      updateParams();
+   for (int i = 0; i < nb_balls; i++)
+   {
+      Balls[i].updateBall();
+   }
+
+   // sync();
+   h++;
 }
