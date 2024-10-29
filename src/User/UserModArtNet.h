@@ -94,7 +94,7 @@ public:
     
     for (uint_fast16_t hardware_output = 0; hardware_output < hardware_outputs.size(); hardware_output++) { //loop over all outputs
       
-      if (bufferOffset > eff->fixture.nrOfLeds * sizeof(CRGB)) {
+      if (bufferOffset > fix->nrOfLeds * sizeof(CRGB)) {
         // This stop is reached if we don't have enough pixels for the defined Art-Net output.
         return; // stop when we hit end of LEDs
       }
@@ -121,7 +121,7 @@ public:
         packet_buffer[17] = packetSize;
 
         // bulk copy the buffer range to the packet buffer after the header 
-        memcpy(packet_buffer+18, (&eff->fixture.ledsP[0].r)+bufferOffset, packetSize); //start from the first byte of ledsP[0]
+        memcpy(packet_buffer+18, (&fix->ledsP[0].r)+bufferOffset, packetSize); //start from the first byte of ledsP[0]
 
         for (int i = 18; i < packetSize+18; i+=sizeof(CRGB)) {
           // set brightness all at once - seems slightly faster than scale8()?

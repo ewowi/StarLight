@@ -10,7 +10,6 @@
 */
 
 #include "LedLayer.h"
-
 #include <vector>
 
 class LedModEffects:public SysModule {
@@ -19,25 +18,10 @@ public:
   bool newFrame = false; //for other modules (DDP)
   unsigned long frameCounter = 0;
 
-  uint16_t fps = 60;
-  unsigned long lastMappingMillis = 0;
-
   std::vector<Effect *> effects;
   std::vector<Projection *> projections;
 
-  Fixture fixture = Fixture();
-
-  bool driverShow = true;
-
   uint8_t doInitEffectRowNr = UINT8_MAX;
-
-  #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-    #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
-      I2SClocklessLedDriveresp32S3 driver;
-    #else
-      I2SClocklessLedDriver driver;
-    #endif
-  #endif
 
   LedModEffects();
 
@@ -46,8 +30,6 @@ public:
   //this loop is run as often as possible so coding should also be as efficient as possible (no findVars etc)
   void loop();
 
-  void mapInitAlloc();
-
   void initEffect(LedsLayer &leds, uint8_t rowNr);
 
   // void loop10s();
@@ -55,7 +37,6 @@ public:
 private:
   unsigned long frameMillis = 0;
   JsonObject varSystem = JsonObject();
-  uint8_t viewRot = UINT8_MAX;
 
 };
 

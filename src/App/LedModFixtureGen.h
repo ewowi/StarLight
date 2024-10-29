@@ -29,9 +29,10 @@ public:
   char pixelSep[2]="";
 
   Coord3D fixSize = {0,0,0};
-  uint16_t nrOfLeds=0;
+  uint16_t nrOfLeds = 0;
   uint16_t ledSize = 5; //mm
   uint8_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
+  uint8_t factor = 10;
   
   File f;
 
@@ -77,9 +78,9 @@ public:
     g.print("{");
     g.printf("\"name\":\"%s\"", name);
     g.printf(",\"nrOfLeds\":%d", nrOfLeds);
-    g.printf(",\"width\":%d", (fixSize.x+9)/10+1); //effects run on 1 led is 1 cm mode.
-    g.printf(",\"height\":%d", (fixSize.y+9)/10+1); //e.g. (110+9)/10 +1 = 11+1 = 12, (111+9)/10 +1 = 12+1 = 13
-    g.printf(",\"depth\":%d", (fixSize.z+9)/10+1);
+    g.printf(",\"width\":%d", (fixSize.x+9) / factor + 1); //effects run on 1 led is 1 cm mode.
+    g.printf(",\"height\":%d", (fixSize.y+9) / factor + 1); //e.g. (110+9)/10 +1 = 11+1 = 12, (111+9)/10 +1 = 12+1 = 13
+    g.printf(",\"depth\":%d", (fixSize.z+9) / factor + 1);
     g.printf(",\"ledSize\":%d", ledSize);
     g.printf(",\"shape\":%d", shape);
 
@@ -119,9 +120,9 @@ public:
     {
       f.printf("%s[%d,%d,%d]", pixelSep, x, y, z);
       strlcpy(pixelSep, ",", sizeof(pixelSep));
-      fixSize.x = max((uint16_t)fixSize.x, x);
-      fixSize.y = max((uint16_t)fixSize.y, y);
-      fixSize.z = max((uint16_t)fixSize.z, z);
+      fixSize.x = _max(fixSize.x, x);
+      fixSize.y = _max(fixSize.y, y);
+      fixSize.z = _max(fixSize.z, z);
       nrOfLeds++;
     }
 
@@ -200,7 +201,7 @@ public:
       Coord3D rowPixel = cRowStart;
       while (true) {
         ppf(" %d,%d,%d", rowPixel.x, rowPixel.y, rowPixel.z);
-        // write3D(rowPixel.x*10, rowPixel.y*10, rowPixel.z*10);
+        // write3D(rowPixel.x*factor, rowPixel.y*factor, rowPixel.z*factor);
         write3D(trigo.rotate(rowPixel, middle, tilt, pan, roll, 360));
 
         
@@ -323,7 +324,7 @@ public:
     for (int i=0; i<nrOfSpokes; i++) {
       float radians = i*360/nrOfSpokes * DEG_TO_RAD;
       for (int j=0;j<ledsPerSpoke;j++) {
-        float radius = 50 + 10 * j; //in mm
+        float radius = 50 + factor * j; //in mm
         uint16_t x = radius * sinf(radians);
         uint16_t y = radius * cosf(radians);
         write3D(x+middle.x,y+middle.y, middle.z);
@@ -349,8 +350,8 @@ public:
       offset = offset - (float)edgenum; // Retain fractional part only: offset on that edge
 
       // Use interpolation to get coordinates of that point on that edge
-      float x = (float)middle.x + radius*10.0f * (hexaX[edgenum] + offset * (hexaX[edgenum + 1] - hexaX[edgenum]));
-      float y = (float)middle.y + radius*10.0f * (hexaY[edgenum] + offset * (hexaY[edgenum + 1] - hexaY[edgenum]));
+      float x = (float)middle.x + radius * (float)factor * (hexaX[edgenum] + offset * (hexaX[edgenum + 1] - hexaX[edgenum]));
+      float y = (float)middle.y + radius * (float)factor * (hexaY[edgenum] + offset * (hexaY[edgenum + 1] - hexaY[edgenum]));
       // ppf(" %d %f: %f,%f", edgenum, offset, x, y);
 
       write3D(x, y, middle.z);
@@ -460,18 +461,37 @@ public:
     JsonObject currentVar = ui->initSelect(parentVar, "fixture", (uint8_t)0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         ui->setComment(var, "Predefined fixture");
-        JsonVariant options1 = ui->setOptions(var); //See enum Fixtures for order of options
+        JsonArray options = ui->setOptions(var); //See enum Fixtures for order of options
 
-        //create 3 level select options
-        char jsonString[512] = "";
-        strlcat(jsonString, "[ {\"Strips\": [\"Spiral\", \"Helix\"]}", sizeof(jsonString));
-        strlcat(jsonString, ", {\"Matrices\": [\"Panel\", \"Panel2x2\", \"Panel4x1\", \"Sticks\"]}", sizeof(jsonString));
-        strlcat(jsonString, ", {\"Cubes\": [\"Human Sized Cube\", \"CubeBox\", \"Cube3D\"]}", sizeof(jsonString));
-        strlcat(jsonString, ", {\"Rings\": [\"Ring\", \"Audi\", \"Olympic\"]}", sizeof(jsonString));
-        strlcat(jsonString, ", {\"Shapes\": [\"Rings241\", {\"Hexagon\":[\"Hexagon\", \"HexaWall\"]}, \"Cone\", \"Cloud5416\"]}", sizeof(jsonString));
-        strlcat(jsonString, ", {\"Combinations\": [\"Wall\", \"6Rings\", \"SpaceStation\", \"Star\", \"Wheel\", \"Human\", \"Curtain\"]}", sizeof(jsonString));
-        strlcat(jsonString, ", {\"Spheres\": [\"Globe\", \"LeGlorb\", \"GeodesicDome WIP\"]}", sizeof(jsonString));
-        strlcat(jsonString, "]", sizeof(jsonString));
+        JsonObject mainOption = options.add<JsonObject>();
+        mainOption["Strips"].add("Spiral"); 
+        mainOption["Strips"].add("Helix");
+        mainOption["Matrices"].add("Panel"); 
+        mainOption["Matrices"].add("Panel2x2");
+        mainOption["Matrices"].add("Panel4x1");
+        mainOption["Matrices"].add("Sticks");
+        mainOption["Cubes"].add("Human Sized Cube");
+        mainOption["Cubes"].add("CubeBox");
+        mainOption["Cubes"].add("Cube3D");
+        mainOption["Rings"].add("Ring");
+        mainOption["Rings"].add("Audi");
+        mainOption["Rings"].add("Olympic");
+        mainOption["Shapes"].add("Rings241");
+        JsonObject subOption = mainOption["Shapes"].add<JsonObject>();
+                   subOption["Hexagon"].add("Hexagon");
+                   subOption["Hexagon"].add("HexaWall");
+        mainOption["Shapes"].add("Cone");
+        mainOption["Shapes"].add("Cloud5416");
+        mainOption["Combinations"].add("Wall");
+        mainOption["Combinations"].add("6Rings");
+        mainOption["Combinations"].add("SpaceStation");
+        mainOption["Combinations"].add("Star");
+        mainOption["Combinations"].add("Wheel");
+        mainOption["Combinations"].add("Human");
+        mainOption["Combinations"].add("Curtain");
+        mainOption["Spheres"].add("Globe");
+        mainOption["Spheres"].add("LeGlorb");
+        mainOption["Spheres"].add("GeodesicDome WIP");
 
         // char jsonString[1024] = "";
         // strlcat(jsonString, "[ {\"Strips\": [\"Spiral 🧊\", \"Helix 🧊\"]}", sizeof(jsonString));
@@ -482,11 +502,6 @@ public:
         // strlcat(jsonString, ", {\"Spheres\": [\"Globe 🧊\", \"LeGlorb 🧊\", \"GeodesicDome WIP 🧊\"]}", sizeof(jsonString));
         // strlcat(jsonString, "]", sizeof(jsonString));
 
-        DeserializationError error = deserializeJson(options1, jsonString);
-        if (error)
-          ppf("Error %s %s\n", jsonString, error.c_str());
-        // else
-        //   print->printJson("OPTIONS", options1);
         return true; }
       case onChange:
         this->fixtureOnChange();
@@ -543,9 +558,9 @@ public:
     }
     else if (strnstr(fgText, "Sticks", 32) != nullptr) {
       for (uint8_t fixNr = 0; fixNr < width; fixNr++) {
-        mdl->setValue("elements", "firstLed", Coord3D{(uint16_t)(fixNr*5), height, 0}, fixNr);
-        mdl->setValue("elements", "rowEnd", Coord3D{(uint16_t)(fixNr*5), height, 0}, fixNr);
-        mdl->setValue("elements", "columnEnd", Coord3D{(uint16_t)(fixNr*5), 0, 0}, fixNr);
+        mdl->setValue("elements", "firstLed", Coord3D{fixNr*5, height, 0}, fixNr);
+        mdl->setValue("elements", "rowEnd", Coord3D{fixNr*5, height, 0}, fixNr);
+        mdl->setValue("elements", "columnEnd", Coord3D{fixNr*5, 0, 0}, fixNr);
         mdl->setValue("elements", "pin", 2, fixNr);
       }
     }
@@ -579,9 +594,9 @@ public:
     else if (strnstr(fgText, "Cube3D", 32) != nullptr) {
       uint8_t size = length -1;
       for (uint8_t fixNr = 0; fixNr < length; fixNr++) {
-        mdl->setValue("elements", "firstLed", Coord3D{0,0,(uint16_t)fixNr}, fixNr);
-        mdl->setValue("elements", "rowEnd", Coord3D{0, length -1,(uint16_t)fixNr}, fixNr);
-        mdl->setValue("elements", "columnEnd", Coord3D{length -1, length -1,(uint16_t)fixNr}, fixNr);
+        mdl->setValue("elements", "firstLed", Coord3D{0,0,fixNr}, fixNr);
+        mdl->setValue("elements", "rowEnd", Coord3D{0, length -1,fixNr}, fixNr);
+        mdl->setValue("elements", "columnEnd", Coord3D{length -1, length -1,fixNr}, fixNr);
         mdl->setValue("elements", "pin", 12, fixNr);
       }
     }
@@ -899,7 +914,7 @@ public:
         Coord3D rotate = mdl->getValue("elements", "rotate", rowNr);
         Coord3D rowEnd = mdl->getValue("elements", "rowEnd", rowNr);
         Coord3D columnEnd = mdl->getValue("elements", "columnEnd", rowNr);
-        genFix->matrix(firstLed * 10, rowEnd * 10, columnEnd * 10, IP, pin, rotate.x, rotate.y, rotate.z);
+        genFix->matrix(firstLed * genFix->factor, rowEnd * genFix->factor, columnEnd * genFix->factor, IP, pin, rotate.x, rotate.y, rotate.z);
       });
 
     } else if (strncmp(fgGroup, "Rings", 6) == 0) {
@@ -910,9 +925,9 @@ public:
         uint16_t ledCount = mdl->getValue("elements", "#Leds", rowNr);
         //first to middle (in mm)
         Coord3D middle = firstLed;
-        uint8_t radius = 10 * ledCount / M_TWOPI + 10; //in mm
-        middle.x = middle.x*10 + radius;
-        middle.y = middle.y*10 + radius;
+        uint8_t radius = genFix->factor * ledCount / M_TWOPI + 10; //in mm
+        middle.x = middle.x * genFix->factor + radius;
+        middle.y = middle.y * genFix->factor + radius;
         
         genFix->ring(middle, ledCount, IP, pin);
       });
@@ -922,13 +937,13 @@ public:
       print->fFormat(fileName, 32, "%s-%d", fgText, mdl->getValue("elements", "nrOfRings").as<uint8_t>());
 
       getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D firstLed, uint8_t IP, uint8_t pin) {
-        uint16_t nrOfLeds = mdl->getValue("elements", "#Leds", rowNr);
+        // uint16_t nrOfLeds = mdl->getValue("elements", "#Leds", rowNr);
         Coord3D rotate = mdl->getValue("elements", "rotate", rowNr);
         //first to middle (in mm)
         Coord3D middle = firstLed;
         uint8_t radius = 10 * 60 / M_TWOPI; //in mm
-        middle.x = middle.x*10 + radius;
-        middle.y = middle.y*10 + radius;
+        middle.x = middle.x * genFix->factor+ radius;
+        middle.y = middle.y * genFix->factor+ radius;
         genFix->rings241(middle, mdl->getValue("elements", "nrOfRings", rowNr), mdl->getValue("elements", "in2out", rowNr), IP, pin, rotate.x, rotate.y, rotate.z);
       });
 
@@ -941,9 +956,9 @@ public:
         uint16_t radius = mdl->getValue("elements", "radius", rowNr);
         //first to middle (in mm)
         Coord3D middle;
-        middle.x = firstLed.x*10 + radius;
-        middle.y = firstLed.y*10;
-        middle.z = firstLed.z*10 + radius;
+        middle.x = firstLed.x * genFix->factor+ radius;
+        middle.y = firstLed.y * genFix->factor;
+        middle.z = firstLed.z * genFix->factor+ radius;
 
         genFix->spiral(middle, nrOfLeds, radius, IP, pin);
       });
@@ -961,9 +976,9 @@ public:
 
         //first to middle (in mm)
         Coord3D middle;
-        middle.x = firstLed.x*10 + radius;
-        middle.y = firstLed.y*10;
-        middle.z = firstLed.z*10 + radius;
+        middle.x = firstLed.x * genFix->factor+ radius;
+        middle.y = firstLed.y * genFix->factor;
+        middle.z = firstLed.z * genFix->factor+ radius;
 
         genFix->helix(middle, nrOfLeds, radius, pitch, deltaLed, IP, pin, rotate.x, rotate.y, rotate.z);
       });
@@ -975,11 +990,11 @@ public:
       getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D firstLed, uint8_t IP, uint8_t pin) {
         uint8_t ledsPerSpoke = mdl->getValue("elements", "ledsPerSpoke", rowNr);
           //first to middle (in mm)
-        float size = 50 + 10 * ledsPerSpoke;
+        float size = 50 + genFix->factor * ledsPerSpoke;
         Coord3D middle;
-        middle.x = firstLed.x*10 + size;
-        middle.y = firstLed.y*10 + size;
-        middle.z = firstLed.z*10;
+        middle.x = firstLed.x * genFix->factor+ size;
+        middle.y = firstLed.y * genFix->factor+ size;
+        middle.z = firstLed.z * genFix->factor;
 
         genFix->wheel(middle, mdl->getValue("elements", "nrOfSpokes", rowNr), ledsPerSpoke, IP, pin);
       });
@@ -990,7 +1005,7 @@ public:
       getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D firstLed, uint8_t IP, uint8_t pin) {
         uint8_t ledsPerSide = mdl->getValue("elements", "ledsPerSide", rowNr);
         //first to middle (in mm)
-        Coord3D middle = (firstLed + Coord3D{ledsPerSide, ledsPerSide, 0})*10; //in mm
+        Coord3D middle = (firstLed + Coord3D{ledsPerSide, ledsPerSide, 0}) * genFix->factor; //in mm
         genFix->hexagon(middle, ledsPerSide, IP, pin);
       });
 
@@ -1004,9 +1019,9 @@ public:
         //first to middle (in mm)
         float width = nrOfRings * 1.5f / M_PI + 1;
         Coord3D middle;
-        middle.x = firstLed.x*10 + width*10;
-        middle.y = firstLed.y*10;
-        middle.z = firstLed.z*10 + width*10;
+        middle.x = firstLed.x * genFix->factor+ width * genFix->factor;
+        middle.y = firstLed.y * genFix->factor;
+        middle.z = firstLed.z * genFix->factor+ width * genFix->factor;
 
         genFix->cone(middle, nrOfRings, IP, pin);
       });
@@ -1015,7 +1030,7 @@ public:
       strlcpy(fileName, fgText, 32);
 
       getFixtures(fileName, [](GenFix * genFix, uint8_t rowNr, Coord3D firstLed, uint8_t IP, uint8_t pin) {
-        genFix->cloud5416(firstLed*10, IP, pin);
+        genFix->cloud5416(firstLed * genFix->factor, IP, pin);
       });
 
     } else if (strnstr(fgText, "Wall", 32) != nullptr) {
@@ -1112,9 +1127,9 @@ public:
         uint16_t width = mdl->getValue("fixture", "width", rowNr);
         //first to middle (in mm)
         Coord3D middle;
-        middle.x = firstLed.x*10 + 10 * width / 2;
-        middle.y = firstLed.y*10;
-        middle.z = firstLed.z*10 + 10 * width / 2;
+        middle.x = firstLed.x * genFix->factor+ genFix->factor * width / 2;
+        middle.y = firstLed.y * genFix->factor;
+        middle.z = firstLed.z * genFix->factor+ genFix->factor * width / 2;
 
         genFix->globe(middle, width, IP, pin);
       });
@@ -1164,7 +1179,7 @@ public:
         for (int y=0; y<width; y++) {
           for (int x=0; x<height; x++) {
             offX = (y%2 == 1)?5:0;
-            genFix->write3D(x*10 + offX + firstLed.x, y*10 + firstLed.y, firstLed.z);
+            genFix->write3D(x * genFix->factor+ offX + firstLed.x, y * genFix->factor+ firstLed.y, firstLed.z);
           }
         }
 

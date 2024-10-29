@@ -23,68 +23,13 @@
 
 #include "../Sys/SysModModel.h" //for Coord3D
 
-#define NUM_VLEDS_Max 8192
-#define NUM_LEDS_Max 8192
+#ifndef STARLIGHT_MAXLEDS
+  #define STARLIGHT_MAXLEDS 8192
+#endif
+
+#define NUM_VLEDS_Max STARLIGHT_MAXLEDS
 
 class LedsLayer; //forward
-
-class Fixture {
-
-public:
-
-  CRGB ledsP[NUM_LEDS_Max];
-  std::vector<bool> pixelsToBlend; //this is a 1-bit vector !!! overlapping effects will blend
-
-  // CRGB *leds = nullptr;
-    // if (!leds)
-  //   leds = (CRGB*)calloc(nrOfLeds, sizeof(CRGB));
-  // else
-  //   leds = (CRGB*)reallocarray(leds, nrOfLeds, sizeof(CRGB));
-  // if (leds) free(leds);
-  // leds = (CRGB*)malloc(nrOfLeds * sizeof(CRGB));
-  // leds = (CRGB*)reallocarray
-
-  uint16_t nrOfLeds = 64; //amount of physical leds
-  uint8_t fixtureNr = -1;
-  Coord3D fixSize = {8,8,1};
-  uint16_t ledSize = 5; //mm
-  uint16_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
-
-  std::vector<LedsLayer *> layers; //virtual leds
-
-  Coord3D head = {0,0,0};
-
-  uint8_t mappingStatus = 0; //not mapping
-  bool doAllocPins = false;
-
-  uint8_t globalBlend = 128;
-
-  Fixture() {
-    //init pixelsToBlend
-    for (uint16_t i=0; i<nrOfLeds; i++) {
-      if (pixelsToBlend.size() < nrOfLeds)
-        pixelsToBlend.push_back(false);
-    }
-    ppf("Fixture constructor ptb:%d", pixelsToBlend.size());
-  }
-
-  //temporary here  
-  uint16_t indexP = 0;
-  uint16_t prevIndexP = 0;
-  uint16_t currPin; //lookFor needs u16
-
-  //load fixture json file, parse it and depending on the projection, create a mapping for it
-  AsyncWebSocketMessageBuffer * wsBuf;
-  void projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize = 5, uint8_t shape = 0);
-  void projectAndMapPixel(Coord3D pixel);
-  void projectAndMapPin(uint16_t pin);
-  void projectAndMapPost();
-
-  #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-    uint8_t setMaxPowerBrightness = 30; //tbd: implement driver.setMaxPowerInMilliWatts
-  #endif
-
-}; //Fixture
 
 #define _1D 1
 #define _2D 2
@@ -97,12 +42,9 @@ public:
   virtual const char * tags() {return "";}
   virtual uint8_t dim() {return _1D;};
 
-  virtual void setup(LedsLayer &leds) {}
+  virtual void setup(LedsLayer &leds, JsonObject parentVar);
 
   virtual void loop(LedsLayer &leds) {}
-
-  virtual void controls(LedsLayer &leds, JsonObject parentVar);
-
 };
 
 class Projection {
@@ -110,12 +52,12 @@ public:
   virtual const char * name() {return "noname";}
   virtual const char * tags() {return "";}
 
-  virtual void setup(LedsLayer &leds, Coord3D &sizeAdjusted, Coord3D &pixelAdjusted, Coord3D &midPosAdjusted, uint16_t &indexV) {}
-  
-  virtual void adjustXYZ(LedsLayer &leds, Coord3D &pixel) {}
-  
-  virtual void controls(LedsLayer &leds, JsonObject parentVar) {}
+  virtual void setup(LedsLayer &leds, JsonObject parentVar) {}
 
+  virtual void addPixelsPre(LedsLayer &leds) {}
+  virtual void addPixel(LedsLayer &leds, Coord3D &pixelAdjusted, uint16_t &indexV) {}
+  
+  virtual void XYZ(LedsLayer &leds, Coord3D &pixel) {}
 };
 
 enum mapType {
@@ -150,6 +92,7 @@ class SharedData {
   private:
     byte *data = nullptr;
     uint16_t index = 0;
+    bool dataAllocated = true;
 
   public:
     uint16_t bytesAllocated = 0;
@@ -171,6 +114,7 @@ class SharedData {
     }
     bytesAllocated = 0;
     alertIfChanged = false;
+    dataAllocated = true;
     begin();
   }
 
@@ -182,6 +126,7 @@ class SharedData {
   //returns the next pointer to a specified type (length for arrays)
   template <typename Type>
   Type * readWrite(int length = 1) {
+    if (!dataAllocated) return nullptr;
     size_t newIndex = index + length * sizeof(Type);
     if (newIndex > bytesAllocated) {
       size_t newSize = bytesAllocated + (1 + ( newIndex - bytesAllocated)/32) * 32; // add a multitude of 32 bytes
@@ -196,7 +141,10 @@ class SharedData {
           ppf("dev sharedData.readWrite reallocating, this should not happen ! %d -> %d\n", bytesAllocated, newSize);
         bytesAllocated = newSize;
       }
-      else ppf("dev sharedData.readWrite, alloc not successful %d->%d %d->%d\n", index, newIndex, bytesAllocated, newSize);
+      else {
+        ppf("dev sharedData.readWrite, alloc not successful %d->%d %d->%d\n", index, newIndex, bytesAllocated, newSize);
+        dataAllocated = false;
+      }
     }
     // ppf("bind %d->%d %d\n", index, newIndex, bytesAllocated);
     Type * returnValue  = reinterpret_cast<Type *>(data + index);
@@ -219,17 +167,18 @@ class SharedData {
     return *result;
   }
 
+  bool success() {
+    return dataAllocated;
+  }
+
 };
 
 class LedsLayer {
 
 public:
 
-  Fixture *fixture;
-
-  uint16_t nrOfLeds = 64;  //amount of virtual leds (calculated by projection)
-
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
+  uint16_t nrOfLeds = 64;  //amount of virtual leds (calculated by projection)
 
   Effect *effect = nullptr;
   Projection *projection = nullptr;
@@ -237,14 +186,15 @@ public:
   //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
       //setting cached virtual class methods! (By chatGPT so no source and don't understand how it works - scary!)
       //   (don't know how it works as it is not refering to derived classes, just to the base class but later it calls the derived class method)
-  void (Projection::*setupCached)(LedsLayer &, Coord3D &, Coord3D &, Coord3D &, uint16_t &) = &Projection::setup;
-  void (Projection::*adjustXYZCached)(LedsLayer &, Coord3D &) = &Projection::adjustXYZ;
+  void (Projection::*addPixelsPreCached)(LedsLayer &) = &Projection::addPixelsPre;
+  void (Projection::*addPixelCached)(LedsLayer &, Coord3D &, uint16_t &) = &Projection::addPixel;
+  void (Projection::*XYZCached)(LedsLayer &, Coord3D &) = &Projection::XYZ;
 
-  uint8_t effectDimension = -1;
-  uint8_t projectionDimension = -1;
+  uint8_t effectDimension = UINT8_MAX;
+  uint8_t projectionDimension = UINT8_MAX;
 
-  Coord3D startPos = {0,0,0}, endPos = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
-  Coord3D midPos = {0,0,0};
+  Coord3D start = {0,0,0}, middle = {0,0,0}, end = {0,0,0};//{UINT16_MAX,UINT16_MAX,UINT16_MAX}; //default
+
   #ifdef STARBASE_USERMOD_MPU6050
     bool proGyro = false;
   #endif
@@ -256,34 +206,30 @@ public:
   SharedData projectionData;
 
   std::vector<PhysMap> mappingTable;
+  uint16_t mappingTableSizeUsed = 0;
   std::vector<std::vector<uint16_t>> mappingTableIndexes;
-
+  uint16_t mappingTableIndexesSizeUsed = 0;
+  
   uint16_t indexVLocal = 0; //set in operator[], used by operator=
 
   bool doMap = true; //so a mapping will be made
 
   CRGBPalette16 palette;
 
-  uint16_t XY(uint16_t x, uint16_t y) {
+  int XY(int x, int y) {
     return XYZ(x, y, 0);
   }
 
-  uint16_t XYZUnprojected(Coord3D pixel) {
-    if (pixel >= 0 && pixel < size)
-      return pixel.x + pixel.y * size.x + pixel.z * size.x * size.y;
-    else
-      return UINT16_MAX;
-  }
+  //use inBounds with care (or not at all) is sPC, gPC just ignores out of bounds
+  bool inBounds(int x, int y, int z = 0);
+  bool inBounds(Coord3D pos);
 
-  uint16_t XYZ(uint16_t x, uint16_t y, uint16_t z) {
-    return XYZ({x, y, z});
-  }
+  int XYZUnprojected(Coord3D pixel);
+  int XYZ(int x, int y, int z);
+  int XYZ(Coord3D pixel);
 
-  uint16_t XYZ(Coord3D pixel);
-
-  LedsLayer(Fixture &fixture) {
+  LedsLayer() {
     ppf("LedsLayer constructor (PhysMap:%d)\n", sizeof(PhysMap));
-    this->fixture = &fixture;
   }
 
   ~LedsLayer() {
@@ -339,20 +285,20 @@ public:
 
 
   // maps the virtual led to the physical led(s) and assign a color to it
-  void setPixelColor(uint16_t indexV, CRGB color);
+  void setPixelColor(int indexV, CRGB color);
   void setPixelColor(Coord3D pixel, CRGB color) {setPixelColor(XYZ(pixel), color);}
 
   // temp methods until all effects have been converted to Palette / 2 byte mapping mode
-  void setPixelColorPal(uint16_t indexV, uint8_t palIndex, uint8_t palBri = 255);
+  void setPixelColorPal(int indexV, uint8_t palIndex, uint8_t palBri = 255);
   void setPixelColorPal(Coord3D pixel, uint8_t palIndex, uint8_t palBri = 255) {setPixelColorPal(XYZ(pixel), palIndex, palBri);}
 
-  void blendPixelColor(uint16_t indexV, CRGB color, uint8_t blendAmount);
+  void blendPixelColor(int indexV, CRGB color, uint8_t blendAmount);
   void blendPixelColor(Coord3D pixel, CRGB color, uint8_t blendAmount) {blendPixelColor(XYZ(pixel), color, blendAmount);}
 
-  CRGB getPixelColor(uint16_t indexV);
+  CRGB getPixelColor(int indexV);
   CRGB getPixelColor(Coord3D pixel) {return getPixelColor(XYZ(pixel));}
 
-  void addPixelColor(uint16_t indexV, CRGB color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
+  void addPixelColor(int indexV, CRGB color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
   void addPixelColor(Coord3D pixel, CRGB color) {setPixelColor(pixel, getPixelColor(pixel) + color);}
 
   void fadeToBlackBy(uint8_t fadeBy = 255);
@@ -360,8 +306,8 @@ public:
   void fill_rainbow(uint8_t initialhue, uint8_t deltahue);
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
-  bool isMapped(uint16_t indexV) {
-    return indexV < mappingTable.size() && (mappingTable[indexV].mapType == m_onePixel || mappingTable[indexV].mapType == m_morePixels);
+  bool isMapped(int indexV) {
+    return indexV < mappingTableSizeUsed && (mappingTable[indexV].mapType == m_onePixel || mappingTable[indexV].mapType == m_morePixels);
   }
 
   void blur1d(fract8 blur_amount)
@@ -433,8 +379,7 @@ public:
       }
   }
 
-  void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX) {
-    if (x0 >= size.x || x1 >= size.x || y0 >= size.y || y1 >= size.y) return;
+  void drawLine(int x0, int y0, int x1, int y1, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX) {
 
     // WLEDMM shorten line according to depth
     if (depth < UINT8_MAX) {
@@ -480,8 +425,12 @@ public:
         int y = int(intersectY);
         if (steep) std::swap(x,y);  // temporarily swap if steep
         // pixel coverage is determined by fractional part of y co-ordinate
+        // WLEDMM added out-of-bounds check: "unsigned(x) < cols" catches negative numbers _and_ too large values
         setPixelColor(XY(x, y), blend(color, getPixelColor(XY(x, y)), keep));
-        setPixelColor(XY(x+int(steep), y+int(!steep)), blend(color, getPixelColor(XY(x+int(steep), y+int(!steep))), seep));
+        int xx = x+int(steep);
+        int yy = y+int(!steep);
+        setPixelColor(XY(xx, yy), blend(color, getPixelColor(XY(xx, yy)), seep));
+      
         intersectY += gradient;
         if (steep) std::swap(x,y);  // restore if steep
       }
@@ -499,21 +448,74 @@ public:
     }
   }
 
-  //shift is used by drawText indicating which letter it is drawing
-  void drawCharacter(unsigned char chr, int x = 0, int16_t y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0, uint16_t shiftChr = 0);
+  void drawCircle(int cx, int cy, uint8_t radius, CRGB col, bool soft) {
+    if (radius == 0) return;
+    if (soft) {
+      // Xiaolin Wu’s algorithm
+      int rsq = radius*radius;
+      int x = 0;
+      int y = radius;
+      unsigned oldFade = 0;
+      while (x < y) {
+        float yf = sqrtf(float(rsq - x*x)); // needs to be floating point
+        unsigned fade = float(0xFFFF) * (ceilf(yf) - yf); // how much color to keep
+        if (oldFade > fade) y--;
+        oldFade = fade;
+        setPixelColor(XY(cx+x, cy+y), blend(col, getPixelColor(XY(cx+x, cy+y)), fade));
+        setPixelColor(XY(cx-x, cy+y), blend(col, getPixelColor(XY(cx-x, cy+y)), fade));
+        setPixelColor(XY(cx+x, cy-y), blend(col, getPixelColor(XY(cx+x, cy-y)), fade));
+        setPixelColor(XY(cx-x, cy-y), blend(col, getPixelColor(XY(cx-x, cy-y)), fade));
+        setPixelColor(XY(cx+y, cy+x), blend(col, getPixelColor(XY(cx+y, cy+x)), fade));
+        setPixelColor(XY(cx-y, cy+x), blend(col, getPixelColor(XY(cx-y, cy+x)), fade));
+        setPixelColor(XY(cx+y, cy-x), blend(col, getPixelColor(XY(cx+y, cy-x)), fade));
+        setPixelColor(XY(cx-y, cy-x), blend(col, getPixelColor(XY(cx-y, cy-x)), fade));
+        setPixelColor(XY(cx+x, cy+y-1), blend(getPixelColor(XY(cx+x, cy+y-1)), col, fade));
+        setPixelColor(XY(cx-x, cy+y-1), blend(getPixelColor(XY(cx-x, cy+y-1)), col, fade));
+        setPixelColor(XY(cx+x, cy-y+1), blend(getPixelColor(XY(cx+x, cy-y+1)), col, fade));
+        setPixelColor(XY(cx-x, cy-y+1), blend(getPixelColor(XY(cx-x, cy-y+1)), col, fade));
+        setPixelColor(XY(cx+y-1, cy+x), blend(getPixelColor(XY(cx+y-1, cy+x)), col, fade));
+        setPixelColor(XY(cx-y+1, cy+x), blend(getPixelColor(XY(cx-y+1, cy+x)), col, fade));
+        setPixelColor(XY(cx+y-1, cy-x), blend(getPixelColor(XY(cx+y-1, cy-x)), col, fade));
+        setPixelColor(XY(cx-y+1, cy-x), blend(getPixelColor(XY(cx-y+1, cy-x)), col, fade));
+        x++;
+      }
+    } else {
+      // Bresenham’s Algorithm
+      int d = 3 - (2*radius);
+      int y = radius, x = 0;
+      while (y >= x) {
+        setPixelColor(XY(cx+x, cy+y), col);
+        setPixelColor(XY(cx-x, cy+y), col);
+        setPixelColor(XY(cx+x, cy-y), col);
+        setPixelColor(XY(cx-x, cy-y), col);
+        setPixelColor(XY(cx+y, cy+x), col);
+        setPixelColor(XY(cx-y, cy+x), col);
+        setPixelColor(XY(cx+y, cy-x), col);
+        setPixelColor(XY(cx-y, cy-x), col);
+        x++;
+        if (d > 0) {
+          y--;
+          d += 4 * (x - y) + 10;
+        } else {
+          d += 4 * x + 6;
+        }
+      }
+    }
+  }
 
-  void drawText(const char * text, int x = 0, int16_t y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0) {
+  //shift is used by drawText indicating which letter it is drawing
+  void drawCharacter(unsigned char chr, int x = 0, int y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0, uint16_t shiftChr = 0);
+
+  void drawText(const char * text, int x = 0, int y = 0, uint8_t font = 0, CRGB col = CRGB::Red, uint16_t shiftPixel = 0) {
     const int numberOfChr = text?strnlen(text, 256):0; //max 256 charcters
     for (int shiftChr = 0; shiftChr < numberOfChr; shiftChr++) {
       drawCharacter(text[shiftChr], x, y, font, col, shiftPixel, shiftChr);
     }
   }
 
-  void projectAndMapPre();
-
-  void projectAndMapPixel(Coord3D pixel, uint8_t rowNr);
-
-  void projectAndMapPost(uint8_t rowNr);
+  void addPixelsPre(uint8_t rowNr);
+  void addPixel(Coord3D pixel, uint8_t rowNr);
+  void addPixelsPost(uint8_t rowNr);
 
 }; //LedsLayer
 

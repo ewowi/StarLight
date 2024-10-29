@@ -10,6 +10,7 @@
 */
 
 #include "LedLayer.h"
+#include "LedModFixture.h"
 
 #include "../Sys/SysModSystem.h"  //for sys->now
 #include "../Sys/SysModFiles.h"
@@ -35,166 +36,7 @@ void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, uint8_t init
   fill_rainbow(targetArray, numToFill, initialhue, deltahue);
 }
 
-#define headerBytes 11
-
-void Fixture::projectAndMapPre(Coord3D size, uint16_t nrOfLeds, uint8_t ledSize, uint8_t shape) {
-  ppf("projectAndMapPre %d,%d,%d -> %d s:%d s:%d\n", size.x, size.y, size.z, nrOfLeds, ledSize, shape);
-  // reset leds
-  uint8_t rowNr = 0;
-  for (LedsLayer *leds: layers) {
-    if (leds->doMap) {
-      leds->projectAndMapPre();
-    }
-    rowNr++;
-  }
-
-  //deallocate all led pins
-  if (doAllocPins) {
-    // uint8_t pinNr = 0;
-    // for (PinObject &pinObject: pinsM->pinObjects) {
-    //   if (strncmp(pinObject.owner, "Leds", 5) == 0)
-        pinsM->deallocatePin(UINT8_MAX, "Leds"); //deallocate all led pins
-    //   pinNr++;
-    // }
-  }
-
-  indexP = 0;
-  prevIndexP = 0; //for allocPins
-
-  size_t len = nrOfLeds * 6 + headerBytes;
-  wsBuf = web->ws.makeBuffer(len);
-  if (wsBuf) {
-    wsBuf->lock();
-    byte* buffer = wsBuf->get();
-    buffer[0] = 1; //userfun 1
-    buffer[1] = size.x/256;
-    buffer[2] = size.x%256;
-    buffer[3] = size.y/256;
-    buffer[4] = size.y%256;
-    buffer[5] = size.z/256;
-    buffer[6] = size.z%256;
-    buffer[7] = nrOfLeds/256;
-    buffer[8] = nrOfLeds%256;
-    buffer[9] = ledSize;
-    buffer[10] = shape;
-  }
-}
-
-void Fixture::projectAndMapPixel(Coord3D pixel) {
-  // ppf("led %d,%d,%d start %d,%d,%d end %d,%d,%d\n",x,y,z, startPos.x, startPos.y, startPos.z, endPos.x, endPos.y, endPos.z);
-
-  if (indexP < NUM_LEDS_Max) {
-
-    // //send pixel to ui ...
-    if (wsBuf && indexP < nrOfLeds) {
-      byte* buffer = wsBuf->get();
-      buffer[indexP*6+headerBytes] = pixel.x/256;
-      buffer[indexP*6+headerBytes + 1] = pixel.x%256;
-      buffer[indexP*6+headerBytes + 2] = pixel.y/256;
-      buffer[indexP*6+headerBytes + 3] = pixel.y%256;
-      buffer[indexP*6+headerBytes + 4] = pixel.z/256;
-      buffer[indexP*6+headerBytes + 5] = pixel.z%256;
-    }
-    
-    uint8_t rowNr = 0;
-    for (LedsLayer *leds: layers) {
-      leds->projectAndMapPixel(pixel, rowNr);
-      rowNr++;
-    } //for layers
-  } //indexP < max
-  else 
-    ppf("dev post indexP too high %d>=%d or %d p:%d,%d,%d\n", indexP, nrOfLeds, NUM_LEDS_Max, pixel.x, pixel.y, pixel.z);
-
-  indexP++; //also increase if no buffer created
-}
-
-void Fixture::projectAndMapPin(uint16_t pin) {
-  if (doAllocPins) {
-    //check if pin already allocated, if so, extend range in details
-    PinObject pinObject = pinsM->pinObjects[pin];
-    char details[32] = "";
-    if (pinsM->isOwner(pin, "Leds")) { //if owner
-
-      //merge already assigned leds with new assignleds in %d-%d
-      char * after = strtok((char *)pinObject.details, "-");
-      if (after != NULL ) {
-        char * before;
-        before = after;
-        after = strtok(NULL, "-");
-        uint16_t startLed = atoi(before);
-        uint16_t nrOfLeds = atoi(after) - atoi(before) + 1;
-        print->fFormat(details, sizeof(details), "%d-%d", min(prevIndexP, startLed), max((uint16_t)(indexP - 1), nrOfLeds)); //careful: LedModEffects:loop uses this to assign to FastLed
-        ppf("pins extend leds %d: %s\n", pin, details);
-        //tbd: more check
-
-        strlcpy(pinsM->pinObjects[pin].details, details, sizeof(PinObject::details));  
-        pinsM->pinsChanged = true;
-      }
-    }
-    else {//allocate new pin
-      //tbd: check if free
-      print->fFormat(details, sizeof(details), "%d-%d", prevIndexP, indexP - 1); //careful: LedModEffects:loop uses this to assign to FastLed
-      // ppf("allocatePin %d: %s\n", pin, details);
-      pinsM->allocatePin(pin, "Leds", details);
-    }
-
-    prevIndexP = indexP;
-  }
-}
-
-void Fixture::projectAndMapPost() {
-  ppf("projectAndMapPost indexP:%d\n", indexP);
-  //after processing each led
-
-  if (wsBuf) {
-
-    for (auto &loopClient:web->ws.getClients()) {
-      if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
-        // if (loopClient->queueLen() <= 3) {
-          loopClient->binary(wsBuf);
-          web->sendWsCounter++;
-          web->sendWsBBytes+=indexP;
-        // }
-      }
-      else {
-        web->printClient("sendDataWs client full or not connected", loopClient);
-        // ppf("sendDataWs client full or not connected\n");
-        web->ws.cleanupClients(); //only if above threshold
-        web->ws._cleanBuffers();
-      }
-    }
-
-    wsBuf->unlock();
-    web->ws._cleanBuffers();
-  }
-
-  uint8_t rowNr = 0;
-
-  for (LedsLayer *leds: layers) {
-    if (leds->doMap) {
-      leds->projectAndMapPost(rowNr);
-    }
-    rowNr++;
-  } // leds
-
-  ppf("projectAndMapPost fixture P:%dx%dx%d -> %d\n", fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
-
-  //causes crash if in ELS task...
-  mdl->setValue("fixture", "size", fixSize);
-  mdl->setValue("fixture", "count", nrOfLeds);
-
-  //init pixelsToBlend
-  for (uint16_t i=0; i<nrOfLeds; i++) {
-    if (pixelsToBlend.size() < nrOfLeds)
-      pixelsToBlend.push_back(false);
-  }
-
-  ppf("projectAndMapPost fixture.size = %d + l:(%d * %d) B\n", sizeof(Fixture) - NUM_LEDS_Max * sizeof(CRGB), NUM_LEDS_Max, sizeof(CRGB)); //56
-
-  mappingStatus = 0; //not mapping
-}
-
-void Effect::controls(LedsLayer &leds, JsonObject parentVar) {
+void Effect::setup(LedsLayer &leds, JsonObject parentVar) {
     ui->initSelect(parentVar, "palette", 4, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI: {
         JsonArray options = ui->setOptions(var);
@@ -241,11 +83,16 @@ void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
       break;
     case m_onePixel: {
       uint16_t oldIndexP = this->indexP;
-      std::vector<uint16_t> newVector;
-      newVector.push_back(oldIndexP);
-      newVector.push_back(indexP);
-      leds.mappingTableIndexes.push_back(newVector);
-      indexes = leds.mappingTableIndexes.size() - 1;
+      // std::vector<uint16_t> newVector;
+      // newVector.push_back(oldIndexP);
+      // newVector.push_back(indexP);
+      leds.mappingTableIndexesSizeUsed++;
+      if (leds.mappingTableIndexes.size() < leds.mappingTableIndexesSizeUsed)
+        leds.mappingTableIndexes.push_back({oldIndexP, indexP});
+      else
+        leds.mappingTableIndexes[leds.mappingTableIndexesSizeUsed-1] = {oldIndexP, indexP};
+
+      indexes = leds.mappingTableIndexesSizeUsed - 1; //array position
       mapType = m_morePixels;
       break; }
     case m_morePixels:
@@ -256,24 +103,42 @@ void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
   // ppf("\n");
 }
 
-
 void LedsLayer::triggerMapping() {
     doMap = true; //specify which leds to remap
-    fixture->mappingStatus = 1; //start mapping
-  }
+    fix->mappingStatus = 1; //start mapping
+}
 
-uint16_t LedsLayer::XYZ(Coord3D pixel) {
+bool LedsLayer::inBounds(int x, int y, int z) {
+  return x >= 0 && x < size.x && y >= 0 && y < size.y && z >= 0 && z < size.z;
+}
+bool LedsLayer::inBounds(Coord3D pos) {
+  return pos >= 0 && pos < size;
+}
+
+int LedsLayer::XYZUnprojected(Coord3D pixel) {
+  return pixel.x + pixel.y * size.x + pixel.z * size.x * size.y;
+}
+
+int LedsLayer::XYZ(int x, int y, int z) {
+  return XYZ({x, y, z});
+}
+
+int LedsLayer::XYZ(Coord3D pixel) {
 
   //using cached virtual class methods! (so no need for if projectionNr optimizations!)
-  if (projection)
-    (projection->*adjustXYZCached)(*this, pixel);
+  if (projection) {
+    projectionData.begin();
+    (projection->*XYZCached)(*this, pixel);
+  }
 
   return XYZUnprojected(pixel);
 }
 
 // maps the virtual led to the physical led(s) and assign a color to it
-void LedsLayer::setPixelColor(uint16_t indexV, CRGB color) {
-  if (indexV < mappingTable.size()) {
+void LedsLayer::setPixelColor(int indexV, CRGB color) {
+  if (indexV < 0)
+    return;
+  else if (indexV < mappingTableSizeUsed) {
     switch (mappingTable[indexV].mapType) {
       case m_color:{
         mappingTable[indexV].rgb14 = ((min(color.r + 3, 255) >> 3) << 9) + 
@@ -283,40 +148,43 @@ void LedsLayer::setPixelColor(uint16_t indexV, CRGB color) {
       }
       case m_onePixel: {
         uint16_t indexP = mappingTable[indexV].indexP;
-        fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], fixture->globalBlend):color;
+        fix->ledsP[indexP] = fix->pixelsToBlend[indexP]?blend(color, fix->ledsP[indexP], fix->globalBlend):color;
         break; }
       case m_morePixels:
         if (mappingTable[indexV].indexes < mappingTableIndexes.size())
           for (uint16_t indexP: mappingTableIndexes[mappingTable[indexV].indexes]) {
-            fixture->ledsP[indexP] = fixture->pixelsToBlend[indexP]?blend(color, fixture->ledsP[indexP], fixture->globalBlend): color;
+            fix->ledsP[indexP] = fix->pixelsToBlend[indexP]?blend(color, fix->ledsP[indexP], fix->globalBlend): color;
           }
-        // else
-        //   ppf("dev setPixelColor2 i:%d m:%d s:%d\n", indexV, mappingTable[indexV].indexes, mappingTableIndexes.size());
+        else
+          ppf("dev setPixelColor i:%d m:%d s:%d\n", indexV, mappingTable[indexV].indexes, mappingTableIndexes.size());
         break;
     }
   }
   else if (indexV < NUM_LEDS_Max) //no projection
-    fixture->ledsP[indexV] = fixture->pixelsToBlend[indexV]?blend(color, fixture->ledsP[indexV], fixture->globalBlend): color;
-  else if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
-    ppf(" dev sPC %d >= %d", indexV, NUM_LEDS_Max);
+    fix->ledsP[indexV] = fix->pixelsToBlend[indexV]?blend(color, fix->ledsP[indexV], fix->globalBlend): color;
+  // some operations will go out of bounds e.g. VUMeter, uncomment below lines if you wanna test on a specific effect
+  // else //if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
+  //   ppf(" dev sPC %d >= %d", indexV, NUM_LEDS_Max);
 }
 
-void LedsLayer::setPixelColorPal(uint16_t indexV, uint8_t palIndex, uint8_t palBri) {
+void LedsLayer::setPixelColorPal(int indexV, uint8_t palIndex, uint8_t palBri) {
   setPixelColor(indexV, ColorFromPalette(palette, palIndex, palBri));
 }
 
-void LedsLayer::blendPixelColor(uint16_t indexV, CRGB color, uint8_t blendAmount) {
+void LedsLayer::blendPixelColor(int indexV, CRGB color, uint8_t blendAmount) {
   setPixelColor(indexV, blend(color, getPixelColor(indexV), blendAmount));
 }
 
-CRGB LedsLayer::getPixelColor(uint16_t indexV) {
-  if (indexV < mappingTable.size()) {
+CRGB LedsLayer::getPixelColor(int indexV) {
+  if (indexV < 0)
+    return CRGB::Black;
+  else if (indexV < mappingTableSizeUsed) {
     switch (mappingTable[indexV].mapType) {
       case m_onePixel:
-        return fixture->ledsP[mappingTable[indexV].indexP]; 
+        return fix->ledsP[mappingTable[indexV].indexP]; 
         break;
       case m_morePixels:
-        return fixture->ledsP[mappingTableIndexes[mappingTable[indexV].indexes][0]]; //any would do as they are all the same
+        return fix->ledsP[mappingTableIndexes[mappingTable[indexV].indexes][0]]; //any would do as they are all the same
         break;
       default: // m_color:
         return CRGB((mappingTable[indexV].rgb14 >> 9) << 3, 
@@ -326,18 +194,19 @@ CRGB LedsLayer::getPixelColor(uint16_t indexV) {
     }
   }
   else if (indexV < NUM_LEDS_Max) //no mapping
-    return fixture->ledsP[indexV];
+    return fix->ledsP[indexV];
   else {
-    ppf(" dev gPC %d >= %d", indexV, NUM_LEDS_Max);
+    // some operations will go out of bounds e.g. VUMeter, uncomment below lines if you wanna test on a specific effect
+    // ppf(" dev gPC %d >= %d", indexV, NUM_LEDS_Max);
     return CRGB::Black;
   }
 }
 
 void LedsLayer::fadeToBlackBy(uint8_t fadeBy) {
-  if (!projection || (fixture->layers.size() == 1)) { //faster, else manual 
-    fastled_fadeToBlackBy(fixture->ledsP, fixture->nrOfLeds, fadeBy);
+  if (!projection || (fix->layers.size() == 1)) { //faster, else manual 
+    fastled_fadeToBlackBy(fix->ledsP, fix->nrOfLeds, fadeBy);
   } else {
-    for (uint16_t index = 0; index < mappingTable.size(); index++) {
+    for (uint16_t index = 0; index < mappingTableSizeUsed; index++) {
       CRGB color = getPixelColor(index);
       color.nscale8(255-fadeBy);
       setPixelColor(index, color);
@@ -346,31 +215,31 @@ void LedsLayer::fadeToBlackBy(uint8_t fadeBy) {
 }
 
 void LedsLayer::fill_solid(const struct CRGB& color) {
-  if (!projection || (fixture->layers.size() == 1)) { //faster, else manual 
-    fastled_fill_solid(fixture->ledsP, fixture->nrOfLeds, color);
+  if (!projection || (fix->layers.size() == 1)) { //faster, else manual 
+    fastled_fill_solid(fix->ledsP, fix->nrOfLeds, color);
   } else {
-    for (uint16_t index = 0; index < mappingTable.size(); index++)
+    for (uint16_t index = 0; index < mappingTableSizeUsed; index++)
       setPixelColor(index, color);
   }
 }
 
 void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
-  if (!projection || (fixture->layers.size() == 1)) { //faster, else manual 
-    fastled_fill_rainbow(fixture->ledsP, fixture->nrOfLeds, initialhue, deltahue);
+  if (!projection || (fix->layers.size() == 1)) { //faster, else manual 
+    fastled_fill_rainbow(fix->ledsP, fix->nrOfLeds, initialhue, deltahue);
   } else {
     CHSV hsv;
     hsv.hue = initialhue;
     hsv.val = 255;
     hsv.sat = 240;
 
-    for (uint16_t index = 0; index < mappingTable.size(); index++) {
+    for (uint16_t index = 0; index < mappingTableSizeUsed; index++) {
       setPixelColor(index, hsv);
       hsv.hue += deltahue;
     }
   }
 }
 
-  void LedsLayer::drawCharacter(unsigned char chr, int x, int16_t y, uint8_t font, CRGB col, uint16_t shiftPixel, uint16_t shiftChr) {
+  void LedsLayer::drawCharacter(unsigned char chr, int x, int y, uint8_t font, CRGB col, uint16_t shiftPixel, uint16_t shiftChr) {
     if (chr < 32 || chr > 126) return; // only ASCII 32-126 supported
     chr -= 32; // align with font table entries
 
@@ -409,60 +278,73 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
     }
   }
 
-  void LedsLayer::projectAndMapPre() {
+  void LedsLayer::addPixelsPre(uint8_t rowNr) {
     if (doMap) {
       fill_solid(CRGB::Black);
 
-      ppf("projectAndMapPre clear leds[x] effect:%s pro:%s\n", effect?effect->name():"None", projection?projection->name():"None");
+      ppf("addPixelsPre clear leds[x] effect:%s pro:%s\n", effect?effect->name():"None", projection?projection->name():"None");
       size = Coord3D{0,0,0};
       //vectors really gone now?
       for (std::vector<uint16_t> mappingTableIndex: mappingTableIndexes) {
         mappingTableIndex.clear();
       }
-      mappingTableIndexes.clear();
-      mappingTable.clear();
+      mappingTableIndexesSizeUsed = 0; //do not clear mappingTableIndexes, reuse it
+
+      for (size_t i = 0; i < mappingTable.size(); i++) {
+        mappingTable[i] = PhysMap();
+      }
+      mappingTableSizeUsed = 0;
+
+      //new fix size: update leds
+      start = mdl->getValue("layers", "start", rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+      middle = mdl->getValue("layers", "middle", rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+      end = mdl->getValue("layers", "end", rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+
+      if (middle == Coord3D{0,0,0}) 
+        middle = fix->fixSize / 2; //so pinWheel shows a midpoint
+      if (end == Coord3D{0,0,0}) 
+        end = fix->fixSize - Coord3D{1,1,1};
+
+      size = (end - start) + Coord3D{1,1,1};
+
+      // 0 to 3D depending on start and end (e.g. to display ScrollingText on one side of a cube)
+      projectionDimension = 0;
+      if (size.x > 1) projectionDimension++;
+      if (size.y > 1) projectionDimension++;
+      if (size.z > 1) projectionDimension++;
+
+      if (projection) {
+        mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
+        projectionData.begin();
+        (projection->*addPixelsPreCached)(*this);
+        mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
+      }
+
+      nrOfLeds = size.x * size.y * size.z;
     }
   }
 
-  void LedsLayer::projectAndMapPixel(Coord3D pixel, uint8_t rowNr) {
-    if (projection && doMap) { //only real projections: add pixel in leds mappingtable
+  void LedsLayer::addPixel(Coord3D pixel, uint8_t rowNr) {
+    if (projection && doMap) { //only real projections: add pixel in leds mappingTable
 
-      //set start and endPos between bounderies of fixture
-      Coord3D startPosAdjusted = (startPos).minimum(fixture->fixSize - Coord3D{1,1,1}) * 10;
-      Coord3D endPosAdjusted = (endPos).minimum(fixture->fixSize - Coord3D{1,1,1}) * 10;
-      Coord3D midPosAdjusted = (midPos).minimum(fixture->fixSize - Coord3D{1,1,1}); //not * 10
+      if (pixel >= start * fix->factor && pixel <= end * fix->factor ) { //if pixel between start and end pos
 
-      // mdl->setValue("start", startPosAdjusted/10, rowNr); //rowNr
-      // mdl->setValue("end", endPosAdjusted/10, rowNr); //rowNr
+        Coord3D pixelAdjusted = pixel / fix->factor - start; //pixel also rounded to a 1x1 grid space
 
-      if (pixel >= startPosAdjusted && pixel <= endPosAdjusted ) { //if pixel between start and end pos
-
-        Coord3D pixelAdjusted = (pixel - startPosAdjusted)/10; //pixelRelative to startPos in cm
-
-        Coord3D sizeAdjusted = (endPosAdjusted - startPosAdjusted)/10 + Coord3D{1,1,1}; // in cm
-
-        // 0 to 3D depending on start and endpos (e.g. to display ScrollingText on one side of a cube)
-        projectionDimension = 0;
-        if (sizeAdjusted.x > 1) projectionDimension++;
-        if (sizeAdjusted.y > 1) projectionDimension++;
-        if (sizeAdjusted.z > 1) projectionDimension++;
-
-        // setupCached = &Projection::setup;
-        // adjustXYZCached = &Projection::adjustXYZ;
-
-        mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
+        // addPixelCached = &Projection::addPixel;
+        // XYZCached = &Projection::XYZ;
 
         uint16_t indexV = XYZUnprojected(pixelAdjusted); //default
 
         // Setup changes leds.size, mapped, indexV
-        if (projection) (projection->*setupCached)(*this, sizeAdjusted, pixelAdjusted, midPosAdjusted, indexV);
-
-        if (size == Coord3D{0,0,0}) size = sizeAdjusted; //first, not assigned in setupCached
-        nrOfLeds = size.x * size.y * size.z;
+        mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
+        projectionData.begin();
+        (projection->*addPixelCached)(*this, pixelAdjusted, indexV);
+        mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
 
         if (indexV != UINT16_MAX) {
           if (indexV >= nrOfLeds || indexV >= NUM_VLEDS_Max)
-            ppf("dev leds[%d] pre indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, nrOfLeds, NUM_VLEDS_Max, mappingTable.size(), fixture->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
+            ppf("dev leds[%d] pre indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, nrOfLeds, NUM_VLEDS_Max, mappingTableSizeUsed, fix->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
           else {
 
             //create new physMaps if needed
@@ -470,23 +352,24 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
               for (size_t i = mappingTable.size(); i <= indexV; i++) {
                 // ppf("mapping %d,%d,%d add physMap before %d %d\n", pixel.y, pixel.y, pixel.z, indexV, mappingTable.size());
                 mappingTable.push_back(PhysMap());
+                // mappingTableIndexesSizeUsed++;
               }
             }
 
-            mappingTable[indexV].addIndexP(*this, fixture->indexP);
-            // ppf("mapping b:%d t:%d V:%d\n", indexV, indexP, mappingTable.size());
+            if (indexV >= mappingTableSizeUsed) mappingTableSizeUsed = indexV + 1;
+
+            mappingTable[indexV].addIndexP(*this, fix->indexP);
+            // ppf("mapping b:%d t:%d V:%d\n", indexV, indexP, mappingTableSizeUsed);
           } //indexV not too high
         } //indexV
 
-        mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
+      } //if x,y,z between start and end
+    } //if projection && doMap
+  } //addPixel
 
-      } //if x,y,z between start and endpos
-    } //if doMap
-  } //projectAndMapPixel
-
-  void LedsLayer::projectAndMapPost(uint8_t rowNr) {
+  void LedsLayer::addPixelsPost(uint8_t rowNr) {
     if (doMap) {
-      ppf("projectAndMapPost leds[%d] effect:%s pro:%s\n", rowNr, effect?effect->name():"None", projection?projection->name():"None");
+      ppf("addPixelsPost leds[%d] effect:%s pro:%s\n", rowNr, effect?effect->name():"None", projection?projection->name():"None");
 
       uint16_t nrOfLogical = 0;
       uint16_t nrOfPhysical = 0;
@@ -496,22 +379,24 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
       if (!projection) { //projection is none
 
         //defaults
-        size = fixture->fixSize;
-        nrOfLeds = nrOfLeds;
-        nrOfPhysical = nrOfLeds;
+        size = fix->fixSize;
+        nrOfLeds = fix->nrOfLeds;
+        nrOfPhysical = fix->nrOfLeds;
 
       } else {
 
         if (mappingTable.size() < size.x * size.y * size.z)
-          ppf("projectAndMapPost add extra physMap %d to %d size: %d,%d,%d\n", mappingTable.size(), size.x * size.y * size.z, size.x, size.y, size.z);
+          ppf("addPixelsPost add extra physMap %d to %d size: %d,%d,%d\n", mappingTableSizeUsed, size.x * size.y * size.z, size.x, size.y, size.z);
         for (size_t i = mappingTable.size(); i < size.x * size.y * size.z; i++) {
           mappingTable.push_back(PhysMap());
+          mappingTableSizeUsed++;
         }
 
-        nrOfLeds = mappingTable.size();
+        nrOfLeds = mappingTableSizeUsed;
 
         //debug info + summary values
-        for (PhysMap &map:mappingTable) {
+        for (size_t i = 0; i< mappingTableSizeUsed; i++) {
+          PhysMap &map = mappingTable[i];
           switch (map.mapType) {
             case m_color:
               nrOfColor++;
@@ -536,13 +421,13 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
         }
       }
 
-      ppf("projectAndMapPost leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d c:%d)\n", rowNr, size.x, size.y, size.z, nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, nrOfColor);
+      ppf("addPixelsPost leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d of %d c:%d)\n", rowNr, size.x, size.y, size.z, nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, mappingTableIndexesSizeUsed, nrOfColor);
 
       char buf[32];
       print->fFormat(buf, sizeof(buf), "%d x %d x %d -> %d", size.x, size.y, size.z, nrOfLeds);
       mdl->setValue("layers", "size", JsonString(buf, JsonString::Copied), rowNr);
 
-      ppf("projectAndMapPost leds[%d].size = %d + m:(%d * %d) + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164
+      ppf("addPixelsPost leds[%d].size = so:%d + m:(%d of %d) * %d + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTableSizeUsed, mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164
 
       doMap = false;
     } //doMap

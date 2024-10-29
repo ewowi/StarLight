@@ -27,24 +27,14 @@ int iter;
 
 void beforeRender()
 {
-//  float jj=triangle(time(0.2));
-//     dp(2.4*(jj-0.5));
-//§§float g=2.4;
- //§ t1 = g*(triangle(time(0.2)) - 0.5);
-//dp(t1);
+
   t1 = (triangle(time(0.2)) - 0.5)*2.4 ;
-//dp(t1);
+
   t2 = time(0.05);
 
   cX = cR + t1;
   cY = cI + (t1 / 2.5);
-  //  dp(cY);
-// dp(cX);
-//  dp(t1);
-//  display(11111);
- // dp(t2);
 }
-
 
 void render2D(int x1, int y1)
 {
@@ -55,7 +45,7 @@ void render2D(int x1, int y1)
   {
     float x2 = x ^ 2;
     float y2 = y ^ 2;
-    if ((int)(x2 + y2) >= 4)
+    if (x2 + y2 >= 4)
     {
       break; 
     }
@@ -65,10 +55,9 @@ void render2D(int x1, int y1)
     y = fY;
   }
  
-
   if (iter < maxIterations)
   {
-    sPC(panel_width * y1 + x1, hsv(((t2 + (iter / maxIterations)) * 255), 255, 255));
+    sPC(panel_width * y1 + x1, hsv((t2 + iter / maxIterations) * 255, 255, 255));
   }
   else
   {

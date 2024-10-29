@@ -20,6 +20,7 @@
 #include "../Sys/SysModSystem.h"
 #include "../Sys/SysModFiles.h"
 
+#include "../App/LedModFixture.h" //for fix->driver (temp)
 // #define __RUN_CORE 0
 
 long time1;
@@ -82,10 +83,22 @@ static void show()
 static void preKill()
 {
   ppf("ELS preKill\n");
+  // LEDS specific
+  //tbd: move this to LedModFixture...
+  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+    fix->driver.__enableDriver=false;
+    while(fix->driver.isDisplaying){};
+    //delay(20);
+  #endif
 }
 static void postKill()
 {
   ppf("ELS postKill\n");
+  // LEDS specific
+  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+    // delay(10);
+    fix->driver.__enableDriver=true;
+  #endif
 }
 
 static void resetShowStats()

@@ -22,58 +22,85 @@ function userFunSetup() {
   </div>`
 }
 
+let cumulatativeBuffer = []
+
 function userFun(buffer) {
   let previewVar = controller.modules.findVar("Fixture", "preview");
   if (buffer[0] == 1) {
-    console.log("userFun Fixture definition", buffer, previewVar)
-    previewVar.file = {};
-    previewVar.file.new = true;
-    previewVar.file.width = buffer[1]*256 + buffer[2];
-    previewVar.file.height = buffer[3]*256 + buffer[4];
-    previewVar.file.depth = buffer[5]*256 + buffer[6];
-    previewVar.file.nrOfLeds = buffer[7]*256 + buffer[8];
-    previewVar.file.ledSize = buffer[9];
-    previewVar.file.shape = buffer[10];
-    previewVar.file.outputs = [];
-    let headerBytes = 11
-    let output = {};
-    output.leds = [];
-    for (let i = 0; i<previewVar.file.nrOfLeds*6; i+=6) { //steps of 6
-      // if (headerBytes + 5 + i < previewVar.file.nrOfLeds * 6 + 11)
-        output.leds.push([buffer[headerBytes+i]*256+buffer[headerBytes+1+i],buffer[headerBytes+2+i]*256+buffer[headerBytes+3+i],buffer[headerBytes+4+i]*256+buffer[headerBytes+5+i]]);
+    let headerBytesFixture = 16
+    if (buffer[1] != 255) {
+      console.log("userFun Fixture definition", buffer[11], buffer)
+      previewVar.file = {};
+      previewVar.file.new = true;
+      previewVar.file.width = buffer[1]*256 + buffer[2];
+      previewVar.file.height = buffer[3]*256 + buffer[4];
+      previewVar.file.depth = buffer[5]*256 + buffer[6];
+      previewVar.file.nrOfLeds = buffer[7]*256 + buffer[8];
+      previewVar.file.ledSize = buffer[9];
+      previewVar.file.shape = buffer[10];
+      previewVar.file.factor = buffer[11];
+      previewVar.file.outputs = [];
     }
-    previewVar.file.outputs.push(output);
-    console.log("userFun Fixture definition", buffer, previewVar.file)
+    else {
+      console.log("userFun Fixture definition - new buffer", buffer)
+    }
+
+    if (previewVar.file) {
+      previewBufferIndex = buffer[12]*256 + buffer[13];
+
+      let output = {};
+      output.leds = [];
+      for (let i = headerBytesFixture; i<previewBufferIndex; ) { //steps of 2, 4, or 6 (1D, 2D or 3D)
+        //add 3D coordinates
+        let led = [];
+        if (previewVar.file.width > 1) {
+          if (previewVar.file.width * previewVar.file.factor > 255) {
+            if (i+1<previewBufferIndex) led.push(buffer[i++]*256+buffer[i++]); else led.push(0);
+          } else {
+            if (i<previewBufferIndex) led.push(buffer[i++]); else led.push(0);
+          }
+        } 
+        if (previewVar.file.height > 1) {
+          if (previewVar.file.height * previewVar.file.factor > 255) {
+            if (i+1<previewBufferIndex) led.push(buffer[i++]*256+buffer[i++]); else led.push(0);
+          } else {
+            if (i<previewBufferIndex) led.push(buffer[i++]); else led.push(0);
+          }
+        } 
+        if (previewVar.file.depth > 1) {
+          if (previewVar.file.depth * previewVar.file.factor > 255) {
+            if (i+1<previewBufferIndex) led.push(buffer[i++]*256+buffer[i++]); else led.push(0);
+          } else {
+            if (i<previewBufferIndex) led.push(buffer[i++]); else led.push(0);
+          }
+        } 
+
+        output.leds.push(led);
+      }
+
+      previewVar.file.outputs.push(output);
+      console.log('add leds', output.leds.length);
+    }
+    else
+      console.log("dev no init received?", buffer);
   }
   else if (buffer[0] == 2) {
     let canvasNode = gId("Fixture.preview");
-    if (canvasNode) {
-  
-      //replace the canvas: in case we switch from 2D to 3D as they cannot be reused between them
-      //not needed anymore as we do only three.js
-      // if (previewVar.file.new)
-      // {
-      //   console.log("replace the canvas!", previewVar.file);
-      //   let canvasNode = cE("canvas");
-      //   canvasNode.width = previewNode.width;
-      //   canvasNode.height = previewNode.height;
-      //   canvasNode.className = previewNode.className;
-      //   canvasNode.draggable = true;
-      //   canvasNode.addEventListener('dragstart', (event) => {event.preventDefault(); event.stopPropagation();});
-
-      //   previewNode.parentNode.replaceChild(canvasNode, previewNode);
-      //   previewNode = canvasNode;
-      //   previewNode.id = "preview";
-      //   previewNode.addEventListener('dblclick', (event) => {toggleModal(event.target);});
-      // }
-
-      // console.log("userFun", buffer, previewVar);
-
-      // if (previewVar.file.depth == 1)
-      //   preview2D(previewNode, buffer, previewVar);
-      // else
-        preview3D(canvasNode, buffer, previewVar);
-
+    if (canvasNode && previewVar.file) {
+      let headerBytesPreview = 5
+      if (buffer[1] != 255) { //initial
+        cumulatativeBuffer = buffer; //reset cumulatativeBuffer. including 5 header bytes
+        // console.log("init buffer", cumulatativeBuffer, headerBytesPreview + previewVar.file.nrOfLeds * bytesPerPixel);
+      }
+      else {
+        // console.log("add buffer", cumulatativeBuffer, buffer.slice(0, headerBytesPreview), buffer.slice(headerBytesPreview), headerBytesPreview + previewVar.file.nrOfLeds * bytesPerPixel);
+        cumulatativeBuffer = new Uint8Array([...cumulatativeBuffer, ...buffer.slice(headerBytesPreview)]) //add without header bytes
+      }
+      let bytesPerPixel = cumulatativeBuffer[4]
+      if (cumulatativeBuffer.length >= headerBytesPreview + previewVar.file.nrOfLeds * bytesPerPixel ) {
+        // console.log("send buffer", cumulatativeBuffer, headerBytesPreview + previewVar.file.nrOfLeds * bytesPerPixel);
+        preview3D(canvasNode, cumulatativeBuffer, previewVar);
+      }
     }
     return true;
   }
@@ -84,7 +111,6 @@ function userFun(buffer) {
 function preview2D(canvasNode, buffer, previewVar) {
   let ctx = canvasNode.getContext('2d');
   let i = 5;
-  let factor = 10;//fixed value: from mm to cm
   ctx.clearRect(0, 0, canvasNode.width, canvasNode.height);
   if (previewVar.file) {
     let pPL = Math.min(canvasNode.width / previewVar.file.width, canvasNode.height / previewVar.file.height); // pixels per LED (width of circle)
@@ -97,7 +123,7 @@ function preview2D(canvasNode, buffer, previewVar) {
             if (buffer[i] + buffer[i+1] + buffer[i+2] > 20) { //do not show nearly blacks
               ctx.fillStyle = `rgb(${buffer[i]},${buffer[i+1]},${buffer[i+2]})`;
               ctx.beginPath();
-              ctx.arc(led[0]*pPL/factor + lOf, led[1]*pPL/factor, pPL*0.4, 0, 2 * Math.PI);
+              ctx.arc(led[0]*pPL/previewVar.file.factor + lOf, led[1]*pPL/previewVar.file.factor, pPL*0.4, 0, 2 * Math.PI);
               ctx.fill();
             }
             i+=3;
@@ -175,8 +201,7 @@ function preview3D(canvasNode, buffer, previewVar) {
     
     import ('three/addons/controls/OrbitControls.js').then((OCModule) => {
 
-      let factor = 10;//fixed value: from mm to cm
-      let d = 5 / factor; //distanceLED;
+      let distance = 5 / 10;//previewVar.file.factor; //distanceLED;
 
       //init three - done once
       if (!renderer || (previewVar.file && previewVar.file.new)) { //init 3D
@@ -189,7 +214,7 @@ function preview3D(canvasNode, buffer, previewVar) {
         renderer.setClearColor( 0x000000, 0 );
 
         camera = new THREE.PerspectiveCamera( 45, canvasNode.width/canvasNode.width, 1, 500); //aspectRatio is 1 for the time being
-        camera.position.set( 0, 0, d*Math.sqrt(previewVar.file.width*previewVar.file.width + previewVar.file.height*previewVar.file.height + previewVar.file.depth*previewVar.file.depth) );
+        camera.position.set( 0, 0, distance * Math.sqrt(previewVar.file.width*previewVar.file.width + previewVar.file.height*previewVar.file.height + previewVar.file.depth*previewVar.file.depth) );
         camera.lookAt( 0, 0, 0 );
 
         scene = new THREE.Scene();
@@ -247,9 +272,9 @@ function preview3D(canvasNode, buffer, previewVar) {
 
       //init fixture - anytime a new fixture
       if (previewVar.file && previewVar.file.new) { //set the new coordinates
-        var offset_x = -d*(previewVar.file.width-1)/2;
-        var offset_y = -d*(previewVar.file.height-1)/2;
-        var offset_z = -d*(previewVar.file.depth-1)/2;
+        var offset_x = -distance * (previewVar.file.width-1)/2;
+        var offset_y = -distance * (previewVar.file.height-1)/2;
+        var offset_z = -distance * (previewVar.file.depth-1)/2;
 
         console.log("preview3D new jsonValues", previewVar.file);
 
@@ -276,7 +301,7 @@ function preview3D(canvasNode, buffer, previewVar) {
                 const material = new THREE.MeshBasicMaterial({transparent: true, opacity: 1.0});
                 // material.color = new THREE.Color(`${x/mW}`, `${y/mH}`, `${z/mD}`);
                 const mesh = new THREE.Mesh( geometry, material );
-                mesh.position.set(offset_x + d*led[0]/factor, -offset_y - d*led[1]/factor, - offset_z - d*led[2]/factor);
+                mesh.position.set(offset_x + distance * led[0]/previewVar.file.factor, -offset_y - distance * led[1]/previewVar.file.factor, - offset_z - distance * led[2]/previewVar.file.factor);
                 mesh.name = outputsIndex + " - " + ledsIndex++;
                 scene.add( mesh );
               }
@@ -304,9 +329,9 @@ function preview3D(canvasNode, buffer, previewVar) {
         }
 
         //light up the cube
-        let headerBytes = 4;
+        let headerBytesPreview = 5;
         var i = 0;
-        let rgb1B = previewVar.file.nrOfLeds == buffer.length - headerBytes; //1-byte rgb
+        let bytesPerPixel = buffer[4];// previewVar.file.nrOfLeds == buffer.length - headerBytesPreview; //1-byte rgb
         // console.log(previewVar.file.nrOfLeds, buffer.length);
         if (previewVar.file.outputs) {
           // console.log("preview3D jsonValues", previewVar.file);
@@ -314,15 +339,22 @@ function preview3D(canvasNode, buffer, previewVar) {
             if (output.leds) {
               for (var led of output.leds) {
                 if (i < scene.children.length) {
-                  if (rgb1B) {
-                    let bte = buffer[headerBytes + i];
+                  if (bytesPerPixel == 1) {
+                    let bte = buffer[headerBytesPreview + i];
                     //decode rgb from 8 bits: 3 for red, 3 for green, 2 for blue
-                    scene.children[i].material.color = new THREE.Color(`${((bte & 0xE0) >> 5)*32/256}`, `${((bte & 0x1C) >> 2)*32/256}`, `${(bte & 0x03)*64/256}`);
+                    scene.children[i].material.color = new THREE.Color(`${((bte & 0xE0) >> 5)*31/255}`, `${((bte & 0x1C) >> 2)*31/255}`, `${(bte & 0x03)*63/255}`);
+                  }
+                  else if (bytesPerPixel == 2) {
+                    //encode rgb in 16 bits: 5 for red, 6 for green, 5 for blue
+                    // let encodedColor = buffer[headerBytesPreview + i] * 256 + buffer[headerBytesPreview + i + 1]; //in 16 bits
+                    let encodedColor = (buffer[headerBytesPreview + i*2]<< 8) | buffer[headerBytesPreview + i*2 + 1]; //in 16 bits
+                    scene.children[i].material.color = new THREE.Color(`${((encodedColor >> 11) & 0x1F)/31}`, `${((encodedColor >> 5) & 0x3F)/63}`, `${(encodedColor & 0x1F)/31}`);
+                    // scene.children[i].material.color = new THREE.Color(`${buffer[headerBytesPreview + i]/255}`, `${0}`, `${buffer[headerBytesPreview + i + 1]/255}`);
                   }
                   else {
-                    // scene.children[i].visible = buffer[headerBytes + i*3] + buffer[headerBytes + i*3 + 1] + buffer[headerBytes + i*3 + 2] > 10; //do not show blacks
+                    // scene.children[i].visible = buffer[headerBytesPreview + i*3] + buffer[headerBytesPreview + i*3 + 1] + buffer[headerBytesPreview + i*3 + 2] > 10; //do not show blacks
                     // if (scene.children[i].visible) {
-                      scene.children[i].material.color = new THREE.Color(`${buffer[headerBytes + i*3]/255}`, `${buffer[headerBytes + i*3 + 1]/255}`, `${buffer[headerBytes + i*3 + 2]/255}`);
+                      scene.children[i].material.color = new THREE.Color(`${buffer[headerBytesPreview + i*3]/255}`, `${buffer[headerBytesPreview + i*3 + 1]/255}`, `${buffer[headerBytesPreview + i*3 + 2]/255}`);
                       // scene.children[i].geometry.setAtttribute("radius", buffer[4] / 30);
                     // }
                   }
