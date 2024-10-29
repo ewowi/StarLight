@@ -175,7 +175,6 @@ class PinwheelProjection: public Projection {
   }
 
   void addPixelsPre(LedsLayer &leds) {
-    leds.projectionData.begin();
     const int petals = leds.projectionData.read<uint8_t>();
     if (leds.projectionDimension > _1D && leds.effectDimension > _1D) {
       leds.size.y = sqrt(sq(max(leds.size.x - leds.middle.x, leds.middle.x)) + 
@@ -195,7 +194,6 @@ class PinwheelProjection: public Projection {
     // factors of 360
     const int FACTORS[24] = {360, 180, 120, 90, 72, 60, 45, 40, 36, 30, 24, 20, 18, 15, 12, 10, 9, 8, 6, 5, 4, 3, 2};
     // UI Variables
-    leds.projectionData.begin();
     const int petals   = leds.projectionData.read<uint8_t>();
     const int swirlVal = leds.projectionData.read<uint8_t>() - 30; // SwirlVal range -30 to 30
     const bool reverse = leds.projectionData.read<bool>();
@@ -504,7 +502,6 @@ class ReverseProjection: public Projection {
   }
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) { 
-    leds.projectionData.begin();
     bool reverseX = leds.projectionData.read<bool>();
     bool reverseY = leds.projectionData.read<bool>();
     bool reverseZ = leds.projectionData.read<bool>();
@@ -555,14 +552,15 @@ class MirrorProjection: public Projection {
 
   void addPixelsPre(LedsLayer &leds) {
     // UI Variables
-    leds.projectionData.begin();
     bool mirrorX = leds.projectionData.read<bool>();
     bool mirrorY = leds.projectionData.read<bool>();
     bool mirrorZ = leds.projectionData.read<bool>();
+    Coord3D *originalSize = leds.projectionData.readWrite<Coord3D>();
 
     if (mirrorX) leds.size.x = (leds.size.x + 1) / 2;
     if (mirrorY) leds.size.y = (leds.size.y + 1) / 2;
     if (mirrorZ) leds.size.z = (leds.size.z + 1) / 2;
+    *originalSize = leds.size;
 
     DefaultProjection dp;
     dp.addPixelsPre(leds);
@@ -570,14 +568,14 @@ class MirrorProjection: public Projection {
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
     // UI Variables
-    leds.projectionData.begin();
     bool mirrorX = leds.projectionData.read<bool>();
     bool mirrorY = leds.projectionData.read<bool>();
     bool mirrorZ = leds.projectionData.read<bool>();
+    Coord3D originalSize = leds.projectionData.read<Coord3D>();
 
-    if (mirrorX && pixel.x >= leds.size.x) pixel.x = leds.size.x * 2 - 1 - pixel.x;
-    if (mirrorY && pixel.y >= leds.size.y) pixel.y = leds.size.y * 2 - 1 - pixel.y;
-    if (mirrorZ && pixel.z >= leds.size.z) pixel.z = leds.size.z * 2 - 1 - pixel.z;
+    if (mirrorX && pixel.x >= originalSize.x) pixel.x = originalSize.x * 2 - 1 - pixel.x;
+    if (mirrorY && pixel.y >= originalSize.y) pixel.y = originalSize.y * 2 - 1 - pixel.y;
+    if (mirrorZ && pixel.z >= originalSize.z) pixel.z = originalSize.z * 2 - 1 - pixel.z;
     
     DefaultProjection dp;
     dp.addPixel(leds, pixel, indexV);
@@ -603,7 +601,6 @@ class GroupingProjection: public Projection {
 
   void addPixelsPre(LedsLayer &leds) {
     // UI Variables
-    leds.projectionData.begin();
     Coord3D grouping = leds.projectionData.read<Coord3D>();
     grouping = grouping.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
     if (grouping == Coord3D{1, 1, 1}) return;
@@ -614,7 +611,6 @@ class GroupingProjection: public Projection {
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
     // UI Variables
-    leds.projectionData.begin();
     Coord3D grouping = leds.projectionData.read<Coord3D>();
     grouping = grouping.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
     if (grouping == Coord3D{1, 1, 1}) return;
@@ -642,7 +638,6 @@ class SpacingProjection: public Projection {
 
   void addPixelsPre(LedsLayer &leds) {
     // UI Variables
-    leds.projectionData.begin();
     Coord3D spacing = leds.projectionData.read<Coord3D>();
 
     // ppf ("pixel: %d,%d,%d -> ", pixel.x, pixel.y, pixel.z);
@@ -657,7 +652,6 @@ class SpacingProjection: public Projection {
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
     // UI Variables
-    leds.projectionData.begin();
     Coord3D spacing = leds.projectionData.read<Coord3D>();
 
     // ppf ("pixel: %d,%d,%d -> ", pixel.x, pixel.y, pixel.z);
@@ -707,7 +701,6 @@ class TransposeProjection: public Projection {
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
     // UI Variables
-    leds.projectionData.begin();
     bool transposeXY = leds.projectionData.read<bool>();
     bool transposeXZ = leds.projectionData.read<bool>();
     bool transposeYZ = leds.projectionData.read<bool>();
@@ -759,7 +752,6 @@ class ScrollingProjection: public Projection {
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
-    leds.projectionData.begin();
     bool mirrorX = leds.projectionData.read<bool>(); // Not used 
     bool mirrorY = leds.projectionData.read<bool>(); // Not used
     bool mirrorZ = leds.projectionData.read<bool>(); // Not used
@@ -796,7 +788,6 @@ class AccelerationProjection: public Projection {
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
-    leds.projectionData.begin();
     bool wrap = leds.projectionData.read<bool>();
     float sensitivity = float(leds.projectionData.read<uint8_t>()) / 20.0 + 1; // 0 - 100 slider -> 1.0 - 6.0 multiplier 
     uint16_t deadzone = map(leds.projectionData.read<uint8_t>(), 0, 255, 0 , 1000); // 0 - 1000
@@ -850,7 +841,6 @@ class CheckerboardProjection: public Projection {
   }
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
-    leds.projectionData.begin();
     Coord3D size = leds.projectionData.read<Coord3D>();
     bool invert = leds.projectionData.read<bool>();
     bool group = leds.projectionData.read<bool>();
@@ -932,7 +922,6 @@ class RotateProjection: public Projection {
   }
 
   void addPixelsPre(LedsLayer &leds) {
-    leds.projectionData.begin();
     RotateData *data = leds.projectionData.readWrite<RotateData>();
     data->expand = mdl->getValue("projection", "Expand");
 
@@ -949,7 +938,6 @@ class RotateProjection: public Projection {
   }
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
-    leds.projectionData.begin();
     RotateData *data = leds.projectionData.readWrite<RotateData>();
 
     if (data->expand) {
@@ -967,7 +955,6 @@ class RotateProjection: public Projection {
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
-    leds.projectionData.begin();
     RotateData *data = leds.projectionData.readWrite<RotateData>();
 
     constexpr int Fixed_Scale = 1 << 10;
