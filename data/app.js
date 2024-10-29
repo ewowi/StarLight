@@ -22,7 +22,7 @@ function userFunSetup() {
   </div>`
 }
 
-let cumulatativeBuffer;
+let cumulatativeBuffer = []
 
 function userFun(buffer) {
   let previewVar = controller.modules.findVar("Fixture", "preview");
@@ -88,15 +88,15 @@ function userFun(buffer) {
     let canvasNode = gId("Fixture.preview");
     if (canvasNode && previewVar.file) {
       let headerBytesPreview = 5
-      let bytesPerPixel = buffer[4]
       if (buffer[1] != 255) { //initial
-        cumulatativeBuffer = buffer;
+        cumulatativeBuffer = buffer; //reset cumulatativeBuffer. including 5 header bytes
         // console.log("init buffer", cumulatativeBuffer, headerBytesPreview + previewVar.file.nrOfLeds * bytesPerPixel);
       }
       else {
         // console.log("add buffer", cumulatativeBuffer, buffer.slice(0, headerBytesPreview), buffer.slice(headerBytesPreview), headerBytesPreview + previewVar.file.nrOfLeds * bytesPerPixel);
-        cumulatativeBuffer = new Uint8Array([...cumulatativeBuffer, ...buffer.slice(headerBytesPreview)])
+        cumulatativeBuffer = new Uint8Array([...cumulatativeBuffer, ...buffer.slice(headerBytesPreview)]) //add without header bytes
       }
+      let bytesPerPixel = cumulatativeBuffer[4]
       if (cumulatativeBuffer.length >= headerBytesPreview + previewVar.file.nrOfLeds * bytesPerPixel ) {
         // console.log("send buffer", cumulatativeBuffer, headerBytesPreview + previewVar.file.nrOfLeds * bytesPerPixel);
         preview3D(canvasNode, cumulatativeBuffer, previewVar);

@@ -220,6 +220,7 @@ public:
     return XYZ(x, y, 0);
   }
 
+  //use inBounds with care (or not at all) is sPC, gPC just ignores out of bounds
   bool inBounds(int x, int y, int z = 0);
   bool inBounds(Coord3D pos);
 
@@ -399,7 +400,7 @@ public:
 
     // single pixel (line length == 0)
     if (dx+dy == 0) {
-      setPixelColor(XY(x0, y0), color); //no check on out of bounds yet
+      setPixelColor(XY(x0, y0), color);
       return;
     }
 
@@ -425,10 +426,10 @@ public:
         if (steep) std::swap(x,y);  // temporarily swap if steep
         // pixel coverage is determined by fractional part of y co-ordinate
         // WLEDMM added out-of-bounds check: "unsigned(x) < cols" catches negative numbers _and_ too large values
-        if (inBounds(x,y)) setPixelColor(XY(x, y), blend(color, getPixelColor(XY(x, y)), keep));
+        setPixelColor(XY(x, y), blend(color, getPixelColor(XY(x, y)), keep));
         int xx = x+int(steep);
         int yy = y+int(!steep);
-        if (inBounds(xx,yy)) setPixelColor(XY(xx, yy), blend(color, getPixelColor(XY(xx, yy)), seep));
+        setPixelColor(XY(xx, yy), blend(color, getPixelColor(XY(xx, yy)), seep));
       
         intersectY += gradient;
         if (steep) std::swap(x,y);  // restore if steep
@@ -438,7 +439,7 @@ public:
       int err = (dx>dy ? dx : -dy)/2;   // error direction
       for (;;) {
         // if (x0 >= cols || y0 >= rows) break; // WLEDMM we hit the edge - should never happen
-        if (inBounds(x0, y0)) setPixelColor(XY(x0, y0), color);
+        setPixelColor(XY(x0, y0), color);
         if (x0==x1 && y0==y1) break;
         int e2 = err;
         if (e2 >-dx) { err -= dy; x0 += sx; }

@@ -23,6 +23,8 @@
   #include "../User/UserModAudioSync.h"
 #endif
 
+#define PACKAGE_SIZE 5120 //4096 is not ideal as also header info, multiples of 1024 sounds good...
+
 #ifdef STARBASE_USERMOD_LIVE
   #include "User/UserModLive.h"
   static void _addPixelsPre(uint16_t a1, uint16_t a2, uint16_t a3, uint16_t a4, uint8_t a5, uint8_t a6, uint8_t a7) {fix->addPixelsPre(Coord3D{a1, a2, a3}, a4, a5, a6, a7);}
@@ -79,7 +81,7 @@
 
           #define headerBytesPreview 5
           // ppf("(%d %d %d,%d,%d)", len, headerBytesPreview + nrOfLeds * bytesPerPixel, fixSize.x, fixSize.y, fixSize.z);
-          size_t len = min(headerBytesPreview + nrOfLeds * bytesPerPixel, 4096);
+          size_t len = min(headerBytesPreview + nrOfLeds * bytesPerPixel, PACKAGE_SIZE);
           AsyncWebSocketMessageBuffer *wsBuf= web->ws.makeBuffer(len); //global wsBuf causes crash in audio sync module!!!
           if (wsBuf) {
             wsBuf->lock();
@@ -114,7 +116,7 @@
             // send leds preview to clients
             for (size_t indexP = 0; indexP < nrOfLeds; indexP++) {
 
-              if (previewBufferIndex + bytesPerPixel > 4096) {
+              if (previewBufferIndex + bytesPerPixel > PACKAGE_SIZE) {
                 //send the buffer and create a new one
                 web->sendBuffer(wsBuf, true);
                 delay(10);
@@ -125,7 +127,7 @@
                 buffer[4] = bytesPerPixel;
                 // ppf("@");
                 // ppf("new buffer created i:%d p:%d r:%d r6:%d\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6);
-                previewBufferIndex = 5;
+                previewBufferIndex = headerBytesPreview;
               }
 
               if (bytesPerPixel == 1) {
@@ -660,7 +662,7 @@
     } //doAllocPins
   } //mapInitAlloc
 
-#define headerBytesFixture 16 // so 680 pixels will fit in a 4096 package
+#define headerBytesFixture 16 // so 680 pixels will fit in a PACKAGE_SIZE package ?
 
 void LedModFixture::addPixelsPre(Coord3D size, uint16_t nrOfLeds, uint8_t factor, uint8_t ledSize, uint8_t shape) {
   ppf("addPixelsPre %d,%d,%d -> %d f:%d s:%d s:%d\n", size.x, size.y, size.z, nrOfLeds, factor, ledSize, shape);
@@ -694,7 +696,7 @@ void LedModFixture::addPixelsPre(Coord3D size, uint16_t nrOfLeds, uint8_t factor
 
   if (bytesPerPixel && doSendFixtureDefinition) {
     for (auto &client:web->ws.getClients()) while (client->queueLen() > 3) delay(10); //ui refresh, wait a bit
-    size_t len = min(nrOfLeds * 6 + headerBytesFixture, 4096);
+    size_t len = min(nrOfLeds * 6 + headerBytesFixture, PACKAGE_SIZE);
     wsBuf = web->ws.makeBuffer(len);
     if (wsBuf) {
       wsBuf->lock();
@@ -725,7 +727,7 @@ void LedModFixture::addPixel(Coord3D pixel) {
       //send pixel to ui ...
       if (wsBuf && indexP < nrOfLeds ) { //max index to process && indexP * 6 + headerBytesFixture + 5 < 2 * 8192
         byte* buffer = wsBuf->get();
-        if (previewBufferIndex + ((fixSize.x > 1)?2:0 + (fixSize.y > 1)?2:0 + (fixSize.z > 1)?2:0) > 4096) { //2, 4, or 6 bytes (1D, 2D, 3D)
+        if (previewBufferIndex + ((fixSize.x > 1)?2:0 + (fixSize.y > 1)?2:0 + (fixSize.z > 1)?2:0) > PACKAGE_SIZE) { //2, 4, or 6 bytes (1D, 2D, 3D)
           //add previewBufferIndex to package
           buffer[12] = previewBufferIndex/256; //first empty slot
           buffer[13] = previewBufferIndex%256;

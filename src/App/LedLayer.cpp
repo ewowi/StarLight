@@ -126,8 +126,10 @@ int LedsLayer::XYZ(int x, int y, int z) {
 int LedsLayer::XYZ(Coord3D pixel) {
 
   //using cached virtual class methods! (so no need for if projectionNr optimizations!)
-  if (projection)
+  if (projection) {
+    projectionData.begin();
     (projection->*XYZCached)(*this, pixel);
+  }
 
   return XYZUnprojected(pixel);
 }
@@ -160,8 +162,9 @@ void LedsLayer::setPixelColor(int indexV, CRGB color) {
   }
   else if (indexV < NUM_LEDS_Max) //no projection
     fix->ledsP[indexV] = fix->pixelsToBlend[indexV]?blend(color, fix->ledsP[indexV], fix->globalBlend): color;
-  else //if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
-    ppf(" dev sPC %d >= %d", indexV, NUM_LEDS_Max);
+  // some operations will go out of bounds e.g. VUMeter, uncomment below lines if you wanna test on a specific effect
+  // else //if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
+  //   ppf(" dev sPC %d >= %d", indexV, NUM_LEDS_Max);
 }
 
 void LedsLayer::setPixelColorPal(int indexV, uint8_t palIndex, uint8_t palBri) {
@@ -193,7 +196,8 @@ CRGB LedsLayer::getPixelColor(int indexV) {
   else if (indexV < NUM_LEDS_Max) //no mapping
     return fix->ledsP[indexV];
   else {
-    ppf(" dev gPC %d >= %d", indexV, NUM_LEDS_Max);
+    // some operations will go out of bounds e.g. VUMeter, uncomment below lines if you wanna test on a specific effect
+    // ppf(" dev gPC %d >= %d", indexV, NUM_LEDS_Max);
     return CRGB::Black;
   }
 }
@@ -311,6 +315,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
 
       if (projection) {
         mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
+        projectionData.begin();
         (projection->*addPixelsPreCached)(*this);
         mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
       }
@@ -333,6 +338,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
 
         // Setup changes leds.size, mapped, indexV
         mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
+        projectionData.begin();
         (projection->*addPixelCached)(*this, pixelAdjusted, indexV);
         mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
 

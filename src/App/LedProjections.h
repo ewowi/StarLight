@@ -254,9 +254,9 @@ class MultiplyProjection: public Projection {
   }
 
   void addPixelsPre(LedsLayer &leds) {
-    leds.projectionData.begin();
     Coord3D proMulti = leds.projectionData.read<Coord3D>();
     bool    mirror   = leds.projectionData.read<bool>();
+    Coord3D *originalSize = leds.projectionData.readWrite<Coord3D>();
 
     proMulti = proMulti.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
     if (proMulti == Coord3D{1, 1, 1}) return;      // No need to adjust if proMulti is {1, 1, 1}
@@ -264,24 +264,26 @@ class MultiplyProjection: public Projection {
     leds.size = (leds.size + proMulti - Coord3D({1,1,1})) / proMulti; // Round up
     leds.middle /= proMulti;
 
+    *originalSize = leds.size;
+
     DefaultProjection dp;
     dp.addPixelsPre(leds);
   }
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
     // UI Variables
-    leds.projectionData.begin();
     Coord3D proMulti = leds.projectionData.read<Coord3D>();
     bool    mirror   = leds.projectionData.read<bool>();
+    Coord3D originalSize = leds.projectionData.read<Coord3D>();
 
     if (mirror) {
-      Coord3D mirrors = pixel / leds.size; // Place the pixel in the right quadrant
-      pixel = pixel % leds.size;
-      if (mirrors.x %2 != 0) pixel.x = leds.size.x - 1 - pixel.x;
-      if (mirrors.y %2 != 0) pixel.y = leds.size.y - 1 - pixel.y;
-      if (mirrors.z %2 != 0) pixel.z = leds.size.z - 1 - pixel.z;
+      Coord3D mirrors = pixel / originalSize; // Place the pixel in the right quadrant
+      pixel = pixel % originalSize;
+      if (mirrors.x %2 != 0) pixel.x = originalSize.x - 1 - pixel.x;
+      if (mirrors.y %2 != 0) pixel.y = originalSize.y - 1 - pixel.y;
+      if (mirrors.z %2 != 0) pixel.z = originalSize.z - 1 - pixel.z;
     }
-    else pixel = pixel % leds.size;
+    else pixel = pixel % originalSize;
 
     DefaultProjection dp;
     dp.addPixel(leds, pixel, indexV);
