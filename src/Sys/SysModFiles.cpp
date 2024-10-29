@@ -62,7 +62,7 @@ void SysModFiles::setup() {
   //   case onSetValue:
   //     for (size_t rowNr = 0; rowNr < fileList.size(); rowNr++) {
   //       char urlString[32] = "file/";
-  //       strncat(urlString, fileList[rowNr].name, sizeof(urlString)-1);
+  //       strlcat(urlString, fileList[rowNr].name, sizeof(urlString));
   //       mdl->setValue(var, JsonString(urlString, JsonString::Copied), rowNr);
   //     }
   //     return true;

@@ -43,9 +43,13 @@ public:
 
   void loop1s();
 
-  void run(const char *fileName, const char * main = "main", const char * post = nullptr);
+  bool compile(const char *fileName, const char * progName=nullptr,const char * post=nullptr);
 
-  void kill(const char * fileName = nullptr);
+  void killAndDelete(const char * fileName = nullptr);
+
+  bool taskExists(const char *fileName);
+  void executeTask(const char * fileName, const char * function = nullptr);
+  void executeBackgroundTask(const char * fileName, const char * function = nullptr);
 
 };
 

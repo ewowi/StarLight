@@ -51,7 +51,7 @@ struct Coord3D {
   bool operator<(Coord3D rhs) {
     return x < rhs.x && y < rhs.y && z < rhs.z;
   }
-  bool operator>=(uint16_t rhs) {
+  bool operator>=(int rhs) {
     return x >= rhs && y >= rhs && z >= rhs;
   }
 

@@ -31,9 +31,11 @@ static float _totfps;
 static float fps = 0; //integer?
 static unsigned long frameCounter = 0;
 static uint8_t loopState = 0; //waiting on Live Script
+Parser parser = Parser();
 
 //external function implementation (tbd: move into class)
 
+//tbd: move this to LedModFixture as show is Leds related...
 static void show()
 {
   frameCounter++;
@@ -80,15 +82,10 @@ static void show()
 static void preKill()
 {
   ppf("ELS preKill\n");
-  // driver.__enableDriver=false;
-  // while(driver.isDisplaying){};
-  // //delay(20);
 }
 static void postKill()
 {
   ppf("ELS postKill\n");
-  //delay(10);
-  // driver.__enableDriver=true;
 }
 
 static void resetShowStats()
@@ -139,19 +136,23 @@ static float _time(float j) {
           files->seqNrToName(fileName, fileNr, ".sc");
           ppf("script.onChange f:%d n:%s\n", fileNr, fileName);
 
-          scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
+          if (!taskExists(fileName)) {
 
-          addExternals();
+            scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
 
-          //to run blinkSL.sc
-          addExternalFun("void", "pinMode", "(int a1, int a2)", (void *)&pinMode);
-          addExternalFun("void", "digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
-          addExternalFun("void", "delay", "(int a1)", (void *)&delay);
+            addExternals();
 
-          run(fileName, "main", "void main(){resetStat();setup();while(2>1){loop();show();}}");
+            //to run blinkSL.sc
+            addExternalFun("void", "pinMode", "(int a1, int a2)", (void *)&pinMode);
+            addExternalFun("void", "digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
+            addExternalFun("void", "delay", "(int a1)", (void *)&delay);
+
+            compile(fileName,NULL ,"void main(){resetStat();setup();while(2>1){loop();sync();}}");
+          }
+          executeTask(fileName);
         }
         else {
-          kill();
+          // kill();
           ppf("script.onChange set to None\n");
         }
 
@@ -177,55 +178,60 @@ static float _time(float j) {
 
     ui->initText(tableVar, "name", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
-          if (runningPrograms.execPtr[rowNr]) {
-            const char *name = runningPrograms.execPtr[rowNr]->name.c_str();
-            mdl->setValue(var, JsonString(name?name:"xx", JsonString::Copied), rowNr);
-          }
+        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
+        for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
+          const char *name = scriptRuntime._scExecutables[rowNr].name.c_str();
+          mdl->setValue(var, JsonString(name?name:"xx", JsonString::Copied), rowNr);
         }
         return true;
       default: return false;
     }});
+
     ui->initCheckBox(tableVar, "running", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
-          if (runningPrograms.execPtr[rowNr])
-            mdl->setValue(var, runningPrograms.execPtr[rowNr]->isRunning(), rowNr);
+        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
+        for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
+           mdl->setValue(var, scriptRuntime._scExecutables[rowNr].isRunning(), rowNr);
         }
         return true;
       default: return false;
     }});
+
     ui->initCheckBox(tableVar, "halted", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
-          if (runningPrograms.execPtr[rowNr])
-            mdl->setValue(var, runningPrograms.execPtr[rowNr]->isHalted, rowNr);
+        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
+        for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
+           mdl->setValue(var, scriptRuntime._scExecutables[rowNr].isHalted, rowNr);
         }
         return true;
       default: return false;
     }});
+
     ui->initCheckBox(tableVar, "exe", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
-          if (runningPrograms.execPtr[rowNr])
-            mdl->setValue(var, runningPrograms.execPtr[rowNr]->exeExist, rowNr);
+        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
+        for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
+          mdl->setValue(var, scriptRuntime._scExecutables[rowNr].exeExist, rowNr);
         }
         return true;
       default: return false;
     }});
+
     ui->initNumber(tableVar, "handle", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
-        for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
-          if (runningPrograms.execPtr[rowNr])
-            mdl->setValue(var, runningPrograms.execPtr[rowNr]->__run_handle_index, rowNr);
+        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
+        for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
+           mdl->setValue(var, scriptRuntime._scExecutables[rowNr].__run_handle_index, rowNr);
         }
         return true;
       default: return false;
     }});
     ui->initButton(tableVar, "Kill", false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        if (runningPrograms.execPtr[rowNr])
-          kill(runningPrograms.execPtr[rowNr]->name.c_str());
+        if (rowNr < scriptRuntime._scExecutables.size())
+          killAndDelete(scriptRuntime._scExecutables[rowNr].name.c_str());
+        else
+          ppf("dev try to kill a script which does not exist anymore... (%d)\n", rowNr);
         return true;
       default: return false;
     }});
@@ -322,14 +328,36 @@ static float _time(float j) {
       ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
   }
 
-  void UserModLive::run(const char *fileName, const char * main, const char * post) {
-    ppf("live run n:%s o:%s (f:%d)\n", fileName, this->fileName);
+  void UserModLive::executeTask(const char * fileName, const char * function)
+  {
+    if (function)
+      scriptRuntime.execute(string(fileName), string(function));
+    else
+      scriptRuntime.execute(string(fileName));
+  }
+  void UserModLive::executeBackgroundTask(const char * fileName, const char * function)
+  {
+    if (function)
+      scriptRuntime.executeAsTask(string(fileName), string(function));
+    else
+      scriptRuntime.executeAsTask(string(fileName));
+  }
 
-    kill(); //kill any old script
-
+  bool UserModLive::compile(const char *fileName, const char * progName, const char * post) {
+    ppf("live compile n:%s o:%s \n", fileName, this->fileName);
+    if (progName == nullptr)
+      progName = fileName;
+    //if(this->fileName!=NULL)
+    killAndDelete(); //doesn't this kill running scripts, e.g. when changing a Live Fixture, a running Live Effect will be killed !
+    killAndDelete(fileName); //kill any old script
+    
+    //this->fileName=(char *)_fileName;
     File f = files->open(fileName, "r");
     if (!f)
+    {
       ppf("UserModLive setup script open %s for %s failed\n", fileName, "r");
+      return false;
+    }
     else {
 
       string scScript = scPreBaseScript;
@@ -363,36 +391,45 @@ static float _time(float j) {
       ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
       Executable *executable = new Executable();
-      Parser parser = Parser();
-
+     
       *executable = parser.parseScript(&scScript);
-      executable->name = string(fileName);
+      executable->name = string(progName);
 
       if (executable->exeExist)
       {
         ppf("parsing %s done\n", fileName);
         ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
-        executable->executeAsTask(main);
+        scriptRuntime.addExe(*executable);
+        ppf("exe created %d\n", scriptRuntime._scExecutables.size());
+
+        return true;
         // ppf("setup done\n");
         // strlcpy(this->fileName, fileName, sizeof(this->fileName));
+      }
+      else{
+        return false;
       }
       f.close();
     }
   }
 
-  void UserModLive::kill(const char * fileName) {
+  void UserModLive::killAndDelete(const char * name) {
     //tbd: kill specific task...
-    for (size_t rowNr = 0; rowNr < _MAX_PROG_AT_ONCE; rowNr++) {
-      if (runningPrograms.execPtr[rowNr] && runningPrograms.execPtr[rowNr]->isRunning()) {
-        //if fileName kill only process with this name
-        if (!fileName || !runningPrograms.execPtr[rowNr]->name.c_str() || strncmp(runningPrograms.execPtr[rowNr]->name.c_str(), fileName, 32) == 0) {
-          ppf("kill %s\n", runningPrograms.execPtr[rowNr]->name.c_str());
-          runningPrograms.execPtr[rowNr]->_kill();
-          fps = 0;
-          strlcpy(this->fileName, "", sizeof(this->fileName));
-          delete runningPrograms.execPtr[rowNr]; //delete the Execution created in Run
-        }
-      }
+    if (name != NULL)
+    { 
+      scriptRuntime.kill(string(name));
+      scriptRuntime.deleteExe(string(name));
     }
+    else
+    {
+      scriptRuntime.killAndFreeRunningProgram();
+    }
+  }
+
+  bool UserModLive::taskExists(const char *fileName) {
+    // for (auto &executable: scriptRuntime._scExecutables)
+    //   if (strncmp(executable.name.c_str(), fileName, 32) == 0)
+    //     return true;
+    return scriptRuntime.findExecutable(string(fileName)) != nullptr;
   }

@@ -68,21 +68,29 @@ void SysModPins::setup() {
       ui->setComment(var, "Pin viewer 🚧");
       return true;
     case onLoop:
-      var["interval"] = 100; //every 100 ms
+      if (web->ws.getClients().length()) {
+        var["interval"] = 100; //every 100 ms
 
-      web->sendDataWs([](AsyncWebSocketMessageBuffer * wsBuf) {
-        byte* buffer = wsBuf->get();
+        size_t len = NUM_DIGITAL_PINS + 5;
+        AsyncWebSocketMessageBuffer *wsBuf= web->ws.makeBuffer(len); //global wsBuf causes crash in audio sync module!!!
+        if (wsBuf) {
+          wsBuf->lock();
+          byte* buffer = wsBuf->get();
+          // send pins to clients
+          for (size_t pin = 0; pin < NUM_DIGITAL_PINS; pin++)
+          {
+            buffer[pin+5] = random(8);// digitalRead(pin) * 255; // is only 0 or 1
+          }
+          // ppf("\n");
+          //new values
+          buffer[0] = 0; //userFun id
 
-        // send pins to clients
-        for (size_t pin = 0; pin < NUM_DIGITAL_PINS; pin++)
-        {
-          buffer[pin+5] = random(8);// digitalRead(pin) * 255; // is only 0 or 1
+          web->sendBuffer(wsBuf, true);
+
+          wsBuf->unlock();
+          web->ws._cleanBuffers();
         }
-        // ppf("\n");
-        //new values
-        buffer[0] = 0; //userFun id
-
-      }, NUM_DIGITAL_PINS + 5, true);
+      }
       return true;
 
     default: return false;

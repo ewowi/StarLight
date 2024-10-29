@@ -76,14 +76,14 @@ public:
   //send json to client or all clients
   void sendDataWs(JsonVariant json = JsonVariant(), WebClient * client = nullptr);
   void sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fill, size_t len, bool isBinary, WebClient * client = nullptr);
-  void sendBuffer(AsyncWebSocketMessageBuffer * wsBuf, bool isBinary, WebClient * client = nullptr);
+  void sendBuffer(AsyncWebSocketMessageBuffer * wsBuf, bool isBinary, WebClient * client = nullptr, bool lossless = true);
 
   //add an url to the webserver to listen to
   void serveIndex(WebRequest *request);
   void serveNewUI(WebRequest *request);
   //mdl and WLED style state and info
-  void serializeState(JsonObject root);
-  void serializeInfo(JsonObject root);
+  void serializeState(JsonVariant root);
+  void serializeInfo(JsonVariant root);
   void serveJson(WebRequest *request);
 
 
