@@ -87,9 +87,9 @@ public:
 
   Coord3D fixSize = {8,8,1};
   uint16_t nrOfLeds = 64; //amount of physical leds
-  uint16_t ledSize = 5; //mm
-  uint16_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
-  uint16_t factor = 10;
+  uint8_t factor = 1;
+  uint8_t ledSize = 4; //mm
+  uint8_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
 
   unsigned long lastMappingMillis = 0;
   uint8_t viewRotation = 0;
@@ -117,16 +117,18 @@ public:
   //temporary here  
   uint16_t indexP = 0;
   uint16_t prevIndexP = 0;
-  uint16_t currPin; //lookFor needs u16
+  uint8_t currPin;
 
   void mapInitAlloc();
 
   //load fixture json file, parse it and depending on the projection, create a mapping for it
   uint16_t previewBufferIndex = 0;
+  unsigned long start = millis();
+  uint8_t pass = 0; //'class global' so addPixel/Pin functions know which pass it is in
   AsyncWebSocketMessageBuffer * wsBuf; //buffer for preview create fixture
-  void addPixelsPre(Coord3D size, uint16_t nrOfLeds, uint8_t factor = 10, uint8_t ledSize = 5, uint8_t shape = 0);
+  void addPixelsPre();
   void addPixel(Coord3D pixel);
-  void addPin(uint16_t pin);
+  void addPin(uint8_t pin);
   void addPixelsPost();
 
   #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER

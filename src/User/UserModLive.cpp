@@ -151,7 +151,7 @@ static float _time(float j) {
 
           if (!taskExists(fileName)) {
 
-            scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
+            scPreBaseScript = "";
 
             addExternals();
 

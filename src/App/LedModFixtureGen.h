@@ -28,11 +28,9 @@ public:
   char pinSep[2]="";
   char pixelSep[2]="";
 
-  Coord3D fixSize = {0,0,0};
-  uint16_t nrOfLeds = 0;
   uint16_t ledSize = 5; //mm
   uint8_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
-  uint8_t factor = 10;
+  uint8_t factor = 10; //cm, 10 is mm (for rings) : to do: bring default back to 1
   
   File f;
 
@@ -63,7 +61,7 @@ public:
   void closeHeader() {
     f.print("]"); //outputs
 
-    ppf("closeHeader %d-%d-%d %d\n", fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
+    ppf("closeHeader\n");
     f.close();
     f = files->open("/temp.json", "r");
 
@@ -77,10 +75,7 @@ public:
 
     g.print("{");
     g.printf("\"name\":\"%s\"", name);
-    g.printf(",\"nrOfLeds\":%d", nrOfLeds);
-    g.printf(",\"width\":%d", (fixSize.x+9) / factor + 1); //effects run on 1 led is 1 cm mode.
-    g.printf(",\"height\":%d", (fixSize.y+9) / factor + 1); //e.g. (110+9)/10 +1 = 11+1 = 12, (111+9)/10 +1 = 12+1 = 13
-    g.printf(",\"depth\":%d", (fixSize.z+9) / factor + 1);
+    g.printf(",\"factor\":%d", factor);
     g.printf(",\"ledSize\":%d", ledSize);
     g.printf(",\"shape\":%d", shape);
 
@@ -120,10 +115,6 @@ public:
     {
       f.printf("%s[%d,%d,%d]", pixelSep, x, y, z);
       strlcpy(pixelSep, ",", sizeof(pixelSep));
-      fixSize.x = _max(fixSize.x, x);
-      fixSize.y = _max(fixSize.y, y);
-      fixSize.z = _max(fixSize.z, z);
-      nrOfLeds++;
     }
 
   }
@@ -156,7 +147,7 @@ public:
     if (colEnd.z > middle.z) middle.z = colEnd.z;
     middle = (middle + first) / 2;
 
-    ppf("middle %d,%d,%d", middle.x, middle.y, middle.z);
+    ppf("middle %d,%d,%d\n", middle.x, middle.y, middle.z);
 
     uint8_t rowDimension; //in what dimension the row will advance (x=0, y=1, z=2), now only one should differ
     if (first.x != rowEnd.x) rowDimension = 0;
@@ -206,13 +197,13 @@ public:
 
         
         if (rowPixel == cRowEnd) break; //end condition row
-        rowPixel.advance(cRowEnd, 10);
+        rowPixel.advance(cRowEnd, factor);
       }
 
       ppf("\n");
 
       if (colPixel == colEnd) break; //end condition columns
-      colPixel.advance(colEnd, 10);
+      colPixel.advance(colEnd, factor);
       colNr++;
     }
 
@@ -914,6 +905,7 @@ public:
         Coord3D rotate = mdl->getValue("elements", "rotate", rowNr);
         Coord3D rowEnd = mdl->getValue("elements", "rowEnd", rowNr);
         Coord3D columnEnd = mdl->getValue("elements", "columnEnd", rowNr);
+        genFix->factor = 1;
         genFix->matrix(firstLed * genFix->factor, rowEnd * genFix->factor, columnEnd * genFix->factor, IP, pin, rotate.x, rotate.y, rotate.z);
       });
 

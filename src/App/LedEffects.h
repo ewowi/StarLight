@@ -2997,7 +2997,7 @@ class LiveEffect: public Effect {
 
               if (!liveM->taskExists(fileName))
 
-                liveM->scPreBaseScript = ""; //externals etc generated (would prefer String for esp32...)
+                liveM->scPreBaseScript = "";
 
                 liveM->addExternals();
 

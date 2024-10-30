@@ -40,20 +40,21 @@
     files->filesChanged = true;
   }
 
-  //look for uint8 var
-  // void lookFor(const char * id, uint8_t * value) {
-  //   // const char *p = (const char*)&value; //pointer trick
-  //   uint8List.push_back(value);
-  //   addToVars(id, "uint8", uint8List.size()-1);
-  // }
-
-  //look for uint16 var
-  void StarJson::lookFor(const char * id, uint16_t * value) {
-    uint16List.push_back(value);
-    addToVars(id, "uint16", uint16List.size()-1);
+  void StarJson::lookFor(const char * id, uint8_t * value) {
+    uint8List.push_back(value);
+    addToVars(id, "uint8", uint8List.size()-1);
   }
 
-  //look for char var
+  // void StarJson::lookFor(const char * id, uint16_t * value) {
+  //   uint16List.push_back(value);
+  //   addToVars(id, "uint16", uint16List.size()-1);
+  // }
+
+  // void StarJson::lookFor(const char * id, int * value) {
+  //   intList.push_back(value);
+  //   addToVars(id, "int", intList.size()-1);
+  // }
+
   void StarJson::lookFor(const char * id, char * value) {
     charList.push_back(value);
     addToVars(id, "char", charList.size()-1);
@@ -201,8 +202,9 @@
       // ppf("check %s %s %s\n", vd->id, varId, value);
       if (strncmp(vd->id, varId, 32)==0) {
         // ppf("StarJson found %s:%s %d %s %d %d\n", varId, vd->type, vd->index, value?value:"", uint16CollectList.size(), funList.size());
-        // if (strncmp(vd->type, "uint8") ==0 && value) *uint8List[vd->index] = atoi(value);
-        if (strncmp(vd->type, "uint16", 7) ==0 && value) *uint16List[vd->index] = atoi(value);
+        if (strncmp(vd->type, "uint8", 7) ==0 && value) *uint8List[vd->index] = atoi(value);
+        // if (strncmp(vd->type, "uint16", 7) ==0 && value) *uint16List[vd->index] = atoi(value);
+        // if (strncmp(vd->type, "int", 7) ==0 && value) *intList[vd->index] = atoi(value);
         if (strncmp(vd->type, "char", 5) ==0 && value) strlcpy(charList[vd->index], value, 32); //assuming size 32 here
         if (strncmp(vd->type, "fun", 4) ==0) funList[vd->index](uint16CollectList); //call for every found item (no value check)
         foundCounter++;

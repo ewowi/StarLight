@@ -6,7 +6,6 @@ define depth 1
 
 void main()
 {
-  addPixelsPre(width,height,depth,width * height * depth, 1, 5, 0);
   for (int z=0; z<depth;z++) {
     for (int y=0; y<height; y++) {
       for (int x=0; x<width;x++) {
@@ -14,5 +13,4 @@ void main()
       }
     }
   }
-  addPixelsPost();
 }

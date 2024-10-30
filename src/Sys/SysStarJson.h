@@ -38,18 +38,19 @@ class StarJson {
   //   addToVars(id, "uint8", uint8List.size()-1);
   // }
 
-  //look for uint16 var
-  void lookFor(const char * id, uint16_t * value);
-
-  //look for char var
+  void lookFor(const char * id, uint8_t * value);
+  // void lookFor(const char * id, uint16_t * value);
+  // void lookFor(const char * id, int * value);
   void lookFor(const char * id, char * value);
-
-  //look for array of integers
   void lookFor(const char * id, std::function<void(std::vector<uint16_t>)> fun);
 
   //reads from file until all vars have been found (then stops reading)
   //returns false if not all vars to look for are found
   bool deserialize(bool lazy = false);
+
+  void seek(uint32_t pos) {
+    f.seek(pos);
+  }
 
 private:
   struct VarDetails {
@@ -61,8 +62,9 @@ private:
   File f;
   byte character; //the last character parsed
   std::vector<VarDetails> varDetails; //details of vars looking for
-  // std::vector<uint8_t *> uint8List; //pointer of uint8 to assign found values to (index of list stored in varDetails)
-  std::vector<uint16_t *> uint16List; //same for uint16
+  std::vector<uint8_t *> uint8List; //pointer of uint8 to assign found values to (index of list stored in varDetails)
+  // std::vector<uint16_t *> uint16List; //same for uint16
+  // std::vector<int *> intList; //same for int
   std::vector<char *> charList; //same for char
   std::vector<std::function<void(std::vector<uint16_t>)>> funList; //same for function calls
   std::vector<String> varStack; //objects and arrays store their names in a stack

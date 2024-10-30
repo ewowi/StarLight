@@ -1,7 +1,7 @@
-//F_panel128-128.sc
+//F_panel80-48.sc
 
-define horizontalPanels 8
-define verticalPanels 8
+define horizontalPanels 5
+define verticalPanels 3
 
 void main() {
   for (int panelY = 0; panelY < verticalPanels; panelY++) {
