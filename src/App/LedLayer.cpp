@@ -343,10 +343,10 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
         mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
 
         if (indexV != UINT16_MAX) {
-          if (indexV >= nrOfLeds || indexV >= NUM_VLEDS_Max)
-            ppf("dev leds[%d] pre indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, nrOfLeds, NUM_VLEDS_Max, mappingTableSizeUsed, fix->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
+          if (indexV >= nrOfLeds || indexV >= NUM_VLEDS_Max) {
+            // ppf("dev leds[%d] pre indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, nrOfLeds, NUM_VLEDS_Max, mappingTableSizeUsed, fix->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
+          }
           else {
-
             //create new physMaps if needed
             if (indexV >= mappingTable.size()) {
               for (size_t i = mappingTable.size(); i <= indexV; i++) {
