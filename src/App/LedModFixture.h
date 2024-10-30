@@ -37,7 +37,9 @@
     #define SVCD_PINS 14,12,13,25,33,32
   #endif
   // #include "esp_heap_caps.h"
-  #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) // (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY)
+  #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) //works but mapping using mappingTable Needed
+  // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE) //works but flickering!
+  // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY) //not working
   #include "I2SClocklessVirtualLedDriver.h"
   #ifndef SCVD_CLOCK_PIN
     #define SCVD_CLOCK_PIN 26
@@ -130,6 +132,10 @@ public:
   void addPixel(Coord3D pixel);
   void addPin(uint8_t pin);
   void addPixelsPost();
+
+  #ifdef STARBASE_USERMOD_LIVE
+    void *liveFixtureExecutable = nullptr; //will be Executable * in the future
+  #endif
 
   #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
     #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2

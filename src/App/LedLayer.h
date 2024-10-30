@@ -24,7 +24,7 @@
 #include "../Sys/SysModModel.h" //for Coord3D
 
 #ifndef STARLIGHT_MAXLEDS
-  #define STARLIGHT_MAXLEDS 8192
+  #define STARLIGHT_MAXLEDS 8192 //any board can do this
 #endif
 
 #define NUM_VLEDS_Max STARLIGHT_MAXLEDS
@@ -215,6 +215,10 @@ public:
   bool doMap = true; //so a mapping will be made
 
   CRGBPalette16 palette;
+
+  #ifdef STARBASE_USERMOD_LIVE
+    void *liveEffectExecutable = nullptr; //will be Executable * in the future
+  #endif
 
   int XY(int x, int y) {
     return XYZ(x, y, 0);

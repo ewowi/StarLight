@@ -9,8 +9,9 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
-#include "UserModLive.h"
+#ifdef STARBASE_USERMOD_LIVE //don't know why to exclude the .cpp as the .h is not included in this case ...
 
+#include "UserModLive.h"
 #include "ESPLiveScript.h" //note: contains declarations AND definitions, therefore can only be included once!
 
 // #include <Arduino.h>
@@ -144,12 +145,13 @@ static float _time(float j) {
 
         char fileName[32] = "";
 
-        if (fileNr > 0) { //not None and setup done
+        if (fileNr > 0 && fileNr != UINT8_MAX) { //not None and setup done
           fileNr--;  //-1 as none is no file
           files->seqNrToName(fileName, fileNr, ".sc");
           ppf("script.onChange f:%d n:%s\n", fileNr, fileName);
 
-          if (!taskExists(fileName)) {
+          void *executable = liveM->findExecutable(fileName);
+          if (!executable) {
 
             scPreBaseScript = "";
 
@@ -160,9 +162,10 @@ static float _time(float j) {
             addExternalFun("void", "digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
             addExternalFun("void", "delay", "(int a1)", (void *)&delay);
 
-            compile(fileName,NULL ,"void main(){resetStat();setup();while(2>1){loop();sync();}}");
+            executable = compile(fileName, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
           }
-          executeTask(fileName);
+
+          liveM->executeTask(executable);
         }
         else {
           // kill();
@@ -235,6 +238,18 @@ static float _time(float j) {
         var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
         for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
            mdl->setValue(var, scriptRuntime._scExecutables[rowNr].__run_handle_index, rowNr);
+        }
+        return true;
+      default: return false;
+    }});
+    ui->initText(tableVar, "size", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      case onSetValue:
+        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
+        for (size_t rowNr = 0; rowNr < scriptRuntime._scExecutables.size(); rowNr++) {
+          exe_info exeInfo = scriptRuntime.getExecutableInfo(scriptRuntime._scExecutables[rowNr].name);
+          char text[30];
+          print->fFormat(text, sizeof(text), "%d+%d=%d B", exeInfo.binary_size, exeInfo.data_size, exeInfo.total_size);
+          mdl->setValue(var, JsonString(text, JsonString::Copied), rowNr);
         }
         return true;
       default: return false;
@@ -341,25 +356,18 @@ static float _time(float j) {
       ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
   }
 
-  void UserModLive::executeTask(const char * fileName, const char * function)
+  void UserModLive::executeTask(void * executable, const char * function)
   {
-    if (function)
-      scriptRuntime.execute(string(fileName), string(function));
-    else
-      scriptRuntime.execute(string(fileName));
-  }
-  void UserModLive::executeBackgroundTask(const char * fileName, const char * function)
-  {
-    if (function)
-      scriptRuntime.executeAsTask(string(fileName), string(function));
-    else
-      scriptRuntime.executeAsTask(string(fileName));
+    ((Executable *)executable)->execute(string(function));
   }
 
-  bool UserModLive::compile(const char *fileName, const char * progName, const char * post) {
+  void UserModLive::executeBackgroundTask(void * executable, const char * function)
+  {
+    ((Executable *)executable)->executeAsTask(string(function));
+  }
+
+  void* UserModLive::compile(const char * fileName, const char * post) {
     ppf("live compile n:%s o:%s \n", fileName, this->fileName);
-    if (progName == nullptr)
-      progName = fileName;
     //if(this->fileName!=NULL)
     killAndDelete(); //doesn't this kill running scripts, e.g. when changing a Live Fixture, a running Live Effect will be killed !
     killAndDelete(fileName); //kill any old script
@@ -369,7 +377,7 @@ static float _time(float j) {
     if (!f)
     {
       ppf("UserModLive setup script open %s for %s failed\n", fileName, "r");
-      return false;
+      return nullptr;
     }
     else {
 
@@ -406,7 +414,7 @@ static float _time(float j) {
       Executable *executable = new Executable();
      
       *executable = parser.parseScript(&scScript);
-      executable->name = string(progName);
+      executable->name = string(fileName);
 
       if (executable->exeExist)
       {
@@ -416,12 +424,12 @@ static float _time(float j) {
         scriptRuntime.addExe(*executable);
         ppf("exe created %d\n", scriptRuntime._scExecutables.size());
 
-        return true;
+        return executable;
         // ppf("setup done\n");
         // strlcpy(this->fileName, fileName, sizeof(this->fileName));
       }
       else{
-        return false;
+        return nullptr;
       }
       f.close();
     }
@@ -439,10 +447,13 @@ static float _time(float j) {
       scriptRuntime.killAndFreeRunningProgram();
     }
   }
-
-  bool UserModLive::taskExists(const char *fileName) {
-    // for (auto &executable: scriptRuntime._scExecutables)
-    //   if (strncmp(executable.name.c_str(), fileName, 32) == 0)
-    //     return true;
-    return scriptRuntime.findExecutable(string(fileName)) != nullptr;
+  void UserModLive::killAndDelete(void *executable) {
+    if (executable)
+      killAndDelete(((Executable *)executable)->name.c_str());
   }
+
+  void * UserModLive::findExecutable(const char *fileName) {
+    return scriptRuntime.findExecutable(string(fileName));
+  }
+
+  #endif

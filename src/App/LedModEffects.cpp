@@ -188,15 +188,15 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
           // leds->doMap = true; //stop the effects loop already here
 
-          #ifdef STARBASE_USERMOD_LIVE
-            //kill Live Script if moving to other effect
-            // if (leds->effectNr < effects.size()) {
-            //   Effect* effect = effects[leds->effectNr];
-              if (leds->effect && strncmp(leds->effect->name(), "Live Effect", 12) == 0) {
-                // liveM->kill();
-              }
-            // }
-          #endif
+          // #ifdef STARBASE_USERMOD_LIVE
+          //   //kill Live Script if moving to other effect
+          //   // if (leds->effectNr < effects.size()) {
+          //   //   Effect* effect = effects[leds->effectNr];
+          //     if (leds->effect && strncmp(leds->effect->name(), "Live Effect", 12) == 0) {
+          //       // liveM->kill();
+          //     }
+          //   // }
+          // #endif
 
           uint16_t effectNr = mdl->getValue(var, rowNr);
 

@@ -22,31 +22,6 @@
   #include "../User/UserModMPU6050.h"
 #endif
 
-#ifdef STARBASE_USERMOD_LIVE
-  #include "../User/UserModLive.h"
-
-  //FastLed functions
-  static CRGB hsv(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);}
-  static CRGB rgb(uint8_t r, uint8_t g, uint8_t b) {return CRGB(r, g, b);}
-  static uint8_t _sin8(uint8_t theta) {return sin8(theta);}
-  static uint8_t _cos8(uint8_t theta) {return cos8(theta);}
-  static uint8_t _beatSin8(uint8_t bpm, uint8_t lowest, uint8_t highest) {return beatsin8(bpm, lowest, highest);}
-  static uint8_t _inoise8(uint16_t x, uint16_t y, uint16_t z) {return inoise8(x, y, z);}
-  static uint8_t _random8() {return random8();}
-  static uint8_t _random16(uint8_t r) {return random16(r);}
-
-  //StarLight functions
-  static LedsLayer *gLeds = nullptr;
-  static void _fadeToBlackBy(uint8_t fadeBy) {if (gLeds) gLeds->fadeToBlackBy(fadeBy);}
-  static void sPCLive(uint16_t pixel, CRGB color) {if (gLeds) gLeds->setPixelColor(pixel, color);} //setPixelColor with color
-  static void sCFPLive(uint16_t pixel, uint8_t index, uint8_t brightness) {if (gLeds) gLeds->setPixelColor(pixel, ColorFromPalette(gLeds->palette, index, brightness));} //setPixelColor within palette
-
-  uint8_t slider1 = 128;
-  uint8_t slider2 = 128;
-  uint8_t slider3 = 128;
-#endif
-
-
 //utility function
 float distance(float x1, float y1, float z1, float x2, float y2, float z2) {
   return sqrtf((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
@@ -2509,7 +2484,7 @@ class GEQEffect: public Effect {
 class LaserGEQEffect: public Effect {
   const char * name() {return "Laser GEQ";}
   uint8_t dim() {return _2D;}
-  const char * tags() {return "♫💡";}
+  const char * tags() {return "♫💡📺";}
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
     leds.fadeToBlackBy(16);
@@ -2771,7 +2746,7 @@ class FunkyPlankEffect: public Effect {
 class VUMeterEffect: public Effect {
   const char * name() {return "VU Meter";}
   uint8_t dim() {return _2D;}
-  const char * tags() {return "♫💫";}
+  const char * tags() {return "♫💫📺";}
 
   void drawNeedle(LedsLayer &leds, float angle, Coord3D topLeft, Coord3D size, CRGB color) {
       int x0 = topLeft.x + size.x / 2; // Center of the needle
@@ -2964,6 +2939,28 @@ class MarioTestEffect: public Effect {
 
 #ifdef STARBASE_USERMOD_LIVE
 
+  #include "../User/UserModLive.h"
+
+  //FastLed functions
+  static CRGB hsv(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);}
+  static CRGB rgb(uint8_t r, uint8_t g, uint8_t b) {return CRGB(r, g, b);}
+  static uint8_t _sin8(uint8_t theta) {return sin8(theta);}
+  static uint8_t _cos8(uint8_t theta) {return cos8(theta);}
+  static uint8_t _beatSin8(uint8_t bpm, uint8_t lowest, uint8_t highest) {return beatsin8(bpm, lowest, highest);}
+  static uint8_t _inoise8(uint16_t x, uint16_t y, uint16_t z) {return inoise8(x, y, z);}
+  static uint8_t _random8() {return random8();}
+  static uint8_t _random16(uint8_t r) {return random16(r);}
+
+  //StarLight functions
+  static LedsLayer *gLeds = nullptr;
+  static void _fadeToBlackBy(uint8_t fadeBy) {if (gLeds) gLeds->fadeToBlackBy(fadeBy);}
+  static void sPCLive(uint16_t pixel, CRGB color) {if (gLeds) gLeds->setPixelColor(pixel, color);} //setPixelColor with color
+  static void sCFPLive(uint16_t pixel, uint8_t index, uint8_t brightness) {if (gLeds) gLeds->setPixelColor(pixel, ColorFromPalette(gLeds->palette, index, brightness));} //setPixelColor within palette
+
+  uint8_t slider1 = 128;
+  uint8_t slider2 = 128;
+  uint8_t slider3 = 128;
+
 class LiveEffect: public Effect {
   const char * name() {return "Live Effect";}
   uint8_t dim() {return _2D;}
@@ -2984,7 +2981,7 @@ class LiveEffect: public Effect {
         uint8_t fileNr = var["value"][rowNr];
 
         gLeds = &leds; //set the leds class for the Live Scripts Module
-        if (fileNr > 0) { //not None and live setup done (before )
+        if (fileNr > 0 && fileNr != UINT8_MAX) { //not None and live setup done (before )
 
           fileNr--;  //-1 as none is no file
 
@@ -2993,9 +2990,12 @@ class LiveEffect: public Effect {
           if (files->seqNrToName(fileName, fileNr, ".sc")) { // get the fixture.json
 
             if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
-              ppf("projectAndMap Live Fixture %s\n", fileName);
+              ppf("script.onChange Live Fixture %s\n", fileName);
 
-              if (!liveM->taskExists(fileName))
+              //to do kill the old one if changed
+
+              leds.liveEffectExecutable = liveM->findExecutable(fileName);
+              if (!leds.liveEffectExecutable) {
 
                 liveM->scPreBaseScript = "";
 
@@ -3022,9 +3022,11 @@ class LiveEffect: public Effect {
                 liveM->scPreBaseScript += "define NUM_LEDS " + std::to_string(leds.nrOfLeds) + "\n";
                 liveM->scPreBaseScript += "define panel_width " + std::to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
 
-                liveM->compile(fileName, nullptr, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
+                leds.liveEffectExecutable = liveM->compile(fileName, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
               }
-              liveM->executeBackgroundTask(fileName);
+
+              liveM->executeBackgroundTask(leds.liveEffectExecutable);
+            }
           }
         }
         else {

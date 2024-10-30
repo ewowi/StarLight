@@ -25,15 +25,37 @@
 
 #define PACKAGE_SIZE 5120 //4096 is not ideal as also header info, multiples of 1024 sounds good...
 
-#ifdef STARBASE_USERMOD_LIVE
-  #include "User/UserModLive.h"
-  static void _setFactor(uint8_t a1) {fix->factor = a1;}
-  static void _setLedSize(uint8_t a1) {fix->ledSize = a1;}
-  static void _setShape(uint8_t a1) {fix->shape = a1;}
-  static void _addPixelsPre() {fix->addPixelsPre();}
-  static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {fix->addPixel({a1, a2, a3});}
-  static void _addPin(uint8_t a1) {fix->addPin(a1);}
-  static void _addPixelsPost() {fix->addPixelsPost();}
+#ifdef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+  uint16_t mapfunction(uint16_t pos)
+  {
+    int panelnumber = pos / 256;
+    int datainpanel = pos % 256;
+    int Xp = 7 - panelnumber % 8;
+
+    //fix for ewowi panels
+    Xp=Xp+1;
+    if (Xp==8) {Xp=0;}
+
+    int yp = panelnumber / 8;
+    int X = Xp; //panel on the x axis
+    int Y = yp; //panel on the y axis
+
+    int y = datainpanel % 16;
+    int x = datainpanel / 16;
+
+    if (x % 2 == 0) //serpentine
+    {
+      Y = Y * 16 + y;
+      X = X * 16 + x;
+    }
+    else
+    {
+      Y = Y * 16 + 16 -y-1;
+      X = X * 16 + x;
+    }
+
+    return (95-Y) * 16 * 8 + (127-X);
+  }
 #endif
 
   void LedModFixture::setup() {
@@ -309,8 +331,20 @@
     memmove(tickerTape, tickerTape+1, strlen(tickerTape)); //no memory leak ?
   }
 
+#ifdef STARBASE_USERMOD_LIVE
+  #include "User/UserModLive.h"
+  static void _setFactor(uint8_t a1) {fix->factor = a1;}
+  static void _setLedSize(uint8_t a1) {fix->ledSize = a1;}
+  static void _setShape(uint8_t a1) {fix->shape = a1;}
+  static void _addPixelsPre() {fix->addPixelsPre();}
+  static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {fix->addPixel({a1, a2, a3});}
+  static void _addPin(uint8_t a1) {fix->addPin(a1);}
+  static void _addPixelsPost() {fix->addPixelsPost();}
+#endif
+
+
   void LedModFixture::mapInitAlloc() {
-    // projectAndMap();
+
     mappingStatus = 2; //mapping in progress
 
     char fileName[32] = "";
@@ -322,9 +356,18 @@
 
     #ifdef STARBASE_USERMOD_LIVE
       if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
-        ppf("projectAndMap Live Fixture %s\n", fileName);
 
-        if (!liveM->taskExists(fileName)) {
+        ppf("mapInitAlloc Live Fixture %s\n", fileName);
+
+        void *newExecutable = liveM->findExecutable(fileName);
+        // ppf("mapInitAlloc Live Fixture %s o:%p n:%p =:%d\n", fileName, newExecutable, liveFixtureExecutable, newExecutable != liveFixtureExecutable);
+        // if (newExecutable && liveFixtureExecutable && newExecutable != liveFixtureExecutable) {
+        //   ppf("kill old live fixture script\n");
+        //   liveM->killAndDelete(liveFixtureExecutable);
+        // }
+        liveFixtureExecutable = newExecutable;
+
+        if (!liveFixtureExecutable) {
           //if the file is already compiled, use it, otherwise compile new one
 
           liveM->scPreBaseScript = "";
@@ -340,14 +383,14 @@
           liveM->addExternalFun("void", "addPin", "(uint8_t a1)", (void *)_addPin);
           liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
 
-          liveM->compile(fileName, nullptr, "void c(){addPixelsPre();main();addPixelsPost();}");
+          liveFixtureExecutable = liveM->compile(fileName, "void c(){addPixelsPre();main();addPixelsPost();}");
         }
-        
+
         start = millis();
         pass = 1;
-        liveM->executeTask(fileName, "c");
+        liveM->executeTask(liveFixtureExecutable, "c");
         pass = 2;
-        liveM->executeTask(fileName, "c");
+        liveM->executeTask(liveFixtureExecutable, "c");
 
       } else 
     #endif
@@ -400,7 +443,7 @@
       }//Live Fixture
     } //if fileName
     else
-      ppf("projectAndMap: Filename for fixture %d not found\n", fixtureNr);
+      ppf("mapInitAlloc: Filename for fixture %d not found\n", fixtureNr);
 
     //reinit the effect after an effect change causing a mapping change
     uint8_t rowNr = 0;
@@ -427,7 +470,7 @@
       #ifndef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
       for (PinObject &pinObject: pinsM->pinObjects) {
 
-        if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in projectAndMap)
+        if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in addPin)
           //dirty trick to decode nrOfLedsPerPin
           char details[32];
           strlcpy(details, pinObject.details, sizeof(details)); //copy as strtok messes with the string
@@ -666,6 +709,7 @@
       #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
         int svcd_pins[6] = { SVCD_PINS };
         driver.initled(ledsP, svcd_pins, SCVD_CLOCK_PIN, SCVD_LATCH_PIN);
+        // driver.enableShowPixelsOnCore(1);
         // driver.setMapLed(&mapfunction);
         driver.setBrightness(10);
       #endif
