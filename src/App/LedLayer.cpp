@@ -346,7 +346,6 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
           if (indexV >= nrOfLeds || indexV >= STARLIGHT_MAXLEDS)
             ppf("dev leds[%d] pre indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, nrOfLeds, STARLIGHT_MAXLEDS, mappingTableSizeUsed, fix->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
           else {
-
             //create new physMaps if needed
             if (indexV >= mappingTable.size()) {
               for (size_t i = mappingTable.size(); i <= indexV; i++) {
