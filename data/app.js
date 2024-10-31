@@ -331,7 +331,7 @@ function preview3D(canvasNode, buffer, previewVar) {
         //light up the cube
         let headerBytesPreview = 5;
         var i = 0;
-        let bytesPerPixel = buffer[4];// previewVar.file.nrOfLeds == buffer.length - headerBytesPreview; //1-byte rgb
+        let bytesPerPixel = buffer[4];
         // console.log(previewVar.file.nrOfLeds, buffer.length);
         if (previewVar.file.outputs) {
           // console.log("preview3D jsonValues", previewVar.file);
