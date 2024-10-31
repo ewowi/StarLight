@@ -22,7 +22,7 @@ class UserModMPU6050: public SysModule {
 
 public:
 
-  bool motionTrackingReady = false;  // set true if DMP init was successful
+  bool3State motionTrackingReady = false;  // set true if DMP init was successful
 
   Coord3D gyro; // in degrees (not radians)
   Coord3D accell;

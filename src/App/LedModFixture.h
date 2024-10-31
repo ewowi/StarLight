@@ -42,7 +42,7 @@
 
   // why if this if not working here? (removed for now to have the buffer right)
   // #if (I2S_MAPPING_MODE & (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY | I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE)) > 0
-    #define __NB_DMA_BUFFER 4 //underscore ! default 2 (2 causes flickering in case of mapping). 
+    #define __NB_DMA_BUFFER 10 //underscore ! default 2 (2 causes flickering in case of mapping). 
                               //Sometimes interrupts can distrub the pixel buffer calculations hence making some artifacts. A solution against that is to caculate several buffers in advance. BY defualt we have 2 dma buffers. this can be increase to cope with unwanted interupts.
   // #endif
 
@@ -122,9 +122,9 @@ public:
 
   uint16_t fps = 60;
   uint16_t realFps = 60;
-  bool showTicker = true;
+  bool3State showTicker = true;
   char tickerTape[20] = "";
-  bool driverShow = true;
+  bool3State driverShow = true;
 
   //temporary here  
   uint16_t indexP = 0;

@@ -126,7 +126,7 @@ sendDataWs client full or not connected client: 2 ...126 q:0 l:16 s:1 (#:1)
 αWS_EVT_DATA json {"pin":{"label":"Pin"},"owner":{"label":"Owner"},"details":{"label":"Details"},"pins":{"label":"Pins","comment":"List of pins","value":[[16,"Leds","0-1023"]]},"board":{"label":"Board layout","comment":"WIP"}}
 αWS_EVT_DATA info  284 / 3072 (9%) (5 0 4)
 αWS event data client: 2 ...126 q:0 l:16 s:1 (#:1)
-αWS_EVT_DATA json {"output":{"label":"Output","comment":"System log to Serial or Net print (WIP)","options":["No","Serial","UI","192.168.8.126"]},"log":{"comment":"Show the printed log"}}
+αWS_EVT_DATA json {"output":{"label":"Output","comment":"System log to Serial or Net print (WIP)","options":["No","Serial","UI","192.168.1.126"]},"log":{"comment":"Show the printed log"}}
 αWS_EVT_DATA info  174 / 3072 (5%) (2 0 3)
 sendDataWs client full or not connected client: 2 ...126 q:0 l:16 s:1 (#:1)
 αWS event data client: 2 ...126 q:0 l:16 s:1 (#:1)
@@ -140,10 +140,10 @@ instances updateNode 132
 αWS_EVT_DATA json {"password":{"label":"Password"},"connect":{"comment":"Force reconnect (loose current connection)"},"nwstatus":{"label":"Status"},"rssi":{"label":"Wifi signal"}}
 αWS_EVT_DATA info  128 / 3072 (4%) (4 0 2)
 αWS event data client: 2 ...126 q:0 l:20 s:1 (#:1)
-αWS_EVT_DATA json {"instance":{"label":"Instance","comment":"Instance to send data","options":[[0,"no sync"],[132,"192.168.8.132 StarBaseRS"]]}}
+αWS_EVT_DATA json {"instance":{"label":"Instance","comment":"Instance to send data","options":[[0,"no sync"],[132,"192.168.1.132 StarBaseRS"]]}}
 αWS_EVT_DATA info  184 / 3072 (5%) (1 0 4)
 αWS event data client: 2 ...126 q:0 l:20 s:1 (#:1)
-αWS_EVT_DATA json {"artInst":{"label":"Instance","comment":"Instance to send data","options":[[0,"no sync"],[132,"192.168.8.132 StarBaseRS"]]}}
+αWS_EVT_DATA json {"artInst":{"label":"Instance","comment":"Instance to send data","options":[[0,"no sync"],[132,"192.168.1.132 StarBaseRS"]]}}
 αWS_EVT_DATA info  184 / 3072 (5%) (1 0 4)
 αWS event data client: 2 ...126 q:0 l:20 s:1 (#:1)
 αWS_EVT_DATA json {"universe":{"label":"DMX Universe"},"channel":{"label":"DMX Channel","comment":"First channel"},"channel":{"label":"Channel"},"variable":{"label":"Variable"},"max":{"label":"Max"},"value":{"label":"Value"},"watches":{"label":"Vars to watch","comment":"List of instances","value":[[1,"brightness",255,0],[2,"fx",20,0],[3,"palette",8,0]]}}
@@ -165,7 +165,7 @@ etValue var ip[0] value null not array, creating
 αWS_EVT_DATA info  464 / 3072 (15%) (9 0 3)
 setValue var full[0] value null not array, creating
 αWS event data client: 2 ...126 q:0 l:27 s:1 (#:1)
-αWS_EVT_DATA json {"insfx":{"label":"Effect","comment":"Effect to show","options":["Solid 1D","Rainbow 1D","Rainbow with glitter 1D","Sinelon 1D","Running 1D","Confetti 1D","Beats per minute 1D","Juggle 1D","Ripples 3D","SphereMove 3D","Frizzles 2D","Lines 2D","DistortionWaves 2D","Octopus 2D","Lissajous 2D","Bouncing Balls 1D","RingRandomFlow 1D","GEQ 2D","AudioRings 1D","FreqMatrix 1D"]},"inspal":{"label":"Palette","comment":"Colors","options":["CloudColors","LavaColors","OceanColors","ForestColors","RainbowColors","RainbowStripeColors","PartyColors","HeatColors"]},"insdch":{"label":"DMX Channel","comment":"First channel"},"inssma":{"label":"Sync Master","comment":"Instance to sync from","options":[[0,"no sync"],[132,"192.168.8.132 StarBaseRS"]]},"instances":{"label":"Instances","comment":"List of instances","value":[["StarBaseRS","http://192.168.8.132","192.168.8.132","StarBase",24012818,8151,1,141,0,19,-1,1,0]]},"sma":{"label":"Sync Master","comment":"Instance to sync from","options":[[0,"no sync"],[132,"192.168.8.132 StarBaseRS"]]}}
+αWS_EVT_DATA json {"insfx":{"label":"Effect","comment":"Effect to show","options":["Solid 1D","Rainbow 1D","Rainbow with glitter 1D","Sinelon 1D","Running 1D","Confetti 1D","Beats per minute 1D","Juggle 1D","Ripples 3D","SphereMove 3D","Frizzles 2D","Lines 2D","DistortionWaves 2D","Octopus 2D","Lissajous 2D","Bouncing Balls 1D","RingRandomFlow 1D","GEQ 2D","AudioRings 1D","FreqMatrix 1D"]},"inspal":{"label":"Palette","comment":"Colors","options":["CloudColors","LavaColors","OceanColors","ForestColors","RainbowColors","RainbowStripeColors","PartyColors","HeatColors"]},"insdch":{"label":"DMX Channel","comment":"First channel"},"inssma":{"label":"Sync Master","comment":"Instance to sync from","options":[[0,"no sync"],[132,"192.168.1.132 StarBaseRS"]]},"instances":{"label":"Instances","comment":"List of instances","value":[["StarBaseRS","http://192.168.1.132","192.168.1.132","StarBase",24012818,8151,1,141,0,19,-1,1,0]]},"sma":{"label":"Sync Master","comment":"Instance to sync from","options":[[0,"no sync"],[132,"192.168.1.132 StarBaseRS"]]}}
 αWS_EVT_DATA info  1301 / 3072 (42%) (6 0 4)
 setValue var status[0] value null not array, creating
 αWS event data client: 2 ...126 q:0 l:28 s:1 (#:1)

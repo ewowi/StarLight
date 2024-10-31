@@ -87,18 +87,18 @@ public:
   void serveJson(WebRequest *request);
 
 
-  // curl -F 'data=@fixture1.json' 192.168.8.213/upload
+  // curl -F 'data=@fixture1.json' 192.168.1.213/upload
   void serveUpload(WebRequest *request, const String& fileName, size_t index, byte *data, size_t len, bool final);
-  // curl -s -F "update=@/Users/ewoudwijma/Developer/GitHub/ewowi/StarBase/.pio/build/esp32dev/firmware.bin" 192.168.8.102/update /dev/null &
+  // curl -s -F "update=@/Users/ewoudwijma/Developer/GitHub/ewowi/StarBase/.pio/build/esp32dev/firmware.bin" 192.168.1.102/update /dev/null &
   void serveUpdate(WebRequest *request, const String& fileName, size_t index, byte *data, size_t len, bool final);
   void serveFiles(WebRequest *request);
 
   //processJsonUrl handles requests send in javascript using fetch and from a browser or curl
-  //try this !!!: curl -X POST "http://192.168.121.196/json" -d '{"pin2":false}' -H "Content-Type: application/json"
-  //curl -X POST "http://4.3.2.1/json" -d '{"pin2":false}' -H "Content-Type: application/json"
-  //curl -X POST "http://4.3.2.1/json" -d '{"brightness":20, "v":true}' -H "Content-Type: application/json"
-  //curl -X POST "http://192.168.8.125/json" -d '{"effect":2}' -H "Content-Type: application/json"
-  //curl -X POST "http://192.168.8.152/json" -d '{"nrOfLeds":2000}' -H "Content-Type: application/json"
+  //try this !!!: 
+  //curl -X POST "http://4.3.2.1/json" -d '{"Pins.pin19":false}' -H "Content-Type: application/json"
+  //curl -X POST "http://4.3.2.1/json" -d '{"Fixture.brightness":20, "v":true}' -H "Content-Type: application/json"
+  //curl -X POST "http://192.168.1.125/json" -d '{"leyers.effect":2}' -H "Content-Type: application/json"
+  //curl -X POST "http://192.168.1.152/json" -d '{"nrOfLeds":2000}' -H "Content-Type: application/json"
 
   //handle "v" and processJson (on /json)
   void jsonHandler(WebRequest *request, JsonVariant json);

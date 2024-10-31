@@ -133,7 +133,7 @@ class PinwheelProjection: public Projection {
   void setup(LedsLayer &leds, JsonObject parentVar) {
     uint8_t *petals   = leds.projectionData.write<uint8_t>(60); // Initalize petal first for addPixel
     uint8_t *swirlVal = leds.projectionData.write<uint8_t>(30);
-    bool    *reverse  = leds.projectionData.write<bool>(false);
+    bool3State    *reverse  = leds.projectionData.write<bool3State>(false);
     uint8_t *symmetry = leds.projectionData.write<uint8_t>(1);
     uint8_t *zTwist   = leds.projectionData.write<uint8_t>(0);
 
@@ -196,7 +196,7 @@ class PinwheelProjection: public Projection {
     // UI Variables
     const int petals   = leds.projectionData.read<uint8_t>();
     const int swirlVal = leds.projectionData.read<uint8_t>() - 30; // SwirlVal range -30 to 30
-    const bool reverse = leds.projectionData.read<bool>();
+    const bool3State reverse = leds.projectionData.read<bool3State>();
     const int symmetry = FACTORS[leds.projectionData.read<uint8_t>()-1];
     const int zTwist   = leds.projectionData.read<uint8_t>();
          
@@ -236,7 +236,7 @@ class MultiplyProjection: public Projection {
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
     Coord3D *proMulti = leds.projectionData.write<Coord3D>({2,2,1});
-    bool *mirror = leds.projectionData.write<bool>(false);
+    bool3State *mirror = leds.projectionData.write<bool3State>(false);
     ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
         leds.triggerMapping();
@@ -253,7 +253,7 @@ class MultiplyProjection: public Projection {
 
   void addPixelsPre(LedsLayer &leds) {
     Coord3D proMulti = leds.projectionData.read<Coord3D>();
-    bool    mirror   = leds.projectionData.read<bool>();
+    bool3State    mirror   = leds.projectionData.read<bool3State>();
     Coord3D *originalSize = leds.projectionData.readWrite<Coord3D>();
 
     proMulti = proMulti.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
@@ -271,7 +271,7 @@ class MultiplyProjection: public Projection {
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
     // UI Variables
     Coord3D proMulti = leds.projectionData.read<Coord3D>();
-    bool    mirror   = leds.projectionData.read<bool>();
+    bool3State    mirror   = leds.projectionData.read<bool3State>();
     Coord3D originalSize = leds.projectionData.read<Coord3D>();
 
     if (mirror) {
@@ -473,9 +473,9 @@ class ReverseProjection: public Projection {
   public:
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
-    bool *reverseX = leds.projectionData.write<bool>(false);
-    bool *reverseY = leds.projectionData.write<bool>(false);
-    bool *reverseZ = leds.projectionData.write<bool>(false);
+    bool3State *reverseX = leds.projectionData.write<bool3State>(false);
+    bool3State *reverseY = leds.projectionData.write<bool3State>(false);
+    bool3State *reverseZ = leds.projectionData.write<bool3State>(false);
 
     ui->initCheckBox(parentVar, "reverseX", reverseX, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
@@ -502,9 +502,9 @@ class ReverseProjection: public Projection {
   }
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) { 
-    bool reverseX = leds.projectionData.read<bool>();
-    bool reverseY = leds.projectionData.read<bool>();
-    bool reverseZ = leds.projectionData.read<bool>();
+    bool3State reverseX = leds.projectionData.read<bool3State>();
+    bool3State reverseY = leds.projectionData.read<bool3State>();
+    bool3State reverseZ = leds.projectionData.read<bool3State>();
 
     if (reverseX) pixel.x = leds.size.x - pixel.x - 1;
     if (reverseY) pixel.y = leds.size.y - pixel.y - 1;
@@ -523,9 +523,9 @@ class MirrorProjection: public Projection {
   public:
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
-    bool *mirrorX = leds.projectionData.write<bool>(false);
-    bool *mirrorY = leds.projectionData.write<bool>(false);
-    bool *mirrorZ = leds.projectionData.write<bool>(false);
+    bool3State *mirrorX = leds.projectionData.write<bool3State>(false);
+    bool3State *mirrorY = leds.projectionData.write<bool3State>(false);
+    bool3State *mirrorZ = leds.projectionData.write<bool3State>(false);
     ui->initCheckBox(parentVar, "mirrorX", mirrorX, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
         leds.triggerMapping();
@@ -552,9 +552,9 @@ class MirrorProjection: public Projection {
 
   void addPixelsPre(LedsLayer &leds) {
     // UI Variables
-    bool mirrorX = leds.projectionData.read<bool>();
-    bool mirrorY = leds.projectionData.read<bool>();
-    bool mirrorZ = leds.projectionData.read<bool>();
+    bool3State mirrorX = leds.projectionData.read<bool3State>();
+    bool3State mirrorY = leds.projectionData.read<bool3State>();
+    bool3State mirrorZ = leds.projectionData.read<bool3State>();
     Coord3D *originalSize = leds.projectionData.readWrite<Coord3D>();
 
     if (mirrorX) leds.size.x = (leds.size.x + 1) / 2;
@@ -568,9 +568,9 @@ class MirrorProjection: public Projection {
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
     // UI Variables
-    bool mirrorX = leds.projectionData.read<bool>();
-    bool mirrorY = leds.projectionData.read<bool>();
-    bool mirrorZ = leds.projectionData.read<bool>();
+    bool3State mirrorX = leds.projectionData.read<bool3State>();
+    bool3State mirrorY = leds.projectionData.read<bool3State>();
+    bool3State mirrorZ = leds.projectionData.read<bool3State>();
     Coord3D originalSize = leds.projectionData.read<Coord3D>();
 
     if (mirrorX && pixel.x >= originalSize.x) pixel.x = originalSize.x * 2 - 1 - pixel.x;
@@ -673,9 +673,9 @@ class TransposeProjection: public Projection {
   public:
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
-    bool *transposeXY = leds.projectionData.write<bool>(false);
-    bool *transposeXZ = leds.projectionData.write<bool>(false);
-    bool *transposeYZ = leds.projectionData.write<bool>(false);
+    bool3State *transposeXY = leds.projectionData.write<bool3State>(false);
+    bool3State *transposeXZ = leds.projectionData.write<bool3State>(false);
+    bool3State *transposeYZ = leds.projectionData.write<bool3State>(false);
 
     ui->initCheckBox(parentVar, "transpose XY", transposeXY, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
@@ -701,9 +701,9 @@ class TransposeProjection: public Projection {
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
     // UI Variables
-    bool transposeXY = leds.projectionData.read<bool>();
-    bool transposeXZ = leds.projectionData.read<bool>();
-    bool transposeYZ = leds.projectionData.read<bool>();
+    bool3State transposeXY = leds.projectionData.read<bool3State>();
+    bool3State transposeXZ = leds.projectionData.read<bool3State>();
+    bool3State transposeYZ = leds.projectionData.read<bool3State>();
 
     if (transposeXY) { int temp = pixel.x; pixel.x = pixel.y; pixel.y = temp; }
     if (transposeXZ) { int temp = pixel.x; pixel.x = pixel.z; pixel.z = temp; }
@@ -752,9 +752,9 @@ class ScrollingProjection: public Projection {
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
-    bool mirrorX = leds.projectionData.read<bool>(); // Not used 
-    bool mirrorY = leds.projectionData.read<bool>(); // Not used
-    bool mirrorZ = leds.projectionData.read<bool>(); // Not used
+    bool3State mirrorX = leds.projectionData.read<bool3State>(); // Not used 
+    bool3State mirrorY = leds.projectionData.read<bool3State>(); // Not used
+    bool3State mirrorZ = leds.projectionData.read<bool3State>(); // Not used
 
     uint8_t xSpeed = leds.projectionData.read<uint8_t>();
     uint8_t ySpeed = leds.projectionData.read<uint8_t>();
@@ -773,7 +773,7 @@ class AccelerationProjection: public Projection {
   public:
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
-    bool *wrap = leds.projectionData.write<bool>(false);
+    bool3State *wrap = leds.projectionData.write<bool3State>(false);
     uint8_t *sensitivity = leds.projectionData.write<uint8_t>(0);
     uint8_t *deadzone = leds.projectionData.write<uint8_t>(10);
 
@@ -788,7 +788,7 @@ class AccelerationProjection: public Projection {
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
-    bool wrap = leds.projectionData.read<bool>();
+    bool3State wrap = leds.projectionData.read<bool3State>();
     float sensitivity = float(leds.projectionData.read<uint8_t>()) / 20.0 + 1; // 0 - 100 slider -> 1.0 - 6.0 multiplier 
     uint16_t deadzone = map(leds.projectionData.read<uint8_t>(), 0, 255, 0 , 1000); // 0 - 1000
 
@@ -818,8 +818,8 @@ class CheckerboardProjection: public Projection {
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
     Coord3D *size = leds.projectionData.write<Coord3D>({3,3,3});
-    bool *invert = leds.projectionData.write<bool>(false);
-    bool *group = leds.projectionData.write<bool>(false);
+    bool3State *invert = leds.projectionData.write<bool3State>(false);
+    bool3State *group = leds.projectionData.write<bool3State>(false);
     ui->initCoord3D(parentVar, "squareSize", size, 0, 100, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
         leds.triggerMapping();
@@ -842,8 +842,8 @@ class CheckerboardProjection: public Projection {
 
   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
     Coord3D size = leds.projectionData.read<Coord3D>();
-    bool invert = leds.projectionData.read<bool>();
-    bool group = leds.projectionData.read<bool>();
+    bool3State invert = leds.projectionData.read<bool3State>();
+    bool3State group = leds.projectionData.read<bool3State>();
 
     // ppf ("pixel: %d,%d,%d -> ", pixel.x, pixel.y, pixel.z);
     size = size.maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value

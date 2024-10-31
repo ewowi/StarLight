@@ -138,8 +138,8 @@ public:
     return initVarAndValue<bool3State>(parent, id, "checkbox", value, 0, 0, readOnly, varFun);
   }
   //init a checkbox using referenced value
-  JsonObject initCheckBox(JsonObject parent, const char * id, bool * value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
-    return initVarAndValue<bool>(parent, id, "checkbox", value, 0, 0, readOnly, varFun);
+  JsonObject initCheckBox(JsonObject parent, const char * id, bool3State *value = nullptr, bool readOnly = false, VarFun varFun = nullptr) {
+    return initVarAndValue<bool3State>(parent, id, "checkbox", value, 0, 0, readOnly, varFun);
   }
 
   //a button never gets a value
@@ -289,7 +289,7 @@ public:
     }
     else { //do onChange on existing value
       //no call of onChange for buttons otherwise all buttons will be fired which is highly undesirable
-      if (var["type"] != "button" && !var["fun"].isNull() ) { //!isPointer because 0 is also a value then && (!isPointer || value)
+      if (var["type"] != "button") { // && !var["fun"].isNull(): also if no varFun to update pointers   !isPointer because 0 is also a value then && (!isPointer || value)
         bool onChangeExists = false;
         if (var["value"].is<JsonArray>()) {
           //refill the vector
@@ -298,7 +298,7 @@ public:
           }
         }
         else {
-          onChangeExists = mdl->callVarOnChange(var, mdl->setValueRowNr, true); //init, also set var["p"]
+          onChangeExists = mdl->callVarOnChange(var, mdl->setValueRowNr, true); //init, also set var["p"] 
         }
 
         if (onChangeExists)
