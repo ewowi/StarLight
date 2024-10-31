@@ -622,13 +622,13 @@ public:
           width = 10; height = 54;
         }
 
-        ui->initNumber(fixture, "width", width, 1, NUM_LEDS_Max, false, [this,fgText](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+        ui->initNumber(fixture, "width", width, 1, STARLIGHT_MAXLEDS, false, [this,fgText](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
           case onChange:
             rebuildMatrix(fgText);
             return true;
           default: return false; 
         }});
-        ui->initNumber(fixture, "height", height, 1, NUM_LEDS_Max, false, [this,fgText](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+        ui->initNumber(fixture, "height", height, 1, STARLIGHT_MAXLEDS, false, [this,fgText](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
           case onChange:
             rebuildMatrix(fgText);
             return true;
@@ -643,7 +643,7 @@ public:
         else if (strnstr(fgText, "CubeBox", 32) != nullptr)
           length = 8;
 
-        ui->initNumber(fixture, "length", length, 1, NUM_LEDS_Max, false, [this,fgText](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+        ui->initNumber(fixture, "length", length, 1, STARLIGHT_MAXLEDS, false, [this,fgText](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
           case onChange:
             rebuildCube(fgText);
             return true;
@@ -687,7 +687,7 @@ public:
         default: return false;
       }});
 
-      ui->initCoord3D(parentVar, "firstLed", {0,0,0}, 0, NUM_LEDS_Max, false, [fgGroup](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCoord3D(parentVar, "firstLed", {0,0,0}, 0, STARLIGHT_MAXLEDS, false, [fgGroup](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onUI:
           //show Top Left for all fixture except Matrix as it has its own
           if (strncmp(fgGroup, "Matrices", 9) != 0 && strncmp(fgGroup, "Cubes", 6) != 0)
@@ -701,11 +701,11 @@ public:
     //custom variables
     if (strncmp(fgGroup, "Strips", 7) == 0) {
       if (strnstr(fgText, "Spiral", 32) != nullptr) {
-        ui->initNumber(parentVar, "#Leds", 64, 1, NUM_LEDS_Max);
+        ui->initNumber(parentVar, "#Leds", 64, 1, STARLIGHT_MAXLEDS);
         ui->initNumber(parentVar, "radius", 100, 1, 1000);
       }
       else if (strnstr(fgText, "Helix", 32) != nullptr) {
-        ui->initNumber(parentVar, "#Leds", 100, 1, NUM_LEDS_Max);
+        ui->initNumber(parentVar, "#Leds", 100, 1, STARLIGHT_MAXLEDS);
         ui->initNumber(parentVar, "radius", 60, 1, 600);
         ui->initNumber(parentVar, "pitch", 30, 1, 100);
         ui->initNumber(parentVar, "deltaLed", 30, 1, 100);
@@ -713,14 +713,14 @@ public:
     }
     else if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0) {
 
-      ui->initCoord3D(parentVar, "rowEnd", {7,0,0}, 0, NUM_LEDS_Max, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCoord3D(parentVar, "rowEnd", {7,0,0}, 0, STARLIGHT_MAXLEDS, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onUI:
           ui->setComment(var, "-> Orientation");
           return true;
         default: return false;
       }});
 
-      ui->initCoord3D(parentVar, "columnEnd", {7,7,0}, 0, NUM_LEDS_Max, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCoord3D(parentVar, "columnEnd", {7,7,0}, 0, STARLIGHT_MAXLEDS, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
         case onUI:
           ui->setComment(var, "Last LED -> nrOfLeds, Serpentine");
           return true;
@@ -728,7 +728,7 @@ public:
       }});
     }
     else if (strncmp(fgGroup, "Rings", 6) == 0) {
-      ui->initNumber(parentVar, "#Leds", 24, 1, NUM_LEDS_Max);
+      ui->initNumber(parentVar, "#Leds", 24, 1, STARLIGHT_MAXLEDS);
     }
     else if (strncmp(fgGroup, "Shapes", 7) == 0) {
       if (strnstr(fgText, "Rings241", 32) != nullptr) {

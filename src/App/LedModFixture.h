@@ -25,37 +25,41 @@
   #endif
 #endif
 #ifdef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-  #define NUM_LEDS_PER_STRIP 256 //used in I2SClocklessVirtualLedDriver.h, should not be needed here...
+  //used in I2SClocklessVirtualLedDriver.h,
+  //see https://github.com/ewowi/I2SClocklessVirtualLedDriver read me
+  #define NUM_LEDS_PER_STRIP 256 // for I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY ...
   #define CORE_DEBUG_LEVEL 1 //surpress ESP_LOGE compile error
-  #define USE_FASTLED //so CRGB is supported e.g. in initled
-  #define NB_DMA_BUFFER 10
-  #define BRIGHTNESS_BIT 5
-  #ifndef NBIS2SERIALPINS
+  #define USE_FASTLED //so CRGB is supported e.g. in initLed
+  #define __NB_DMA_BUFFER 10 //underscore ! default 2. Sometimes interrupts can distrub the pixel buffer calculations hence making some artifacts. A solution against that is to caculate several buffers in advance. BY defualt we have 2 dma buffers. this can be increase to cope with unwanted interupts.
+  #define __BRIGHTNESS_BIT 5 //underscore ! default 8. the max brightness will be 2^5=32 If you remember when I have discussed about the fact that the showPixels is not always occupied with gives time for other processes to run. Well the less time we 'spent' in buffer calcualtion the better.for instance if you do not use gamma calculation and you can cope with a brightness that is a power of 2:
+  #ifndef NBIS2SERIALPINS //no underscore !
     #define NBIS2SERIALPINS 6 //6 shift registers
   #endif
-  #ifndef SVCD_PINS
-    #define SVCD_PINS 14,12,13,25,33,32
-  #endif
   // #include "esp_heap_caps.h"
-  #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) //works but mapping using mappingTable Needed
-  // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE) //works but flickering!
-  // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY) //not working
+  // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) //works but mapping using mappingTable Needed
+  #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE) //works no flickering anymore (due to __NB_DMA_BUFFER)!
+  // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY) //not working: IllegalInstruction Backtrace: 0x5515d133:0x3ffb1fc0 |<-CORRUPTED
+
   #include "I2SClocklessVirtualLedDriver.h"
-  #ifndef SCVD_CLOCK_PIN
-    #define SCVD_CLOCK_PIN 26
+
+  //StarLight only
+  #ifndef STARLIGHT_ICVLD_PINS
+    #define STARLIGHT_ICVLD_PINS 14,12,13,25,33,32 // must be 6, see initLed
   #endif
-  #ifndef SCVD_LATCH_PIN
-    #define SCVD_LATCH_PIN 27
+
+  #ifndef STARLIGHT_ICVLD_CLOCK_PIN
+    #define STARLIGHT_ICVLD_CLOCK_PIN 26
+  #endif
+  #ifndef STARLIGHT_ICVLD_LATCH_PIN
+    #define STARLIGHT_ICVLD_LATCH_PIN 27
   #endif
 #endif
-
-#define NUM_LEDS_Max STARLIGHT_MAXLEDS
 
 class LedModFixture: public SysModule {
 
 public:
 
-  CRGB ledsP[NUM_LEDS_Max];
+  CRGB ledsP[STARLIGHT_MAXLEDS];
 
   // CRGB *leds = nullptr;
     // if (!leds)

@@ -160,11 +160,11 @@ void LedsLayer::setPixelColor(int indexV, CRGB color) {
         break;
     }
   }
-  else if (indexV < NUM_LEDS_Max) //no projection
+  else if (indexV < STARLIGHT_MAXLEDS) //no projection
     fix->ledsP[indexV] = fix->pixelsToBlend[indexV]?blend(color, fix->ledsP[indexV], fix->globalBlend): color;
   // some operations will go out of bounds e.g. VUMeter, uncomment below lines if you wanna test on a specific effect
   // else //if (indexV != UINT16_MAX) //assuming UINT16_MAX is set explicitly (e.g. in XYZ)
-  //   ppf(" dev sPC %d >= %d", indexV, NUM_LEDS_Max);
+  //   ppf(" dev sPC %d >= %d", indexV, STARLIGHT_MAXLEDS);
 }
 
 void LedsLayer::setPixelColorPal(int indexV, uint8_t palIndex, uint8_t palBri) {
@@ -193,11 +193,11 @@ CRGB LedsLayer::getPixelColor(int indexV) {
         break;
     }
   }
-  else if (indexV < NUM_LEDS_Max) //no mapping
+  else if (indexV < STARLIGHT_MAXLEDS) //no mapping
     return fix->ledsP[indexV];
   else {
     // some operations will go out of bounds e.g. VUMeter, uncomment below lines if you wanna test on a specific effect
-    // ppf(" dev gPC %d >= %d", indexV, NUM_LEDS_Max);
+    // ppf(" dev gPC %d >= %d", indexV, STARLIGHT_MAXLEDS);
     return CRGB::Black;
   }
 }
@@ -343,8 +343,8 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
         mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
 
         if (indexV != UINT16_MAX) {
-          if (indexV >= nrOfLeds || indexV >= NUM_VLEDS_Max)
-            ppf("dev leds[%d] pre indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, nrOfLeds, NUM_VLEDS_Max, mappingTableSizeUsed, fix->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
+          if (indexV >= nrOfLeds || indexV >= STARLIGHT_MAXLEDS)
+            ppf("dev leds[%d] pre indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, nrOfLeds, STARLIGHT_MAXLEDS, mappingTableSizeUsed, fix->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
           else {
 
             //create new physMaps if needed
@@ -362,6 +362,8 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
             // ppf("mapping b:%d t:%d V:%d\n", indexV, indexP, mappingTableSizeUsed);
           } //indexV not too high
         } //indexV
+        else
+          ppf("dev check this case indexV != UINT16_MAX %d\n", indexV);
 
       } //if x,y,z between start and end
     } //if projection && doMap

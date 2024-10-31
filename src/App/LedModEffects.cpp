@@ -284,7 +284,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     }});
     currentVar["dash"] = true;
 
-    ui->initCoord3D(tableVar, "start", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(tableVar, "start", {0,0,0}, 0, STARLIGHT_MAXLEDS, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
         //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
@@ -311,7 +311,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       default: return false;
     }});
 
-    ui->initCoord3D(tableVar, "middle", {0,0,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(tableVar, "middle", {0,0,0}, 0, STARLIGHT_MAXLEDS, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
         //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
@@ -338,7 +338,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       default: return false;
     }});
 
-    ui->initCoord3D(tableVar, "end", {8,8,0}, 0, NUM_LEDS_Max, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(tableVar, "end", {8,8,0}, 0, STARLIGHT_MAXLEDS, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onSetValue:
         //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {

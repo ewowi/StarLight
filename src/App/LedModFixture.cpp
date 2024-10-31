@@ -26,36 +26,39 @@
 #define PACKAGE_SIZE 5120 //4096 is not ideal as also header info, multiples of 1024 sounds good...
 
 #ifdef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-  uint16_t mapfunction(uint16_t pos)
-  {
-    int panelnumber = pos / 256;
-    int datainpanel = pos % 256;
-    int Xp = 7 - panelnumber % 8;
+  #if (I2S_MAPPING_MODE & (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY | I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE)) > 0
 
-    //fix for ewowi panels
-    Xp=Xp+1;
-    if (Xp==8) {Xp=0;}
-
-    int yp = panelnumber / 8;
-    int X = Xp; //panel on the x axis
-    int Y = yp; //panel on the y axis
-
-    int y = datainpanel % 16;
-    int x = datainpanel / 16;
-
-    if (x % 2 == 0) //serpentine
+    uint16_t mapfunction(uint16_t pos)
     {
-      Y = Y * 16 + y;
-      X = X * 16 + x;
-    }
-    else
-    {
-      Y = Y * 16 + 16 -y-1;
-      X = X * 16 + x;
-    }
+      int panelnumber = pos / 256;
+      int datainpanel = pos % 256;
+      int Xp = 7 - panelnumber % 8;
 
-    return (95-Y) * 16 * 8 + (127-X);
-  }
+      //fix for ewowi panels
+      Xp=Xp+1;
+      if (Xp==8) {Xp=0;}
+
+      int yp = panelnumber / 8;
+      int X = Xp; //panel on the x axis
+      int Y = yp; //panel on the y axis
+
+      int y = datainpanel % 16;
+      int x = datainpanel / 16;
+
+      if (x % 2 == 0) //serpentine
+      {
+        Y = Y * 16 + y;
+        X = X * 16 + x;
+      }
+      else
+      {
+        Y = Y * 16 + 16 -y-1;
+        X = X * 16 + x;
+      }
+
+      return (95-Y) * 16 * 8 + (127-X);
+    }
+  #endif
 #endif
 
   void LedModFixture::setup() {
@@ -238,13 +241,13 @@
       default: return false; 
     }}); //fixture
 
-    ui->initCoord3D(currentVar, "size", &fixSize, 0, NUM_LEDS_Max, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(currentVar, "size", &fixSize, 0, STARLIGHT_MAXLEDS, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       default: return false;
     }});
 
     ui->initNumber(currentVar, "count", &nrOfLeds, 0, UINT16_MAX, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onUI:
-        web->addResponse(var, "comment", "Max %d", NUM_LEDS_Max, 0); //0 is to force format overload used
+        web->addResponse(var, "comment", "Max %d", STARLIGHT_MAXLEDS, 0); //0 is to force format overload used
         return true;
       default: return false;
     }});
@@ -707,10 +710,13 @@
           // driver.setBrightness(setMaxPowerBrightnessFactor / 256); //not brighter then the set limit (WIP)
         }
       #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-        int svcd_pins[6] = { SVCD_PINS };
-        driver.initled(ledsP, svcd_pins, SCVD_CLOCK_PIN, SCVD_LATCH_PIN);
+        int pins[6] = { STARLIGHT_ICVLD_PINS };
+        driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN);
         // driver.enableShowPixelsOnCore(1);
-        // driver.setMapLed(&mapfunction);
+        #if (I2S_MAPPING_MODE & (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY | I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE)) > 0
+          driver.setMapLed(&mapfunction);
+        #endif
+        driver.setGamma(255.0/255.0, 176.0/255.0, 240.0/255.0);
         driver.setBrightness(10);
       #endif
 
@@ -726,7 +732,7 @@ void LedModFixture::addPixelsPre() {
   if (pass == 1) {
     fixSize = {0, 0, 0}; //start counting
     nrOfLeds = 0; //start counting
-  } else if (nrOfLeds <= NUM_LEDS_Max) {
+  } else if (nrOfLeds <= STARLIGHT_MAXLEDS) {
 
     // reset leds
     uint8_t rowNr = 0;
@@ -781,9 +787,9 @@ void LedModFixture::addPixel(Coord3D pixel) {
     // ppf(".");
     fixSize = fixSize.maximum(pixel);
     nrOfLeds++;
-  } else if (nrOfLeds <= NUM_LEDS_Max) {
+  } else if (nrOfLeds <= STARLIGHT_MAXLEDS) {
 
-    if (indexP < NUM_LEDS_Max) {
+    if (indexP < STARLIGHT_MAXLEDS) {
 
       if (bytesPerPixel && doSendFixtureDefinition) {
         //send pixel to ui ...
@@ -827,7 +833,7 @@ void LedModFixture::addPixel(Coord3D pixel) {
       } //for layers
     } //indexP < max
     else 
-      ppf("dev post indexP too high %d>=%d or %d p:%d,%d,%d\n", indexP, nrOfLeds, NUM_LEDS_Max, pixel.x, pixel.y, pixel.z);
+      ppf("dev post indexP too high %d>=%d or %d p:%d,%d,%d\n", indexP, nrOfLeds, STARLIGHT_MAXLEDS, pixel.x, pixel.y, pixel.z);
 
     indexP++; //also increase if no buffer created
   }
@@ -836,7 +842,7 @@ void LedModFixture::addPixel(Coord3D pixel) {
 void LedModFixture::addPin(uint8_t pin) {
   if (pass == 1) {
     // ppf("addPin calc\n");
-  } else if (nrOfLeds <= NUM_LEDS_Max) {
+  } else if (nrOfLeds <= STARLIGHT_MAXLEDS) {
     if (doAllocPins) {
       //check if pin already allocated, if so, extend range in details
       PinObject pinObject = pinsM->pinObjects[pin];
@@ -877,7 +883,7 @@ void LedModFixture::addPixelsPost() {
   if (pass == 1) {
     fixSize = fixSize / factor + Coord3D{1,1,1};
     ppf("addPixelsPost(%d) size s:%d,%d,%d #:%d %d ms\n", pass, fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
-  } else if (nrOfLeds <= NUM_LEDS_Max) {
+  } else if (nrOfLeds <= STARLIGHT_MAXLEDS) {
 
     if (bytesPerPixel && doSendFixtureDefinition) {
       if (wsBuf) {
@@ -918,7 +924,7 @@ void LedModFixture::addPixelsPost() {
         pixelsToBlend.push_back(false);
     }
 
-    ppf("addPixelsPost(%d) fixture.size = so:%d + l:(%d * %d) B %d ms\n", pass, sizeof(this), NUM_LEDS_Max, sizeof(CRGB), millis() - start); //56
+    ppf("addPixelsPost(%d) fixture.size = so:%d + l:(%d * %d) B %d ms\n", pass, sizeof(this), STARLIGHT_MAXLEDS, sizeof(CRGB), millis() - start); //56
   }
 
   if (pass == 2)

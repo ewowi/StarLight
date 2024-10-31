@@ -27,8 +27,6 @@
   #define STARLIGHT_MAXLEDS 8192 //any board can do this
 #endif
 
-#define NUM_VLEDS_Max STARLIGHT_MAXLEDS
-
 class LedsLayer; //forward
 
 #define _1D 1
