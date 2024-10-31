@@ -47,7 +47,7 @@ public:
 
   //void * for the time being, should be Executable * but importing ESPLiveScript.h in this .h gives multiple definition errors
   void *findExecutable(const char *fileName);
-  void executeTask(void *executable, const char *function = "main");
+  void executeTask(void *executable, const char *function = "main", int val = UINT16_MAX);
   void executeBackgroundTask(void *executable, const char *function = "main");
 
   void killAndDelete(const char *fileName = nullptr);

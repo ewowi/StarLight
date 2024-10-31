@@ -3025,7 +3025,10 @@ class LiveEffect: public Effect {
                 leds.liveEffectExecutable = liveM->compile(fileName, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
               }
 
-              liveM->executeBackgroundTask(leds.liveEffectExecutable);
+              if (leds.liveEffectExecutable)
+                liveM->executeBackgroundTask(leds.liveEffectExecutable);
+              else 
+                ppf("mapInitAlloc Live Effect not created (compilation error?) %s\n", fileName);
             }
           }
         }

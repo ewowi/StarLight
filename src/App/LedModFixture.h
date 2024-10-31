@@ -36,15 +36,14 @@
     #define NBIS2SERIALPINS 6 //6 shift registers
   #endif
   // #include "esp_heap_caps.h"
-  #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) //works but mapping using mappingTable Needed
-  // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE) //works no flickering anymore (due to __NB_DMA_BUFFER)!
-  // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY) //not working: IllegalInstruction Backtrace: 0x5515d133:0x3ffb1fc0 |<-CORRUPTED
-
-  // why if this if not working here? (removed for now to have the buffer right)
-  // #if (I2S_MAPPING_MODE & (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY | I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE)) > 0
-    // #define __NB_DMA_BUFFER 10 //underscore ! default 2 (2 causes flickering in case of mapping). 
-                              //Sometimes interrupts can distrub the pixel buffer calculations hence making some artifacts. A solution against that is to caculate several buffers in advance. BY defualt we have 2 dma buffers. this can be increase to cope with unwanted interupts.
-  // #endif
+  #if STARBASE_USERMOD_LIVE & false //crashes at the moment
+    #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE) //works no flickering anymore (due to __NB_DMA_BUFFER)!
+    // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY) //not working: IllegalInstruction Backtrace: 0x5515d133:0x3ffb1fc0 |<-CORRUPTED
+    #define __NB_DMA_BUFFER 5 //or 10 ... underscore ! default 2 (2 causes flickering in case of mapping). 
+    #define STARLIGHT_ICLD_MAPPING
+  #else
+    #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) //works but mapping using StarLight mappingTable needed
+  #endif
 
   #include "I2SClocklessVirtualLedDriver.h"
 
@@ -120,8 +119,8 @@ public:
 
   uint8_t globalBlend = 128;
 
-  uint16_t fps = 60;
-  uint16_t realFps = 60;
+  uint16_t fps = 200;
+  uint16_t realFps = 200;
   bool3State showTicker = true;
   char tickerTape[20] = "";
   bool3State driverShow = true;

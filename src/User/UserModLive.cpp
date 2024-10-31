@@ -165,7 +165,10 @@ static float _time(float j) {
             executable = compile(fileName, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
           }
 
-          liveM->executeTask(executable);
+          if (executable) 
+            liveM->executeTask(executable);
+          else 
+            ppf("mapInitAlloc task not created (compilation error?) %s\n", fileName);
         }
         else {
           // kill();
@@ -356,9 +359,15 @@ static float _time(float j) {
       ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
   }
 
-  void UserModLive::executeTask(void * executable, const char * function)
+  void UserModLive::executeTask(void * executable, const char * function, int val)
   {
-    ((Executable *)executable)->execute(string(function));
+    if (val == UINT16_MAX)
+      ((Executable *)executable)->execute(string(function));
+    else {
+      Arguments arguments;
+      arguments.add(val);
+      ((Executable *)executable)->execute(string(function), arguments);
+    }
   }
 
   void UserModLive::executeBackgroundTask(void * executable, const char * function)
@@ -435,18 +444,16 @@ static float _time(float j) {
     }
   }
 
-  void UserModLive::killAndDelete(const char * name) {
-    //tbd: kill specific task...
-    if (name != NULL)
-    { 
+  void UserModLive::killAndDelete(const char *name) {
+    if (name != nullptr) { 
       scriptRuntime.kill(string(name));
       scriptRuntime.deleteExe(string(name));
-    }
-    else
-    {
+    } else {
       scriptRuntime.killAndFreeRunningProgram();
     }
+    fix->liveFixtureExecutable = nullptr; //to be sure! todo: nullify exec pointers fix->liveFixtureExecutable and leds.liveEffectExecutable
   }
+
   void UserModLive::killAndDelete(void *executable) {
     if (executable)
       killAndDelete(((Executable *)executable)->name.c_str());

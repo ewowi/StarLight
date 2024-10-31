@@ -25,41 +25,6 @@
 
 #define PACKAGE_SIZE 5120 //4096 is not ideal as also header info, multiples of 1024 sounds good...
 
-#ifdef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-  #if (I2S_MAPPING_MODE & (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY | I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE)) > 0
-
-    uint16_t mapfunction(uint16_t pos)
-    {
-      int panelnumber = pos / 256;
-      int datainpanel = pos % 256;
-      int Xp = 7 - panelnumber % 8;
-
-      //fix for ewowi panels
-      Xp=Xp+1;
-      if (Xp==8) {Xp=0;}
-
-      int yp = panelnumber / 8;
-      int X = Xp; //panel on the x axis
-      int Y = yp; //panel on the y axis
-
-      int y = datainpanel % 16;
-      int x = datainpanel / 16;
-
-      if (x % 2 == 0) //serpentine
-      {
-        Y = Y * 16 + y;
-        X = X * 16 + x;
-      }
-      else
-      {
-        Y = Y * 16 + 16 -y-1;
-        X = X * 16 + x;
-      }
-
-      return (95-Y) * 16 * 8 + (127-X);
-    }
-  #endif
-#endif
 
   void LedModFixture::setup() {
     SysModule::setup();
@@ -343,6 +308,48 @@
   static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {fix->addPixel({a1, a2, a3});}
   static void _addPin(uint8_t a1) {fix->addPin(a1);}
   static void _addPixelsPost() {fix->addPixelsPost();}
+
+  #ifdef STARLIGHT_ICLD_MAPPING
+    uint16_t mapResult = UINT16_MAX;
+
+    uint16_t mapfunction(uint16_t pos)
+    {
+      if (fix->liveFixtureExecutable) {
+        mapResult = pos;
+        ppf("±"); // to see if it is invoked...
+        // liveM->executeTask(fix->liveFixtureExecutable, "map", pos); //if not existst then Impossible to execute @_map: not found and crash -> check existence before?
+
+        return mapResult; //set by this task
+      } else { // this is hardcoded and only for testing purposes
+        int datainpanel = pos % 256;
+        int Xp = 7 - panelnumber % 8;
+
+        //fix for ewowi panels
+        Xp=Xp+1;
+        if (Xp==8) {Xp=0;}
+
+        int yp = panelnumber / 8;
+        int X = Xp; //panel on the x axis
+        int Y = yp; //panel on the y axis
+
+        int y = datainpanel % 16;
+        int x = datainpanel / 16;
+
+        if (x % 2 == 0) //serpentine
+        {
+          Y = Y * 16 + y;
+          X = X * 16 + x;
+        }
+        else
+        {
+          Y = Y * 16 + 16 -y-1;
+          X = X * 16 + x;
+        }
+
+        return (95-Y) * 16 * 8 + (127-X);
+      }
+    }
+  #endif
 #endif
 
 
@@ -385,15 +392,22 @@
           liveM->addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
           liveM->addExternalFun("void", "addPin", "(uint8_t a1)", (void *)_addPin);
           liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
+          #ifdef STARLIGHT_ICLD_MAPPING
+            liveM->addExternalVal("uint16_t", "mapResult", &mapResult); //used in map function
+          #endif
 
           liveFixtureExecutable = liveM->compile(fileName, "void c(){addPixelsPre();main();addPixelsPost();}");
         }
 
-        start = millis();
-        pass = 1;
-        liveM->executeTask(liveFixtureExecutable, "c");
-        pass = 2;
-        liveM->executeTask(liveFixtureExecutable, "c");
+        if (liveFixtureExecutable) {
+          start = millis();
+          pass = 1;
+          liveM->executeTask(liveFixtureExecutable, "c");
+          pass = 2;
+          liveM->executeTask(liveFixtureExecutable, "c");
+        }
+        else 
+          ppf("mapInitAlloc Live Fixture not created (compilation error?) %s\n", fileName);
 
       } else 
     #endif
@@ -704,6 +718,9 @@
             //void initled( uint8_t * leds, int * pins, int numstrip, int NUM_LED_PER_STRIP)
           #else
             driver.initled((uint8_t*) ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
+            #ifdef STARLIGHT_ICLD_MAPPING
+              driver.setMapLed(&mapfunction);
+            #endif
             //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
           #endif
           mdl->callVarOnChange(mdl->findVar("Fixture", "brightness"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
@@ -713,7 +730,7 @@
         int pins[6] = { STARLIGHT_ICVLD_PINS };
         driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN);
         // driver.enableShowPixelsOnCore(1);
-        #if (I2S_MAPPING_MODE & (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY | I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE)) > 0
+        #ifdef STARLIGHT_ICLD_MAPPING
           driver.setMapLed(&mapfunction);
         #endif
         driver.setGamma(255.0/255.0, 176.0/255.0, 240.0/255.0);
