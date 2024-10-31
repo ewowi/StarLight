@@ -30,9 +30,9 @@
   #define NUM_LEDS_PER_STRIP 256 // for I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY ...
   #define CORE_DEBUG_LEVEL 1 //surpress ESP_LOGE compile error
   #define USE_FASTLED //so CRGB is supported e.g. in initLed
-  #define __NB_DMA_BUFFER 10 //underscore ! default 2. Sometimes interrupts can distrub the pixel buffer calculations hence making some artifacts. A solution against that is to caculate several buffers in advance. BY defualt we have 2 dma buffers. this can be increase to cope with unwanted interupts.
-  #define __BRIGHTNESS_BIT 5 //underscore ! default 8. the max brightness will be 2^5=32 If you remember when I have discussed about the fact that the showPixels is not always occupied with gives time for other processes to run. Well the less time we 'spent' in buffer calcualtion the better.for instance if you do not use gamma calculation and you can cope with a brightness that is a power of 2:
-  #ifndef NBIS2SERIALPINS //no underscore !
+  // #define __BRIGHTNESS_BIT 5 //underscore ! default 8, set off for the moment as ui brightness stopped working, will look at it later. 
+                                //the max brightness will be 2^5=32 If you remember when I have discussed about the fact that the showPixels is not always occupied with gives time for other processes to run. Well the less time we 'spent' in buffer calcualtion the better.for instance if you do not use gamma calculation and you can cope with a brightness that is a power of 2:
+  #ifndef NBIS2SERIALPINS //no underscore !, defined in pio.ini
     #define NBIS2SERIALPINS 6 //6 shift registers
   #endif
   // #include "esp_heap_caps.h"
@@ -40,9 +40,15 @@
   #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE) //works no flickering anymore (due to __NB_DMA_BUFFER)!
   // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY) //not working: IllegalInstruction Backtrace: 0x5515d133:0x3ffb1fc0 |<-CORRUPTED
 
+  // why if this if not working here? (removed for now to have the buffer right)
+  // #if (I2S_MAPPING_MODE & (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY | I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE)) > 0
+    #define __NB_DMA_BUFFER 4 //underscore ! default 2 (2 causes flickering in case of mapping). 
+                              //Sometimes interrupts can distrub the pixel buffer calculations hence making some artifacts. A solution against that is to caculate several buffers in advance. BY defualt we have 2 dma buffers. this can be increase to cope with unwanted interupts.
+  // #endif
+
   #include "I2SClocklessVirtualLedDriver.h"
 
-  //StarLight only
+  //StarLight specific
   #ifndef STARLIGHT_ICVLD_PINS
     #define STARLIGHT_ICVLD_PINS 14,12,13,25,33,32 // must be 6, see initLed
   #endif
