@@ -43,15 +43,17 @@ public:
 
   void loop1s();
 
-  void* compile(const char *fileName, const char *post = nullptr);
+  //return the id of the executable
+  uint8_t compile(const char *fileName, const char *post = nullptr);
 
   //void * for the time being, should be Executable * but importing ESPLiveScript.h in this .h gives multiple definition errors
-  void *findExecutable(const char *fileName);
-  void executeTask(void *executable, const char *function = "main", int val = UINT16_MAX);
-  void executeBackgroundTask(void *executable, const char *function = "main");
+  uint8_t findExecutable(const char *fileName);
+  
+  void executeTask(uint8_t exeID, const char *function = "main", int val = UINT16_MAX);
+  void executeBackgroundTask(uint8_t exeID, const char *function = "main");
 
   void killAndDelete(const char *fileName = nullptr);
-  void killAndDelete(void *executable);
+  void killAndDelete(uint8_t exeID);
 };
 
 extern UserModLive *liveM;

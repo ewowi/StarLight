@@ -3,6 +3,37 @@
 define horizontalPanels 5
 define verticalPanels 3
 
+//to be modified for 80x48
+void map(int pos) {
+  int panelnumber = pos / 256;
+  int datainpanel = pos % 256;
+  int Xp = 7 - panelnumber % 8;
+
+  //fix for ewowi panels
+  Xp=Xp+1;
+  if (Xp==8) {Xp=0;}
+
+  int yp = panelnumber / 8;
+  int X = Xp; //panel on the x axis
+  int Y = yp; //panel on the y axis
+
+  int y = datainpanel % 16;
+  int x = datainpanel / 16;
+
+  if (x % 2 == 0) //serpentine
+  {
+    Y = Y * 16 + y;
+    X = X * 16 + x;
+  }
+  else
+  {
+    Y = Y * 16 + 16 -y-1;
+    X = X * 16 + x;
+  }
+
+  mapResult = (95-Y) * 16 * 8 + (127-X);
+}
+
 void main() {
   for (int panelY = 0; panelY < verticalPanels; panelY++) {
     for (int panelX = horizontalPanels-1; panelX >=0; panelX--) {

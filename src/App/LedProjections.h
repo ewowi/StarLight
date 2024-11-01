@@ -22,6 +22,17 @@ class NoneProjection: public Projection {
   }
 }; //NoneProjection
 
+#ifdef STARLIGHT_LIVE_MAPPING
+  class LiveMappingProjection: public Projection {
+    const char * name() {return "Live Fixture Mapping";}
+    //uint8_t dim() {return _1D;} // every projection should work for all D
+    const char * tags() {return "💫";}
+
+    void setup(LedsLayer &leds, JsonObject parentVar) {
+    }
+  }; //NoneProjection
+#endif
+
 class DefaultProjection: public Projection {
   const char * name() {return "Default";}
   const char * tags() {return "💫";}

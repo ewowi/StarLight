@@ -215,7 +215,7 @@ public:
   CRGBPalette16 palette;
 
   #ifdef STARBASE_USERMOD_LIVE
-    void *liveEffectExecutable = nullptr; //will be Executable * in the future
+    uint8_t liveEffectID = UINT8_MAX;
   #endif
 
   int XY(int x, int y) {

@@ -104,7 +104,11 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     #endif
 
     //load projections
-    projections.push_back(new NoneProjection);
+    #ifdef STARLIGHT_LIVE_MAPPING
+      projections.push_back(new LiveMappingProjection);
+    #else
+      projections.push_back(new NoneProjection);
+    #endif
     projections.push_back(new DefaultProjection);
     projections.push_back(new PinwheelProjection);
     projections.push_back(new MirrorReverseTransposeProjection);

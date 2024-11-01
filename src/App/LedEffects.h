@@ -2992,10 +2992,14 @@ class LiveEffect: public Effect {
             if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
               ppf("script.onChange Live Fixture %s\n", fileName);
 
-              //to do kill the old one if changed
+              uint8_t newExeID = liveM->findExecutable(fileName);
+              if (newExeID == UINT8_MAX) {
+                ppf("kill old live effect script\n");
+                liveM->killAndDelete(leds.liveEffectID);
+              }
+              leds.liveEffectID = newExeID;
 
-              leds.liveEffectExecutable = liveM->findExecutable(fileName);
-              if (!leds.liveEffectExecutable) {
+              if (leds.liveEffectID == UINT8_MAX) {
 
                 liveM->scPreBaseScript = "";
 
@@ -3022,11 +3026,11 @@ class LiveEffect: public Effect {
                 liveM->scPreBaseScript += "define NUM_LEDS " + std::to_string(leds.nrOfLeds) + "\n";
                 liveM->scPreBaseScript += "define panel_width " + std::to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
 
-                leds.liveEffectExecutable = liveM->compile(fileName, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
+                leds.liveEffectID = liveM->compile(fileName, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
               }
 
-              if (leds.liveEffectExecutable)
-                liveM->executeBackgroundTask(leds.liveEffectExecutable);
+              if (leds.liveEffectID != UINT8_MAX)
+                liveM->executeBackgroundTask(leds.liveEffectID);
               else 
                 ppf("mapInitAlloc Live Effect not created (compilation error?) %s\n", fileName);
             }

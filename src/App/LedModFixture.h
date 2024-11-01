@@ -36,11 +36,10 @@
     #define NBIS2SERIALPINS 6 //6 shift registers
   #endif
   // #include "esp_heap_caps.h"
-  #if STARBASE_USERMOD_LIVE & false //crashes at the moment
+  #if STARBASE_USERMOD_LIVE & STARLIGHT_LIVE_MAPPING
     #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE) //works no flickering anymore (due to __NB_DMA_BUFFER)!
     // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY) //not working: IllegalInstruction Backtrace: 0x5515d133:0x3ffb1fc0 |<-CORRUPTED
-    #define __NB_DMA_BUFFER 5 //or 10 ... underscore ! default 2 (2 causes flickering in case of mapping). 
-    #define STARLIGHT_ICLD_MAPPING
+    #define __NB_DMA_BUFFER 10 //or 10 ... underscore ! default 2 (2 causes flickering in case of mapping). 
   #else
     #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) //works but mapping using StarLight mappingTable needed
   #endif
@@ -143,7 +142,7 @@ public:
   void addPixelsPost();
 
   #ifdef STARBASE_USERMOD_LIVE
-    void *liveFixtureExecutable = nullptr; //will be Executable * in the future
+    uint8_t liveFixtureID = UINT8_MAX;
   #endif
 
   #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER

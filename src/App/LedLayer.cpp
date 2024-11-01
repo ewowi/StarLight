@@ -342,7 +342,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
         (projection->*addPixelCached)(*this, pixelAdjusted, indexV);
         mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
 
-        if (indexV != UINT16_MAX) {
+        if (indexV != UINT16_MAX) { //can be set to UINT16_MAX by projection
           if (indexV >= nrOfLeds || indexV >= STARLIGHT_MAXLEDS)
             ppf("dev addPixel leds[%d] indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, nrOfLeds, STARLIGHT_MAXLEDS, mappingTableSizeUsed, fix->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
           else {
@@ -361,8 +361,8 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
             // ppf("mapping b:%d t:%d V:%d\n", indexV, indexP, mappingTableSizeUsed);
           } //indexV not too high
         } //indexV
-        else
-          ppf("dev check this case indexV != UINT16_MAX %d\n", indexV);
+        // else
+        //   ppf("dev check this case indexV != UINT16_MAX %d\n", indexV);
 
       } //if x,y,z between start and end
     } //if projection && doMap
