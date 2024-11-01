@@ -30,7 +30,7 @@ class NoneProjection: public Projection {
 
     void setup(LedsLayer &leds, JsonObject parentVar) {
     }
-  }; //NoneProjection
+  }; //LiveMappingProjection
 #endif
 
 class DefaultProjection: public Projection {
@@ -841,8 +841,12 @@ class GroupingSpacingProjection: public Projection {
     Coord3D GS = grouping + spacing;
     Coord3D modPixel = pixel % GS;
 
-    if (modPixel.x < grouping.x && modPixel.y < grouping.y && modPixel.z < grouping.z) pixel /= GS;
-    else pixel = Coord3D{UINT16_MAX, UINT16_MAX, UINT16_MAX};
+    if (modPixel.x < grouping.x && modPixel.y < grouping.y && modPixel.z < grouping.z) 
+      pixel /= GS;
+    else {
+      indexV = UINT16_MAX;
+      return;
+    }
 
     DefaultProjection dp;
     dp.addPixel(leds, pixel, indexV);
@@ -984,10 +988,10 @@ class CheckerboardProjection: public Projection {
 
     Coord3D check = pixel / size;
     if ((check.x + check.y + check.z) % 2 == 0) {
-      if (invert) pixel = {UINT16_MAX, UINT16_MAX, UINT16_MAX};
+      if (invert) indexV = UINT16_MAX; return;
     }
     else {
-      if (!invert) pixel = {UINT16_MAX, UINT16_MAX, UINT16_MAX};
+      if (!invert) indexV = UINT16_MAX; return;
     }
 
     if (group) pixel /= size;
