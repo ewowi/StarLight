@@ -52,9 +52,13 @@ public:
 
   virtual void setup(LedsLayer &leds, JsonObject parentVar) {}
 
+  //setupPixels
   virtual void addPixelsPre(LedsLayer &leds) {}
-  virtual void addPixel(LedsLayer &leds, Coord3D &pixelAdjusted, uint16_t &indexV) {}
+
+  //setupPixel
+  virtual void addPixel(LedsLayer &leds, Coord3D &pixelAdjusted) {}
   
+  //loopPixel
   virtual void XYZ(LedsLayer &leds, Coord3D &pixel) {}
 };
 
@@ -185,7 +189,7 @@ public:
       //setting cached virtual class methods! (By chatGPT so no source and don't understand how it works - scary!)
       //   (don't know how it works as it is not refering to derived classes, just to the base class but later it calls the derived class method)
   void (Projection::*addPixelsPreCached)(LedsLayer &) = &Projection::addPixelsPre;
-  void (Projection::*addPixelCached)(LedsLayer &, Coord3D &, uint16_t &) = &Projection::addPixel;
+  void (Projection::*addPixelCached)(LedsLayer &, Coord3D &) = &Projection::addPixel;
   void (Projection::*XYZCached)(LedsLayer &, Coord3D &) = &Projection::XYZ;
 
   uint8_t effectDimension = UINT8_MAX;

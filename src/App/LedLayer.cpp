@@ -329,20 +329,20 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
       // ppf("addPixel %d %d", pixel, fix->factor);
       if (pixel >= start * fix->factor && pixel <= end * fix->factor ) { //if pixel between start and end pos
 
-        Coord3D pixelAdjusted = pixel / fix->factor - start; //pixel also rounded to a 1x1 grid space
+        pixel = pixel / fix->factor - start; //pixel relative to start (also rounded to a 1x1 grid space in case of factor 10)
 
         // addPixelCached = &Projection::addPixel;
         // XYZCached = &Projection::XYZ;
 
-        uint16_t indexV = XYZUnprojected(pixelAdjusted); //default
-
-        // Setup changes leds.size, mapped, indexV
+        // Setup changes leds.size, mapped
         mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
         projectionData.begin();
-        (projection->*addPixelCached)(*this, pixelAdjusted, indexV);
+        (projection->*addPixelCached)(*this, pixel);
         mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
 
-        if (indexV != UINT16_MAX) { //can be set to UINT16_MAX by projection
+        if (pixel.x != UINT16_MAX) { //can be set to UINT16_MAX by projection
+          uint16_t indexV = XYZUnprojected(pixel);
+
           if (indexV >= nrOfLeds || indexV >= STARLIGHT_MAXLEDS)
             ppf("dev addPixel leds[%d] indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, nrOfLeds, STARLIGHT_MAXLEDS, mappingTableSizeUsed, fix->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
           else {
@@ -360,9 +360,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
             mappingTable[indexV].addIndexP(*this, fix->indexP);
             // ppf("mapping b:%d t:%d V:%d\n", indexV, indexP, mappingTableSizeUsed);
           } //indexV not too high
-        } //indexV
-        // else
-        //   ppf("dev check this case indexV != UINT16_MAX %d\n", indexV);
+        } //pixel.x != UINT16_MAX
 
       } //if x,y,z between start and end
     } //if projection && doMap

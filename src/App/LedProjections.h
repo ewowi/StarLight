@@ -89,7 +89,7 @@ class DefaultProjection: public Projection {
     }
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) {
     Coord3D mapped;
     switch (leds.effectDimension) {
       case _1D: // effectDimension 1DxD
@@ -130,7 +130,7 @@ class DefaultProjection: public Projection {
           break;
     }
 
-    indexV = leds.XYZUnprojected(mapped);
+    pixel = mapped;
   }
 
 }; //DefaultProjection
@@ -200,8 +200,8 @@ class PinwheelProjection: public Projection {
     }
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
-    Coord3D mapped;
+  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+    // Coord3D mapped;
     // factors of 360
     const int FACTORS[24] = {360, 180, 120, 90, 72, 60, 45, 40, 36, 30, 24, 20, 18, 15, 12, 10, 9, 8, 6, 5, 4, 3, 2};
     // UI Variables
@@ -225,17 +225,15 @@ class PinwheelProjection: public Projection {
 
     if (reverse) value = petals - value - 1; // Reverse Movement
 
-    mapped.x = value;
-    mapped.y = 0;
+    pixel.x = value;
+    pixel.y = 0;
     if (leds.effectDimension > _1D && leds.projectionDimension > _1D) {
-      mapped.y = int(sqrt(sq(dx) + sq(dy))); // Round produced blank pixel
+      pixel.y = int(sqrt(sq(dx) + sq(dy))); // Round produced blank pixel
     }
-    mapped.z = 0;
+    pixel.z = 0;
 
     // if (pixel.x == 0 && pixel.y == 0 && pixel.z == 0) ppf("Pinwheel  Center: (%d, %d) SwirlVal: %d Symmetry: %d Petals: %d zTwist: %d\n", leds.middle.x, leds.middle.y, swirlVal, symmetry, petals, zTwist);
     // ppf("pixel %2d,%2d,%2d -> %2d,%2d,%2d Angle: %3d Petal: %2d\n", pixel.x, pixel.y, pixel.z, mapped.x, mapped.y, mapped.z, angle, value);
-
-    indexV = leds.XYZUnprojected(mapped);
   }
 }; //PinwheelProjection
 
@@ -279,7 +277,7 @@ class MultiplyProjection: public Projection {
     dp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) {
     // UI Variables
     Coord3D proMulti = leds.projectionData.read<Coord3D>();
     bool3State    mirror   = leds.projectionData.read<bool3State>();
@@ -295,7 +293,7 @@ class MultiplyProjection: public Projection {
     else pixel = pixel % originalSize;
 
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    dp.addPixel(leds, pixel);
   }
 
 }; //MultiplyProjection
@@ -339,10 +337,10 @@ class TiltPanRollProjection: public Projection {
     }});
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) {
     // adjustSizeAndPixel(leds, pixel); // Uncomment to expand grid to fill corners
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    dp.addPixel(leds, pixel);
   }
 
   void adjustSizeAndPixel(LedsLayer &leds, Coord3D &pixel) {
@@ -380,17 +378,16 @@ class DistanceFromPointProjection: public Projection {
 
   public:
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) {
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
-    if (leds.projectionDimension == _2D && leds.effectDimension == _2D) postProcessing(leds, indexV);
+    dp.addPixel(leds, pixel);
+    if (leds.projectionDimension == _2D && leds.effectDimension == _2D) postProcessing(leds, pixel);
   }
 
-  void postProcessing(LedsLayer &leds, uint16_t &indexV) {
+  void postProcessing(LedsLayer &leds, Coord3D &pixel) {
     //2D2D: inverse mapping
     Trigo trigo(leds.size.x-1); // 8 bits trigo with period leds.size.x-1 (currentl Float trigo as same performance)
     float minDistance = 10;
-    // ppf("checking indexV %d\n", indexV);
     for (uint16_t x=0; x<leds.size.x && minDistance > 0.5f; x++) {
       // float xFactor = x * TWO_PI / (float)(leds.size.x-1); //between 0 .. 2PI
 
@@ -415,17 +412,19 @@ class DistanceFromPointProjection: public Projection {
         // }
 
         // if the new XY i
-        if (indexV == leds.XY(x2New, y2New)) { //(uint8_t)xNew + (uint8_t)yNew * size.x) {
-          // ppf("  found one %d => %d=%d+%d*%d (%f+%f*%d) [%f]\n", indexV, x+y*size.x, x,y, size.x, xNew, yNew, size.x, distance);
-          indexV = leds.XY(x, y);
+        if (pixel == Coord3D({(int)x2New, (int)y2New, 0})) {
+          // ppf("  found one %d => %d=%d+%d*%d (%f+%f*%d) [%f]\n", x+y*size.x, x,y, size.x, xNew, yNew, size.x, distance);
+          pixel.x = x;
+          pixel.y = y;
+          pixel.z = 0;
 
-          if (indexV%10 == 0) ppf("."); //show some progress as this projection is slow (Need S007 to optimize ;-)
+          if (pixel.x%10 == 0) ppf("."); //show some progress as this projection is slow (Need S007 to optimize ;-)
                                       
           minDistance = 0.0f; // stop looking further
         }
       }
     }
-    if (minDistance > 0.5f) indexV = UINT16_MAX; //do not show this pixel
+    if (minDistance > 0.5f) {pixel.x = UINT16_MAX; return;} //do not show this pixel
   }
 }; //DistanceFromPointProjection
 
@@ -451,12 +450,12 @@ class Preset1Projection: public Projection {
     tp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) {
     MultiplyProjection mp;
-    mp.addPixel(leds, pixel, indexV);
+    mp.addPixel(leds, pixel);
 
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    dp.addPixel(leds, pixel);
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
@@ -597,7 +596,7 @@ class MirrorReverseTransposeProjection: public Projection {
     dp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) { 
+  void addPixel(LedsLayer &leds, Coord3D &pixel) { 
     MRTData data = leds.projectionData.read<MRTData>();
 
     // Mirror
@@ -616,7 +615,7 @@ class MirrorReverseTransposeProjection: public Projection {
     if (data.transposeYZ) { int temp = pixel.y; pixel.y = pixel.z; pixel.z = temp; }
 
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    dp.addPixel(leds, pixel);
   }
 }; //MirrorReverseTransposeProjection
 
@@ -670,7 +669,7 @@ class MirrorProjection: public Projection {
     dp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) {
     // UI Variables
     bool3State mirrorX = leds.projectionData.read<bool3State>();
     bool3State mirrorY = leds.projectionData.read<bool3State>();
@@ -682,7 +681,7 @@ class MirrorProjection: public Projection {
     if (mirrorZ && pixel.z >= originalSize.z) pixel.z = originalSize.z * 2 - 1 - pixel.z;
     
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    dp.addPixel(leds, pixel);
   }
 
 }; //MirrorProjection
@@ -722,7 +721,7 @@ class MirrorProjection: public Projection {
 //     }
 //   }
 // 
-//   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) { 
+//   void addPixel(LedsLayer &leds, Coord3D &pixel) { 
 //     bool3State reverseX = leds.projectionData.read<bool3State>();
 //     bool3State reverseY = leds.projectionData.read<bool3State>();
 //     bool3State reverseZ = leds.projectionData.read<bool3State>();
@@ -732,7 +731,7 @@ class MirrorProjection: public Projection {
 //     if (reverseZ) pixel.z = leds.size.z - pixel.z - 1;
 // 
 //     DefaultProjection dp;
-//     dp.addPixel(leds, pixel, indexV);
+//     dp.addPixel(leds, pixel);
 //   }
 // 
 // }; //ReverseProjection
@@ -784,7 +783,7 @@ class MirrorProjection: public Projection {
 //     dp.addPixelsPre(leds);
 //   }
 // 
-//   void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+//   void addPixel(LedsLayer &leds, Coord3D &pixel) {
 //     // UI Variables
 //     bool3State transposeXY = leds.projectionData.read<bool3State>();
 //     bool3State transposeXZ = leds.projectionData.read<bool3State>();
@@ -795,7 +794,7 @@ class MirrorProjection: public Projection {
 //     if (transposeYZ) { int temp = pixel.y; pixel.y = pixel.z; pixel.z = temp; }
 // 
 //     DefaultProjection dp;
-//     dp.addPixel(leds, pixel, indexV);
+//     dp.addPixel(leds, pixel);
 //   }
 // 
 // }; //TransposeProjection
@@ -835,7 +834,7 @@ class GroupingSpacingProjection: public Projection {
     dp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) {
     Coord3D grouping = leds.projectionData.read<Coord3D>().maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
     Coord3D spacing  = leds.projectionData.read<Coord3D>().maximum(Coord3D{0, 0, 0});
     Coord3D GS = grouping + spacing;
@@ -844,12 +843,11 @@ class GroupingSpacingProjection: public Projection {
     if (modPixel.x < grouping.x && modPixel.y < grouping.y && modPixel.z < grouping.z) 
       pixel /= GS;
     else {
-      indexV = UINT16_MAX;
-      return;
+      pixel.x = UINT16_MAX; return;
     }
 
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    dp.addPixel(leds, pixel);
   }
 }; //GroupingSpacingProjection
 
@@ -876,9 +874,9 @@ class ScrollingProjection: public Projection {
     mp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) {
     MirrorProjection mp;
-    mp.addPixel(leds, pixel, indexV);
+    mp.addPixel(leds, pixel);
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
@@ -912,9 +910,9 @@ class AccelerationProjection: public Projection {
     ui->initSlider(parentVar, "deadzone", deadzone, 0, 100, false);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) {
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    dp.addPixel(leds, pixel);
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
@@ -981,22 +979,23 @@ class CheckerboardProjection: public Projection {
     dp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) {
     Coord3D size = leds.projectionData.read<Coord3D>().maximum(Coord3D{1, 1, 1});
     bool3State invert = leds.projectionData.read<bool3State>();
     bool3State group = leds.projectionData.read<bool3State>();
 
     Coord3D check = pixel / size;
     if ((check.x + check.y + check.z) % 2 == 0) {
-      if (invert) indexV = UINT16_MAX; return;
+      if (invert) pixel.x = UINT16_MAX; return;
     }
     else {
-      if (!invert) indexV = UINT16_MAX; return;
+      if (!invert) pixel.x = UINT16_MAX; return;
     }
 
     if (group) pixel /= size;
+
     DefaultProjection dp; 
-    dp.addPixel(leds, pixel, indexV);
+    dp.addPixel(leds, pixel);
   }
 }; //CheckerboardProjection
 
@@ -1075,7 +1074,7 @@ class RotateProjection: public Projection {
     data->midY = leds.size.y / 2;
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel, uint16_t &indexV) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) {
     RotateData *data = leds.projectionData.readWrite<RotateData>();
 
     if (data->expand) {
@@ -1089,7 +1088,7 @@ class RotateProjection: public Projection {
     }
 
     DefaultProjection dp;
-    dp.addPixel(leds, pixel, indexV);
+    dp.addPixel(leds, pixel);
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
