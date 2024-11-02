@@ -122,7 +122,9 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     // projections.push_back(new MirrorProjection);
     // projections.push_back(new TransposeProjection);
     projections.push_back(new ScrollingProjection);
-    projections.push_back(new AccelerationProjection);
+    #ifdef STARBASE_USERMOD_MPU6050
+      projections.push_back(new AccelerationProjection);
+    #endif
     projections.push_back(new CheckerboardProjection);
     projections.push_back(new RotateProjection);
   };

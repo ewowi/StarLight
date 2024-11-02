@@ -14,6 +14,7 @@
 
 #include "../Sys/SysModSystem.h"  //for sys->now
 #include "../Sys/SysModFiles.h"
+#include "../Sys/SysModUI.h"
 
 #ifdef STARBASE_USERMOD_MPU6050
   #include "../User/UserModMPU6050.h"

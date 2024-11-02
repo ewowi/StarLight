@@ -852,7 +852,7 @@ class GroupingSpacingProjection: public Projection {
 }; //GroupingSpacingProjection
 
 class ScrollingProjection: public Projection {
-  const char * name() {return "Scrolling WIP";}
+  const char * name() {return "Scrolling";}
   const char * tags() {return "💫";}
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
@@ -894,8 +894,10 @@ class ScrollingProjection: public Projection {
   }
 }; //ScrollingProjection
 
+#ifdef STARBASE_USERMOD_MPU6050
+
 class AccelerationProjection: public Projection {
-  const char * name() {return "Acceleration WIP";}
+  const char * name() {return "Acceleration";}
   const char * tags() {return "💫🧭";}
 
   public:
@@ -939,6 +941,8 @@ class AccelerationProjection: public Projection {
     }
   }
 }; //Acceleration
+
+#endif
 
 class CheckerboardProjection: public Projection {
   const char * name() {return "Checkerboard";}
