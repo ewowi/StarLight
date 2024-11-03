@@ -164,7 +164,7 @@ static float _time(float j) {
           }
 
           if (exeID != UINT8_MAX)
-            liveM->executeTask(exeID);
+            liveM->executeBackgroundTask(exeID);
           else 
             ppf("mapInitAlloc task not created (compilation error?) %s\n", fileName);
         }
@@ -273,8 +273,6 @@ static float _time(float j) {
       default: return false;
     }});
 
-    addDefaultExternals();
-
     runningPrograms.setPrekill(preKill, postKill); //for clockless driver...
     runningPrograms.setFunctionToSync(show);
 
@@ -296,10 +294,6 @@ static float _time(float j) {
     addExternalFun("float", "time", "(float a1)", (void *)_time);
     addExternalFun("float", "triangle", "(float a1)", (void *)_triangle);
     addExternalFun("uint32_t", "millis", "()", (void *)millis);
-
-    // addExternalFun("delay", [](int ms) {delay(ms);});
-    // addExternalFun("digitalWrite", [](int pin, int val) {digitalWrite(pin, val);});
-
   }
 
   void UserModLive::addExternalVal(string result, string name, void * ptr) {

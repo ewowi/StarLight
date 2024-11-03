@@ -11,7 +11,7 @@ uint8_t blinkPin; //tbd: assigment here
 
 void setup()
 {
-  blinkPin = 5;  //tbd make blinkPin an ui control
+  blinkPin = 2;  //tbd make blinkPin an ui control
 
   //pinsM->allocatePin(2, "Blink", "On board led"); //class methods and strings supported?
   pinMode(blinkPin, OUTPUT); //tbd: part of allocatePin?
