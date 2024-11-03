@@ -722,6 +722,7 @@
             #if STARBASE_USERMOD_LIVE & STARLIGHT_LIVE_MAPPING
               driver.setMapLed(&mapfunction);
             #endif
+            driver.setGamma(255.0/255.0, 176.0/255.0, 240.0/255.0);
             //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
           #endif
           mdl->callVarOnChange(mdl->findVar("Fixture", "brightness"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)

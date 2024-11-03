@@ -28,7 +28,14 @@
   //used in I2SClocklessVirtualLedDriver.h,
   //see https://github.com/ewowi/I2SClocklessVirtualLedDriver read me
   #define NUM_LEDS_PER_STRIP 256 // for I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY ...
-  #define CORE_DEBUG_LEVEL 1 //surpress ESP_LOGE compile error
+
+  #define CORE_DEBUG_LEVEL 1 //surpress ESP_LOGE compile error, increase to 6 when debugging
+  //catch errors from library, enable when debugging
+  #define ICVD_LOGD(tag, format, ...) //ppf(format, ##__VA_ARGS__)
+  #define ICVD_LOGE(tag, format, ...) //ppf(format, ##__VA_ARGS__)
+  #define ICVD_LOGV(tag, format, ...) //ppf(format, ##__VA_ARGS__)
+  #define ICVD_LOGI(tag, format, ...) //ppf(format, ##__VA_ARGS__)
+
   #define USE_FASTLED //so CRGB is supported e.g. in initLed
   // #define __BRIGHTNESS_BIT 5 //underscore ! default 8, set off for the moment as ui brightness stopped working, will look at it later. 
                                 //the max brightness will be 2^5=32 If you remember when I have discussed about the fact that the showPixels is not always occupied with gives time for other processes to run. Well the less time we 'spent' in buffer calcualtion the better.for instance if you do not use gamma calculation and you can cope with a brightness that is a power of 2:
