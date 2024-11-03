@@ -3001,9 +3001,7 @@ class LiveEffect: public Effect {
 
               if (leds.liveEffectID == UINT8_MAX) {
 
-                liveM->scPreBaseScript = "";
-
-                liveM->addExternals();
+                liveM->addDefaultExternals();
 
                 liveM->addExternalFun("CRGB", "hsv", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)hsv);
                 liveM->addExternalFun("CRGB", "rgb", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)rgb);

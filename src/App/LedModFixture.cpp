@@ -384,11 +384,8 @@
         if (liveFixtureID == UINT8_MAX) {
           //if the file is already compiled, use it, otherwise compile new one
 
-          liveM->scPreBaseScript = "";
+          liveM->addDefaultExternals();
 
-          liveM->addExternals();
-
-          //adding to scPreBaseScript
           liveM->addExternalFun("void", "setFactor", "(uint8_t a1)", (void *)_setFactor);
           liveM->addExternalFun("void", "setLedSize", "(uint8_t a1)", (void *)_setLedSize);
           liveM->addExternalFun("void", "setShape", "(uint8_t a1)", (void *)_setShape);

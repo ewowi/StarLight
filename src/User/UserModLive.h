@@ -25,7 +25,7 @@ public:
 
   void setup() override;
 
-  void addExternals();
+  void addDefaultExternals();
 
   void addExternalVal(std::string result, std::string name, void * ptr);
 

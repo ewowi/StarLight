@@ -209,7 +209,7 @@ void SysModWeb::connectedChanged() {
 
 
     // ppf("%s server (re)started\n", name); //causes crash for some reason...
-    ppf("server (re)started\n");
+    ppf("connectedChanged: web server (re)started %s \n", name);
   }
   //else remove handlers...
 }

@@ -153,9 +153,7 @@ static float _time(float j) {
           uint8_t exeID = liveM->findExecutable(fileName);
           if (exeID == UINT8_MAX) {
 
-            scPreBaseScript = "";
-
-            addExternals();
+            addDefaultExternals();
 
             //to run blinkSL.sc
             addExternalFun("void", "pinMode", "(int a1, int a2)", (void *)&pinMode);
@@ -275,14 +273,17 @@ static float _time(float j) {
       default: return false;
     }});
 
-    addExternals();
+    addDefaultExternals();
 
     runningPrograms.setPrekill(preKill, postKill); //for clockless driver...
     runningPrograms.setFunctionToSync(show);
 
   } //setup
 
-  void UserModLive::addExternals() {
+  void UserModLive::addDefaultExternals() {
+
+    scPreBaseScript = "";
+
     //Live Scripts defaults
     addExternalFun("void", "show", "()", (void *)&show); //comment if setup/loop model works
     // addExternalFun("void", "showM", "()", (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
