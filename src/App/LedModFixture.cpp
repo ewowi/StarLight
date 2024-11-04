@@ -25,6 +25,60 @@
 
 #define PACKAGE_SIZE 5120 //4096 is not ideal as also header info, multiples of 1024 sounds good...
 
+#ifdef STARBASE_USERMOD_LIVE
+  #include "User/UserModLive.h"
+  static void _setFactor(uint8_t a1) {fix->factor = a1;}
+  static void _setLedSize(uint8_t a1) {fix->ledSize = a1;}
+  static void _setShape(uint8_t a1) {fix->shape = a1;}
+  static void _addPixelsPre() {fix->addPixelsPre();}
+  static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {fix->addPixel({a1, a2, a3});}
+  static void _addPin(uint8_t a1) {fix->addPin(a1);}
+  static void _addPixelsPost() {fix->addPixelsPost();}
+
+  #ifdef STARLIGHT_LIVE_MAPPING
+    uint16_t mapResult = UINT16_MAX;
+
+    uint16_t mapLed(uint16_t pos)
+    {
+      LedsLayer *leds = fix->layers[0]; // only works for layer 0
+      if (leds && !leds->projection) { // projection 0: Live Mapping
+        if (false && fix->liveFixtureID != UINT8_MAX) { // there is a Live Fixture: not stable yet.
+          mapResult = pos;
+          if (pos == 0) ppf("±"); // to see if it is invoked...
+          liveM->executeTask(fix->liveFixtureID, "mapLed", pos); //if not existst then Impossible to execute @_map: not found and crash -> check existence before?
+
+          return mapResult; //set by this task
+        } else { // hardcoded panel map
+          int panelnumber = pos / 256;
+          int datainpanel = pos % 256;
+          int horizontalPanels = 128 / 16; //fix->fixSize.x/y not available for some reason
+          int verticalPanels = 96 / 16;
+
+          int Xp = horizontalPanels - 1 - panelnumber % horizontalPanels; //wired from right to left
+          Xp = (Xp + 1) % horizontalPanels; //fix for ewowi panels
+
+          int yp = panelnumber / horizontalPanels;
+          int X = Xp; //panel on the x axis
+          int Y = yp; //panel on the y axis
+
+          int y = datainpanel % 16; //ewowi panel fix
+          int x = datainpanel / 16;
+
+          X = X * 16 + x;
+
+          if (x % 2 == 0) //serpentine
+            Y = Y * 16 + y;
+          else
+            Y = Y * 16 + 15 - y;
+
+          return (verticalPanels * 16 - 1 - Y) * 16 * horizontalPanels + (horizontalPanels * 16 - 1 - X);
+        }
+      } else
+        return pos;
+    }
+  #endif
+#endif
+
 
   void LedModFixture::setup() {
     SysModule::setup();
@@ -121,19 +175,25 @@
                 previewBufferIndex = headerBytesPreview;
               }
 
+              uint16_t indexP2 = indexP;
+              //causes too much flickering for some reason, so leave it for now
+              // #ifdef STARLIGHT_LIVE_MAPPING
+              //   indexP2 = mapLed(indexP);
+              // #endif
+
               if (bytesPerPixel == 1) {
                 //encode rgb in 8 bits: 3 for red, 3 for green, 2 for blue (0xE0 = 01110000)
-                buffer[previewBufferIndex++] = (ledsP[indexP].red & 0xE0) | ((ledsP[indexP].green & 0xE0)>>3) | (ledsP[indexP].blue >> 6);
+                buffer[previewBufferIndex++] = (ledsP[indexP2].red & 0xE0) | ((ledsP[indexP2].green & 0xE0)>>3) | (ledsP[indexP2].blue >> 6);
               }
               else if (bytesPerPixel == 2) {
                 //encode rgb in 16 bits: 5 for red, 6 for green, 5 for blue
-                buffer[previewBufferIndex++] = (ledsP[indexP].red & 0xF8) | (ledsP[indexP].green >> 5); // Take 5 bits of Red component and 3 bits of G component
-                buffer[previewBufferIndex++] = ((ledsP[indexP].green & 0x1C) << 3) | (ledsP[indexP].blue  >> 3); // Take remaining 3 Bits of G component and 5 bits of Blue component
+                buffer[previewBufferIndex++] = (ledsP[indexP2].red & 0xF8) | (ledsP[indexP2].green >> 5); // Take 5 bits of Red component and 3 bits of G component
+                buffer[previewBufferIndex++] = ((ledsP[indexP2].green & 0x1C) << 3) | (ledsP[indexP2].blue  >> 3); // Take remaining 3 Bits of G component and 5 bits of Blue component
               }
               else {
-                buffer[previewBufferIndex++] = ledsP[indexP].red;
-                buffer[previewBufferIndex++] = ledsP[indexP].green;
-                buffer[previewBufferIndex++] = ledsP[indexP].blue;
+                buffer[previewBufferIndex++] = ledsP[indexP2].red;
+                buffer[previewBufferIndex++] = ledsP[indexP2].green;
+                buffer[previewBufferIndex++] = ledsP[indexP2].blue;
               }
             } //loop
 
@@ -251,6 +311,15 @@
       default: return false; 
     }});
 
+    // #if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+    //   ui->initNumber(parentVar, "dma", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    //     case onLoop1s:
+    //         mdl->setValue(var, _proposed_dma_extension);
+    //       return true;
+    //     default: return false;
+    //   }});
+    // #endif
+
     #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
       fix->setMaxPowerBrightnessFactor = 90; //0..255
     #else
@@ -298,64 +367,6 @@
   void LedModFixture::loop1s() {
     memmove(tickerTape, tickerTape+1, strlen(tickerTape)); //no memory leak ?
   }
-
-#ifdef STARBASE_USERMOD_LIVE
-  #include "User/UserModLive.h"
-  static void _setFactor(uint8_t a1) {fix->factor = a1;}
-  static void _setLedSize(uint8_t a1) {fix->ledSize = a1;}
-  static void _setShape(uint8_t a1) {fix->shape = a1;}
-  static void _addPixelsPre() {fix->addPixelsPre();}
-  static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {fix->addPixel({a1, a2, a3});}
-  static void _addPin(uint8_t a1) {fix->addPin(a1);}
-  static void _addPixelsPost() {fix->addPixelsPost();}
-
-  #ifdef STARLIGHT_LIVE_MAPPING
-    uint16_t mapResult = UINT16_MAX;
-
-    uint16_t mapfunction(uint16_t pos)
-    {
-      if (!fix->layers[0]->projection) { // projection 0
-        if (false && fix->liveFixtureID != UINT8_MAX) {
-          mapResult = pos;
-          if (pos == 0) ppf("±"); // to see if it is invoked...
-          liveM->executeTask(fix->liveFixtureID, "map", pos); //if not existst then Impossible to execute @_map: not found and crash -> check existence before?
-
-          return mapResult; //set by this task
-        } else { // this is hardcoded and only for testing purposes
-          int panelnumber = pos / 256;
-          int datainpanel = pos % 256;
-          int Xp = 7 - panelnumber % 8;
-
-          //fix for ewowi panels
-          Xp=Xp+1;
-          if (Xp==8) {Xp=0;}
-
-          int yp = panelnumber / 8;
-          int X = Xp; //panel on the x axis
-          int Y = yp; //panel on the y axis
-
-          int y = datainpanel % 16;
-          int x = datainpanel / 16;
-
-          if (x % 2 == 0) //serpentine
-          {
-            Y = Y * 16 + y;
-            X = X * 16 + x;
-          }
-          else
-          {
-            Y = Y * 16 + 16 -y-1;
-            X = X * 16 + x;
-          }
-
-          return (95-Y) * 16 * 8 + (127-X);
-        }
-      } else
-        return pos;
-    }
-  #endif
-#endif
-
 
   void LedModFixture::mapInitAlloc() {
 
@@ -407,7 +418,7 @@
           pass = 2;
           liveM->executeTask(liveFixtureID, "c");
         }
-        else 
+        else
           ppf("mapInitAlloc Live Fixture not created (compilation error?) %s\n", fileName);
 
       } else 
@@ -719,8 +730,8 @@
             //void initled( uint8_t * leds, int * pins, int numstrip, int NUM_LED_PER_STRIP)
           #else
             driver.initled((uint8_t*) ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
-            #if STARBASE_USERMOD_LIVE & STARLIGHT_LIVE_MAPPING
-              driver.setMapLed(&mapfunction);
+            #if STARLIGHT_LIVE_MAPPING
+              driver.setMapLed(&mapLed);
             #endif
             driver.setGamma(255.0/255.0, 176.0/255.0, 240.0/255.0);
             //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
@@ -732,8 +743,8 @@
         int pins[6] = { STARLIGHT_ICVLD_PINS };
         driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN);
         // driver.enableShowPixelsOnCore(1);
-        #if STARBASE_USERMOD_LIVE & STARLIGHT_LIVE_MAPPING
-          driver.setMapLed(&mapfunction);
+        #if STARLIGHT_LIVE_MAPPING
+          driver.setMapLed(&mapLed);
         #endif
         driver.setGamma(255.0/255.0, 176.0/255.0, 240.0/255.0);
         driver.setBrightness(10);

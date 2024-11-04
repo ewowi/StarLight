@@ -280,7 +280,7 @@ static float _time(float j) {
 
   void UserModLive::addDefaultExternals() {
 
-    scPreBaseScript = "";
+    scScript = "";
 
     //Live Scripts defaults
     addExternalFun("void", "show", "()", (void *)&show); //comment if setup/loop model works
@@ -299,13 +299,13 @@ static float _time(float j) {
   void UserModLive::addExternalVal(string result, string name, void * ptr) {
     if (findLink(name, externalType::value) == -1) //allready added earlier
       addExternal(name, externalType::value, ptr);
-    scPreBaseScript += "external " + result + " " + name + ";\n";
+    scScript += "external " + result + " " + name + ";\n";
   }
 
   void UserModLive::addExternalFun(string result, string name, string parameters, void * ptr) {
     if (findLink(name, externalType::function) == -1) //allready added earlier
       addExternal(name, externalType::function, ptr);
-    scPreBaseScript += "external " + result + " " + name + parameters + ";\n";
+    scScript += "external " + result + " " + name + parameters + ";\n";
   }
 
   // void UserModLive::addExternalFun(string name, std::function<void(int)> fun) {
@@ -393,8 +393,6 @@ static float _time(float j) {
     }
     else {
 
-      string scScript = scPreBaseScript;
-
       unsigned preScriptNrOfLines = 0;
 
       for (size_t i = 0; i < scScript.length(); i++)
@@ -402,8 +400,9 @@ static float _time(float j) {
         if (scScript[i] == '\n')
           preScriptNrOfLines++;
       }
-
       ppf("preScript of %s has %d lines\n", fileName, preScriptNrOfLines+1); //+1 to subtract the line from parser error line reported
+
+      // string scScript = scScript;
 
       scScript += string(f.readString().c_str()); // add sc file
 

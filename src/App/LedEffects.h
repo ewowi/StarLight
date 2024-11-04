@@ -932,29 +932,44 @@ class LinesEffect: public Effect {
   const char * tags() {return "💫";}
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
-    ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(60));
-    ui->initCheckBox(parentVar, "vertical", leds.effectData.write<bool3State>(true));
+    ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(32));
+    // ui->initCheckBox(parentVar, "vertical", leds.effectData.write<bool3State>(true));
+    ui->initCheckBox(parentVar, "panelTest", leds.effectData.write<bool3State>(false));
   }
 
   void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
     uint8_t bpm = leds.effectData.read<uint8_t>();
-    bool3State vertical = leds.effectData.read<bool3State>();
+    // bool3State vertical = leds.effectData.read<bool3State>();
+    bool3State panelTest = leds.effectData.read<bool3State>();
+    int   *frameNr = leds.effectData.readWrite<int>();
 
     leds.fadeToBlackBy(100);
 
-    Coord3D pos = {0,0,0};
-    if (vertical) {
+    if (panelTest) {
+      for (int i=0;i<leds.size.x * leds.size.y / 256;i++) //panels
+      {
+        //pixels in panels
+        for (int j=0;j<i+1;j++)
+        {
+            leds[j+i*256]=CRGB(255,0,0); //no projection => ledsV = ledsP
+        }
+      }
+    } else {
+      Coord3D pos = {0,0,0};
       pos.x = map(beat16( bpm), 0, UINT16_MAX, 0, leds.size.x ); //instead of call%width
 
       for (pos.y = 0; pos.y <  leds.size.y; pos.y++) {
-        leds[pos] = CHSV( sys->now/50, 255, 255);
+        int colorNr = (*frameNr / leds.size.y) % 3;
+        leds[pos] = colorNr == 0?CRGB::Red:colorNr == 1?CRGB::Green:CRGB::Blue;
       }
-    } else {
+      pos = {0,0,0};
       pos.y = map(beat16( bpm), 0, UINT16_MAX, 0, leds.size.y ); //instead of call%height
       for (pos.x = 0; pos.x <  leds.size.x; pos.x++) {
-        leds[pos] = CHSV( sys->now/50, 255, 255);
+        int colorNr = (*frameNr / leds.size.x) % 3;
+        leds[pos] = colorNr == 0?CRGB::Red:colorNr == 1?CRGB::Green:CRGB::Blue;
       }
+      (*frameNr)++;
     }
   }
 }; // LinesEffect
@@ -3019,10 +3034,10 @@ class LiveEffect: public Effect {
                 liveM->addExternalVal("uint8_t", "slider2", &slider2); //used in map function
                 liveM->addExternalVal("uint8_t", "slider3", &slider3); //used in map function
 
-                liveM->scPreBaseScript += "define width " + std::to_string(leds.size.x) + "\n";
-                liveM->scPreBaseScript += "define height " + std::to_string(leds.size.y) + "\n";
-                liveM->scPreBaseScript += "define NUM_LEDS " + std::to_string(leds.nrOfLeds) + "\n";
-                liveM->scPreBaseScript += "define panel_width " + std::to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
+                liveM->scScript += "define width " + std::to_string(leds.size.x) + "\n";
+                liveM->scScript += "define height " + std::to_string(leds.size.y) + "\n";
+                liveM->scScript += "define NUM_LEDS " + std::to_string(leds.nrOfLeds) + "\n";
+                liveM->scScript += "define panel_width " + std::to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
 
                 leds.liveEffectID = liveM->compile(fileName, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
               }

@@ -29,12 +29,12 @@
   //see https://github.com/ewowi/I2SClocklessVirtualLedDriver read me
   #define NUM_LEDS_PER_STRIP 256 // for I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY ...
 
-  #define CORE_DEBUG_LEVEL 1 //surpress ESP_LOGE compile error, increase to 6 when debugging
+  #define CORE_DEBUG_LEVEL 0 //surpress ESP_LOGE compile error, increase to 6 when debugging
   //catch errors from library, enable when debugging
-  #define ICVD_LOGD(tag, format, ...) //ppf(format, ##__VA_ARGS__)
-  #define ICVD_LOGE(tag, format, ...) //ppf(format, ##__VA_ARGS__)
-  #define ICVD_LOGV(tag, format, ...) //ppf(format, ##__VA_ARGS__)
-  #define ICVD_LOGI(tag, format, ...) //ppf(format, ##__VA_ARGS__)
+  #define ICVD_LOGD(tag, format, ...) ppf(format, ##__VA_ARGS__)
+  #define ICVD_LOGE(tag, format, ...) ppf(format, ##__VA_ARGS__)
+  #define ICVD_LOGV(tag, format, ...) ppf(format, ##__VA_ARGS__)
+  #define ICVD_LOGI(tag, format, ...) ppf(format, ##__VA_ARGS__)
 
   #define USE_FASTLED //so CRGB is supported e.g. in initLed
   // #define __BRIGHTNESS_BIT 5 //underscore ! default 8, set off for the moment as ui brightness stopped working, will look at it later. 
@@ -46,9 +46,11 @@
   #if STARBASE_USERMOD_LIVE & STARLIGHT_LIVE_MAPPING
     #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE) //works no flickering anymore (due to __NB_DMA_BUFFER)!
     // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY) //not working: IllegalInstruction Backtrace: 0x5515d133:0x3ffb1fc0 |<-CORRUPTED
-    #define __NB_DMA_BUFFER 10 //or 10 ... underscore ! default 2 (2 causes flickering in case of mapping). 
+    #define __NB_DMA_BUFFER 10 //default 2 (2 causes flickering in case of mapping, 5 also, 10 a bit, 15 a bit, 20 not, on esp32devICLVD). For now stays at 10 as normal esp / 12288 leds is more stable
+    // #define _DMA_EXTENSTION 64 //not needed (yet)
   #else
     #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) //works but mapping using StarLight mappingTable needed
+    #define __NB_DMA_BUFFER 10
   #endif
 
   #include "I2SClocklessVirtualLedDriver.h"
