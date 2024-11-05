@@ -30,11 +30,12 @@ void main() {
   for (int panelY = 0; panelY < verticalPanels; panelY++) {
     for (int panelX = horizontalPanels-1; panelX >=0; panelX--) {
 
+      int panelX2 = (panelX + 1) % horizontalPanels; //ewowi panel correction
+
       for (int x=0; x<16;x++) {
         for (int y=15; y>=0; y--) {
           int y2 = y; if (x%2 == 0) {y2=15-y;} //serpentine
-          int panelX2 = (panelX + 1) % horizontalPanels; //ewowi panel correction
-          addPixel(panelX*16+x,panelY*16+y2,0);
+          addPixel(panelX2*16+x,panelY*16+y2,0);
         }
       }
 

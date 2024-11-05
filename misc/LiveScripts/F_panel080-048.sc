@@ -26,18 +26,37 @@ void mapLed(uint16_t pos) {
   mapResult = (verticalPanels * 16 - 1 - Y) * 16 * horizontalPanels + (horizontalPanels * 16 - 1 - X);
 }
 
-void main() {
-  for (int panelY = 0; panelY < verticalPanels; panelY++) {
-    for (int panelX = horizontalPanels-1; panelX >=0; panelX--) {
-
-      for (int x=0; x<16;x++) {
-        for (int y=0; y<16; y++) {
-          int y2 = y; if (x%2 == 0) {y2=15-y;} //serpentine
-          int panelX2 = (panelX + 1)%horizontalPanels; //ewowi panel correction
-          addPixel(panelX*16+x,panelY*16+y2,0);
-        }
-      }
-
+void drawPanel(int panelX, int panelY) {
+  for (int x=0; x<16;x++) {
+    for (int y=15; y>=0; y--) {
+      int y2 = y; if (x%2 == 0) {y2=15-y;} //serpentine
+      addPixel(panelX * 16 + x, panelY * 16 + y2, 0);
     }
   }
+}
+
+void main() {
+  drawPanel(2, 1); //first panel is in the middle
+
+  //first row
+  drawPanel(4, 0); //2
+  drawPanel(3, 0); //3
+  drawPanel(1, 0); //4 swapped !!!
+  drawPanel(2, 0); //5 swapped !!!
+  drawPanel(0, 0); //6
+
+  //second row
+  drawPanel(4, 1); //7
+  drawPanel(3, 1); //8
+
+  drawPanel(0, 2); //9  !!!
+
+  drawPanel(1, 1); //10
+  drawPanel(0, 1); //11
+
+  //third row
+  drawPanel(4, 2); //12
+  drawPanel(3, 2); //13
+  drawPanel(2, 2); //14
+  drawPanel(1, 2); //15 no data coming from pin...
 }

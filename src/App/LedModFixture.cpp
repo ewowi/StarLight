@@ -34,9 +34,9 @@
   static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {fix->addPixel({a1, a2, a3});}
   static void _addPin(uint8_t a1) {fix->addPin(a1);}
   static void _addPixelsPost() {fix->addPixelsPost();}
+  uint16_t mapResult = UINT16_MAX; //for STARLIGHT_LIVE_MAPPING but script with this can also run when live mapping is disabled
 
   #ifdef STARLIGHT_LIVE_MAPPING
-    uint16_t mapResult = UINT16_MAX;
 
     uint16_t mapLed(uint16_t pos)
     {
@@ -482,6 +482,14 @@
         eff->initEffect(*leds, rowNr);
       }
       rowNr++;
+    }
+
+    //init pixels, with some debugging for panels
+    for (int i = 0; i < STARLIGHT_MAXLEDS / 256; i++) //panels
+    {
+      //pixels in panels
+      for (int j=0;j<256;j++)
+        ledsP[j+i*256]=j < i + 1?CRGB::Red: CRGB::Black; //each panel get as much red pixels as its sequence in the chain
     }
 
     //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples

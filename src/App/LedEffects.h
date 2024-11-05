@@ -951,9 +951,7 @@ class LinesEffect: public Effect {
       {
         //pixels in panels
         for (int j=0;j<i+1;j++)
-        {
-            leds[j+i*256]=CRGB(255,0,0); //no projection => ledsV = ledsP
-        }
+          leds[j+i*256]=CRGB::Red; //no projection => ledsV = ledsP
       }
     } else {
       Coord3D pos = {0,0,0};

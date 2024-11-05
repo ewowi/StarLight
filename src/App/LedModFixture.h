@@ -46,11 +46,12 @@
   #if STARBASE_USERMOD_LIVE & STARLIGHT_LIVE_MAPPING
     #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE) //works no flickering anymore (due to __NB_DMA_BUFFER)!
     // #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY) //not working: IllegalInstruction Backtrace: 0x5515d133:0x3ffb1fc0 |<-CORRUPTED
-    #define __NB_DMA_BUFFER 10 //default 2 (2 causes flickering in case of mapping, 5 also, 10 a bit, 15 a bit, 20 not, on esp32devICLVD). For now stays at 10 as normal esp / 12288 leds is more stable
     // #define _DMA_EXTENSTION 64 //not needed (yet)
   #else
     #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) //works but mapping using StarLight mappingTable needed
-    #define __NB_DMA_BUFFER 10
+  #endif
+  #ifdef STARLIGHT_DMA_BUFFER
+    #define __NB_DMA_BUFFER STARLIGHT_DMA_BUFFER
   #endif
 
   #include "I2SClocklessVirtualLedDriver.h"
