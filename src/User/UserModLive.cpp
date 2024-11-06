@@ -402,8 +402,6 @@ static float _time(float j) {
       }
       ppf("preScript of %s has %d lines\n", fileName, preScriptNrOfLines+1); //+1 to subtract the line from parser error line reported
 
-      // string scScript = scScript;
-
       scScript += string(f.readString().c_str()); // add sc file
 
       if (post) scScript += post;

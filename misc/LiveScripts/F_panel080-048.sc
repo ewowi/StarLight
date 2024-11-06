@@ -36,27 +36,27 @@ void drawPanel(int panelX, int panelY) {
 }
 
 void main() {
-  drawPanel(2, 1); //first panel is in the middle
+  drawPanel(2, 1); //first panel data come from the 8th pin!!
 
   //first row
-  drawPanel(4, 0); //2
-  drawPanel(3, 0); //3
-  drawPanel(1, 0); //4 swapped !!!
-  drawPanel(2, 0); //5 swapped !!!
-  drawPanel(0, 0); //6
+  drawPanel(4, 0); //second panel comes from pin 1
+  drawPanel(3, 0); //3th from 2
+  drawPanel(1, 0); //4th from 3 swapped !!!
+  drawPanel(2, 0); //5th from 4 swapped !!!
+  drawPanel(0, 0); //6th from 5
 
   //second row
-  drawPanel(4, 1); //7
-  drawPanel(3, 1); //8
+  drawPanel(4, 1); //7th from 6
+  drawPanel(3, 1); //8th from 7
 
-  drawPanel(0, 2); //9  !!!
+  drawPanel(0, 2); //9th from 15 !!! no data coming from pin...
 
-  drawPanel(1, 1); //10
-  drawPanel(0, 1); //11
+  drawPanel(1, 1); //10th from 9
+  drawPanel(0, 1); //11th from 10
 
   //third row
-  drawPanel(4, 2); //12
-  drawPanel(3, 2); //13
-  drawPanel(2, 2); //14
-  drawPanel(1, 2); //15 no data coming from pin...
+  drawPanel(4, 2); //12th from 11
+  drawPanel(3, 2); //13th from 12
+  drawPanel(2, 2); //14th from 13
+  drawPanel(1, 2); //15th from 14
 }

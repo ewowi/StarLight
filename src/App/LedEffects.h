@@ -2400,7 +2400,7 @@ class GEQEffect: public Effect {
     //     e131mod->patchChannel(3, "fadeOut", 255); // TODO: add constant for name
     //     e131mod->patchChannel(4, "ripple", 255);
     //     for (JsonObject childVar: mdl->findVar("E131", "watches")["n"].as<JsonArray>()) {
-    //       ui->callVarFun(childVar, UINT8_MAX, onUI);
+    //       Variable(childVar).triggerEvent(onUI);
     //     }
     //   }
 

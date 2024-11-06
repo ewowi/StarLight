@@ -664,7 +664,7 @@ public:
         //set fixture in fixture module
         Variable(mdl->findVar("Fixture", "fixture")).triggerEvent(onUI); //rebuild options
 
-        uint8_t value = ui->selectOptionToValue("fixture", fileName);
+        uint8_t value = ui->selectOptionToValue("Fixture.fixture", fileName);
         if (value != UINT8_MAX)
           mdl->setValue("Fixture", "fixture", value);
 

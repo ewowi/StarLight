@@ -121,7 +121,7 @@
         }
         return true;
       case onLoop: {
-        if (mappingStatus == 0 && bytesPerPixel && !doSendFixtureDefinition && web->ws.getClients().length()) { //not remapping and clients exists
+        if (!web->isBusy && mappingStatus == 0 && bytesPerPixel && !doSendFixtureDefinition && web->ws.getClients().length()) { //not remapping and clients exists
           var["interval"] = max(nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
 
           #define headerBytesPreview 5
@@ -345,7 +345,7 @@
 
     #endif
 
-    if (driverShow) {
+    if (driverShow && !web->isBusy) {
       // if statement needed as we need to wait until the driver is initialised
       #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
         #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
@@ -371,6 +371,14 @@
   void LedModFixture::mapInitAlloc() {
 
     mappingStatus = 2; //mapping in progress
+
+    //init pixels, with some debugging for panels
+    for (int i = 0; i < STARLIGHT_MAXLEDS / 256; i++) //panels
+    {
+      //pixels in panels
+      for (int j=0;j<256;j++)
+        ledsP[j+i*256]=j < i + 1?CRGB::Red: CRGB::Black; //each panel get as much red pixels as its sequence in the chain
+    }
 
     char fileName[32] = "";
 
@@ -482,14 +490,6 @@
         eff->initEffect(*leds, rowNr);
       }
       rowNr++;
-    }
-
-    //init pixels, with some debugging for panels
-    for (int i = 0; i < STARLIGHT_MAXLEDS / 256; i++) //panels
-    {
-      //pixels in panels
-      for (int j=0;j<256;j++)
-        ledsP[j+i*256]=j < i + 1?CRGB::Red: CRGB::Black; //each panel get as much red pixels as its sequence in the chain
     }
 
     //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
@@ -744,18 +744,25 @@
             driver.setGamma(255.0/255.0, 176.0/255.0, 240.0/255.0);
             //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
           #endif
-          mdl->callVarOnChange(mdl->findVar("Fixture", "brightness"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+          Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
           // driver.setBrightness(setMaxPowerBrightnessFactor / 256); //not brighter then the set limit (WIP)
         }
       #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+
+        for (int i=0; i< STARLIGHT_MAXLEDS; i++) ledsP[i] = CRGB::Black; //avoid very bright pixels during reboot (WIP)
         int pins[6] = { STARLIGHT_ICVLD_PINS };
+        
         driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN);
         // driver.enableShowPixelsOnCore(1);
         #if STARLIGHT_LIVE_MAPPING
           driver.setMapLed(&mapLed);
         #endif
         driver.setGamma(255.0/255.0, 176.0/255.0, 240.0/255.0);
-        driver.setBrightness(10);
+
+        if (driver.driverInit) driver.showPixels(WAIT);  //avoid very bright pixels during reboot (WIP)
+        driver.setBrightness(10); //avoid very bright pixels during reboot (WIP)
+
+        Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
       #endif
 
       doAllocPins = false;

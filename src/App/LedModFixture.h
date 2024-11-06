@@ -50,9 +50,6 @@
   #else
     #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) //works but mapping using StarLight mappingTable needed
   #endif
-  #ifdef STARLIGHT_DMA_BUFFER
-    #define __NB_DMA_BUFFER STARLIGHT_DMA_BUFFER
-  #endif
 
   #include "I2SClocklessVirtualLedDriver.h"
 
