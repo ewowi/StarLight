@@ -68,7 +68,7 @@ void SysModPins::setup() {
       ui->setComment(var, "Pin viewer 🚧");
       return true;
     case onLoop:
-      if (web->ws.getClients().length()) {
+      if (!web->isBusy && web->ws.getClients().length()) {
         var["interval"] = 100; //every 100 ms
 
         size_t len = NUM_DIGITAL_PINS + 5;
@@ -125,7 +125,7 @@ void SysModPins::loop20ms() {
     pinsChanged = false;
 
     for (JsonObject childVar: Variable(mdl->findVar("Pins", "pins")).children())
-      ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
+      Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
   }
 }
 

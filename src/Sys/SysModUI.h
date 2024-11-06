@@ -14,21 +14,6 @@
 #include "SysModPrint.h"
 #include "SysModModel.h"
 
-enum FunTypes
-{
-  onSetValue,
-  onUI,
-  onChange,
-  onLoop,
-  onLoop1s,
-  onAdd,
-  onDelete,
-  f_count
-};
-
-// https://stackoverflow.com/questions/59111610/how-do-you-declare-a-lambda-function-using-typedef-and-then-use-it-by-passing-to
-typedef std::function<uint8_t(JsonObject, uint8_t, uint8_t)> VarFun;
-
 struct VarLoop {
   JsonObject var;
   VarFun loopFun;
@@ -39,7 +24,6 @@ struct VarLoop {
 class SysModUI: public SysModule {
 
 public:
-  std::vector<VarFun> varFunctions;
 
   SysModUI();
 
@@ -281,7 +265,7 @@ public:
     if (doSetValue) {
       bool onSetValueExists = false;
       if (!var["fun"].isNull()) {
-        onSetValueExists = callVarFun(var, mdl->setValueRowNr, onSetValue);
+        onSetValueExists = variable.triggerEvent(onSetValue, mdl->setValueRowNr);
       }
       if (!onSetValueExists) { //setValue provided (if not null)
         return true;
@@ -294,11 +278,11 @@ public:
         if (var["value"].is<JsonArray>()) {
           //refill the vector
           for (uint8_t rowNr = 0; rowNr < variable.valArray().size(); rowNr++) {
-            onChangeExists |= mdl->callVarOnChange(var, rowNr, true); //init, also set var["p"]
+            onChangeExists |= variable.triggerEvent(onChange, rowNr, true); //init, also set var["p"]
           }
         }
         else {
-          onChangeExists = mdl->callVarOnChange(var, mdl->setValueRowNr, true); //init, also set var["p"] 
+          onChangeExists = variable.triggerEvent(onChange, mdl->setValueRowNr, true); //init, also set var["p"] 
         }
 
         if (onChangeExists)
@@ -308,104 +292,9 @@ public:
     return false;
   }
 
-  //checks if var has fun of type funType implemented by calling it and checking result (for onUI on RO var, also onSetValue is called)
-  bool callVarFun(const char * pid, const char * id, uint8_t rowNr = UINT8_MAX, uint8_t funType = onSetValue) {
-    JsonObject var = mdl->findVar(pid, id);
-    return callVarFun(var, rowNr, funType);
-  }
-
-  //checks if var has fun of type funType implemented by calling it and checking result (for onUI on RO var, also onSetValue is called)
-  bool callVarFun(JsonObject var, uint8_t rowNr = UINT8_MAX, uint8_t funType = onSetValue) {
-    Variable variable = Variable(var);
-    bool result = false;
-
-    //call varFun if exists
-    if (!var["fun"].isNull()) {//isNull needed here!
-      size_t funNr = var["fun"];
-      if (funNr < varFunctions.size()) {
-        result = varFunctions[funNr](var, rowNr, funType);
-        if (result && !variable.readOnly()) { //send rowNr = 0 if no rowNr
-          //only print vars with a value and not onSetValue as that changes a lot due to instances clients etc (tbd)
-          //don't print if onSetValue or oldValue is null
-          if (funType != onSetValue && (!var["oldValue"].isNull() || ((rowNr != UINT8_MAX) && !var["oldValue"][rowNr].isNull()))) {
-            ppf("%sFun %s.%s", funType==onSetValue?"val":funType==onUI?"ui":funType==onChange?"ch":funType==onAdd?"add":funType==onDelete?"del":"other", Variable(var).pid(), Variable(var).id());
-            if (rowNr != UINT8_MAX) {
-              ppf("[%d] (", rowNr);
-              if (funType == onChange) ppf("%s ->", var["oldValue"][rowNr].as<String>().c_str());
-              ppf("%s)\n", var["value"][rowNr].as<String>().c_str());
-            }
-            else {
-              ppf(" (");
-              if (funType == onChange) ppf("%s ->", var["oldValue"].as<String>().c_str());
-              ppf("%s)\n", variable.valueString().c_str());
-            }
-          }
-        } //varFun exists
-      }
-      else    
-        ppf("dev callVarFun function nr %s.%s outside bounds %d >= %d\n", variable.pid(), variable.id(), funNr, varFunctions.size());
-    } //varFun exists
-
-    //delete pointers after calling var.onDelete as var.onDelete might need the values
-    if (funType == onAdd || funType == onDelete) {
-
-      print->printJson("callVarFun add/del", var);
-      //if delete, delete also from vector ...
-      //find the columns of the table
-      if (funType == onDelete) {
-        for (JsonObject childVar: variable.children()) {
-          int pointer;
-          if (childVar["p"].is<JsonArray>())
-            pointer = childVar["p"][rowNr];
-          else
-            pointer = childVar["p"];
-
-          ppf("  delete vector %s[%d] %d\n", Variable(childVar).id(), rowNr, pointer);
-
-          if (pointer != 0) {
-            //pointer checks
-            // check rowNr as it can be 255 
-            if (childVar["type"] == "select" || childVar["type"] == "range" || childVar["type"] == "pin") {
-              std::vector<uint8_t> *valuePointer = (std::vector<uint8_t> *)pointer;
-              if (rowNr < (*valuePointer).size())
-                (*valuePointer).erase((*valuePointer).begin() + rowNr);
-            } else if (childVar["type"] == "number") {
-              std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
-              if (rowNr < (*valuePointer).size())
-                (*valuePointer).erase((*valuePointer).begin() + rowNr);
-            } else if (childVar["type"] == "checkbox") {
-              std::vector<bool3State> *valuePointer = (std::vector<bool3State> *)pointer;
-              if (rowNr < (*valuePointer).size())
-                (*valuePointer).erase((*valuePointer).begin() + rowNr);
-            } else if (childVar["type"] == "text" || childVar["type"] == "fileEdit") {
-              std::vector<VectorString> *valuePointer = (std::vector<VectorString> *)pointer;
-              if (rowNr < (*valuePointer).size())
-                (*valuePointer).erase((*valuePointer).begin() + rowNr);
-            } else if (childVar["type"] == "coord3D") {
-              std::vector<Coord3D> *valuePointer = (std::vector<Coord3D> *)pointer;
-              if (rowNr < (*valuePointer).size())
-                (*valuePointer).erase((*valuePointer).begin() + rowNr);
-            }
-            else
-              print->printJson("dev callVarFun onDelete type not supported yet", childVar);
-          }
-        }
-      } //onDelete
-      web->getResponseObject()[funType==onAdd?"onAdd":"onDelete"]["rowNr"] = rowNr;
-      print->printJson("callVarFun add/del response", web->getResponseObject());
-    } //onAdd onDelete
-
-    //for ro variables, call onSetValue to add also the value in responseDoc (as it is not stored in the model)
-    if (funType == onUI && variable.readOnly()) {
-      callVarFun(var, rowNr, onSetValue);
-    }
-
-    return result; //varFun exists
-  }
-
-  // assuming callVarFun(varID, UINT8_MAX, onUI); has been called before
-  uint8_t selectOptionToValue(const char *varID, const char *label) {
-    JsonArray options = web->getResponseObject()[varID]["options"];
+  // assuming Variable(varId).triggerEvent(onUI); has been called before
+  uint8_t selectOptionToValue(const char *pidid, const char *label) {
+    JsonArray options = web->getResponseObject()[pidid]["options"];
     // ppf("selectOptionToValue fileName %s %s\n", label, options[0].as<String>().c_str());
     uint8_t value = 0;
     for (JsonVariant option: options) {
@@ -437,7 +326,7 @@ public:
   }
   //return the options from onUI (don't forget to clear responseObject)
   JsonArray getOptions(JsonObject var) {
-    callVarFun(var, UINT8_MAX, onUI); //rebuild options
+    Variable(var).triggerEvent(onUI); //rebuild options
     char pidid[64];
     print->fFormat(pidid, sizeof(pidid), "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
     return web->getResponseObject()[pidid]["options"];

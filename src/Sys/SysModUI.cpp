@@ -43,7 +43,7 @@ void SysModUI::setup() {
         mdl->setValue(var, loopFunctions[rowNr].counter, rowNr);
       return true;
     case onLoop1s:
-      callVarFun(var, UINT8_MAX, onSetValue); //set the value (WIP)
+      Variable(var).triggerEvent(onSetValue); //set the value (WIP)
       for (VarLoop &varLoop : loopFunctions)
         varLoop.counter = 0;
       return true;
@@ -119,8 +119,8 @@ JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * ty
       // if (itr!=ucFunctions.end()) //found
       //   var["varFun"] = distance(ucFunctions.begin(), itr); //assign found function
       // else { //not found
-        varFunctions.push_back(varFun); //add new function
-        var["fun"] = varFunctions.size()-1;
+        mdl->varFunctions.push_back(varFun); //add new function
+        var["fun"] = mdl->varFunctions.size()-1;
       // }
       
       if (varFun(var, UINT8_MAX, onLoop)) { //test run if it supports loop
@@ -172,7 +172,7 @@ void SysModUI::processJson(JsonVariant json) {
           uint8_t rowNr = command["rowNr"].isNull()?UINT8_MAX:command["rowNr"];
           ppf("processJson %s - %s[%d]\n", key, Variable(var).id(), rowNr);
 
-          callVarFun(var, rowNr, pair.key() == "onAdd"?onAdd:onDelete);
+          Variable(var).triggerEvent(pair.key() == "onAdd"?onAdd:onDelete, rowNr);
 
           //first remove the deleted row both on server and on client(s)
           if (pair.key() == "onDelete") {
@@ -197,7 +197,7 @@ void SysModUI::processJson(JsonVariant json) {
 
             JsonObject var = mdl->findVar(pid, id); //value is the id
             if (!var.isNull()) {
-              callVarFun(var, UINT8_MAX, onUI);
+              Variable(var).triggerEvent(onUI);
               //sendDataWs done in caller of processJson
             }
             else
@@ -244,7 +244,7 @@ void SysModUI::processJson(JsonVariant json) {
           {
             //a button never sets the value
             if (var["type"] == "button") { //button always
-              mdl->callVarOnChange(var, rowNr);
+              Variable(var).triggerEvent(onChange, rowNr);
               if (rowNr != UINT8_MAX) web->getResponseObject()[pidid]["rowNr"] = rowNr;
             }
             else {

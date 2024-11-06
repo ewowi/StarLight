@@ -241,7 +241,7 @@ public:
           return true;
         case onUI:
           // call onUI of the base variable for the new variable
-          ui->varFunctions[var["fun"]](insVar, rowNr, onUI);
+          mdl->varFunctions[var["fun"]](insVar, rowNr, onUI);
           return true;
         case onChange: {
           //do not set this initially!!!
@@ -428,7 +428,7 @@ public:
 
           ppf("instances handleNotifications %d\n", notifierUdp.remoteIP()[3]);
           for (JsonObject childVar: Variable(mdl->findVar("Instances", "instances")).children())
-            ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP) ); //rowNr //instance - instances.begin()
+            Variable(childVar).triggerEvent(onSetValue); //set the value (WIP) ); //rowNr //instance - instances.begin()
 
           web->recvUDPCounter++;
           web->recvUDPBytes+=packetSize;
@@ -529,12 +529,12 @@ public:
     if (erased) {
       ppf("instances remove inactive instances\n");
       for (JsonObject childVar: Variable(mdl->findVar("Instances", "instances")).children())
-        ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //no rowNr so all rows updated
+        Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)); //no rowNr so all rows updated
 
       //tbd: pubsub mechanism
       //LEDs specific
-      ui->callVarFun("DDP", "instance", UINT8_MAX, onUI); //rebuild options
-      // ui->callVarFun("Artnet", "artInst", UINT8_MAX, onUI); //rebuild options
+      Variable(mdl->findVar("DDP", "instance")).triggerEvent(onUI); //rebuild options
+      // Variable(mdl->findVar("Artnet", "artInst")).triggerEvent(onUI); //rebuild options
     }
   }
 
@@ -802,7 +802,7 @@ public:
           // ppf("updateInstance updRow\n");
 
           for (JsonObject childVar: Variable(mdl->findVar("Instances", "instances")).children())
-            ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //rowNr instance - instances.begin()
+            Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)); //rowNr instance - instances.begin()
 
           //tbd: now done for all rows, should be done only for updated rows!
         }
@@ -816,15 +816,15 @@ public:
 
       //tbd: pubsub mechanism
       //LEDs specific
-      ui->callVarFun("DDP", "instance", UINT8_MAX, onUI); //rebuild options
-      // ui->callVarFun("Artnet", "artInst", UINT8_MAX, onUI); //rebuild options
+      Variable(mdl->findVar("DDP", "instance")).triggerEvent(onUI); //rebuild options
+      // Variable(mdl->findVar(Artnet", "artInst")).triggerEvent(onUI); //rebuild options
 
       // ui->processOnUI("instances");
       //run though it sorted to find the right rowNr
       // for (std::vector<InstanceInfo>::iterator instance=instances.begin(); instance!=instances.end(); ++instance) {
       //   if (instance->ip == messageIP) {
           for (JsonObject childVar: Variable(mdl->findVar("Instances", "instances")).children()) {
-            ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)); //no rowNr, update all
+            Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)); //no rowNr, update all
           }
       //   }
       // }

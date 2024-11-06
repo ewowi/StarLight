@@ -662,7 +662,7 @@ public:
         generateOnChange(var, fileName);
 
         //set fixture in fixture module
-        ui->callVarFun("Fixture", "fixture", UINT8_MAX, onUI); //rebuild options
+        Variable(mdl->findVar("Fixture", "fixture")).triggerEvent(onUI); //rebuild options
 
         uint8_t value = ui->selectOptionToValue("fixture", fileName);
         if (value != UINT8_MAX)

@@ -359,7 +359,7 @@ static float _time(float j) {
 
   void UserModLive::loop1s() {
     for (JsonObject childVar: Variable(mdl->findVar("LiveScripts", "scripts")).children())
-      ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
+      Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
   }
 
   void UserModLive::executeTask(uint8_t exeID, const char * function, int val)

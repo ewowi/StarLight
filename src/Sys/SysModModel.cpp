@@ -16,6 +16,308 @@
 #include "SysModUI.h"
 #include "SysModInstances.h"
 
+  String Variable::valueString(uint8_t rowNr) {
+    if (rowNr == UINT8_MAX)
+      return var["value"].as<String>();
+    else
+      return var["value"][rowNr].as<String>();
+  }
+
+  void Variable::removeValuesForRow(uint8_t rowNr) {
+    for (JsonObject childVar: children()) {
+      Variable childVariable = Variable(childVar);
+      JsonArray valArray = childVariable.valArray();
+      if (!valArray.isNull()) {
+        valArray.remove(rowNr);
+        //recursive
+        childVariable.removeValuesForRow(rowNr);
+      }
+    }
+  }
+
+  void Variable::rows(std::function<void(Variable, uint8_t)> fun) {
+    //tbd table check ... 
+    //tbd move to table subclass??
+    // get the first child
+    JsonObject firstChild = children()[0];
+    //loop through its rows
+    uint8_t rowNr = 0;
+    for (JsonVariant value: Variable(firstChild).valArray()) {
+      if (fun) fun(*this, rowNr);
+      // find the other columns
+      //loop over children to get the table columns
+      // ppf("row %d:", rowNr);
+      // for (JsonObject child: children()) {
+      //   Variable childVariable = Variable(child);
+      //   ppf(" %s: %s", childVariable.id(), childVariable.valueString(rowNr));
+      //   //process each ...
+      // }
+      // ppf("\n");
+      rowNr++;
+    }
+  }
+
+  void Variable::preDetails() {
+    for (JsonObject varChild: children()) { //for all controls
+      if (Variable(varChild).order() >= 0) { //post init
+        Variable(varChild).order( -Variable(varChild).order()); // set all negative
+      }
+    }
+    ppf("preDetails post ");
+    print->printVar(var);
+    ppf("\n");
+  }
+
+  void Variable::postDetails(uint8_t rowNr) {
+
+    ppf("varPostDetails pre ");
+    print->printVar(var);
+    ppf("\n");
+
+    //check if post init added: parent is already >=0
+    if (order() >= 0) {
+      for (JsonArray::iterator childVarIt=children().begin(); childVarIt!=children().end(); ++childVarIt) { //use iterator to make .remove work!!!
+      // for (JsonObject &childVarIt: children) { //use iterator to make .remove work!!!
+        JsonObject childVar = *childVarIt;
+        Variable childVariable = Variable(childVar);
+        JsonArray valArray = childVariable.valArray();
+        if (!valArray.isNull())
+        {
+          if (rowNr != UINT8_MAX) {
+            if (childVariable.order() < 0) { //if not updated
+              valArray[rowNr] = (char*)0; // set element in valArray to 0
+
+              ppf("varPostDetails %s.%s[%d] <- null\n", id(), childVariable.id(), rowNr);
+              // setValue(var, -99, rowNr); //set value -99
+              childVariable.order(-childVariable.order());
+              //if some values in array are not -99
+            }
+
+            //if all values null, remove value
+            bool allNull = true;
+            for (JsonVariant element: valArray) {
+              if (!element.isNull())
+                allNull = false;
+            }
+            if (allNull) {
+              ppf("remove allnulls %s\n", childVariable.id());
+              children().remove(childVarIt);
+            }
+            web->getResponseObject()["details"]["rowNr"] = rowNr;
+
+          }
+          else
+            print->printJson("dev array but not rowNr", var);
+        }
+        else {
+          if (childVariable.order() < 0) { //if not updated
+            // childVar["value"] = (char*)0;
+            ppf("varPostDetails %s.%s <- null\n", id(), childVariable.id());
+              // setValue(var, -99, rowNr); //set value -99
+            // childVariable.order(-childVariable.order());
+            print->printJson("remove", childVar);
+            children().remove(childVarIt);
+          }
+        }
+
+      }
+    } //if new added
+    ppf("varPostDetails post ");
+    print->printVar(var);
+    ppf("\n");
+
+    //post update details
+    web->getResponseObject()["details"]["var"] = var;
+  }
+
+  bool Variable::triggerEvent(uint8_t funType, uint8_t rowNr, bool init) {
+
+    if (funType == onChange) {
+      if (!init) {
+        if (!var["dash"].isNull())
+          instances->changedVarsQueue.push_back(var); //tbd: check value arrays / rowNr is working
+      }
+
+      //if var is bound by pointer, set the pointer value before calling onChange
+      if (!var["p"].isNull()) {
+        JsonVariant value;
+        if (rowNr == UINT8_MAX) {
+          value = var["value"]; 
+        } else {
+          value = var["value"][rowNr];
+        }
+
+        //pointer is an array if set by setValueRowNr, used for controls as each control has a seperate variable
+        bool isPointerArray = var["p"].is<JsonArray>();
+        int pointer;
+        if (isPointerArray)
+          pointer = var["p"][rowNr];
+        else
+          pointer = var["p"];
+
+        if (pointer != 0) {
+
+          if (var["value"].is<JsonArray>() && !isPointerArray) { //vector if val array but not if control (each var in array stored in seperate variable)
+            if (rowNr != UINT8_MAX) {
+              //pointer checks
+              if (var["type"] == "select" || var["type"] == "range" || var["type"] == "pin") {
+                std::vector<uint8_t> *valuePointer = (std::vector<uint8_t> *)pointer;
+                while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT8_MAX); //create vector space if needed...
+                ppf("%s.%s[%d]:%s (%d - %d - %s)\n", pid(), id(), rowNr, valueString().c_str(), pointer, (*valuePointer).size(), var["p"].as<String>().c_str());
+                (*valuePointer)[rowNr] = value;
+              }
+              else if (var["type"] == "number") {
+                std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
+                while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT16_MAX); //create vector space if needed...
+                (*valuePointer)[rowNr] = value;
+              }
+              else if (var["type"] == "checkbox") {
+                std::vector<bool3State> *valuePointer = (std::vector<bool3State> *)pointer;
+                while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT8_MAX); //create vector space if needed...
+                (*valuePointer)[rowNr] = value;
+              }
+              else if (var["type"] == "text" || var["type"] == "fileEdit") {
+                std::vector<VectorString> *valuePointer = (std::vector<VectorString> *)pointer;
+                while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(VectorString()); //create vector space if needed...
+                strlcpy((*valuePointer)[rowNr].s, value.as<const char *>(), sizeof(VectorString().s));
+              }
+              else if (var["type"] == "coord3D") {
+                std::vector<Coord3D> *valuePointer = (std::vector<Coord3D> *)pointer;
+                while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back({-1,-1,-1}); //create vector space if needed...
+                (*valuePointer)[rowNr] = value;
+              }
+              else
+                print->printJson("dev triggerChange type not supported yet (arrays)", var);
+
+              // ppf("triggerChange set pointer to vector %s[%d]: v:%s p:%d\n", id(), rowNr, value.as<String>().c_str(), pointer);
+            } else 
+              print->printJson("dev value is array but no rowNr\n", var);
+          } else { //no array
+            //pointer checks
+            if (var["type"] == "select" || var["type"] == "range" || var["type"] == "pin") {
+              uint8_t *valuePointer = (uint8_t *)pointer;
+              *valuePointer = value;
+            }
+            else if (var["type"] == "number") {
+              uint16_t *valuePointer = (uint16_t *)pointer;
+              *valuePointer = value;
+            }
+            else if (var["type"] == "checkbox") {
+              bool3State *valuePointer = (bool3State *)pointer;
+              *valuePointer = value;
+            }
+            else if (var["type"] == "coord3D") {
+              Coord3D *valuePointer = (Coord3D *)pointer;
+              *valuePointer = value;
+            }
+            else
+              print->printJson("dev triggerChange type not supported yet", var);
+
+            // ppf("triggerChange set pointer %s[%d]: v:%s p:%d\n", id(), rowNr, valueString().c_str(), pointer);
+          }
+
+          // else if (var["type"] == "text") {
+          //   const char *valuePointer = (const char *)pointer;
+          //   if (valuePointer != nullptr) {
+          //     *valuePointer = value;
+          //     ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+          //   }
+          //   else
+          //     ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+          // }
+        }
+        else
+          // ppf("dev pointer of type %s is 0\n", var["type"].as<String>().c_str());
+          print->printJson("dev pointer is 0", var);
+      } //pointer
+    }
+
+    bool result = false;
+
+    //call varFun if exists
+    if (!var["fun"].isNull()) {//isNull needed here!
+      size_t funNr = var["fun"];
+      if (funNr < mdl->varFunctions.size()) {
+        result = mdl->varFunctions[funNr](var, rowNr, funType);
+        if (result && !readOnly()) { //send rowNr = 0 if no rowNr
+          //only print vars with a value and not onSetValue as that changes a lot due to instances clients etc (tbd)
+          //don't print if onSetValue or oldValue is null
+          if (funType != onSetValue && (!var["oldValue"].isNull() || ((rowNr != UINT8_MAX) && !var["oldValue"][rowNr].isNull()))) {
+            ppf("%sFun %s.%s", funType==onSetValue?"val":funType==onUI?"ui":funType==onChange?"ch":funType==onAdd?"add":funType==onDelete?"del":"other", pid(), id());
+            if (rowNr != UINT8_MAX) {
+              ppf("[%d] (", rowNr);
+              if (funType == onChange) ppf("%s ->", var["oldValue"][rowNr].as<String>().c_str());
+              ppf("%s)\n", var["value"][rowNr].as<String>().c_str());
+            }
+            else {
+              ppf(" (");
+              if (funType == onChange) ppf("%s ->", var["oldValue"].as<String>().c_str());
+              ppf("%s)\n", valueString().c_str());
+            }
+          }
+        } //varFun exists
+      }
+      else    
+        ppf("dev triggerEvent function nr %s.%s outside bounds %d >= %d\n", pid(), id(), funNr, mdl->varFunctions.size());
+    } //varFun exists
+
+    //delete pointers after calling var.onDelete as var.onDelete might need the values
+    if (funType == onAdd || funType == onDelete) {
+
+      print->printJson("triggerEvent add/del", var);
+      //if delete, delete also from vector ...
+      //find the columns of the table
+      if (funType == onDelete) {
+        for (JsonObject childVar: children()) {
+          int pointer;
+          if (childVar["p"].is<JsonArray>())
+            pointer = childVar["p"][rowNr];
+          else
+            pointer = childVar["p"];
+
+          ppf("  delete vector %s[%d] %d\n", Variable(childVar).id(), rowNr, pointer);
+
+          if (pointer != 0) {
+            //pointer checks
+            // check rowNr as it can be 255 
+            if (childVar["type"] == "select" || childVar["type"] == "range" || childVar["type"] == "pin") {
+              std::vector<uint8_t> *valuePointer = (std::vector<uint8_t> *)pointer;
+              if (rowNr < (*valuePointer).size())
+                (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            } else if (childVar["type"] == "number") {
+              std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
+              if (rowNr < (*valuePointer).size())
+                (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            } else if (childVar["type"] == "checkbox") {
+              std::vector<bool3State> *valuePointer = (std::vector<bool3State> *)pointer;
+              if (rowNr < (*valuePointer).size())
+                (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            } else if (childVar["type"] == "text" || childVar["type"] == "fileEdit") {
+              std::vector<VectorString> *valuePointer = (std::vector<VectorString> *)pointer;
+              if (rowNr < (*valuePointer).size())
+                (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            } else if (childVar["type"] == "coord3D") {
+              std::vector<Coord3D> *valuePointer = (std::vector<Coord3D> *)pointer;
+              if (rowNr < (*valuePointer).size())
+                (*valuePointer).erase((*valuePointer).begin() + rowNr);
+            }
+            else
+              print->printJson("dev triggerEvent onDelete type not supported yet", childVar);
+          }
+        }
+      } //onDelete
+      web->getResponseObject()[funType==onAdd?"onAdd":"onDelete"]["rowNr"] = rowNr;
+      print->printJson("triggerEvent add/del response", web->getResponseObject());
+    } //onAdd onDelete
+
+    //for ro variables, call onSetValue to add also the value in responseDoc (as it is not stored in the model)
+    if (funType == onUI && readOnly()) {
+      triggerEvent(onSetValue, rowNr);
+    }
+
+    return result; //varFun exists
+  }
+
 SysModModel::SysModModel() :SysModule("Model") {
   model = new JsonDocument(&allocator);
 
@@ -101,7 +403,7 @@ void SysModModel::loop20ms() {
 
 void SysModModel::loop1s() {
   mdl->walkThroughModel([](JsonObject var) {
-    ui->callVarFun(var, UINT8_MAX, onLoop1s);
+    Variable(var).triggerEvent(onLoop1s);
     return false; //don't stop
   });
 }
@@ -211,138 +513,3 @@ void SysModModel::findVars(const char * property, bool value, FindFun fun, JsonA
       findVars(property, value, fun, var["n"]);
   }
 }
-
-//currently not used
-// void SysModModel::varToValues(JsonObject var, JsonArray row) {
-
-//     //add value for each child
-//     // JsonArray row = rows.add<JsonArray>();
-//     for (JsonObject childVar : var["n"].as<JsonArray>()) {
-//       print->printJson("varToValues childs", childVar);
-//       row.add(childVar["value"]);
-
-//       if (!childVar["n"].isNull()) {
-//         varToValues(childVar, row.add<JsonArray>());
-//       }
-//     }
-// }
-
-bool checkDash(JsonObject var) {
-  if (var["dash"])
-    return true;
-  else 
-  //disable temporary
-  // {
-  //   JsonObject parentVar = mdl->findVar("dash...", var["pid"]); //tbd: find the parent as this is not finding it...
-  //   if (!parentVar.isNull())
-  //     return checkDash(parentVar);
-  // }
-  return false;
-}
-
-bool SysModModel::callVarOnChange(JsonObject var, uint8_t rowNr, bool init) {
-  Variable variable = Variable(var);
-  //not in SysModModel.h as ui->callVarFun cannot be used in SysModModel.h
-
-  if (!init) {
-    if (checkDash(var))
-      instances->changedVarsQueue.push_back(var); //tbd: check value arrays / rowNr is working
-  }
-
-  //if var is bound by pointer, set the pointer value before calling onChange
-  if (!var["p"].isNull()) {
-    JsonVariant value;
-    if (rowNr == UINT8_MAX) {
-      value = var["value"]; 
-    } else {
-      value = var["value"][rowNr];
-    }
-
-    //pointer is an array if set by setValueRowNr, used for controls as each control has a seperate variable
-    bool isPointerArray = var["p"].is<JsonArray>();
-    int pointer;
-    if (isPointerArray)
-      pointer = var["p"][rowNr];
-    else
-      pointer = var["p"];
-
-    if (pointer != 0) {
-
-      if (var["value"].is<JsonArray>() && !isPointerArray) { //vector if val array but not if control (each var in array stored in seperate variable)
-        if (rowNr != UINT8_MAX) {
-          //pointer checks
-          if (var["type"] == "select" || var["type"] == "range" || var["type"] == "pin") {
-            std::vector<uint8_t> *valuePointer = (std::vector<uint8_t> *)pointer;
-            while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT8_MAX); //create vector space if needed...
-            ppf("%s[%d]:%s (%d - %d - %s)\n", variable.id(), rowNr, variable.valueString().c_str(), pointer, (*valuePointer).size(), var["p"].as<String>().c_str());
-            (*valuePointer)[rowNr] = value;
-          }
-          else if (var["type"] == "number") {
-            std::vector<uint16_t> *valuePointer = (std::vector<uint16_t> *)pointer;
-            while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT16_MAX); //create vector space if needed...
-            (*valuePointer)[rowNr] = value;
-          }
-          else if (var["type"] == "checkbox") {
-            std::vector<bool3State> *valuePointer = (std::vector<bool3State> *)pointer;
-            while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(UINT8_MAX); //create vector space if needed...
-            (*valuePointer)[rowNr] = value;
-          }
-          else if (var["type"] == "text" || var["type"] == "fileEdit") {
-            std::vector<VectorString> *valuePointer = (std::vector<VectorString> *)pointer;
-            while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back(VectorString()); //create vector space if needed...
-            strlcpy((*valuePointer)[rowNr].s, value.as<const char *>(), sizeof(VectorString().s));
-          }
-          else if (var["type"] == "coord3D") {
-            std::vector<Coord3D> *valuePointer = (std::vector<Coord3D> *)pointer;
-            while (rowNr >= (*valuePointer).size()) (*valuePointer).push_back({-1,-1,-1}); //create vector space if needed...
-            (*valuePointer)[rowNr] = value;
-          }
-          else
-            print->printJson("dev callVarOnChange type not supported yet (arrays)", var);
-
-          // ppf("callVarOnChange set pointer to vector %s[%d]: v:%s p:%d\n", variable.id(), rowNr, value.as<String>().c_str(), pointer);
-        } else 
-          print->printJson("dev value is array but no rowNr\n", var);
-      } else { //no array
-        //pointer checks
-        if (var["type"] == "select" || var["type"] == "range" || var["type"] == "pin") {
-          uint8_t *valuePointer = (uint8_t *)pointer;
-          *valuePointer = value;
-        }
-        else if (var["type"] == "number") {
-          uint16_t *valuePointer = (uint16_t *)pointer;
-          *valuePointer = value;
-        }
-        else if (var["type"] == "checkbox") {
-          bool3State *valuePointer = (bool3State *)pointer;
-          *valuePointer = value;
-        }
-        else if (var["type"] == "coord3D") {
-          Coord3D *valuePointer = (Coord3D *)pointer;
-          *valuePointer = value;
-        }
-        else
-          print->printJson("dev callVarOnChange type not supported yet", var);
-
-        // ppf("callVarOnChange set pointer %s[%d]: v:%s p:%d\n", variable.id(), rowNr, variable.valueString().c_str(), pointer);
-      }
-
-      // else if (var["type"] == "text") {
-      //   const char *valuePointer = (const char *)pointer;
-      //   if (valuePointer != nullptr) {
-      //     *valuePointer = value;
-      //     ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
-      //   }
-      //   else
-      //     ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
-      // }
-    }
-    else
-      // ppf("dev pointer of type %s is 0\n", var["type"].as<String>().c_str());
-      print->printJson("dev pointer is 0", var);
-  } //pointer
-
-  return ui->callVarFun(var, rowNr, onChange);
-
-  // web->sendResponseObject();
-}  

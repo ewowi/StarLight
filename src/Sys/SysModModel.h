@@ -190,30 +190,31 @@ struct RAM_Allocator: ArduinoJson::Allocator {
   }
 };
 
+enum eventTypes
+{
+  onSetValue,
+  onUI,
+  onChange,
+  onLoop,
+  onLoop1s,
+  onAdd,
+  onDelete,
+  f_count
+};
+
+
 class Variable {
   public:
 
   JsonObject var;
 
-  Variable(JsonObject var) {
-    this->var = var;
-  }
+  Variable(JsonObject var) {this->var = var;}
 
   //core methods 
-  const char * pid() {
-    return var["pid"];
-  }
+  const char * pid() {return var["pid"];}
+  const char * id() {return var["id"]; }
 
-  const char * id() {
-    return var["id"];
-  }
-
-  String valueString(uint8_t rowNr = UINT8_MAX) {
-    if (rowNr == UINT8_MAX)
-      return var["value"].as<String>();
-    else
-      return var["value"][rowNr].as<String>();
-  }
+  String valueString(uint8_t rowNr = UINT8_MAX);
 
   int order() {return var["o"];}
   void order(int value) {var["o"] = value;}
@@ -226,120 +227,26 @@ class Variable {
   void defaultOrder(int value) {if (order() > -1000) order(- value); } //set default order (in range >=1000). Don't use auto generated order as order can be changed in the ui (WIP)
 
   //recursively remove all value[rowNr] from children of var
-  void removeValuesForRow(uint8_t rowNr) {
-    for (JsonObject childVar: children()) {
-      Variable childVariable = Variable(childVar);
-      JsonArray valArray = childVariable.valArray();
-      if (!valArray.isNull()) {
-        valArray.remove(rowNr);
-        //recursive
-        childVariable.removeValuesForRow(rowNr);
-      }
-    }
-  }
+  void removeValuesForRow(uint8_t rowNr);
 
   JsonArray valArray() {if (var["value"].is<JsonArray>()) return var["value"]; else return JsonArray(); }
 
   //if variable is a table, loop through its rows
-  void rows(std::function<void(Variable, uint8_t)> fun = nullptr) {
-    //tbd table check ... 
-    //tbd move to table subclass??
-    // get the first child
-    JsonObject firstChild = children()[0];
-    //loop through its rows
-    uint8_t rowNr = 0;
-    for (JsonVariant value: Variable(firstChild).valArray()) {
-      if (fun) fun(*this, rowNr);
-      // find the other columns
-      //loop over children to get the table columns
-      // ppf("row %d:", rowNr);
-      // for (JsonObject child: children()) {
-      //   Variable childVariable = Variable(child);
-      //   ppf(" %s: %s", childVariable.id(), childVariable.valueString(rowNr));
-      //   //process each ...
-      // }
-      // ppf("\n");
-      rowNr++;
-    }
-  }
+  void rows(std::function<void(Variable, uint8_t)> fun = nullptr);
 
   //extra methods
 
-  void preDetails() {
-    for (JsonObject varChild: children()) { //for all controls
-      if (Variable(varChild).order() >= 0) { //post init
-        Variable(varChild).order( -Variable(varChild).order()); // set all negative
-      }
-    }
-    ppf("preDetails post ");
-    print->printVar(var);
-    ppf("\n");
-  }
+  void preDetails();
 
-  void postDetails(uint8_t rowNr) {
+  void postDetails(uint8_t rowNr);
 
-    ppf("varPostDetails pre ");
-    print->printVar(var);
-    ppf("\n");
-
-    //check if post init added: parent is already >=0
-    if (order() >= 0) {
-      for (JsonArray::iterator childVarIt=children().begin(); childVarIt!=children().end(); ++childVarIt) { //use iterator to make .remove work!!!
-      // for (JsonObject &childVarIt: children) { //use iterator to make .remove work!!!
-        JsonObject childVar = *childVarIt;
-        Variable childVariable = Variable(childVar);
-        JsonArray valArray = childVariable.valArray();
-        if (!valArray.isNull())
-        {
-          if (rowNr != UINT8_MAX) {
-            if (childVariable.order() < 0) { //if not updated
-              valArray[rowNr] = (char*)0; // set element in valArray to 0
-
-              ppf("varPostDetails %s.%s[%d] <- null\n", id(), childVariable.id(), rowNr);
-              // setValue(var, -99, rowNr); //set value -99
-              childVariable.order(-childVariable.order());
-              //if some values in array are not -99
-            }
-
-            //if all values null, remove value
-            bool allNull = true;
-            for (JsonVariant element: valArray) {
-              if (!element.isNull())
-                allNull = false;
-            }
-            if (allNull) {
-              ppf("remove allnulls %s\n", childVariable.id());
-              children().remove(childVarIt);
-            }
-            web->getResponseObject()["details"]["rowNr"] = rowNr;
-
-          }
-          else
-            print->printJson("dev array but not rowNr", var);
-        }
-        else {
-          if (childVariable.order() < 0) { //if not updated
-            // childVar["value"] = (char*)0;
-            ppf("varPostDetails %s.%s <- null\n", id(), childVariable.id());
-              // setValue(var, -99, rowNr); //set value -99
-            // childVariable.order(-childVariable.order());
-            print->printJson("remove", childVar);
-            children().remove(childVarIt);
-          }
-        }
-
-      }
-    } //if new added
-    ppf("varPostDetails post ");
-    print->printVar(var);
-    ppf("\n");
-
-    //post update details
-    web->getResponseObject()["details"]["var"] = var;
-  }
-
+  //checks if var has fun of type funType implemented by calling it and checking result (for onUI on RO var, also onSetValue is called)
+  //onChange: sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
+  bool triggerEvent(uint8_t funType = onSetValue, uint8_t rowNr = UINT8_MAX, bool init = false);
 }; //class Variable
 
+// https://stackoverflow.com/questions/59111610/how-do-you-declare-a-lambda-function-using-typedef-and-then-use-it-by-passing-to
+typedef std::function<uint8_t(JsonObject, uint8_t, uint8_t)> VarFun;
 
 class SysModModel:public SysModule {
 
@@ -353,6 +260,8 @@ public:
   uint8_t setValueRowNr = UINT8_MAX;
   uint8_t getValueRowNr = UINT8_MAX;
   int varCounter = 1; //start with 1 so it can be negative, see var["o"]
+
+  std::vector<VarFun> varFunctions;
 
   SysModModel();
   void setup();
@@ -450,7 +359,7 @@ public:
       }
     }
 
-    if (changed) callVarOnChange(var, rowNr);
+    if (changed) variable.triggerEvent(onChange, rowNr);
     
     return var;
   }
@@ -500,12 +409,6 @@ public:
   bool walkThroughModel(std::function<bool(JsonObject)> fun, JsonObject parent = JsonObject());
   JsonObject findVar(const char * pid, const char * id, JsonObject parent = JsonObject());
   void findVars(const char * id, bool value, FindFun fun, JsonArray parent = JsonArray());
-
-  //recursively add values in  a variant, currently not used
-  // void varToValues(JsonObject var, JsonArray values);
-
-  //sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
-  bool callVarOnChange(JsonObject var, uint8_t rowNr = UINT8_MAX, bool init = false);
 
   uint8_t linearToLogarithm(uint8_t value, uint8_t minp = 0, uint8_t maxp = UINT8_MAX) {
     if (value == 0) return 0;

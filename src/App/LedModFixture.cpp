@@ -87,7 +87,7 @@
 
     JsonObject currentVar = ui->initCheckBox(parentVar, "on", true, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
       case onChange:
-        mdl->callVarOnChange(mdl->findVar("Fixture", "brightness"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+        Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
         return true;
       default: return false;
     }});

@@ -412,7 +412,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           // ui->dashVarChanged = true;
           // //rebuild the table
           for (JsonObject childVar: Variable(mdl->findVar("E131", "watches")).children())
-            ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
+            Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
 
       // }
       // else
