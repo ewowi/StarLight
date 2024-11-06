@@ -12,7 +12,6 @@
 #ifdef STARBASE_USERMOD_LIVE //don't know why to exclude the .cpp as the .h is not included in this case ...
 
 #include "UserModLive.h"
-#include "ESPLiveScript.h" //note: contains declarations AND definitions, therefore can only be included once!
 
 // #include <Arduino.h>
 
@@ -23,6 +22,8 @@
 
 #include "../App/LedModFixture.h" //for fix->driver (temp)
 // #define __RUN_CORE 0
+
+#include "ESPLiveScript.h" //note: contains declarations AND definitions, therefore can only be included once!
 
 long time1;
 long time4;
