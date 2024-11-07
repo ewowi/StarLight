@@ -47,10 +47,10 @@ public:
 
     parentVar = ui->initUserMod(parentVar, name, 6000);
 
-    ui->initIP(parentVar, "instance", UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initIP(parentVar, "instance", UINT16_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
-        ui->setComment(var, "Instance to send data");
-        JsonArray options = ui->setOptions(var);
+        variable.setComment("Instance to send data");
+        JsonArray options = variable.setOptions();
         //keyValueOption: add key (ip[3] and value instance name/ip)
         JsonArray keyValueOption = options.add<JsonArray>();
         keyValueOption.add(0);
@@ -68,7 +68,7 @@ public:
         }
         return true; }
       case onChange: {
-        uint8_t value = var["value"]; //ip[3] chosen
+        uint8_t value = variable.value(); //ip[3] chosen
         for (InstanceInfo &instance : instances->instances) {
           if (instance.ip[3] == value) {
             targetIp = instance.ip;

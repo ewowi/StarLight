@@ -85,7 +85,7 @@
 
     parentVar = ui->initAppMod(parentVar, name, 1100);
 
-    JsonObject currentVar = ui->initCheckBox(parentVar, "on", true, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    JsonObject currentVar = ui->initCheckBox(parentVar, "on", true, false, [](EventArguments) { switch (eventType) {
       case onChange:
         Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
         return true;
@@ -94,7 +94,7 @@
     currentVar["dash"] = true;
 
     //logarithmic slider (10)
-    currentVar = ui->initSlider(parentVar, "brightness", &bri, 0, 255, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    currentVar = ui->initSlider(parentVar, "brightness", &bri, 0, 255, false, [this](EventArguments) { switch (eventType) {
       case onChange: {
         //bri set by StarMod during onChange
         uint8_t result = mdl->getValue("Fixture", "on").as<bool>()?mdl->linearToLogarithm(bri):0;
@@ -105,14 +105,14 @@
           FastLED.setBrightness(result);
         #endif
 
-        ppf("Set Brightness to %d -> b:%d r:%d\n", var["value"].as<int>(), bri, result);
+        ppf("Set Brightness to %d -> b:%d r:%d\n", variable.value().as<int>(), bri, result);
         return true; }
       default: return false; 
     }});
     currentVar["log"] = true; //logarithmic
     currentVar["dash"] = true; //these values override model.json???
 
-    currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI:
         if (bytesPerPixel) {
           mappingStatus = 1; //rebuild the fixture - so it is send to ui
@@ -122,7 +122,7 @@
         return true;
       case onLoop: {
         if (!web->isBusy && mappingStatus == 0 && bytesPerPixel && !doSendFixtureDefinition && web->ws.getClients().length()) { //not remapping and clients exists
-          var["interval"] = max(nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
+          variable.var["interval"] = max(nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
 
           #define headerBytesPreview 5
           // ppf("(%d %d %d,%d,%d)", len, headerBytesPreview + nrOfLeds * bytesPerPixel, fixSize.x, fixSize.y, fixSize.z);
@@ -209,9 +209,9 @@
       default: return false;
     }});
 
-    ui->initSelect(currentVar, "rotation", &viewRotation, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(currentVar, "rotation", &viewRotation, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
-        JsonArray options = ui->setOptions(var);
+        JsonArray options = variable.setOptions();
         options.add("None");
         options.add("Tilt");
         options.add("Pan");
@@ -223,9 +223,9 @@
       default: return false; 
     }});
 
-    ui->initSelect(currentVar, "PixelBytes", &bytesPerPixel, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(currentVar, "PixelBytes", &bytesPerPixel, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
-        JsonArray options = ui->setOptions(var);
+        JsonArray options = variable.setOptions();
         options.add("None");
         options.add("1-byte RGB");
         options.add("2-byte RGB");
@@ -234,15 +234,15 @@
       default: return false; 
     }});
 
-    currentVar = ui->initSelect(parentVar, "fixture", &fixtureNr, false ,[this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    currentVar = ui->initSelect(parentVar, "fixture", &fixtureNr, false ,[this](EventArguments) { switch (eventType) {
       case onUI: {
-        // ui->setComment(var, "Fixture to display effect on");
-        JsonArray options = ui->setOptions(var);
+        // variable.setComment("Fixture to display effect on");
+        JsonArray options = variable.setOptions();
         files->dirToJson(options, true, "F_"); //only files containing F(ixture), alphabetically
 
         // ui needs to load the file also initially
         char fileName[32] = "";
-        if (files->seqNrToName(fileName, var["value"])) {
+        if (files->seqNrToName(fileName, variable.value())) {
           web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName, JsonString::Copied));
         }
         return true; }
@@ -266,30 +266,30 @@
       default: return false; 
     }}); //fixture
 
-    ui->initCoord3D(currentVar, "size", &fixSize, 0, STARLIGHT_MAXLEDS, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(currentVar, "size", &fixSize, 0, STARLIGHT_MAXLEDS, true, [](EventArguments) { switch (eventType) {
       default: return false;
     }});
 
-    ui->initNumber(currentVar, "count", &nrOfLeds, 0, UINT16_MAX, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(currentVar, "count", &nrOfLeds, 0, UINT16_MAX, true, [](EventArguments) { switch (eventType) {
       case onUI:
-        web->addResponse(var, "comment", "Max %d", STARLIGHT_MAXLEDS, 0); //0 is to force format overload used
+        web->addResponse(variable.var, "comment", "Max %d", STARLIGHT_MAXLEDS, 0); //0 is to force format overload used
         return true;
       default: return false;
     }});
 
-    ui->initNumber(parentVar, "fps", &fps, 1, 999, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "fps", &fps, 1, 999, false, [](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "Frames per second");
+        variable.setComment("Frames per second");
         return true;
       default: return false; 
     }});
 
-    ui->initNumber(parentVar, "realFps", &realFps, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "realFps", &realFps, 0, UINT16_MAX, true, [this](EventArguments) { switch (eventType) {
       case onUI:
-        web->addResponse(var, "comment", "f(%d leds)", nrOfLeds, 0); //0 is to force format overload used
+        web->addResponse(variable.var, "comment", "f(%d leds)", nrOfLeds, 0); //0 is to force format overload used
         return true;
       case onLoop1s:
-          mdl->setValue(var, eff->frameCounter);
+          mdl->setValue(variable.var, eff->frameCounter);
           eff->frameCounter = 0;
         return true;
       default: return false;
@@ -297,24 +297,24 @@
 
     ui->initCheckBox(parentVar, "tickerTape", &showTicker);
 
-    ui->initCheckBox(parentVar, "driverShow", &driverShow, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "driverShow", &driverShow, false, [this](EventArguments) { switch (eventType) {
       case onUI:
         #if STARLIGHT_CLOCKLESS_LED_DRIVER
-          ui->setLabel(var, "CLD Show");
+          variable.setLabel("CLD Show");
         #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-          ui->setLabel(var, "CLVD Show");
+          variable.setLabel("CLVD Show");
         #else
-          ui->setLabel(var, "FastLED Show");
+          variable.setLabel("FastLED Show");
         #endif
-        ui->setComment(var, "dev performance tuning");
+        variable.setComment("dev performance tuning");
         return true;
       default: return false; 
     }});
 
     // #if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-    //   ui->initNumber(parentVar, "dma", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    //   ui->initNumber(parentVar, "dma", UINT16_MAX, 0, UINT16_MAX, true, [this](EventArguments) { switch (eventType) {
     //     case onLoop1s:
-    //         mdl->setValue(var, _proposed_dma_extension);
+    //         mdl->setValue(variable.var, _proposed_dma_extension);
     //       return true;
     //     default: return false;
     //   }});

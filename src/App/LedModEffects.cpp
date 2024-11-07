@@ -136,9 +136,9 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
     JsonObject currentVar;
 
-    JsonObject tableVar = ui->initTable(parentVar, "layers", nullptr, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    JsonObject tableVar = ui->initTable(parentVar, "layers", nullptr, false, [this](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "List of effects");
+        variable.setComment("List of effects");
         return true;
       case onAdd:
         if (rowNr >= fix->layers.size()) {
@@ -148,7 +148,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         }
         return true;
       case onDelete:
-        // ppf("layers onDelete %s[%d]\n", Variable(var).id(), rowNr);
+        // ppf("layers onDelete %s[%d]\n", variable.id(), rowNr);
         //tbd: fade to black
         if (rowNr <fix->layers.size()) {
           LedsLayer *leds = fix->layers[rowNr];
@@ -159,14 +159,14 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       default: return false;
     }});
 
-    currentVar = ui->initSelect(tableVar, "effect", (uint8_t)0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    currentVar = ui->initSelect(tableVar, "effect", (uint8_t)0, false, [this](EventArguments) { switch (eventType) {
       // case onSetValue:
       //   for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++)
-      //     mdl->setValue(var, fix->layers[rowNr]->effectNr, rowNr);
+      //     mdl->setValue(variable.var, fix->layers[rowNr]->effectNr, rowNr);
       //   return true;
       case onUI: {
-        ui->setComment(var, "Effect to show");
-        JsonArray options = ui->setOptions(var);
+        variable.setComment("Effect to show");
+        JsonArray options = variable.setOptions();
         for (Effect *effect:effects) {
           char buf[32] = "";
           strlcat(buf, effect->name(), sizeof(buf));
@@ -182,7 +182,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
         //create a new leds instance if a new row is created
         if (rowNr >= fix->layers.size()) {
-          ppf("layers effect[%d] onChange #:%d v:%s\n", rowNr, fix->layers.size(), Variable(var).valueString().c_str());
+          ppf("layers effect[%d] onChange #:%d v:%s\n", rowNr, fix->layers.size(), variable.valueString().c_str());
           ppf("effect creating new LedsLayer instance %d\n", rowNr);
           LedsLayer *leds = new LedsLayer();
           fix->layers.push_back(leds);
@@ -203,7 +203,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           //   // }
           // #endif
 
-          uint16_t effectNr = mdl->getValue(var, rowNr);
+          uint16_t effectNr = mdl->getValue(variable.var, rowNr);
 
           if (effectNr < effects.size()) {
             leds->effect = effects[effectNr];
@@ -228,15 +228,15 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     currentVar["dash"] = true;
 
     //projection, default projection is 'default'
-    currentVar = ui->initSelect(tableVar, "projection", 1, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    currentVar = ui->initSelect(tableVar, "projection", 1, false, [this](EventArguments) { switch (eventType) {
       // case onSetValue:
       //   for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++)
-      //     mdl->setValue(var, fix->layers[rowNr]->projectionNr, rowNr);
+      //     mdl->setValue(variable.var, fix->layers[rowNr]->projectionNr, rowNr);
       //   return true;
       case onUI: {
-        ui->setComment(var, "How to project effect");
+        variable.setComment("How to project effect");
 
-        JsonArray options = ui->setOptions(var);
+        JsonArray options = variable.setOptions();
         for (Projection *projection:projections) {
           char buf[32] = "";
           strlcat(buf, projection->name(), sizeof(buf));
@@ -255,7 +255,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
           // leds->doMap = true; //stop the effects loop already here
 
-          uint8_t proValue = mdl->getValue(var, rowNr);
+          uint8_t proValue = mdl->getValue(variable.var, rowNr);
 
           if (proValue < projections.size()) {
             if (proValue == 0) //none
@@ -270,10 +270,10 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
             leds->projectionData.clear(); //delete effectData memory so it can be rebuild
 
-            Variable(var).preDetails(); //set all positive var N orders to negative
+            variable.preDetails(); //set all positive var N orders to negative
             mdl->setValueRowNr = rowNr;
-            if (leds->projection) leds->projection->setup(*leds, var); //not if None projection
-            Variable(var).postDetails(rowNr);
+            if (leds->projection) leds->projection->setup(*leds, variable.var); //not if None projection
+            variable.postDetails(rowNr);
             mdl->setValueRowNr = UINT8_MAX;
 
             leds->projectionData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
@@ -289,20 +289,20 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     }});
     currentVar["dash"] = true;
 
-    ui->initCoord3D(tableVar, "start", {0,0,0}, 0, STARLIGHT_MAXLEDS, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(tableVar, "start", {0,0,0}, 0, STARLIGHT_MAXLEDS, false, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
           ppf("ledsStart[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->start.x, fix->layers[rowNr]->start.y, fix->layers[rowNr]->start.z);
-          mdl->setValue(var, fix->layers[rowNr]->start, rowNr);
+          mdl->setValue(variable.var, fix->layers[rowNr]->start, rowNr);
         }
         return true;
       case onUI:
-        ui->setComment(var, "In pixels");
+        variable.setComment("In pixels");
         return true;
       case onChange:
         if (rowNr < fix->layers.size()) {
-          fix->layers[rowNr]->start = mdl->getValue(var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+          fix->layers[rowNr]->start = mdl->getValue(variable.var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
           ppf("ledsStart[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->start.x, fix->layers[rowNr]->start.y, fix->layers[rowNr]->start.z);
 
@@ -316,20 +316,20 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       default: return false;
     }});
 
-    ui->initCoord3D(tableVar, "middle", {0,0,0}, 0, STARLIGHT_MAXLEDS, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(tableVar, "middle", {0,0,0}, 0, STARLIGHT_MAXLEDS, false, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
           ppf("ledsMid[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->middle.x, fix->layers[rowNr]->middle.y, fix->layers[rowNr]->middle.z);
-          mdl->setValue(var, fix->layers[rowNr]->middle, rowNr);
+          mdl->setValue(variable.var, fix->layers[rowNr]->middle, rowNr);
         }
         return true;
       case onUI:
-        ui->setComment(var, "In pixels");
+        variable.setComment("In pixels");
         return true;
       case onChange:
         if (rowNr < fix->layers.size()) {
-          fix->layers[rowNr]->middle = mdl->getValue(var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+          fix->layers[rowNr]->middle = mdl->getValue(variable.var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
           ppf("ledsMid[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->middle.x, fix->layers[rowNr]->middle.y, fix->layers[rowNr]->middle.z);
 
@@ -343,20 +343,20 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       default: return false;
     }});
 
-    ui->initCoord3D(tableVar, "end", {8,8,0}, 0, STARLIGHT_MAXLEDS, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(tableVar, "end", {8,8,0}, 0, STARLIGHT_MAXLEDS, false, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
           ppf("ledsEnd[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->end.x, fix->layers[rowNr]->end.y, fix->layers[rowNr]->end.z);
-          mdl->setValue(var, fix->layers[rowNr]->end, rowNr);
+          mdl->setValue(variable.var, fix->layers[rowNr]->end, rowNr);
         }
         return true;
       case onUI:
-        ui->setComment(var, "In pixels");
+        variable.setComment("In pixels");
         return true;
       case onChange:
         if (rowNr < fix->layers.size()) {
-          fix->layers[rowNr]->end = mdl->getValue(var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+          fix->layers[rowNr]->end = mdl->getValue(variable.var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
           ppf("ledsEnd[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->end.x, fix->layers[rowNr]->end.y, fix->layers[rowNr]->end.z);
 
@@ -370,7 +370,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       default: return false;
     }});
 
-    ui->initText(tableVar, "size", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(tableVar, "size", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
       case onSetValue: {
         // for (std::vector<LedsLayer *>::iterator leds=fix->layers.begin(); leds!=fix->layers.end(); ++leds) {
         uint8_t rowNr = 0;
@@ -378,17 +378,17 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           char message[32];
           print->fFormat(message, sizeof(message), "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           ppf("onSetValue ledsSize[%d] = %s\n", rowNr, message);
-          mdl->setValue(var, JsonString(message, JsonString::Copied), rowNr); //rowNr
+          mdl->setValue(variable.var, JsonString(message, JsonString::Copied), rowNr); //rowNr
           rowNr++;
         }
         return true; }
       default: return false;
     }});
 
-    // ui->initSelect(parentVar, "layout", 0, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    // ui->initSelect(parentVar, "layout", 0, false, [](EventArguments) { switch (eventType) {
     //   case onUI: {
-    //     ui->setComment(var, "WIP");
-    //     JsonArray options = ui->setOptions(var);
+    //     variable.setComment("WIP");
+    //     JsonArray options = variable.setOptions();
     //     options.add("□"); //0
     //     options.add("="); //1
     //     options.add("||"); //2

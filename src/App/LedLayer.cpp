@@ -38,9 +38,9 @@ void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, uint8_t init
 }
 
 void Effect::setup(LedsLayer &leds, JsonObject parentVar) {
-    ui->initSelect(parentVar, "palette", 4, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "palette", 4, false, [&leds](EventArguments) { switch (eventType) {
       case onUI: {
-        JsonArray options = ui->setOptions(var);
+        JsonArray options = variable.setOptions();
         options.add("CloudColors");
         options.add("LavaColors");
         options.add("OceanColors");
@@ -52,7 +52,7 @@ void Effect::setup(LedsLayer &leds, JsonObject parentVar) {
         options.add("RandomColors");
         return true; }
       case onChange:
-        switch (var["value"][rowNr].as<uint8_t>()) {
+        switch (variable.value(rowNr).as<uint8_t>()) {
           case 0: leds.palette = CloudColors_p; break;
           case 1: leds.palette = LavaColors_p; break;
           case 2: leds.palette = OceanColors_p; break;

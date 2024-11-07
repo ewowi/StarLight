@@ -230,9 +230,9 @@ class RunningEffect: public Effect {
   const char * tags() {return "💫";}
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
-    ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(60), 0, 255, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(60), 0, 255, false, [](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "in BPM!");
+        variable.setComment("in BPM!");
         return true;
       default: return false;
     }});
@@ -1130,11 +1130,11 @@ class OctopusEffect: public Effect {
     Effect::setup(leds, parentVar); //palette
     bool3State *setup = leds.effectData.write<bool3State>(true);
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128), 1, 255);
-    ui->initSlider(parentVar, "offsetX", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+    ui->initSlider(parentVar, "offsetX", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
-    ui->initSlider(parentVar, "offsetY", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+    ui->initSlider(parentVar, "offsetY", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
@@ -1297,9 +1297,9 @@ class ScrollingTextEffect: public Effect {
   void setup(LedsLayer &leds, JsonObject parentVar) {
     ui->initText(parentVar, "text", "StarLight"); //effectData to be implemented!
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128));
-    ui->initSelect(parentVar, "font", leds.effectData.write<uint8_t>(0), false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "font", leds.effectData.write<uint8_t>(0), false, [](EventArguments) { switch (eventType) {
       case onUI: {
-        JsonArray options = ui->setOptions(var);
+        JsonArray options = variable.setOptions();
         options.add("4x6");
         options.add("5x8");
         options.add("5x12");
@@ -1437,9 +1437,9 @@ class GameOfLifeEffect: public Effect {
     bool3State *setup       = leds.effectData.write<bool3State>(true);
     bool3State *ruleChanged = leds.effectData.write<bool3State>(true);
     ui->initCoord3D(parentVar, "backgroundColor", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
-    ui->initSelect (parentVar, "ruleset", leds.effectData.write<uint8_t>(1), false, [ruleChanged](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+    ui->initSelect (parentVar, "ruleset", leds.effectData.write<uint8_t>(1), false, [ruleChanged](EventArguments) { switch (eventType) {
       case onUI: {
-        JsonArray options = ui->setOptions(var);
+        JsonArray options = variable.setOptions();
         options.add("Custom B/S");
         options.add("Conway's Game of Life B3/S23");
         options.add("HighLife B36/S23");
@@ -1452,7 +1452,7 @@ class GameOfLifeEffect: public Effect {
       case onChange: {*ruleChanged = true; return true;}
       default: return false;
     }});
-    ui->initText    (parentVar, "CustomRuleString", "B/S", UINT16_MAX, false, [ruleChanged](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+    ui->initText    (parentVar, "CustomRuleString", "B/S", UINT16_MAX, false, [ruleChanged](EventArguments) { switch (eventType) {
       case onChange: {*ruleChanged = true; return true;}
       default: return false;
     }});
@@ -1893,11 +1893,11 @@ class RubiksCubeEffect: public Effect {
     Effect::setup(leds, parentVar);
     bool3State *setup = leds.effectData.write<bool3State>(true);
     ui->initSlider  (parentVar, "turnsPerSecond", leds.effectData.write<uint8_t>(1), 0, 20);   
-    ui->initSlider  (parentVar, "cubeSize",        leds.effectData.write<uint8_t>(2), 1, 8, false, [setup] (JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+    ui->initSlider  (parentVar, "cubeSize",        leds.effectData.write<uint8_t>(2), 1, 8, false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
-    ui->initCheckBox(parentVar, "randomTurning", leds.effectData.write<bool3State>(false), false, [setup] (JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+    ui->initCheckBox(parentVar, "randomTurning", leds.effectData.write<bool3State>(false), false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {if (!mdl->getValue("effect", "Random Turning")) *setup = true; return true;}
       default: return false;
     }});
@@ -2074,11 +2074,11 @@ class ParticleTestEffect: public Effect {
     Effect::setup(leds, parentVar);
     bool3State *setup = leds.effectData.write<bool3State>(true);
     ui->initSlider  (parentVar, "speed", leds.effectData.write<uint8_t>(15), 0, 30);
-    ui->initSlider  (parentVar, "number of Particles", leds.effectData.write<uint8_t>(10), 1, 255, false, [setup] (JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+    ui->initSlider  (parentVar, "number of Particles", leds.effectData.write<uint8_t>(10), 1, 255, false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
-    ui->initCheckBox(parentVar, "barriers", leds.effectData.write<bool3State>(0) , false, [setup] (JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) {
+    ui->initCheckBox(parentVar, "barriers", leds.effectData.write<bool3State>(0) , false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
@@ -2981,17 +2981,17 @@ class LiveEffect: public Effect {
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
     Effect::setup(leds, parentVar);
-    ui->initSelect(parentVar, "script", UINT8_MAX, false , [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "script", UINT8_MAX, false , [&leds](EventArguments) { switch (eventType) {
       case onUI: {
-        // ui->setComment(var, "Fixture to display effect on");
-        JsonArray options = ui->setOptions(var);
+        // variable.setComment("Fixture to display effect on");
+        JsonArray options = variable.setOptions();
         options.add("None");
         files->dirToJson(options, true, ".sc"); //only files containing F(ixture), alphabetically
 
         return true; }
       case onChange: {
         //set script
-        uint8_t fileNr = var["value"][rowNr];
+        uint8_t fileNr = variable.value(rowNr);
 
         gLeds = &leds; //set the leds class for the Live Scripts Module
         if (fileNr > 0 && fileNr != UINT8_MAX) { //not None and live setup done (before )

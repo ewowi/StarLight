@@ -449,10 +449,10 @@ public:
     parentVar = ui->initAppMod(parentVar, name, 6302); //created as a usermod, not an appmod to have it in the usermods tab
     parentVar["s"] = true; //setup
 
-    JsonObject currentVar = ui->initSelect(parentVar, "fixture", (uint8_t)0, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    JsonObject currentVar = ui->initSelect(parentVar, "fixture", (uint8_t)0, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
-        ui->setComment(var, "Predefined fixture");
-        JsonArray options = ui->setOptions(var); //See enum Fixtures for order of options
+        variable.setComment("Predefined fixture");
+        JsonArray options = variable.setOptions(); //See enum Fixtures for order of options
 
         JsonObject mainOption = options.add<JsonObject>();
         mainOption["Strips"].add("Spiral"); 
@@ -596,18 +596,18 @@ public:
   //generate dynamic html for fixture controls
   void fixtureOnChange() {
 
-    JsonObject fixture = mdl->findVar("FixtureGenerator", "fixture");
+    JsonObject fixtureVar = mdl->findVar("FixtureGenerator", "fixture");
 
     // JsonObject parentVar = mdl->findVar(var["id"]); //local parentVar
-    uint8_t fgValue = fixture["value"];
+    uint8_t fgValue = Variable(fixtureVar).value();
 
     //find option group and text
     char fgGroup[32];
     char fgText[32];
-    ui->findOptionsText(fixture, fgValue, fgGroup, fgText);
+    Variable(fixtureVar).findOptionsText(fgValue, fgGroup, fgText);
 
     //remove all the variables
-    fixture.remove("n"); //tbd: we should also remove the varFun !!
+    fixtureVar.remove("n"); //tbd: we should also remove the varEvent !!
 
     //part 0: group variables
     if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0) {
@@ -622,13 +622,13 @@ public:
           width = 10; height = 54;
         }
 
-        ui->initNumber(fixture, "width", width, 1, STARLIGHT_MAXLEDS, false, [this,fgText](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+        ui->initNumber(fixtureVar, "width", width, 1, STARLIGHT_MAXLEDS, false, [this,fgText](EventArguments) { switch (eventType) {
           case onChange:
             rebuildMatrix(fgText);
             return true;
           default: return false; 
         }});
-        ui->initNumber(fixture, "height", height, 1, STARLIGHT_MAXLEDS, false, [this,fgText](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+        ui->initNumber(fixtureVar, "height", height, 1, STARLIGHT_MAXLEDS, false, [this,fgText](EventArguments) { switch (eventType) {
           case onChange:
             rebuildMatrix(fgText);
             return true;
@@ -643,7 +643,7 @@ public:
         else if (strnstr(fgText, "CubeBox", 32) != nullptr)
           length = 8;
 
-        ui->initNumber(fixture, "length", length, 1, STARLIGHT_MAXLEDS, false, [this,fgText](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+        ui->initNumber(fixtureVar, "length", length, 1, STARLIGHT_MAXLEDS, false, [this,fgText](EventArguments) { switch (eventType) {
           case onChange:
             rebuildCube(fgText);
             return true;
@@ -652,14 +652,14 @@ public:
       }
     }
 
-    ui->initButton(fixture, "generate", false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initButton(fixtureVar, "generate", false, [this](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "Create F_ixture.json");
+        variable.setComment("Create F_ixture.json");
         return true;
       case onChange: {
 
         char fileName[32]; 
-        generateOnChange(var, fileName);
+        generateOnChange(variable.var, fileName);
 
         //set fixture in fixture module
         Variable(mdl->findVar("Fixture", "fixture")).triggerEvent(onUI); //rebuild options
@@ -672,26 +672,26 @@ public:
       default: return false;
     }});
 
-    // Variable(fixture).preDetails();
+    // Variable(fixtureVar).preDetails();
 
     bool showTable = true;
-    JsonObject parentVar = fixture;
+    JsonObject parentVar = fixtureVar;
 
     //default table variables - part 1
     if (showTable) {
 
-      parentVar = ui->initTable(fixture, "elements", nullptr, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      parentVar = ui->initTable(fixtureVar, "elements", nullptr, false, [](EventArguments) { switch (eventType) {
         case onUI:
-          ui->setComment(var, "Multiple parts");
+          variable.setComment("Multiple parts");
           return true;
         default: return false;
       }});
 
-      ui->initCoord3D(parentVar, "firstLed", {0,0,0}, 0, STARLIGHT_MAXLEDS, false, [fgGroup](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCoord3D(parentVar, "firstLed", {0,0,0}, 0, STARLIGHT_MAXLEDS, false, [fgGroup](EventArguments) { switch (eventType) {
         case onUI:
           //show Top Left for all fixture except Matrix as it has its own
           if (strncmp(fgGroup, "Matrices", 9) != 0 && strncmp(fgGroup, "Cubes", 6) != 0)
-            ui->setLabel(var, "Top left");
+            variable.setLabel("Top left");
           return true;
         default: return false;
       }});
@@ -713,16 +713,16 @@ public:
     }
     else if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0) {
 
-      ui->initCoord3D(parentVar, "rowEnd", {7,0,0}, 0, STARLIGHT_MAXLEDS, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCoord3D(parentVar, "rowEnd", {7,0,0}, 0, STARLIGHT_MAXLEDS, false, [](EventArguments) { switch (eventType) {
         case onUI:
-          ui->setComment(var, "-> Orientation");
+          variable.setComment("-> Orientation");
           return true;
         default: return false;
       }});
 
-      ui->initCoord3D(parentVar, "columnEnd", {7,7,0}, 0, STARLIGHT_MAXLEDS, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCoord3D(parentVar, "columnEnd", {7,7,0}, 0, STARLIGHT_MAXLEDS, false, [](EventArguments) { switch (eventType) {
         case onUI:
-          ui->setComment(var, "Last LED -> nrOfLeds, Serpentine");
+          variable.setComment("Last LED -> nrOfLeds, Serpentine");
           return true;
         default: return false;
       }});
@@ -766,31 +766,31 @@ public:
 
     //default variables - part 2
     if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0 || strnstr(fgText, "Rings241", 32) != nullptr || strnstr(fgText, "Helix", 32) != nullptr) { //tbd: the rest
-      ui->initCoord3D(parentVar, "rotate", {0,0,0}, 0, 359, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCoord3D(parentVar, "rotate", {0,0,0}, 0, 359, false, [](EventArguments) { switch (eventType) {
         case onUI:
-          ui->setComment(var, "Tilt, Pan, Roll");
+          variable.setComment("Tilt, Pan, Roll");
           return true;
         default: return false;
       }});
     }
 
-    ui->initNumber(parentVar, "IP", net->localIP()[3], 1, 256, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "IP", net->localIP()[3], 1, 256, false, [](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "Super-Sync WIP");
+        variable.setComment("Super-Sync WIP");
         return true;
       default: return false; 
     }});
 
-    ui->initPin(parentVar, "pin", 2, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initPin(parentVar, "pin", 2, false, [](EventArguments) { switch (eventType) {
       case onChange: {
         //set remaining rows to same pin
-        JsonArray valArray = Variable(var).valArray();
+        JsonArray valArray = variable.valArray();
 
-        uint8_t thisVal = var["value"];
+        uint8_t thisVal = variable.value();
         uint8_t rowNrL = 0;
         for (JsonVariant val: valArray) {
           if (rowNrL > rowNr)
-            mdl->setValue(var, valArray[rowNr].as<uint8_t>(), rowNrL);
+            mdl->setValue(variable.var, valArray[rowNr].as<uint8_t>(), rowNrL);
           rowNrL++;
         }
         return true; }
@@ -838,7 +838,7 @@ public:
       }
     }
 
-    Variable(fixture).postDetails(UINT8_MAX);
+    Variable(fixtureVar).postDetails(UINT8_MAX);
     mdl->setValueRowNr = UINT8_MAX;
   }
 
@@ -885,13 +885,13 @@ public:
   //generate the F-ixture.json file
   void generateOnChange(JsonObject var, char * fileName) {
 
-    JsonObject fixture = mdl->findVar("FixtureGenerator", "fixture");
-    uint8_t fgValue = fixture["value"];
+    JsonObject fixtureVar = mdl->findVar("FixtureGenerator", "fixture");
+    uint8_t fgValue = Variable(fixtureVar).value();
 
     //find option group and text
     char fgGroup[32];
     char fgText[32];
-    ui->findOptionsText(fixture, fgValue, fgGroup, fgText);
+    Variable(fixtureVar).findOptionsText(fgValue, fgGroup, fgText);
 
 
     if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0) {

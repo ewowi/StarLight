@@ -148,13 +148,13 @@ class PinwheelProjection: public Projection {
     uint8_t *symmetry = leds.projectionData.write<uint8_t>(1);
     uint8_t *zTwist   = leds.projectionData.write<uint8_t>(0);
 
-    ui->initSlider(parentVar, "swirl", swirlVal, 0, 60, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "swirl", swirlVal, 0, 60, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;
       default: return false;
     }});
-    ui->initCheckBox(parentVar, "reverse", reverse, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "reverse", reverse, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;
@@ -162,7 +162,7 @@ class PinwheelProjection: public Projection {
     }});
     // Testing zTwist range 0 to 42 arbitrary values for testing. Hide if not 3D fixture. Select pinwheel while using 3D fixture.
     if (leds.projectionDimension == _3D) {
-      ui->initSlider(parentVar, "zTwist", zTwist, 0, 42, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initSlider(parentVar, "zTwist", zTwist, 0, 42, false, [&leds](EventArguments) { switch (eventType) {
         case onChange:
           leds.triggerMapping();
           return true;
@@ -170,14 +170,14 @@ class PinwheelProjection: public Projection {
       }});
     }
     // Rotation symmetry. Uses factors of 360.
-    ui->initSlider(parentVar, "rotationalSymmetry", symmetry, 1, 23, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "rotationalSymmetry", symmetry, 1, 23, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;
       default: return false;
     }});
     // Naming petals, arms, blades, rays? Controls virtual strip length.
-    ui->initSlider(parentVar, "petals", petals, 1, 60, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "petals", petals, 1, 60, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;
@@ -246,13 +246,13 @@ class MultiplyProjection: public Projection {
   void setup(LedsLayer &leds, JsonObject parentVar) {
     Coord3D *proMulti = leds.projectionData.write<Coord3D>({2,2,1});
     bool3State *mirror = leds.projectionData.write<bool3State>(false);
-    ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;
       default: return false;
     }});
-    ui->initCheckBox(parentVar, "mirror", mirror, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "mirror", mirror, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;
@@ -307,31 +307,31 @@ class TiltPanRollProjection: public Projection {
   void setup(LedsLayer &leds, JsonObject parentVar) {
     //tbd: implement variable by reference for rowNrs
     #ifdef STARBASE_USERMOD_MPU6050
-      ui->initCheckBox(parentVar, "gyro", false, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "gyro", false, false, [&leds](EventArguments) { switch (eventType) {
         case onChange:
-          leds.proGyro = mdl->getValue(var, rowNr);
+          leds.proGyro = mdl->getValue(variable.var, rowNr);
           return true;
         default: return false;
       }});
     #endif
-    ui->initSlider(parentVar, "tilt", 128, 0, 254, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "tilt", 128, 0, 254, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
-        leds.proTiltSpeed = mdl->getValue(var, rowNr);
+        leds.proTiltSpeed = mdl->getValue(variable.var, rowNr);
         return true;
       default: return false;
     }});
-    ui->initSlider(parentVar, "pan", 128, 0, 254, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "pan", 128, 0, 254, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
-        leds.proPanSpeed = mdl->getValue(var, rowNr);
+        leds.proPanSpeed = mdl->getValue(variable.var, rowNr);
         return true;
       default: return false;
     }});
-    ui->initSlider(parentVar, "roll", 128, 0, 254, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "roll", 128, 0, 254, false, [&leds](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "Roll speed");
+        variable.setComment("Roll speed");
         return true;
       case onChange:
-        leds.proRollSpeed = mdl->getValue(var, rowNr);
+        leds.proRollSpeed = mdl->getValue(variable.var, rowNr);
         return true;
       default: return false;
     }});
@@ -502,70 +502,70 @@ class MirrorReverseTransposeProjection: public Projection {
 
   void setup(LedsLayer &leds, JsonObject parentVar) {
       MRTData *data = leds.projectionData.readWrite<MRTData>();
-      ui->initCheckBox(parentVar, "Mirror X", false, false, [&leds, data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "Mirror X", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->mirrorX = mdl->getValue(var, rowNr);
+          data->mirrorX = mdl->getValue(variable.var, rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
-      ui->initCheckBox(parentVar, "Mirror Y", false, false, [&leds, data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "Mirror Y", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->mirrorY = mdl->getValue(var, rowNr);
+          data->mirrorY = mdl->getValue(variable.var, rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
       if (leds.projectionDimension == _3D) {
-      ui->initCheckBox(parentVar, "Mirror Z", false, false, [&leds, data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "Mirror Z", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->mirrorZ = mdl->getValue(var, rowNr);
+          data->mirrorZ = mdl->getValue(variable.var, rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
       }
-      ui->initCheckBox(parentVar, "Reverse X", false, false, [&leds, data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "Reverse X", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->reverseX = mdl->getValue(var, rowNr);
+          data->reverseX = mdl->getValue(variable.var, rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
-      ui->initCheckBox(parentVar, "Reverse Y", false, false, [&leds, data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "Reverse Y", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->reverseY = mdl->getValue(var, rowNr);
+          data->reverseY = mdl->getValue(variable.var, rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
       if (leds.projectionDimension == _3D) {
-      ui->initCheckBox(parentVar, "Reverse Z", false, false, [&leds, data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "Reverse Z", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->reverseZ = mdl->getValue(var, rowNr);
+          data->reverseZ = mdl->getValue(variable.var, rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
       }
-      ui->initCheckBox(parentVar, "Transpose XY", false, false, [&leds, data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "Transpose XY", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->transposeXY = mdl->getValue(var, rowNr);
+          data->transposeXY = mdl->getValue(variable.var, rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
       if (leds.projectionDimension == _3D) {
-      ui->initCheckBox(parentVar, "Transpose XZ", false, false, [&leds, data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "Transpose XZ", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->transposeXZ = mdl->getValue(var, rowNr);
+          data->transposeXZ = mdl->getValue(variable.var, rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
-      ui->initCheckBox(parentVar, "Transpose YZ", false, false, [&leds, data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "Transpose YZ", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->transposeYZ = mdl->getValue(var, rowNr);
+          data->transposeYZ = mdl->getValue(variable.var, rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
@@ -629,14 +629,14 @@ class MirrorProjection: public Projection {
     bool3State *mirrorX = leds.projectionData.write<bool3State>(false);
     bool3State *mirrorY = leds.projectionData.write<bool3State>(false);
     bool3State *mirrorZ = leds.projectionData.write<bool3State>(false);
-    ui->initCheckBox(parentVar, "mirrorX", mirrorX, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "mirrorX", mirrorX, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;
       default: return false;
     }});
     if (leds.projectionDimension >= _2D) {
-      ui->initCheckBox(parentVar, "mirrorY", mirrorY, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "mirrorY", mirrorY, false, [&leds](EventArguments) { switch (eventType) {
         case onChange:
           leds.triggerMapping();
           return true;
@@ -644,7 +644,7 @@ class MirrorProjection: public Projection {
       }});
     }
     if (leds.projectionDimension == _3D) {
-      ui->initCheckBox(parentVar, "mirrorZ", mirrorZ, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      ui->initCheckBox(parentVar, "mirrorZ", mirrorZ, false, [&leds](EventArguments) { switch (eventType) {
         case onChange:
           leds.triggerMapping();
           return true;
@@ -697,14 +697,14 @@ class MirrorProjection: public Projection {
 //     bool3State *reverseY = leds.projectionData.write<bool3State>(false);
 //     bool3State *reverseZ = leds.projectionData.write<bool3State>(false);
 // 
-//     ui->initCheckBox(parentVar, "reverseX", reverseX, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+//     ui->initCheckBox(parentVar, "reverseX", reverseX, false, [&leds](EventArguments) { switch (eventType) {
 //       case onChange:
 //         leds.triggerMapping();
 //         return true;
 //       default: return false;
 //     }});
 //     if (leds.effectDimension >= _2D || leds.projectionDimension >= _2D) {
-//       ui->initCheckBox(parentVar, "reverseY", reverseY, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+//       ui->initCheckBox(parentVar, "reverseY", reverseY, false, [&leds](EventArguments) { switch (eventType) {
 //         case onChange:
 //           leds.triggerMapping();
 //           return true;
@@ -712,7 +712,7 @@ class MirrorProjection: public Projection {
 //       }});
 //     }
 //     if (leds.effectDimension == _3D || leds.projectionDimension == _3D) {
-//       ui->initCheckBox(parentVar, "reverseZ", reverseZ, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+//       ui->initCheckBox(parentVar, "reverseZ", reverseZ, false, [&leds](EventArguments) { switch (eventType) {
 //         case onChange:
 //           leds.triggerMapping();
 //           return true;
@@ -747,20 +747,20 @@ class MirrorProjection: public Projection {
 //     bool3State *transposeXZ = leds.projectionData.write<bool3State>(false);
 //     bool3State *transposeYZ = leds.projectionData.write<bool3State>(false);
 // 
-//     ui->initCheckBox(parentVar, "transpose XY", transposeXY, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+//     ui->initCheckBox(parentVar, "transpose XY", transposeXY, false, [&leds](EventArguments) { switch (eventType) {
 //       case onChange:
 //         leds.triggerMapping();
 //         return true;
 //       default: return false;
 //     }});
 //     if (leds.effectDimension == _3D) {
-//       ui->initCheckBox(parentVar, "transpose XZ", transposeXZ, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+//       ui->initCheckBox(parentVar, "transpose XZ", transposeXZ, false, [&leds](EventArguments) { switch (eventType) {
 //         case onChange:
 //           leds.triggerMapping();
 //           return true;
 //         default: return false;
 //       }});
-//       ui->initCheckBox(parentVar, "transpose YZ", transposeYZ, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+//       ui->initCheckBox(parentVar, "transpose YZ", transposeYZ, false, [&leds](EventArguments) { switch (eventType) {
 //         case onChange:
 //           leds.triggerMapping();
 //           return true;
@@ -808,13 +808,13 @@ class GroupingSpacingProjection: public Projection {
   void setup(LedsLayer &leds, JsonObject parentVar) {
     Coord3D *grouping = leds.projectionData.write<Coord3D>({2,2,2});
     Coord3D *spacing  = leds.projectionData.write<Coord3D>({0,0,0});
-    ui->initCoord3D(parentVar, "grouping", grouping, 0, 100, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "grouping", grouping, 0, 100, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;
       default: return false;
     }});
-    ui->initCoord3D(parentVar, "spacing", spacing, 0, 100, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "spacing", spacing, 0, 100, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;
@@ -952,19 +952,19 @@ class CheckerboardProjection: public Projection {
     Coord3D *size = leds.projectionData.write<Coord3D>({3,3,3});
     bool3State *invert = leds.projectionData.write<bool3State>(false);
     bool3State *group = leds.projectionData.write<bool3State>(false);
-    ui->initCoord3D(parentVar, "squareSize", size, 0, 100, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "squareSize", size, 0, 100, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;
       default: return false;
     }});
-    ui->initCheckBox(parentVar, "invert", invert, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "invert", invert, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;
       default: return false;
     }});
-    ui->initCheckBox(parentVar, "group", group, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "group", group, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;
@@ -1032,29 +1032,29 @@ class RotateProjection: public Projection {
   void setup(LedsLayer &leds, JsonObject parentVar) {
     RotateData *data = leds.projectionData.readWrite<RotateData>();
 
-    ui->initSelect(parentVar, "direction", (uint8_t)0, false, [data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "direction", (uint8_t)0, false, [data](EventArguments) { switch (eventType) {
       case onUI: {
-        JsonArray options = ui->setOptions(var);
+        JsonArray options = variable.setOptions();
         options.add("Clockwise");
         options.add("Counter-Clockwise");
         options.add("Alternate");
         return true; }
       case onChange: {
-        uint8_t val = mdl->getValue(var, rowNr);
+        uint8_t val = mdl->getValue(variable.var, rowNr);
         if (val == 0) data->reverse = false;
         if (val == 1) data->reverse = true;
         if (val == 2) data->alternate = true; else data->alternate = false;
         return true; }
       default: return false;
     }});
-    ui->initSlider(parentVar, "rotateSpeed", 128, 0, 254, false, [data](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSlider(parentVar, "rotateSpeed", 128, 0, 254, false, [data](EventArguments) { switch (eventType) {
       case onChange:
-        data->speed = mdl->getValue(var, rowNr);
+        data->speed = mdl->getValue(variable.var, rowNr);
         data->interval = 1000 / (data->speed + 1);
         return true;
       default: return false;
     }});
-    ui->initCheckBox(parentVar, "expand", false, false, [&leds](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "expand", false, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
         return true;

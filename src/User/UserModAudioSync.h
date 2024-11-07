@@ -37,7 +37,7 @@ public:
     SysModule::setup();
     parentVar = ui->initUserMod(parentVar, name, 6300);
   
-    ui->initText(parentVar, "status", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(parentVar, "status", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s: {
       String msg = "";
       if((lastData != 0) && isTimeout()) {
@@ -55,7 +55,7 @@ public:
             break;
         }
       }
-      mdl->setValue(var, msg.c_str());
+      mdl->setValue(variable.var, msg.c_str());
     } return true;
     default: return false;
    }});
