@@ -130,17 +130,17 @@ static float _time(float j) {
 
     parentVar = ui->initUserMod(parentVar, name, 6310);
 
-    ui->initSelect(parentVar, "script", UINT8_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "script", UINT8_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
-        // ui->setComment(var, "Fixture to display effect on");
-        JsonArray options = ui->setOptions(var);
+        // variable.setComment("Fixture to display effect on");
+        JsonArray options = variable.setOptions();
         options.add("None");
         files->dirToJson(options, true, ".sc"); //only files containing F(ixture), alphabetically
 
         return true; }
       case onChange: {
         //set script
-        uint8_t fileNr = var["value"];
+        uint8_t fileNr = variable.value();
 
         ppf("%s script.onChange f:%d\n", name, fileNr);
 
@@ -178,15 +178,15 @@ static float _time(float j) {
       default: return false; 
     }}); //script
 
-    ui->initText(parentVar, "fps1", nullptr, 10, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(parentVar, "fps1", nullptr, 10, true, [this](EventArguments) { switch (eventType) {
       case onLoop1s:
-        mdl->setValue(var, "%.0f /s", fps, 0); //0 is to force format overload used
+        mdl->setValue(variable.var, "%.0f /s", fps, 0); //0 is to force format overload used
         return true;
       default: return false; 
     }});
-    ui->initText(parentVar, "fps2", nullptr, 10, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(parentVar, "fps2", nullptr, 10, true, [this](EventArguments) { switch (eventType) {
       case onLoop1s:
-        mdl->setValue(var, "%d /s", frameCounter, 0); //0 is to force format overload used
+        mdl->setValue(variable.var, "%d /s", frameCounter, 0); //0 is to force format overload used
         frameCounter = 0;
         return true;
       default: return false; 
@@ -194,77 +194,77 @@ static float _time(float j) {
 
     JsonObject tableVar = ui->initTable(parentVar, "scripts", nullptr, true);
 
-    ui->initText(tableVar, "name", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(tableVar, "name", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
-        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
+        variable.var["value"].to<JsonArray>(); web->addResponse(variable.var, "value", variable.value()); // empty the value
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
           const char *name = exec.name.c_str();
-          mdl->setValue(var, JsonString(exec.name.c_str(), JsonString::Copied), rowNr++);
+          mdl->setValue(variable.var, JsonString(exec.name.c_str(), JsonString::Copied), rowNr++);
         }
         return true;
       default: return false;
     }});
 
-    ui->initCheckBox(tableVar, "running", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(tableVar, "running", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
-        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
+        variable.var["value"].to<JsonArray>(); web->addResponse(variable.var, "value", variable.value()); // empty the value
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
-          mdl->setValue(var, exec.isRunning(), rowNr++);
+          mdl->setValue(variable.var, exec.isRunning(), rowNr++);
         }
         return true;
       default: return false;
     }});
 
-    ui->initCheckBox(tableVar, "halted", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(tableVar, "halted", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
-        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
+        variable.var["value"].to<JsonArray>(); web->addResponse(variable.var, "value", variable.value()); // empty the value
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
-          mdl->setValue(var, exec.isHalted, rowNr++);
+          mdl->setValue(variable.var, exec.isHalted, rowNr++);
         }
         return true;
       default: return false;
     }});
 
-    ui->initCheckBox(tableVar, "exe", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(tableVar, "exe", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
-        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
+        variable.var["value"].to<JsonArray>(); web->addResponse(variable.var, "value", variable.value()); // empty the value
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
-          mdl->setValue(var, exec.exeExist, rowNr++);
+          mdl->setValue(variable.var, exec.exeExist, rowNr++);
         }
         return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "handle", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "handle", UINT16_MAX, 0, UINT16_MAX, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
-        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
+        variable.var["value"].to<JsonArray>(); web->addResponse(variable.var, "value", variable.value()); // empty the value
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
-          mdl->setValue(var, exec.__run_handle_index, rowNr++);
+          mdl->setValue(variable.var, exec.__run_handle_index, rowNr++);
         }
         return true;
       default: return false;
     }});
 
-    ui->initText(tableVar, "size", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(tableVar, "size", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
-        var["value"].to<JsonArray>(); web->addResponse(var, "value", var["value"]); // empty the value
+        variable.var["value"].to<JsonArray>(); web->addResponse(variable.var, "value", variable.value()); // empty the value
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
           exe_info exeInfo = scriptRuntime.getExecutableInfo(exec.name);
           char text[30];
           print->fFormat(text, sizeof(text), "%d+%d=%d B", exeInfo.binary_size, exeInfo.data_size, exeInfo.total_size);
-          mdl->setValue(var, JsonString(text, JsonString::Copied), rowNr++);
+          mdl->setValue(variable.var, JsonString(text, JsonString::Copied), rowNr++);
         }
         return true;
       default: return false;
     }});
 
-    ui->initButton(tableVar, "Kill", false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initButton(tableVar, "Kill", false, [this](EventArguments) { switch (eventType) {
       case onChange:
         if (rowNr < scriptRuntime._scExecutables.size())
           killAndDelete(scriptRuntime._scExecutables[rowNr].name.c_str());

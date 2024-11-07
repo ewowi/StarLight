@@ -47,47 +47,47 @@ void SysModWeb::setup() {
   SysModule::setup();
   parentVar = ui->initSysMod(parentVar, name, 3101);
 
-  JsonObject tableVar = ui->initTable(parentVar, "clients", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  JsonObject tableVar = ui->initTable(parentVar, "clients", nullptr, true, [](EventArguments) { switch (eventType) {
     case onLoop1s:
-      for (JsonObject childVar: Variable(var).children())
+      for (JsonObject childVar: variable.children())
         Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
     default: return false;
   }});
 
-  ui->initNumber(tableVar, "nr", UINT16_MAX, 0, 999, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initNumber(tableVar, "nr", UINT16_MAX, 0, 999, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(var, client->id(), rowNr++);
+        mdl->setValue(variable.var, client->id(), rowNr++);
       return true; }
     default: return false;
   }});
 
-  ui->initText(tableVar, "ip", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(tableVar, "ip", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(var, JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
+        mdl->setValue(variable.var, JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
       return true; }
     default: return false;
   }});
 
   //UINT8_MAX: tri state boolean: not true not false
-  ui->initCheckBox(tableVar, "full", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initCheckBox(tableVar, "full", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(var, client->queueIsFull(), rowNr++);
+        mdl->setValue(variable.var, client->queueIsFull(), rowNr++);
       return true; }
     default: return false;
   }});
 
-  ui->initSelect(tableVar, "status", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initSelect(tableVar, "status", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(var, client->status(), rowNr++);
+        mdl->setValue(variable.var, client->status(), rowNr++);
       return true; }
     case onUI:
     {
       //tbd: not working yet in ui
-      JsonArray options = ui->setOptions(var);
+      JsonArray options = variable.setOptions();
       options.add("Disconnected"); //0
       options.add("Connected"); //1
       options.add("Disconnecting"); //2
@@ -96,46 +96,46 @@ void SysModWeb::setup() {
     default: return false;
   }});
 
-  ui->initNumber(tableVar, "length", UINT16_MAX, 0, WS_MAX_QUEUED_MESSAGES, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initNumber(tableVar, "length", UINT16_MAX, 0, WS_MAX_QUEUED_MESSAGES, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(var, client->queueLen(), rowNr++);
+        mdl->setValue(variable.var, client->queueLen(), rowNr++);
       return true; }
     default: return false;
   }});
 
   ui->initNumber(parentVar, "maxQueue", WS_MAX_QUEUED_MESSAGES, 0, WS_MAX_QUEUED_MESSAGES, true);
 
-  ui->initText(parentVar, "WSSend", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "WSSend", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(var, "#: %d /s T: %d B/s B:%d B/s", sendWsCounter, sendWsTBytes, sendWsBBytes);
+      mdl->setValue(variable.var, "#: %d /s T: %d B/s B:%d B/s", sendWsCounter, sendWsTBytes, sendWsBBytes);
       sendWsCounter = 0;
       sendWsTBytes = 0;
       sendWsBBytes = 0;
     default: return false;
   }});
 
-  ui->initText(parentVar, "WSRecv", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "WSRecv", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(var, "#: %d /s %d B/s", recvWsCounter, recvWsBytes);
+      mdl->setValue(variable.var, "#: %d /s %d B/s", recvWsCounter, recvWsBytes);
       recvWsCounter = 0;
       recvWsBytes = 0;
       return true;
     default: return false;
   }});
 
-  ui->initText(parentVar, "UDPSend", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "UDPSend", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(var, "#: %d /s %d B/s", sendUDPCounter, sendUDPBytes);
+      mdl->setValue(variable.var, "#: %d /s %d B/s", sendUDPCounter, sendUDPBytes);
       sendUDPCounter = 0;
       sendUDPBytes = 0;
       return true;
     default: return false;
   }});
 
-  ui->initText(parentVar, "UDPRecv", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "UDPRecv", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(var, "#: %d /s %d B/s", recvUDPCounter, recvUDPBytes);
+      mdl->setValue(variable.var, "#: %d /s %d B/s", recvUDPCounter, recvUDPBytes);
       recvUDPCounter = 0;
       recvUDPBytes = 0;
     default: return false;

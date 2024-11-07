@@ -30,14 +30,14 @@ void SysModFiles::setup() {
   SysModule::setup();
   parentVar = ui->initSysMod(parentVar, name, 2101);
 
-  JsonObject tableVar = ui->initTable(parentVar, "files", nullptr, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  JsonObject tableVar = ui->initTable(parentVar, "files", nullptr, false, [this](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "List of files");
+      variable.setComment("List of files");
       return true;
     case onDelete:
       if (rowNr != UINT8_MAX && rowNr < fileNames.size()) {
         const char * fileName = fileNames[rowNr].s;
-        // ppf("files onDelete %s[%d] = %s %s\n", Variable(var).id(), rowNr, Variable(var).valueString().c_str(), fileName);
+        // ppf("files onDelete %s[%d] = %s %s\n", variable.id(), rowNr, variable.valueString().c_str(), fileName);
         this->removeFiles(fileName, false);
 
         #ifdef STARBASE_USERMOD_LIVE
@@ -58,12 +58,12 @@ void SysModFiles::setup() {
 
   ui->initNumber(tableVar, "size", &fileSizes, 0, UINT16_MAX, true);
 
-  // ui->initURL(tableVar, "flLink", nullptr, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  // ui->initURL(tableVar, "flLink", nullptr, true, [this](EventArguments) { switch (eventType) {
   //   case onSetValue:
   //     for (size_t rowNr = 0; rowNr < fileList.size(); rowNr++) {
   //       char urlString[32] = "file/";
   //       strlcat(urlString, fileList[rowNr].name, sizeof(urlString));
-  //       mdl->setValue(var, JsonString(urlString, JsonString::Copied), rowNr);
+  //       mdl->setValue(variable.var, JsonString(urlString, JsonString::Copied), rowNr);
   //     }
   //     return true;
   //   default: return false;
@@ -76,10 +76,10 @@ void SysModFiles::setup() {
 
   ui->initFileUpload(parentVar, "upload");//, nullptr, UINT16_MAX, false);
 
-  ui->initProgress(parentVar, "totalSize", 0, 0, files->totalBytes(), true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initProgress(parentVar, "totalSize", 0, 0, files->totalBytes(), true, [](EventArguments) { switch (eventType) {
     case onChange:
-      var["max"] = files->totalBytes(); //makes sense?
-      web->addResponse(var, "comment", "%d / %d B", files->usedBytes(), files->totalBytes());
+      variable.var["max"] = files->totalBytes(); //makes sense?
+      web->addResponse(variable.var, "comment", "%d / %d B", files->usedBytes(), files->totalBytes());
       return true;
     default: return false;
   }});

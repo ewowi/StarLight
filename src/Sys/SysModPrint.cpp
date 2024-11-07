@@ -57,10 +57,10 @@ void SysModPrint::setup() {
   parentVar = ui->initSysMod(parentVar, name, 2302);
 
   //default to Serial
-  ui->initSelect(parentVar, "output", 1, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initSelect(parentVar, "output", 1, false, [](EventArguments) { switch (eventType) {
     case onUI:
     {
-      JsonArray options = ui->setOptions(var);
+      JsonArray options = variable.setOptions();
       options.add("No");
       options.add("Serial");
       options.add("UI");
@@ -85,7 +85,7 @@ void SysModPrint::printf(const char * format, ...) {
 
   uint8_t output = 1; //default serial
   char buffer[512]; //this is a lot for the stack - move to heap?
-  vsnprintf(buffer, sizeof(buffer)-1, format, args);
+  vsnprintf(buffer, sizeof(buffer), format, args);
   bool toSerial = false;
   
   if (mdls->isConnected) {
@@ -101,8 +101,8 @@ void SysModPrint::printf(const char * format, ...) {
         responseObject["Print.log"]["value"] = buffer;
       else
         responseObject["Print.log"]["value"] = responseObject["Print.log"]["value"].as<String>() + String(buffer);
-      // web->addResponse(var, "value", JsonString(buffer, JsonString::Copied)); //setValue not necessary
-      // mdl->setValue(var, "%s", buffer);
+      // web->addResponse(variable.var, "value", JsonString(buffer, JsonString::Copied)); //setValue not necessary
+      // mdl->setValue(variable.var, "%s", buffer);
     }
     else if (output == 3) {
       //tbd

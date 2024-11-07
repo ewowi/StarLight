@@ -29,9 +29,9 @@ public:
 
     ui->initNumber(parentVar, "universe", &universe, 0, 7);
 
-    JsonObject currentVar = ui->initNumber(parentVar, "channel", &channel, 1, 512, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    JsonObject currentVar = ui->initNumber(parentVar, "channel", &channel, 1, 512, false, [this](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "First channel");
+        variable.setComment("First channel");
         return true;
       case onChange:
         for (JsonObject childVar: Variable(mdl->findVar("E131", "watches")).children())
@@ -41,41 +41,41 @@ public:
     }});
     currentVar["dash"] = true;
 
-    JsonObject tableVar = ui->initTable(parentVar, "watches", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    JsonObject tableVar = ui->initTable(parentVar, "watches", nullptr, true, [](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "Variables to watch");
+        variable.setComment("Variables to watch");
         return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "channel", UINT16_MAX, 1, 512, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "channel", UINT16_MAX, 1, 512, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
-          mdl->setValue(var, channel + varsToWatch[rowNr].channelOffset, rowNr);
+          mdl->setValue(variable.var, channel + varsToWatch[rowNr].channelOffset, rowNr);
         return true;
       default: return false;
     }});
 
-    ui->initText(tableVar, "variable", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(tableVar, "variable", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
-          mdl->setValue(var, varsToWatch[rowNr].id, rowNr);
+          mdl->setValue(variable.var, varsToWatch[rowNr].id, rowNr);
         return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "max", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "max", UINT16_MAX, 0, UINT16_MAX, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
-          mdl->setValue(var, varsToWatch[rowNr].max, rowNr);
+          mdl->setValue(variable.var, varsToWatch[rowNr].max, rowNr);
         return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "value", UINT16_MAX, 0, 255, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "value", UINT16_MAX, 0, 255, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
-          mdl->setValue(var, varsToWatch[rowNr].savedValue, rowNr);
+          mdl->setValue(variable.var, varsToWatch[rowNr].savedValue, rowNr);
         return true;
       default: return false;
     }});

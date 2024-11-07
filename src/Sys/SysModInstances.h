@@ -116,99 +116,99 @@ public:
 
     JsonObject tableVar = ui->initTable(parentVar, "instances", nullptr, true);
     
-    ui->initText(tableVar, "name", nullptr, 32, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(tableVar, "name", nullptr, 32, false, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, JsonString(instances[rowNrL].name, JsonString::Copied), rowNrL);
+          mdl->setValue(variable.var, JsonString(instances[rowNrL].name, JsonString::Copied), rowNrL);
         return true;
       // comment this out for the time being as causes corrupted instance names
       // case onChange:
-      //   strlcpy(instances[rowNr].name, mdl->getValue(var, rowNr), sizeof(instances[rowNr].name));
-      //   sendMessageUDP(instances[rowNr].ip, "name", mdl->getValue(var, rowNr));
+      //   strlcpy(instances[rowNr].name, mdl->getValue(variable.var, rowNr), sizeof(instances[rowNr].name));
+      //   sendMessageUDP(instances[rowNr].ip, "name", mdl->getValue(variable.var, rowNr));
       //   return true;
       default: return false;
     }});
 
-    ui->initURL(tableVar, "show", nullptr, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initURL(tableVar, "show", nullptr, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++) {
           char urlString[32] = "http://";
           strlcat(urlString, instances[rowNrL].ip.toString().c_str(), sizeof(urlString));
-          mdl->setValue(var, JsonString(urlString, JsonString::Copied), rowNrL);
+          mdl->setValue(variable.var, JsonString(urlString, JsonString::Copied), rowNrL);
         }
         return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "link", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "link", UINT16_MAX, 0, UINT16_MAX, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, calcGroup(instances[rowNrL].name), rowNrL);
+          mdl->setValue(variable.var, calcGroup(instances[rowNrL].name), rowNrL);
         return true;
       default: return false;
     }});
 
-    ui->initText(tableVar, "IP", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(tableVar, "IP", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, JsonString(instances[rowNrL].ip.toString().c_str(), JsonString::Copied), rowNrL);
+          mdl->setValue(variable.var, JsonString(instances[rowNrL].ip.toString().c_str(), JsonString::Copied), rowNrL);
         return true;
       default: return false;
     }});
 
-    ui->initText(tableVar, "type", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(tableVar, "type", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++) {
           byte type = instances[rowNrL].sysData.type;
-          mdl->setValue(var, (type==0)?"WLED":(type==1)?"StarBase":(type==2)?"StarLight":(type==3)?"StarLedsLive":"StarFork", rowNrL);
+          mdl->setValue(variable.var, (type==0)?"WLED":(type==1)?"StarBase":(type==2)?"StarLight":(type==3)?"StarLedsLive":"StarFork", rowNrL);
         }
         return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "version", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "version", UINT16_MAX, 0, (unsigned long)-1, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, instances[rowNrL].version, rowNrL);
+          mdl->setValue(variable.var, instances[rowNrL].version, rowNrL);
         return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "uptime", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "uptime", UINT16_MAX, 0, (unsigned long)-1, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, instances[rowNrL].sysData.uptime, rowNrL);
+          mdl->setValue(variable.var, instances[rowNrL].sysData.uptime, rowNrL);
         return true;
       default: return false;
     }});
-    ui->initNumber(tableVar, "now", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "now", UINT16_MAX, 0, (unsigned long)-1, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, instances[rowNrL].sysData.now / 1000, rowNrL);
-        return true;
-      default: return false;
-    }});
-
-    ui->initNumber(tableVar, "timestamp", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
-      case onSetValue:
-        for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, instances[rowNrL].sysData.timeSource, rowNrL);
+          mdl->setValue(variable.var, instances[rowNrL].sysData.now / 1000, rowNrL);
         return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "time", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "timestamp", UINT16_MAX, 0, (unsigned long)-1, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, instances[rowNrL].sysData.tokiTime, rowNrL);
+          mdl->setValue(variable.var, instances[rowNrL].sysData.timeSource, rowNrL);
         return true;
       default: return false;
     }});
 
-    ui->initNumber(tableVar, "ms", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "time", UINT16_MAX, 0, (unsigned long)-1, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          mdl->setValue(var, instances[rowNrL].sysData.tokiMs, rowNrL);
+          mdl->setValue(variable.var, instances[rowNrL].sysData.tokiTime, rowNrL);
+        return true;
+      default: return false;
+    }});
+
+    ui->initNumber(tableVar, "ms", UINT16_MAX, 0, (unsigned long)-1, true, [this](EventArguments) { switch (eventType) {
+      case onSetValue:
+        for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
+          mdl->setValue(variable.var, instances[rowNrL].sysData.tokiMs, rowNrL);
         return true;
       default: return false;
     }});
@@ -225,32 +225,32 @@ public:
       JsonObject insVar; // = ui->cloneVar(var, columnVarID, [this, var](JsonObject insVar){});
 
       //create a var of the same type. InitVar is not calling onChange which is good in this situation!
-      insVar = ui->initVar(tableVar, columnVarID, var["type"], false, [this, var](JsonObject insVar, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+      insVar = ui->initVar(tableVar, columnVarID, var["type"], false, [this, var](Variable insVariable, uint8_t rowNr, uint8_t eventType) { switch (eventType) { //varEvent
         case onSetValue:
           //should not trigger onChange
           for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++) {
-            // ppf("initVar dash %s[%d]\n", Variable(insVar).id(), rowNrL);
+            // ppf("initVar dash %s[%d]\n", variable.id(), rowNrL);
             //do what setValue is doing except calling onChange
-            // insVar["value"][rowNrL] = instances[rowNrL].jsonData[Variable(var).id()]; //only int values...
+            // insVar["value"][rowNrL] = instances[rowNrL].jsonData[variable.id()]; //only int values...
 
-            web->addResponse(insVar, "value", instances[rowNrL].jsonData[Variable(var).id()], rowNrL);
+            web->addResponse(insVariable.var, "value", instances[rowNrL].jsonData[Variable(var).id()], rowNrL);
 
-            // mdl->setValue(insVar, instances[rowNrL].jsonData[Variable(var).id()], rowNr);
+            // mdl->setValue(insVariable.var, instances[rowNrL].jsonData[Variable(var).id()], rowNr);
           //send to ws?
           }
           return true;
         case onUI:
           // call onUI of the base variable for the new variable
-          mdl->varFunctions[var["fun"]](insVar, rowNr, onUI);
+          mdl->varEvents[var["fun"]](insVariable, rowNr, onUI);
           return true;
         case onChange: {
           //do not set this initially!!!
           if (rowNr != UINT8_MAX) {
             //if this instance update directly, otherwise send over network
             if (instances[rowNr].ip == net->localIP()) {
-              mdl->setValue(var, mdl->getValue(insVar, rowNr).as<uint8_t>()); //this will call sendDataWS (tbd...), do not set for rowNr
+              mdl->setValue(var, mdl->getValue(insVariable.var, rowNr).as<uint8_t>()); //this will call sendDataWS (tbd...), do not set for rowNr
             } else {
-              sendMessageUDP(instances[rowNr].ip, var, mdl->getValue(insVar, rowNr));
+              sendMessageUDP(instances[rowNr].ip, var, mdl->getValue(insVariable.var, rowNr));
             }
           }
           // print->printJson(" ", var);
@@ -603,7 +603,7 @@ public:
         instance.jsonData.to<JsonObject>(); //clear
 
         //send dash values
-        mdl->findVars("dash", true, [&instance](JsonObject var) { //varFun
+        mdl->findVars("dash", true, [&instance](JsonObject var) { //varEvent
           instance.jsonData[Variable(var).id()] = var["value"];
           // // print->printJson("setVar", var);
           // JsonArray valArray = Variable(var).valArray();

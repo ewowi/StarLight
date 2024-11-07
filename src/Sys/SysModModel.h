@@ -214,6 +214,9 @@ class Variable {
   const char * pid() {return var["pid"];}
   const char * id() {return var["id"]; }
 
+  JsonVariant value() {return var["value"];}
+  JsonVariant value(uint8_t rowNr) {return var["value"][rowNr];}
+
   String valueString(uint8_t rowNr = UINT8_MAX);
 
   int order() {return var["o"];}
@@ -240,13 +243,29 @@ class Variable {
 
   void postDetails(uint8_t rowNr);
 
-  //checks if var has fun of type funType implemented by calling it and checking result (for onUI on RO var, also onSetValue is called)
+  //checks if var has fun of type eventType implemented by calling it and checking result (for onUI on RO var, also onSetValue is called)
   //onChange: sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
-  bool triggerEvent(uint8_t funType = onSetValue, uint8_t rowNr = UINT8_MAX, bool init = false);
+  bool triggerEvent(uint8_t eventType = onSetValue, uint8_t rowNr = UINT8_MAX, bool init = false);
+
+  void setLabel(const char * text);
+  void setComment(const char * text);
+  JsonArray setOptions();
+  //return the options from onUI (don't forget to clear responseObject)
+  JsonArray getOptions();
+  void clearOptions();
+
+  //find options text in a hierarchy of options
+  void findOptionsText(uint8_t value, char * groupName, char * optionName);
+
+  // (groupName and optionName as pointers? String is already a pointer?)
+  bool findOptionsTextRec(JsonVariant options, uint8_t * startValue, uint8_t value, JsonString *groupName, JsonString *optionName, JsonString parentGroup = JsonString());
+
 }; //class Variable
 
+#define EventArguments Variable variable, uint8_t rowNr, uint8_t eventType
+
 // https://stackoverflow.com/questions/59111610/how-do-you-declare-a-lambda-function-using-typedef-and-then-use-it-by-passing-to
-typedef std::function<uint8_t(JsonObject, uint8_t, uint8_t)> VarFun;
+typedef std::function<uint8_t(EventArguments)> VarEvent;
 
 class SysModModel:public SysModule {
 
@@ -261,7 +280,7 @@ public:
   uint8_t getValueRowNr = UINT8_MAX;
   int varCounter = 1; //start with 1 so it can be negative, see var["o"]
 
-  std::vector<VarFun> varFunctions;
+  std::vector<VarEvent> varEvents;
 
   SysModModel();
   void setup();
@@ -310,21 +329,21 @@ public:
     bool changed = false;
 
     if (rowNr == UINT8_MAX) { //normal situation
-      if (var["value"].isNull() || var["value"].as<Type>() != value) { //const char * will be JsonString so comparison works
-        if (!var["value"].isNull() && !variable.readOnly()) var["oldValue"] = var["value"];
+      if (variable.value().isNull() || variable.value().as<Type>() != value) { //const char * will be JsonString so comparison works
+        if (!variable.value().isNull() && !variable.readOnly()) var["oldValue"] = variable.value();
         var["value"] = value;
         //trick to remove null values
-        if (var["value"].isNull() || var["value"].as<uint16_t>() == UINT16_MAX) {
+        if (variable.value().isNull() || variable.value().as<uint16_t>() == UINT16_MAX) {
           var.remove("value");
-          // ppf("dev setValue value removed %s %s\n", Variable(var).id(), var["oldValue"].as<String>().c_str());
+          // ppf("dev setValue value removed %s %s\n", variable.id(), var["oldValue"].as<String>().c_str());
         }
         else {
           //only print if ! read only
           // if (!variable.readOnly())
           //   ppf("setValue changed %s.%s %s -> %s\n", variable.pid(), variable.id(), var["oldValue"].as<String>().c_str(), variable.valueString().c_str());
           // else
-          //   ppf("setValue changed %s %s\n", Variable(var).id(), var["value"].as<String>().c_str());
-          web->addResponse(var, "value", var["value"]);
+          //   ppf("setValue changed %s %s\n", variable.id(), variable.value().as<String>().c_str());
+          web->addResponse(variable.var, "value", variable.value());
           changed = true;
         }
       }
@@ -332,12 +351,12 @@ public:
     else {
       //if we deal with multiple rows, value should be an array, if not we create one
 
-      if (var["value"].isNull() || !var["value"].is<JsonArray>()) {
-        // ppf("setValue var %s[%d] value %s not array, creating\n", Variable(var).id(), rowNr, var["value"].as<String>().c_str());
+      if (variable.value().isNull() || !variable.value().is<JsonArray>()) {
+        // ppf("setValue var %s[%d] value %s not array, creating\n", variable.id(), rowNr, variable.value().as<String>().c_str());
         var["value"].to<JsonArray>();
       }
 
-      if (var["value"].is<JsonArray>()) {
+      if (variable.value().is<JsonArray>()) {
         JsonArray valueArray = variable.valArray();
         //set the right value in the array (if array did not contain values yet, all values before rownr are set to false)
         bool notSame = true; //rowNr >= size
@@ -350,7 +369,7 @@ public:
           //   ppf("notSame %d %d\n", rowNr, valueArray.size());
           valueArray[rowNr] = value; //if valueArray[<rowNr] not exists it will be created
           // ppf("  assigned %d %d %s\n", rowNr, valueArray.size(), valueArray[rowNr].as<String>().c_str());
-          web->addResponse(var, "value", var["value"]); //send the whole array to UI as response is in format value:<value> !!
+          web->addResponse(variable.var, "value", variable.value()); //send the whole array to UI as response is in format value:<value> !!
           changed = true;
         }
       }
@@ -389,7 +408,7 @@ public:
   }
   JsonVariant getValue(JsonObject var, uint8_t rowNr = UINT8_MAX) {
     Variable variable = Variable(var);
-    if (var["value"].is<JsonArray>()) {
+    if (variable.value().is<JsonArray>()) {
       JsonArray valueArray = variable.valArray();
       if (rowNr == UINT8_MAX) rowNr = getValueRowNr;
       if (rowNr != UINT8_MAX && rowNr < valueArray.size())
@@ -402,7 +421,7 @@ public:
       }
     }
     else
-      return var["value"];
+      return variable.value();
   }
 
   //returns the var defined by id (parent to recursively call findVar)

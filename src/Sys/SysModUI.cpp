@@ -22,28 +22,28 @@ void SysModUI::setup() {
 
   parentVar = initSysMod(parentVar, name, 4101);
 
-  JsonObject tableVar = initTable(parentVar, "loops", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  JsonObject tableVar = initTable(parentVar, "loops", nullptr, true, [](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "Loops initiated by a variable");
+      variable.setComment("Loops initiated by a variable");
       return true;
     default: return false;
   }});
 
-  initText(tableVar, "variable", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  initText(tableVar, "variable", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
       for (size_t rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
-        mdl->setValue(var, JsonString(loopFunctions[rowNr].var["id"], JsonString::Copied), rowNr);
+        mdl->setValue(variable.var, JsonString(loopFunctions[rowNr].var["id"], JsonString::Copied), rowNr);
       return true;
     default: return false;
   }});
 
-  initNumber(tableVar, "#loops", UINT16_MAX, 0, 999, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  initNumber(tableVar, "#loops", UINT16_MAX, 0, 999, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
       for (size_t rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
-        mdl->setValue(var, loopFunctions[rowNr].counter, rowNr);
+        mdl->setValue(variable.var, loopFunctions[rowNr].counter, rowNr);
       return true;
     case onLoop1s:
-      Variable(var).triggerEvent(onSetValue); //set the value (WIP)
+      variable.triggerEvent(onSetValue); //set the value (WIP)
       for (VarLoop &varLoop : loopFunctions)
         varLoop.counter = 0;
       return true;
@@ -65,7 +65,7 @@ void SysModUI::loop20ms() { //never more then 50 times a second!
   }
 }
 
-JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * type, bool readOnly, VarFun varFun) {
+JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * type, bool readOnly, VarEvent varEvent) {
   const char * parentId = parent["id"];
   if (!parentId) parentId = "m"; //m=module
   JsonObject var = mdl->findVar(parentId, id);
@@ -109,24 +109,24 @@ JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * ty
         variable.order( -mdl->varCounter++); //redefine order
     }
 
-    //if varFun, add it to the list
-    if (varFun) {
+    //if varEvent, add it to the list
+    if (varEvent) {
       //if fun already in ucFunctions then reuse, otherwise add new fun in ucFunctions
       //lambda update: when replacing typedef void(*UCFun)(JsonObject); with typedef std::function<void(JsonObject)> UCFun; this gives error:
       //  mismatched types 'T*' and 'std::function<void(ArduinoJson::V6213PB2::JsonObject)>' { return *__it == _M_value; }
       //  it also looks like functions are not added more then once anyway
-      // std::vector<UCFun>::iterator itr = find(ucFunctions.begin(), ucFunctions.end(), varFun);
+      // std::vector<UCFun>::iterator itr = find(ucFunctions.begin(), ucFunctions.end(), varEvent);
       // if (itr!=ucFunctions.end()) //found
-      //   var["varFun"] = distance(ucFunctions.begin(), itr); //assign found function
+      //   var["varEvent"] = distance(ucFunctions.begin(), itr); //assign found function
       // else { //not found
-        mdl->varFunctions.push_back(varFun); //add new function
-        var["fun"] = mdl->varFunctions.size()-1;
+        mdl->varEvents.push_back(varEvent); //add new function
+        var["fun"] = mdl->varEvents.size()-1;
       // }
       
-      if (varFun(var, UINT8_MAX, onLoop)) { //test run if it supports loop
+      if (varEvent(var, UINT8_MAX, onLoop)) { //test run if it supports loop
         //no need to check if already in...
         VarLoop loop;
-        loop.loopFun = varFun;
+        loop.loopFun = varEvent;
         loop.var = var;
 
         loopFunctions.push_back(loop);
@@ -144,7 +144,7 @@ JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * ty
 void SysModUI::processJson(JsonVariant json) {
   if (json.is<JsonObject>()) //should be
   {
-     //varFun adds object elements to json which would be processed in the for loop. So we freeze the original pairs in a vector and loop on this
+     //varEvent adds object elements to json which would be processed in the for loop. So we freeze the original pairs in a vector and loop on this
     std::vector<JsonPair> pairs;
     for (JsonPair pair : json.as<JsonObject>()) { //iterate json elements
       pairs.push_back(pair);

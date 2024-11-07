@@ -18,9 +18,9 @@
 
   String Variable::valueString(uint8_t rowNr) {
     if (rowNr == UINT8_MAX)
-      return var["value"].as<String>();
+      return value().as<String>();
     else
-      return var["value"][rowNr].as<String>();
+      return value()[rowNr].as<String>();
   }
 
   void Variable::removeValuesForRow(uint8_t rowNr) {
@@ -111,7 +111,7 @@
         }
         else {
           if (childVariable.order() < 0) { //if not updated
-            // childVar["value"] = (char*)0;
+            // childVariable.value() = (char*)0;
             ppf("varPostDetails %s.%s <- null\n", id(), childVariable.id());
               // setValue(var, -99, rowNr); //set value -99
             // childVariable.order(-childVariable.order());
@@ -130,9 +130,9 @@
     web->getResponseObject()["details"]["var"] = var;
   }
 
-  bool Variable::triggerEvent(uint8_t funType, uint8_t rowNr, bool init) {
+  bool Variable::triggerEvent(uint8_t eventType, uint8_t rowNr, bool init) {
 
-    if (funType == onChange) {
+    if (eventType == onChange) {
       if (!init) {
         if (!var["dash"].isNull())
           instances->changedVarsQueue.push_back(var); //tbd: check value arrays / rowNr is working
@@ -142,9 +142,9 @@
       if (!var["p"].isNull()) {
         JsonVariant value;
         if (rowNr == UINT8_MAX) {
-          value = var["value"]; 
+          value = this->value(); 
         } else {
-          value = var["value"][rowNr];
+          value = this->value(rowNr);
         }
 
         //pointer is an array if set by setValueRowNr, used for controls as each control has a seperate variable
@@ -157,7 +157,7 @@
 
         if (pointer != 0) {
 
-          if (var["value"].is<JsonArray>() && !isPointerArray) { //vector if val array but not if control (each var in array stored in seperate variable)
+          if (this->value().is<JsonArray>() && !isPointerArray) { //vector if val array but not if control (each var in array stored in seperate variable)
             if (rowNr != UINT8_MAX) {
               //pointer checks
               if (var["type"] == "select" || var["type"] == "range" || var["type"] == "pin") {
@@ -220,10 +220,10 @@
           //   const char *valuePointer = (const char *)pointer;
           //   if (valuePointer != nullptr) {
           //     *valuePointer = value;
-          //     ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+          //     ppf("pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", id(), *valuePointer, valuePointer, rowNr, valueString().c_str(), pointer);
           //   }
           //   else
-          //     ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", Variable(var).id(), *valuePointer, valuePointer, rowNr, var["value"].as<String>().c_str(), pointer);
+          //     ppf("dev pointer set16 %s: v:%d (p:%p) (r:%d v:%s p:%d)\n", id(), *valuePointer, valuePointer, rowNr, valueString().c_str(), pointer);
           // }
         }
         else
@@ -234,40 +234,40 @@
 
     bool result = false;
 
-    //call varFun if exists
+    //call varEvent if exists
     if (!var["fun"].isNull()) {//isNull needed here!
       size_t funNr = var["fun"];
-      if (funNr < mdl->varFunctions.size()) {
-        result = mdl->varFunctions[funNr](var, rowNr, funType);
+      if (funNr < mdl->varEvents.size()) {
+        result = mdl->varEvents[funNr](*this, rowNr, eventType);
         if (result && !readOnly()) { //send rowNr = 0 if no rowNr
           //only print vars with a value and not onSetValue as that changes a lot due to instances clients etc (tbd)
           //don't print if onSetValue or oldValue is null
-          if (funType != onSetValue && (!var["oldValue"].isNull() || ((rowNr != UINT8_MAX) && !var["oldValue"][rowNr].isNull()))) {
-            ppf("%sFun %s.%s", funType==onSetValue?"val":funType==onUI?"ui":funType==onChange?"ch":funType==onAdd?"add":funType==onDelete?"del":"other", pid(), id());
+          if (eventType != onSetValue && (!var["oldValue"].isNull() || ((rowNr != UINT8_MAX) && !var["oldValue"][rowNr].isNull()))) {
+            ppf("%sEvent %s.%s", eventType==onSetValue?"val":eventType==onUI?"ui":eventType==onChange?"ch":eventType==onAdd?"add":eventType==onDelete?"del":"other", pid(), id());
             if (rowNr != UINT8_MAX) {
               ppf("[%d] (", rowNr);
-              if (funType == onChange) ppf("%s ->", var["oldValue"][rowNr].as<String>().c_str());
-              ppf("%s)\n", var["value"][rowNr].as<String>().c_str());
+              if (eventType == onChange) ppf("%s ->", var["oldValue"][rowNr].as<String>().c_str());
+              ppf("%s)\n", valueString().c_str());
             }
             else {
               ppf(" (");
-              if (funType == onChange) ppf("%s ->", var["oldValue"].as<String>().c_str());
+              if (eventType == onChange) ppf("%s ->", var["oldValue"].as<String>().c_str());
               ppf("%s)\n", valueString().c_str());
             }
           }
-        } //varFun exists
+        } //varEvent exists
       }
       else    
-        ppf("dev triggerEvent function nr %s.%s outside bounds %d >= %d\n", pid(), id(), funNr, mdl->varFunctions.size());
-    } //varFun exists
+        ppf("dev triggerEvent function nr %s.%s outside bounds %d >= %d\n", pid(), id(), funNr, mdl->varEvents.size());
+    } //varEvent exists
 
     //delete pointers after calling var.onDelete as var.onDelete might need the values
-    if (funType == onAdd || funType == onDelete) {
+    if (eventType == onAdd || eventType == onDelete) {
 
       print->printJson("triggerEvent add/del", var);
       //if delete, delete also from vector ...
       //find the columns of the table
-      if (funType == onDelete) {
+      if (eventType == onDelete) {
         for (JsonObject childVar: children()) {
           int pointer;
           if (childVar["p"].is<JsonArray>())
@@ -306,16 +306,83 @@
           }
         }
       } //onDelete
-      web->getResponseObject()[funType==onAdd?"onAdd":"onDelete"]["rowNr"] = rowNr;
+      web->getResponseObject()[eventType==onAdd?"onAdd":"onDelete"]["rowNr"] = rowNr;
       print->printJson("triggerEvent add/del response", web->getResponseObject());
     } //onAdd onDelete
 
     //for ro variables, call onSetValue to add also the value in responseDoc (as it is not stored in the model)
-    if (funType == onUI && readOnly()) {
+    if (eventType == onUI && readOnly()) {
       triggerEvent(onSetValue, rowNr);
     }
 
-    return result; //varFun exists
+    return result; //varEvent exists
+  }
+
+  void Variable::setLabel(const char * text) {
+    web->addResponse(var, "label", text);
+  }
+  void Variable::setComment(const char * text) {
+    web->addResponse(var, "comment", text);
+  }
+  JsonArray Variable::setOptions() {
+    JsonObject responseObject = web->getResponseObject();
+    char pidid[64];
+    print->fFormat(pidid, sizeof(pidid), "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    return responseObject[pidid]["options"].to<JsonArray>();
+  }
+  //return the options from onUI (don't forget to clear responseObject)
+  JsonArray Variable::getOptions() {
+    triggerEvent(onUI); //rebuild options
+    char pidid[64];
+    print->fFormat(pidid, sizeof(pidid), "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    return web->getResponseObject()[pidid]["options"];
+  }
+  void Variable::clearOptions() {
+    char pidid[64];
+    print->fFormat(pidid, sizeof(pidid), "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    web->getResponseObject()[pidid].remove("options");
+  }
+
+  //find options text in a hierarchy of options
+  void Variable::findOptionsText(uint8_t value, char * groupName, char * optionName) {
+    uint8_t startValue = 0;
+    char pidid[64];
+    print->fFormat(pidid, sizeof(pidid), "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    bool optionsExisted = !web->getResponseObject()[pidid]["options"].isNull();
+    JsonString groupNameJS;
+    JsonString optionNameJS;
+    JsonArray options = getOptions();
+    if (!findOptionsTextRec(options, &startValue, value, &groupNameJS, &optionNameJS))
+      ppf("findOptions select option not found %d %s %s\n", value, groupNameJS.isNull()?"X":groupNameJS.c_str(), optionNameJS.isNull()?"X":optionNameJS.c_str());
+    strlcpy(groupName, groupNameJS.c_str(), 32); //groupName is char[32]
+    strlcpy(optionName, optionNameJS.c_str(), 32); //optionName is char[32]
+    if (!optionsExisted)
+      clearOptions(); //if created here then also remove 
+  }
+
+  // (groupName and optionName as pointers? String is already a pointer?)
+  bool Variable::findOptionsTextRec(JsonVariant options, uint8_t * startValue, uint8_t value, JsonString *groupName, JsonString *optionName, JsonString parentGroup) {
+    if (options.is<JsonArray>()) { //array of options
+      for (JsonVariant option : options.as<JsonArray>()) {
+        if (findOptionsTextRec(option, startValue, value, groupName, optionName, parentGroup))
+          return true;
+      }
+    }
+    else if (options.is<JsonObject>()) { //group
+      for (JsonPair pair: options.as<JsonObject>()) {
+        if (findOptionsTextRec(pair.value(), startValue, value, groupName, optionName, parentGroup.isNull()?pair.key():parentGroup)) //send the master level group name only
+          return true;
+      }
+    } else { //individual option
+      if (*startValue == value) {
+        *groupName = parentGroup;
+        *optionName = options.as<JsonString>();
+        ppf("Found %d=%d ? %s . %s\n", *startValue, value, (*groupName).isNull()?"":(*groupName).c_str(), (*optionName).isNull()?"":(*optionName).c_str());
+        return true;
+      }
+      (*startValue)++;
+    }
+    return false;
   }
 
 SysModModel::SysModModel() :SysModule("Model") {
@@ -338,9 +405,9 @@ void SysModModel::setup() {
   parentVar = ui->initSysMod(parentVar, name, 4303);
   parentVar["s"] = true; //setup
 
-  ui->initButton(parentVar, "saveModel", false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initButton(parentVar, "saveModel", false, [this](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "Write to model.json");
+      variable.setComment("Write to model.json");
       return true;
     case onChange:
       doWriteModel = true;
@@ -350,16 +417,16 @@ void SysModModel::setup() {
 
   #ifdef STARBASE_DEVMODE
 
-  ui->initCheckBox(parentVar, "showObsolete", false, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initCheckBox(parentVar, "showObsolete", false, false, [this](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "Show in UI (refresh)");
+      variable.setComment("Show in UI (refresh)");
       return true;
     default: return false;
   }});
 
-  ui->initButton(parentVar, "deleteObsolete", false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initButton(parentVar, "deleteObsolete", false, [](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "Delete obsolete variables 🚧");
+      variable.setComment("Delete obsolete variables 🚧");
       return true;
     // case onChange:
     //   model->to<JsonArray>(); //create
@@ -444,7 +511,7 @@ void SysModModel::cleanUpModel(JsonObject parent, bool oPos, bool ro) {
 
       //remove ro values (ro vars cannot be deleted as SM uses these vars)
       // remove if var is ro or table is instance table (exception here, values don't need to be saved)
-      if (ro && (parent["id"] == "instances" || variable.readOnly())) {// && !var["value"].isNull())
+      if (ro && (parent["id"] == "instances" || variable.readOnly())) {// && !value().isNull())
         // ppf("remove ro value %s\n", variable.id());          
         var.remove("value");
       }
