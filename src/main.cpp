@@ -60,6 +60,10 @@ UserModMDNS *mdns;
   #include "User/UserModMPU6050.h"
   UserModMPU6050 *mpu6050;
 #endif
+#ifdef STARBASE_USERMOD_MIDI
+  #include "User/UserModMidi.h"
+  UserModMidi *midi;
+#endif
 #ifdef STARBASE_USERMOD_LIVE
   #include "User/UserModLive.h"
   UserModLive *liveM;
@@ -103,6 +107,9 @@ void setup() {
   #ifdef STARBASE_USERMOD_MPU6050
     mpu6050 = new UserModMPU6050();
   #endif
+  #ifdef STARBASE_USERMOD_MIDI
+    midi = new UserModMidi();
+  #endif
   #ifdef STARBASE_USERMOD_LIVE
     liveM = new UserModLive();
   #endif
@@ -140,6 +147,9 @@ void setup() {
   #endif
   #ifdef STARBASE_USERMOD_MPU6050
     mdls->add(mpu6050);
+  #endif
+  #ifdef STARBASE_USERMOD_MIDI
+    mdls->add(midi);
   #endif
   mdls->add(mdl);
   mdls->add(ui);

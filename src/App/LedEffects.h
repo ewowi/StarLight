@@ -1295,7 +1295,7 @@ class ScrollingTextEffect: public Effect {
   const char * tags() {return "💫";}
   
   void setup(LedsLayer &leds, JsonObject parentVar) {
-    ui->initText(parentVar, "text", "StarLight"); //effectData to be implemented!
+    ui->initText(parentVar, "text", leds.effectData.write<String>("StarLight")->c_str());
     ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128));
     ui->initSelect(parentVar, "font", leds.effectData.write<uint8_t>(0), false, [](EventArguments) { switch (eventType) {
       case onUI: {
@@ -1313,15 +1313,15 @@ class ScrollingTextEffect: public Effect {
 
   void loop(LedsLayer &leds) {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
+    String text = leds.effectData.read<String>();
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t font = leds.effectData.read<uint8_t>();
-    const char * text = mdl->getValue("effect", "text"); //effectData to be implemented!
 
     // text might be nullified by selecting other effects and if effect is selected, controls are run afterwards  
     // tbd: this should be removed and effect.onChange (setEffect) must make sure this cannot happen!!
-    if (text && strnlen(text, 2) > 0) {
+    if (text && strnlen(text.c_str(), 2) > 0) {
       leds.fadeToBlackBy();
-      leds.drawText(text, 0, 0, font, CRGB::Red, - (sys->now/25*speed/256)); //instead of call
+      leds.drawText(text.c_str(), 0, 0, font, CRGB::Red, - (sys->now/25*speed/256)); //instead of call
     }
 
   }
@@ -1452,7 +1452,8 @@ class GameOfLifeEffect: public Effect {
       case onChange: {*ruleChanged = true; return true;}
       default: return false;
     }});
-    ui->initText    (parentVar, "CustomRuleString", "B/S", UINT16_MAX, false, [ruleChanged](EventArguments) { switch (eventType) {
+
+    ui->initText(parentVar, "customRuleString", leds.effectData.write<String>("B/S")->c_str(), UINT16_MAX, false, [ruleChanged](EventArguments) { switch (eventType) {
       case onChange: {*ruleChanged = true; return true;}
       default: return false;
     }});
@@ -1470,16 +1471,17 @@ class GameOfLifeEffect: public Effect {
     // UI Variables
     bool3State *setup       = leds.effectData.readWrite<bool3State>();
     bool3State *ruleChanged = leds.effectData.readWrite<bool3State>();
-    Coord3D bgC       = leds.effectData.read<Coord3D>();
-    byte ruleset      = leds.effectData.read<byte>();
-    uint8_t speed     = leds.effectData.read<uint8_t>();
-    byte lifeChance   = leds.effectData.read<byte>();
-    uint8_t mutation  = leds.effectData.read<uint8_t>();
+    Coord3D bgC             = leds.effectData.read<Coord3D>();
+    byte ruleset            = leds.effectData.read<byte>();
+    String customRuleString = leds.effectData.read<String>();
+    uint8_t speed           = leds.effectData.read<uint8_t>();
+    byte lifeChance         = leds.effectData.read<byte>();
+    uint8_t mutation        = leds.effectData.read<uint8_t>();
     bool3State wrap         = leds.effectData.read<bool3State>();
     bool3State disablePause = leds.effectData.read<bool3State>();
     bool3State colorByAge   = leds.effectData.read<bool3State>();
     bool3State infinite     = leds.effectData.read<bool3State>();
-    uint8_t blur      = leds.effectData.read<uint8_t>();
+    uint8_t blur            = leds.effectData.read<uint8_t>();
 
     // Effect Variables
     const uint16_t dataSize = ((leds.size.x * leds.size.y * leds.size.z + 7) / 8);
@@ -1568,7 +1570,7 @@ class GameOfLifeEffect: public Effect {
     if (*ruleChanged) {
       *ruleChanged = false;
       String ruleString = "";
-      if      (ruleset == 0) ruleString = mdl->getValue("effect", "Custom Rule String").as<String>(); //Custom
+      if      (ruleset == 0) ruleString = customRuleString; //Custom
       else if (ruleset == 1) ruleString = "B3/S23";         //Conway's Game of Life
       else if (ruleset == 2) ruleString = "B36/S23";        //HighLife
       else if (ruleset == 3) ruleString = "B0123478/S34678";//InverseLife
@@ -1893,21 +1895,21 @@ class RubiksCubeEffect: public Effect {
     Effect::setup(leds, parentVar);
     bool3State *setup = leds.effectData.write<bool3State>(true);
     ui->initSlider  (parentVar, "turnsPerSecond", leds.effectData.write<uint8_t>(1), 0, 20);   
-    ui->initSlider  (parentVar, "cubeSize",        leds.effectData.write<uint8_t>(2), 1, 8, false, [setup] (EventArguments) { switch (eventType) {
+    ui->initSlider  (parentVar, "cubeSize",       leds.effectData.write<uint8_t>(2), 1, 8, false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
     ui->initCheckBox(parentVar, "randomTurning", leds.effectData.write<bool3State>(false), false, [setup] (EventArguments) { switch (eventType) {
-      case onChange: {if (!mdl->getValue("effect", "Random Turning")) *setup = true; return true;}
+      case onChange: {if (!variable.value().as<bool3State>()) *setup = true; return true;}
       default: return false;
     }});
   }
 
   void loop(LedsLayer &leds) {
     // UI control variables
-    bool3State   *setup      = leds.effectData.readWrite<bool3State>();
-    uint8_t turnsPerSecond      = leds.effectData.read<uint8_t>();
-    uint8_t cubeSize   = leds.effectData.read<uint8_t>();
+    bool3State *setup        = leds.effectData.readWrite<bool3State>();
+    uint8_t turnsPerSecond   = leds.effectData.read<uint8_t>();
+    uint8_t cubeSize         = leds.effectData.read<uint8_t>();
     bool3State randomTurning = leds.effectData.read<bool3State>();
 
     // Effect variables

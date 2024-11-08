@@ -119,6 +119,7 @@ void SysModSystem::setup() {
       variable.var["max"] = ESP.getHeapSize()/1000; //makes sense?
       web->addResponse(variable.var, "comment", "f:%d / t:%d (l:%d) B [%d %d]", ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
       //temporary add esp_get_free_heap_size(), esp_get_free_internal_heap_size() to see if/how it differs
+      //esp_get_free_heap_size can be bigger in case of heap
       return true;
     case onLoop1s:
       mdl->setValue(variable.var, (ESP.getHeapSize()-ESP.getFreeHeap()) / 1000);

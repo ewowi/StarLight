@@ -71,7 +71,7 @@
           else
             Y = Y * 16 + 15 - y;
 
-          return (verticalPanels * 16 - 1 - Y) * 16 * horizontalPanels + (horizontalPanels * 16 - 1 - X);
+          return Y * 16 * horizontalPanels + X;
         }
       } else
         return pos;

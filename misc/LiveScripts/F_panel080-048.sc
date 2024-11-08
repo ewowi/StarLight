@@ -23,7 +23,7 @@ void mapLed(uint16_t pos) {
   else
     Y = Y * 16 + 16 - y - 1;
 
-  mapResult = (verticalPanels * 16 - 1 - Y) * 16 * horizontalPanels + (horizontalPanels * 16 - 1 - X);
+  mapResult = Y * 16 * horizontalPanels + X;
 }
 
 void drawPanel(int panelX, int panelY) {
