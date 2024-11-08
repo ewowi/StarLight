@@ -289,7 +289,7 @@
         web->addResponse(variable.var, "comment", "f(%d leds)", nrOfLeds, 0); //0 is to force format overload used
         return true;
       case onLoop1s:
-          mdl->setValue(variable.var, eff->frameCounter);
+          variable.setValue(eff->frameCounter);
           eff->frameCounter = 0;
         return true;
       default: return false;
@@ -314,7 +314,7 @@
     // #if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
     //   ui->initNumber(parentVar, "dma", UINT16_MAX, 0, UINT16_MAX, true, [this](EventArguments) { switch (eventType) {
     //     case onLoop1s:
-    //         mdl->setValue(variable.var, _proposed_dma_extension);
+    //         variable.setValue(_proposed_dma_extension);
     //       return true;
     //     default: return false;
     //   }});

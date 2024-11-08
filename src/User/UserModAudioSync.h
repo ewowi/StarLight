@@ -39,23 +39,23 @@ public:
   
     ui->initText(parentVar, "status", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s: {
-      String msg = "";
+      char msg[32] = "";
       if((lastData != 0) && isTimeout()) {
-        msg = sync.sourceIP.toString() + " Timeout " + ((millis() - lastData) / 1000)  +"s";
+        print->fFormat(msg, sizeof(msg), "%s Timeout %d s", sync.sourceIP.toString().c_str(), ((millis() - lastData) / 1000) );
       }
       else {
         switch(sync.receivedFormat) {
-          case -1: msg = "Not connected";
+          case -1: strncpy(msg, "Not connected", sizeof(msg));
             break;
-          case 1: msg = "V1 from " + sync.sourceIP.toString();
+          case 1: print->fFormat(msg, sizeof(msg), "V1 from %s", sync.sourceIP.toString().c_str());
             break;
-          case 2: msg = "V2 from " + sync.sourceIP.toString();
+          case 2: print->fFormat(msg, sizeof(msg), "V2 from %s", sync.sourceIP.toString().c_str());
             break;
-          default: msg = "Unknown";
+          default: strncpy(msg, "Unknown", sizeof(msg));
             break;
         }
       }
-      mdl->setValue(variable.var, msg.c_str());
+      variable.setValueF(msg);
     } return true;
     default: return false;
    }});

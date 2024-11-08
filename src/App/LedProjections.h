@@ -309,20 +309,20 @@ class TiltPanRollProjection: public Projection {
     #ifdef STARBASE_USERMOD_MPU6050
       ui->initCheckBox(parentVar, "gyro", false, false, [&leds](EventArguments) { switch (eventType) {
         case onChange:
-          leds.proGyro = mdl->getValue(variable.var, rowNr);
+          leds.proGyro = variable.getValue(rowNr);
           return true;
         default: return false;
       }});
     #endif
     ui->initSlider(parentVar, "tilt", 128, 0, 254, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
-        leds.proTiltSpeed = mdl->getValue(variable.var, rowNr);
+        leds.proTiltSpeed = variable.getValue(rowNr);
         return true;
       default: return false;
     }});
     ui->initSlider(parentVar, "pan", 128, 0, 254, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
-        leds.proPanSpeed = mdl->getValue(variable.var, rowNr);
+        leds.proPanSpeed = variable.getValue(rowNr);
         return true;
       default: return false;
     }});
@@ -331,7 +331,7 @@ class TiltPanRollProjection: public Projection {
         variable.setComment("Roll speed");
         return true;
       case onChange:
-        leds.proRollSpeed = mdl->getValue(variable.var, rowNr);
+        leds.proRollSpeed = variable.getValue(rowNr);
         return true;
       default: return false;
     }});
@@ -504,14 +504,14 @@ class MirrorReverseTransposeProjection: public Projection {
       MRTData *data = leds.projectionData.readWrite<MRTData>();
       ui->initCheckBox(parentVar, "Mirror X", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->mirrorX = mdl->getValue(variable.var, rowNr);
+          data->mirrorX = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
       ui->initCheckBox(parentVar, "Mirror Y", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->mirrorY = mdl->getValue(variable.var, rowNr);
+          data->mirrorY = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
@@ -519,7 +519,7 @@ class MirrorReverseTransposeProjection: public Projection {
       if (leds.projectionDimension == _3D) {
       ui->initCheckBox(parentVar, "Mirror Z", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->mirrorZ = mdl->getValue(variable.var, rowNr);
+          data->mirrorZ = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
@@ -527,14 +527,14 @@ class MirrorReverseTransposeProjection: public Projection {
       }
       ui->initCheckBox(parentVar, "Reverse X", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->reverseX = mdl->getValue(variable.var, rowNr);
+          data->reverseX = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
       ui->initCheckBox(parentVar, "Reverse Y", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->reverseY = mdl->getValue(variable.var, rowNr);
+          data->reverseY = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
@@ -542,7 +542,7 @@ class MirrorReverseTransposeProjection: public Projection {
       if (leds.projectionDimension == _3D) {
       ui->initCheckBox(parentVar, "Reverse Z", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->reverseZ = mdl->getValue(variable.var, rowNr);
+          data->reverseZ = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
@@ -550,7 +550,7 @@ class MirrorReverseTransposeProjection: public Projection {
       }
       ui->initCheckBox(parentVar, "Transpose XY", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->transposeXY = mdl->getValue(variable.var, rowNr);
+          data->transposeXY = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
@@ -558,14 +558,14 @@ class MirrorReverseTransposeProjection: public Projection {
       if (leds.projectionDimension == _3D) {
       ui->initCheckBox(parentVar, "Transpose XZ", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->transposeXZ = mdl->getValue(variable.var, rowNr);
+          data->transposeXZ = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
       ui->initCheckBox(parentVar, "Transpose YZ", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
-          data->transposeYZ = mdl->getValue(variable.var, rowNr);
+          data->transposeYZ = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
@@ -1040,7 +1040,7 @@ class RotateProjection: public Projection {
         options.add("Alternate");
         return true; }
       case onChange: {
-        uint8_t val = mdl->getValue(variable.var, rowNr);
+        uint8_t val = variable.getValue(rowNr);
         if (val == 0) data->reverse = false;
         if (val == 1) data->reverse = true;
         if (val == 2) data->alternate = true; else data->alternate = false;
@@ -1049,7 +1049,7 @@ class RotateProjection: public Projection {
     }});
     ui->initSlider(parentVar, "rotateSpeed", 128, 0, 254, false, [data](EventArguments) { switch (eventType) {
       case onChange:
-        data->speed = mdl->getValue(variable.var, rowNr);
+        data->speed = variable.getValue(rowNr);
         data->interval = 1000 / (data->speed + 1);
         return true;
       default: return false;

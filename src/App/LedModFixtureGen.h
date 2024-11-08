@@ -790,7 +790,7 @@ public:
         uint8_t rowNrL = 0;
         for (JsonVariant val: valArray) {
           if (rowNrL > rowNr)
-            mdl->setValue(variable.var, valArray[rowNr].as<uint8_t>(), rowNrL);
+            variable.setValue(valArray[rowNr].as<uint8_t>(), rowNrL);
           rowNrL++;
         }
         return true; }

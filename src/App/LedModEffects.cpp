@@ -162,7 +162,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     currentVar = ui->initSelect(tableVar, "effect", (uint8_t)0, false, [this](EventArguments) { switch (eventType) {
       // case onSetValue:
       //   for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++)
-      //     mdl->setValue(variable.var, fix->layers[rowNr]->effectNr, rowNr);
+      //     variable.setValue(fix->layers[rowNr]->effectNr, rowNr);
       //   return true;
       case onUI: {
         variable.setComment("Effect to show");
@@ -203,7 +203,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           //   // }
           // #endif
 
-          uint16_t effectNr = mdl->getValue(variable.var, rowNr);
+          uint16_t effectNr = variable.getValue(rowNr);
 
           if (effectNr < effects.size()) {
             leds->effect = effects[effectNr];
@@ -231,7 +231,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     currentVar = ui->initSelect(tableVar, "projection", 1, false, [this](EventArguments) { switch (eventType) {
       // case onSetValue:
       //   for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++)
-      //     mdl->setValue(variable.var, fix->layers[rowNr]->projectionNr, rowNr);
+      //     variable.setValue(fix->layers[rowNr]->projectionNr, rowNr);
       //   return true;
       case onUI: {
         variable.setComment("How to project effect");
@@ -255,7 +255,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
           // leds->doMap = true; //stop the effects loop already here
 
-          uint8_t proValue = mdl->getValue(variable.var, rowNr);
+          uint8_t proValue = variable.getValue(rowNr);
 
           if (proValue < projections.size()) {
             if (proValue == 0) //none
@@ -294,7 +294,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
           ppf("ledsStart[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->start.x, fix->layers[rowNr]->start.y, fix->layers[rowNr]->start.z);
-          mdl->setValue(variable.var, fix->layers[rowNr]->start, rowNr);
+          variable.setValue(fix->layers[rowNr]->start, rowNr);
         }
         return true;
       case onUI:
@@ -302,7 +302,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true;
       case onChange:
         if (rowNr < fix->layers.size()) {
-          fix->layers[rowNr]->start = mdl->getValue(variable.var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+          fix->layers[rowNr]->start = variable.getValue(rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
           ppf("ledsStart[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->start.x, fix->layers[rowNr]->start.y, fix->layers[rowNr]->start.z);
 
@@ -321,7 +321,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
           ppf("ledsMid[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->middle.x, fix->layers[rowNr]->middle.y, fix->layers[rowNr]->middle.z);
-          mdl->setValue(variable.var, fix->layers[rowNr]->middle, rowNr);
+          variable.setValue(fix->layers[rowNr]->middle, rowNr);
         }
         return true;
       case onUI:
@@ -329,7 +329,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true;
       case onChange:
         if (rowNr < fix->layers.size()) {
-          fix->layers[rowNr]->middle = mdl->getValue(variable.var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+          fix->layers[rowNr]->middle = variable.getValue(rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
           ppf("ledsMid[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->middle.x, fix->layers[rowNr]->middle.y, fix->layers[rowNr]->middle.z);
 
@@ -348,7 +348,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         //is this needed?
         for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
           ppf("ledsEnd[%d] onSetValue %d,%d,%d\n", rowNr, fix->layers[rowNr]->end.x, fix->layers[rowNr]->end.y, fix->layers[rowNr]->end.z);
-          mdl->setValue(variable.var, fix->layers[rowNr]->end, rowNr);
+          variable.setValue(fix->layers[rowNr]->end, rowNr);
         }
         return true;
       case onUI:
@@ -356,7 +356,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true;
       case onChange:
         if (rowNr < fix->layers.size()) {
-          fix->layers[rowNr]->end = mdl->getValue(variable.var, rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
+          fix->layers[rowNr]->end = variable.getValue(rowNr).as<Coord3D>().minimum(fix->fixSize - Coord3D{1,1,1});
 
           ppf("ledsEnd[%d] onChange %d,%d,%d\n", rowNr, fix->layers[rowNr]->end.x, fix->layers[rowNr]->end.y, fix->layers[rowNr]->end.z);
 
@@ -378,7 +378,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           char message[32];
           print->fFormat(message, sizeof(message), "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
           ppf("onSetValue ledsSize[%d] = %s\n", rowNr, message);
-          mdl->setValue(variable.var, JsonString(message, JsonString::Copied), rowNr); //rowNr
+          variable.setValue(JsonString(message, JsonString::Copied), rowNr); //rowNr
           rowNr++;
         }
         return true; }
