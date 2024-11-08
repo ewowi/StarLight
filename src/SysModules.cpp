@@ -45,7 +45,7 @@ void SysModules::setup() {
   ui->initText(tableVar, "name", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
       for (size_t rowNr = 0; rowNr < modules.size(); rowNr++)
-        mdl->setValue(variable.var, JsonString(modules[rowNr]->name, JsonString::Copied), rowNr);
+        variable.setValue(JsonString(modules[rowNr]->name, JsonString::Copied), rowNr);
       return true;
     default: return false;
   }});
@@ -54,7 +54,7 @@ void SysModules::setup() {
   ui->initCheckBox(tableVar, "success", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
       for (size_t rowNr = 0; rowNr < modules.size(); rowNr++)
-        mdl->setValue(variable.var, modules[rowNr]->success, rowNr);
+        variable.setValue(modules[rowNr]->success, rowNr);
       return true;
     default: return false;
   }});
@@ -65,11 +65,11 @@ void SysModules::setup() {
       //never a rowNr as parameter, set all
       //execute only if var has not been set
       for (size_t rowNr = 0; rowNr < modules.size(); rowNr++)
-        mdl->setValue(variable.var, modules[rowNr]->isEnabled, rowNr);
+        variable.setValue(modules[rowNr]->isEnabled, rowNr);
       return true;
     case onChange:
       if (rowNr != UINT8_MAX && rowNr < modules.size()) {
-        modules[rowNr]->isEnabled = mdl->getValue(variable.var, rowNr);
+        modules[rowNr]->isEnabled = variable.getValue(rowNr);
         modules[rowNr]->enabledChanged();
       }
       else {
