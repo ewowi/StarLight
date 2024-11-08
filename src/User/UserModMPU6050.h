@@ -48,7 +48,7 @@ public:
         variable.setComment("in degrees");
         return true;
       case onLoop1s:
-        mdl->setValue(variable.var, gyro); //automatic as var is referenced???
+        variable.setValue(gyro); //automatic as var is referenced???
         return true;
       default: return false;
     }});
@@ -58,7 +58,7 @@ public:
         variable.setComment("in m/s²");
         return true;
       case onLoop1s:
-        mdl->setValue(variable.var, accell); //automatic as var is referenced???
+        variable.setValue(accell); //automatic as var is referenced???
         return true;
       default: return false;
     }}); 

@@ -57,7 +57,7 @@ void SysModWeb::setup() {
   ui->initNumber(tableVar, "nr", UINT16_MAX, 0, 999, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(variable.var, client->id(), rowNr++);
+        variable.setValue(client->id(), rowNr++);
       return true; }
     default: return false;
   }});
@@ -65,7 +65,7 @@ void SysModWeb::setup() {
   ui->initText(tableVar, "ip", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(variable.var, JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
+        variable.setValue(JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
       return true; }
     default: return false;
   }});
@@ -74,7 +74,7 @@ void SysModWeb::setup() {
   ui->initCheckBox(tableVar, "full", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(variable.var, client->queueIsFull(), rowNr++);
+        variable.setValue(client->queueIsFull(), rowNr++);
       return true; }
     default: return false;
   }});
@@ -82,7 +82,7 @@ void SysModWeb::setup() {
   ui->initSelect(tableVar, "status", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(variable.var, client->status(), rowNr++);
+        variable.setValue(client->status(), rowNr++);
       return true; }
     case onUI:
     {
@@ -99,7 +99,7 @@ void SysModWeb::setup() {
   ui->initNumber(tableVar, "length", UINT16_MAX, 0, WS_MAX_QUEUED_MESSAGES, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(variable.var, client->queueLen(), rowNr++);
+        variable.setValue(client->queueLen(), rowNr++);
       return true; }
     default: return false;
   }});
@@ -108,7 +108,7 @@ void SysModWeb::setup() {
 
   ui->initText(parentVar, "WSSend", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(variable.var, "#: %d /s T: %d B/s B:%d B/s", sendWsCounter, sendWsTBytes, sendWsBBytes);
+      variable.setValueF("#: %d /s T: %d B/s B:%d B/s", sendWsCounter, sendWsTBytes, sendWsBBytes);
       sendWsCounter = 0;
       sendWsTBytes = 0;
       sendWsBBytes = 0;
@@ -117,7 +117,7 @@ void SysModWeb::setup() {
 
   ui->initText(parentVar, "WSRecv", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(variable.var, "#: %d /s %d B/s", recvWsCounter, recvWsBytes);
+      variable.setValueF("#: %d /s %d B/s", recvWsCounter, recvWsBytes);
       recvWsCounter = 0;
       recvWsBytes = 0;
       return true;
@@ -126,7 +126,7 @@ void SysModWeb::setup() {
 
   ui->initText(parentVar, "UDPSend", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(variable.var, "#: %d /s %d B/s", sendUDPCounter, sendUDPBytes);
+      variable.setValueF("#: %d /s %d B/s", sendUDPCounter, sendUDPBytes);
       sendUDPCounter = 0;
       sendUDPBytes = 0;
       return true;
@@ -135,7 +135,7 @@ void SysModWeb::setup() {
 
   ui->initText(parentVar, "UDPRecv", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(variable.var, "#: %d /s %d B/s", recvUDPCounter, recvUDPBytes);
+      variable.setValueF("#: %d /s %d B/s", recvUDPCounter, recvUDPBytes);
       recvUDPCounter = 0;
       recvUDPBytes = 0;
     default: return false;

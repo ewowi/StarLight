@@ -32,7 +32,7 @@ void SysModUI::setup() {
   initText(tableVar, "variable", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
       for (size_t rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
-        mdl->setValue(variable.var, JsonString(loopFunctions[rowNr].var["id"], JsonString::Copied), rowNr);
+        variable.setValue(JsonString(loopFunctions[rowNr].var["id"], JsonString::Copied), rowNr);
       return true;
     default: return false;
   }});
@@ -40,7 +40,7 @@ void SysModUI::setup() {
   initNumber(tableVar, "#loops", UINT16_MAX, 0, 999, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
       for (size_t rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
-        mdl->setValue(variable.var, loopFunctions[rowNr].counter, rowNr);
+        variable.setValue(loopFunctions[rowNr].counter, rowNr);
       return true;
     case onLoop1s:
       variable.triggerEvent(onSetValue); //set the value (WIP)
@@ -248,7 +248,7 @@ void SysModUI::processJson(JsonVariant json) {
               if (rowNr != UINT8_MAX) web->getResponseObject()[pidid]["rowNr"] = rowNr;
             }
             else {
-              mdl->setValueJV(var, newValue, rowNr);
+              Variable(var).setValueJV(newValue, rowNr);
               //we do need the response! to update multiple clients and also things within a client (e.g. systemName)
               // json.remove(key); //key / var["id"] processed we don't need the key in the response
               // print->printJson("setValueJV", web->getResponseObject());

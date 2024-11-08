@@ -102,7 +102,7 @@ void SysModPrint::printf(const char * format, ...) {
       else
         responseObject["Print.log"]["value"] = responseObject["Print.log"]["value"].as<String>() + String(buffer);
       // web->addResponse(variable.var, "value", JsonString(buffer, JsonString::Copied)); //setValue not necessary
-      // mdl->setValue(variable.var, "%s", buffer);
+      // variable.setValueF("%s", buffer);
     }
     else if (output == 3) {
       //tbd

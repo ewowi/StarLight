@@ -69,14 +69,14 @@ void SysModNetwork::setup() {
 
   ui->initText(currentVar, "rssi", nullptr, 32, true, [](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(variable.var, "%d dBm", WiFi.RSSI(), 0); //0 is to force format overload used
+      variable.setValueF("%d dBm", WiFi.RSSI(), 0); //0 is to force format overload used
       return true;
     default: return false;
   }});
 
   ui->initText(currentVar, "status", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(variable.var, "%s %s (s:%d)",  wfActive?WiFi.localIP()[0]?"🟢":"🟠":"🛑", wfActive?WiFi.localIP().toString().c_str():"inactive", WiFi.status());
+      variable.setValueF("%s %s (s:%d)",  wfActive?WiFi.localIP()[0]?"🟢":"🟠":"🛑", wfActive?WiFi.localIP().toString().c_str():"inactive", WiFi.status());
       return true;
     default: return false;
   }});
@@ -86,7 +86,7 @@ void SysModNetwork::setup() {
     currentVar = ui->initCheckBox(parentVar, "ethernet", false, false, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
       //initEthernet not done in onChange as initEthernet needs a bit of a delay
-      if (!ethActive && mdl->getValue(variable.var).as<bool>())
+      if (!ethActive && variable.getValue().as<bool>())
         initEthernet();
     default: return false;
     }});
@@ -174,7 +174,7 @@ void SysModNetwork::setup() {
 
     ui->initText(currentVar, "status", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
       case onLoop1s:
-          mdl->setValue(variable.var, "%s %s", ethActive?ETH.localIP()[0]?"🟢":"🟠":"🛑", ethActive?ETH.localIP().toString().c_str():"inactive");
+          variable.setValueF("%s %s", ethActive?ETH.localIP()[0]?"🟢":"🟠":"🛑", ethActive?ETH.localIP().toString().c_str():"inactive");
         return true;
       default: return false;
     }});
@@ -189,7 +189,7 @@ void SysModNetwork::setup() {
         stopAP();
       return true;
     // case onLoop1s:
-      // if (!apActive && mdl->getValue(var).as<bool>()) {
+      // if (!apActive && variable.getValue().as<bool>()) {
       //   stopAP();
       //   initAP();
       // }
@@ -198,7 +198,7 @@ void SysModNetwork::setup() {
   }});
   ui->initText(currentVar, "status", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(variable.var, "%s %s",  apActive?WiFi.softAPIP()[0]?"🟢":"🟠":"🛑", apActive?WiFi.softAPIP().toString().c_str():"inactive");
+      variable.setValueF("%s %s",  apActive?WiFi.softAPIP()[0]?"🟢":"🟠":"🛑", apActive?WiFi.softAPIP().toString().c_str():"inactive");
       return true;
     default: return false;
   }});

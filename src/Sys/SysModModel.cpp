@@ -385,6 +385,54 @@
     return false;
   }
 
+   JsonObject Variable::setValueJV(JsonVariant value, uint8_t rowNr) {
+    if (value.is<JsonArray>()) {
+      uint8_t rowNr = 0;
+      // ppf("   %s is Array\n", value.as<String>().c_str);
+      JsonObject var;
+      for (JsonVariant el: value.as<JsonArray>()) {
+        var = setValueJV(el, rowNr++);
+      }
+      return var;
+    }
+    else if (value.is<const char *>())
+      return setValue(JsonString(value, JsonString::Copied), rowNr);
+    else if (value.is<Coord3D>()) //otherwise it will be treated as JsonObject and toJson / fromJson will not be triggered!!!
+      return setValue(value.as<Coord3D>(), rowNr);
+    else
+      return setValue(value, rowNr);
+  }
+
+  //Set value with argument list
+  JsonObject Variable::setValueF(const char * format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    char value[128];
+    vsnprintf(value, sizeof(value)-1, format, args);
+
+    va_end(args);
+
+    return setValue(JsonString(value, JsonString::Copied));
+  }
+
+  JsonVariant Variable::getValue(uint8_t rowNr) {
+    if (var["value"].is<JsonArray>()) {
+      JsonArray valueArray = valArray();
+      if (rowNr == UINT8_MAX) rowNr = mdl->getValueRowNr;
+      if (rowNr != UINT8_MAX && rowNr < valueArray.size())
+        return valueArray[rowNr];
+      else if (valueArray.size())
+        return valueArray[0]; //return the first element
+      else {
+        ppf("dev getValue no array or rownr wrong %s.%s %s %d\n", pid(), id(), valueString().c_str(), rowNr);
+        return JsonVariant(); // return null
+      }
+    }
+    else
+      return var["value"];
+  }
+
 SysModModel::SysModModel() :SysModule("Model") {
   model = new JsonDocument(&allocator);
 

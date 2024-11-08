@@ -171,7 +171,7 @@ public:
     JsonObject var = initVar(parent, id, type, readOnly, varEvent);
 
     if (initValue(var, min, max, 0)) { //no pointer
-      mdl->setValue(var, value, mdl->setValueRowNr); //does onChange if needed, if var in table, update the table row
+      Variable(var).setValue(value, mdl->setValueRowNr); //does onChange if needed, if var in table, update the table row
     }
 
     return var;
@@ -183,7 +183,7 @@ public:
     JsonObject var = initVar(parent, id, type, readOnly, varEvent);
 
     if (initValue(var, min, max, int(value))) {
-      mdl->setValue(var, *value, mdl->setValueRowNr); //does onChange if needed, if var in table, update the table row
+      Variable(var).setValue(*value, mdl->setValueRowNr); //does onChange if needed, if var in table, update the table row
     }
 
     return var;
@@ -202,7 +202,7 @@ public:
     if (initValue(var, min, max, (int)values)) {
       uint8_t rowNrL = 0;
       for (Type value: *values) { //loop over vector
-        mdl->setValue(var, value, rowNrL); //does onChange if needed, if var in table, update the table row
+        Variable(var).setValue(value, rowNrL); //does onChange if needed, if var in table, update the table row
         rowNrL++;
       }
     }
@@ -222,7 +222,7 @@ public:
     if (initValue(var, min, max, (int)values)) {
       uint8_t rowNrL = 0;
       for (VectorString value: *values) { //loop over vector
-        mdl->setValue(var, JsonString(value.s, JsonString::Copied), rowNrL); //does onChange if needed, if var in table, update the table row
+        Variable(var).setValue(JsonString(value.s, JsonString::Copied), rowNrL); //does onChange if needed, if var in table, update the table row
         rowNrL++;
       }
     }

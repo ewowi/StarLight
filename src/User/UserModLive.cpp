@@ -180,13 +180,13 @@ static float _time(float j) {
 
     ui->initText(parentVar, "fps1", nullptr, 10, true, [this](EventArguments) { switch (eventType) {
       case onLoop1s:
-        mdl->setValue(variable.var, "%.0f /s", fps, 0); //0 is to force format overload used
+        variable.setValueF("%.0f /s", fps, 0); //0 is to force format overload used
         return true;
       default: return false; 
     }});
     ui->initText(parentVar, "fps2", nullptr, 10, true, [this](EventArguments) { switch (eventType) {
       case onLoop1s:
-        mdl->setValue(variable.var, "%d /s", frameCounter, 0); //0 is to force format overload used
+        variable.setValueF("%d /s", frameCounter, 0); //0 is to force format overload used
         frameCounter = 0;
         return true;
       default: return false; 
@@ -200,7 +200,7 @@ static float _time(float j) {
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
           const char *name = exec.name.c_str();
-          mdl->setValue(variable.var, JsonString(exec.name.c_str(), JsonString::Copied), rowNr++);
+          variable.setValue(JsonString(exec.name.c_str(), JsonString::Copied), rowNr++);
         }
         return true;
       default: return false;
@@ -211,7 +211,7 @@ static float _time(float j) {
         variable.var["value"].to<JsonArray>(); web->addResponse(variable.var, "value", variable.value()); // empty the value
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
-          mdl->setValue(variable.var, exec.isRunning(), rowNr++);
+          variable.setValue(exec.isRunning(), rowNr++);
         }
         return true;
       default: return false;
@@ -222,7 +222,7 @@ static float _time(float j) {
         variable.var["value"].to<JsonArray>(); web->addResponse(variable.var, "value", variable.value()); // empty the value
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
-          mdl->setValue(variable.var, exec.isHalted, rowNr++);
+          variable.setValue(exec.isHalted, rowNr++);
         }
         return true;
       default: return false;
@@ -233,7 +233,7 @@ static float _time(float j) {
         variable.var["value"].to<JsonArray>(); web->addResponse(variable.var, "value", variable.value()); // empty the value
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
-          mdl->setValue(variable.var, exec.exeExist, rowNr++);
+          variable.setValue(exec.exeExist, rowNr++);
         }
         return true;
       default: return false;
@@ -244,7 +244,7 @@ static float _time(float j) {
         variable.var["value"].to<JsonArray>(); web->addResponse(variable.var, "value", variable.value()); // empty the value
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
-          mdl->setValue(variable.var, exec.__run_handle_index, rowNr++);
+          variable.setValue(exec.__run_handle_index, rowNr++);
         }
         return true;
       default: return false;
@@ -258,7 +258,7 @@ static float _time(float j) {
           exe_info exeInfo = scriptRuntime.getExecutableInfo(exec.name);
           char text[30];
           print->fFormat(text, sizeof(text), "%d+%d=%d B", exeInfo.binary_size, exeInfo.data_size, exeInfo.total_size);
-          mdl->setValue(variable.var, JsonString(text, JsonString::Copied), rowNr++);
+          variable.setValue(JsonString(text, JsonString::Copied), rowNr++);
         }
         return true;
       default: return false;

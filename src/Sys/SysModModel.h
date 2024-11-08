@@ -260,6 +260,73 @@ class Variable {
   // (groupName and optionName as pointers? String is already a pointer?)
   bool findOptionsTextRec(JsonVariant options, uint8_t * startValue, uint8_t value, JsonString *groupName, JsonString *optionName, JsonString parentGroup = JsonString());
 
+  //setValue for JsonVariants (extract the StarMod supported types)
+  JsonObject setValueJV(JsonVariant value, uint8_t rowNr = UINT8_MAX);
+
+  template <typename Type>
+  JsonObject setValue(Type value, uint8_t rowNr = UINT8_MAX) {
+    bool changed = false;
+
+    if (rowNr == UINT8_MAX) { //normal situation
+      if (var["value"].isNull() || var["value"].as<Type>() != value) { //const char * will be JsonString so comparison works
+        if (!var["value"].isNull() && !readOnly()) var["oldValue"] = var["value"];
+        var["value"] = value;
+        //trick to remove null values
+        if (var["value"].isNull() || var["value"].as<uint16_t>() == UINT16_MAX) {
+          var.remove("value");
+          // ppf("dev setValue value removed %s %s\n", id(), var["oldValue"].as<String>().c_str());
+        }
+        else {
+          //only print if ! read only
+          // if (!readOnly())
+          //   ppf("setValue changed %s.%s %s -> %s\n", pid(), id(), var["oldValue"].as<String>().c_str(), valueString().c_str());
+          // else
+          //   ppf("setValue changed %s %s\n", id(), var["value"].as<String>().c_str());
+          web->addResponse(var, "value", var["value"]);
+          changed = true;
+        }
+      }
+    }
+    else {
+      //if we deal with multiple rows, value should be an array, if not we create one
+
+      if (var["value"].isNull() || !var["value"].is<JsonArray>()) {
+        // ppf("setValue var %s[%d] value %s not array, creating\n", id(), rowNr, var["value"].as<String>().c_str());
+        var["value"].to<JsonArray>();
+      }
+
+      if (var["value"].is<JsonArray>()) {
+        JsonArray valueArray = valArray();
+        //set the right value in the array (if array did not contain values yet, all values before rownr are set to false)
+        bool notSame = true; //rowNr >= size
+
+        if (rowNr < valueArray.size())
+          notSame = valueArray[rowNr].isNull() || valueArray[rowNr].as<Type>() != value;
+
+        if (notSame) {
+          // if (rowNr >= valueArray.size())
+          //   ppf("notSame %d %d\n", rowNr, valueArray.size());
+          valueArray[rowNr] = value; //if valueArray[<rowNr] not exists it will be created
+          // ppf("  assigned %d %d %s\n", rowNr, valueArray.size(), valueArray[rowNr].as<String>().c_str());
+          web->addResponse(var, "value", var["value"]); //send the whole array to UI as response is in format value:<value> !!
+          changed = true;
+        }
+      }
+      else {
+        ppf("setValue %s.%s could not create value array\n", pid(), id());
+      }
+    }
+
+    if (changed) triggerEvent(onChange, rowNr);
+    
+    return var;    
+  }
+
+  //Set value with argument list
+  JsonObject setValueF(const char * format = nullptr, ...);
+
+  JsonVariant getValue(uint8_t rowNr = UINT8_MAX);
+
 }; //class Variable
 
 #define EventArguments Variable variable, uint8_t rowNr, uint8_t eventType
@@ -290,31 +357,12 @@ public:
   //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
   void cleanUpModel(JsonObject parent = JsonObject(), bool oPos = true, bool ro = false);
 
-  //setValue for JsonVariants (extract the StarMod supported types)
-  JsonObject setValueJV(JsonObject var, JsonVariant value, uint8_t rowNr = UINT8_MAX) {
-    if (value.is<JsonArray>()) {
-      uint8_t rowNr = 0;
-      // ppf("   %s is Array\n", value.as<String>().c_str);
-      JsonObject var;
-      for (JsonVariant el: value.as<JsonArray>()) {
-        var = setValueJV(var, el, rowNr++);
-      }
-      return var;
-    }
-    else if (value.is<const char *>())
-      return setValue(var, JsonString(value, JsonString::Copied), rowNr);
-    else if (value.is<Coord3D>()) //otherwise it will be treated as JsonObject and toJson / fromJson will not be triggered!!!
-      return setValue(var, value.as<Coord3D>(), rowNr);
-    else
-      return setValue(var, value, rowNr);
-  }
-
   //sets the value of var with id
   template <typename Type>
   JsonObject setValue(const char * pid, const char * id, Type value, uint8_t rowNr = UINT8_MAX) {
     JsonObject var = findVar(pid, id);
     if (!var.isNull()) {
-      return setValue(var, value, rowNr);
+      return Variable(var).setValue(value, rowNr);
     }
     else {
       ppf("setValue var %s.%s not found\n", pid, id);
@@ -322,106 +370,15 @@ public:
     }
   }
 
-  template <typename Type>
-  JsonObject setValue(JsonObject var, Type value, uint8_t rowNr = UINT8_MAX) {
-    Variable variable = Variable(var);
-
-    bool changed = false;
-
-    if (rowNr == UINT8_MAX) { //normal situation
-      if (variable.value().isNull() || variable.value().as<Type>() != value) { //const char * will be JsonString so comparison works
-        if (!variable.value().isNull() && !variable.readOnly()) var["oldValue"] = variable.value();
-        var["value"] = value;
-        //trick to remove null values
-        if (variable.value().isNull() || variable.value().as<uint16_t>() == UINT16_MAX) {
-          var.remove("value");
-          // ppf("dev setValue value removed %s %s\n", variable.id(), var["oldValue"].as<String>().c_str());
-        }
-        else {
-          //only print if ! read only
-          // if (!variable.readOnly())
-          //   ppf("setValue changed %s.%s %s -> %s\n", variable.pid(), variable.id(), var["oldValue"].as<String>().c_str(), variable.valueString().c_str());
-          // else
-          //   ppf("setValue changed %s %s\n", variable.id(), variable.value().as<String>().c_str());
-          web->addResponse(variable.var, "value", variable.value());
-          changed = true;
-        }
-      }
-    }
-    else {
-      //if we deal with multiple rows, value should be an array, if not we create one
-
-      if (variable.value().isNull() || !variable.value().is<JsonArray>()) {
-        // ppf("setValue var %s[%d] value %s not array, creating\n", variable.id(), rowNr, variable.value().as<String>().c_str());
-        var["value"].to<JsonArray>();
-      }
-
-      if (variable.value().is<JsonArray>()) {
-        JsonArray valueArray = variable.valArray();
-        //set the right value in the array (if array did not contain values yet, all values before rownr are set to false)
-        bool notSame = true; //rowNr >= size
-
-        if (rowNr < valueArray.size())
-          notSame = valueArray[rowNr].isNull() || valueArray[rowNr].as<Type>() != value;
-
-        if (notSame) {
-          // if (rowNr >= valueArray.size())
-          //   ppf("notSame %d %d\n", rowNr, valueArray.size());
-          valueArray[rowNr] = value; //if valueArray[<rowNr] not exists it will be created
-          // ppf("  assigned %d %d %s\n", rowNr, valueArray.size(), valueArray[rowNr].as<String>().c_str());
-          web->addResponse(variable.var, "value", variable.value()); //send the whole array to UI as response is in format value:<value> !!
-          changed = true;
-        }
-      }
-      else {
-        ppf("setValue %s.%s could not create value array\n", variable.pid(), variable.id());
-      }
-    }
-
-    if (changed) variable.triggerEvent(onChange, rowNr);
-    
-    return var;
-  }
-
-  //Set value with argument list
-  JsonObject setValue(JsonObject var, const char * format = nullptr, ...) {
-    va_list args;
-    va_start(args, format);
-
-    char value[128];
-    vsnprintf(value, sizeof(value)-1, format, args);
-
-    va_end(args);
-
-    return setValue(var, JsonString(value, JsonString::Copied));
-  }
-
   JsonVariant getValue(const char * pid, const char * id, uint8_t rowNr = UINT8_MAX) {
     JsonObject var = findVar(pid, id);
     if (!var.isNull()) {
-      return getValue(var, rowNr);
+      return Variable(var).getValue(rowNr);
     }
     else {
       // ppf("getValue: Var %s does not exist!!\n", id);
       return JsonVariant();
     }
-  }
-  JsonVariant getValue(JsonObject var, uint8_t rowNr = UINT8_MAX) {
-    Variable variable = Variable(var);
-    if (variable.value().is<JsonArray>()) {
-      JsonArray valueArray = variable.valArray();
-      if (rowNr == UINT8_MAX) rowNr = getValueRowNr;
-      if (rowNr != UINT8_MAX && rowNr < valueArray.size())
-        return valueArray[rowNr];
-      else if (valueArray.size())
-        return valueArray[0]; //return the first element
-      else {
-        ppf("dev getValue no array or rownr wrong %s %s %d\n", variable.id(), variable.valueString().c_str(), rowNr);
-        return JsonVariant(); // return null
-      }
-    }
-    else
-      return variable.value();
   }
 
   //returns the var defined by id (parent to recursively call findVar)

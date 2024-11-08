@@ -38,7 +38,7 @@ void SysModPins::setup() {
       variable.var.remove("value");
       ppf("pin onSetValue %s %d\n", variable.valueString().c_str(), getNrOfAllocatedPins());
       for (uint8_t rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++)
-        mdl->setValue(variable.var, getPinNr(rowNr), rowNr);
+        variable.setValue(getPinNr(rowNr), rowNr);
       return true;
     default: return false;
   }});
@@ -47,7 +47,7 @@ void SysModPins::setup() {
     case onSetValue:
       variable.var.remove("value");
       for (uint8_t rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++)
-        mdl->setValue(variable.var, JsonString(getNthAllocatedPinObject(rowNr).owner, JsonString::Copied), rowNr);
+        variable.setValue(JsonString(getNthAllocatedPinObject(rowNr).owner, JsonString::Copied), rowNr);
       return true;
     default: return false;
   }});
@@ -57,7 +57,7 @@ void SysModPins::setup() {
       variable.var.remove("value");
       for (uint8_t rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++) {
         // ppf("details[%d] d:%s\n", rowNr, getNthAllocatedPinObject(rowNr).details);
-        mdl->setValue(variable.var, JsonString(getNthAllocatedPinObject(rowNr).details, JsonString::Copied), rowNr);
+        variable.setValue(JsonString(getNthAllocatedPinObject(rowNr).details, JsonString::Copied), rowNr);
       }
       return true;
     default: return false;

@@ -51,7 +51,7 @@ public:
     ui->initNumber(tableVar, "channel", UINT16_MAX, 1, 512, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
-          mdl->setValue(variable.var, channel + varsToWatch[rowNr].channelOffset, rowNr);
+          variable.setValue(channel + varsToWatch[rowNr].channelOffset, rowNr);
         return true;
       default: return false;
     }});
@@ -59,7 +59,7 @@ public:
     ui->initText(tableVar, "variable", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
-          mdl->setValue(variable.var, varsToWatch[rowNr].id, rowNr);
+          variable.setValue(varsToWatch[rowNr].id, rowNr);
         return true;
       default: return false;
     }});
@@ -67,7 +67,7 @@ public:
     ui->initNumber(tableVar, "max", UINT16_MAX, 0, UINT16_MAX, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
-          mdl->setValue(variable.var, varsToWatch[rowNr].max, rowNr);
+          variable.setValue(varsToWatch[rowNr].max, rowNr);
         return true;
       default: return false;
     }});
@@ -75,7 +75,7 @@ public:
     ui->initNumber(tableVar, "value", UINT16_MAX, 0, 255, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNr = 0; rowNr < varsToWatch.size(); rowNr++)
-          mdl->setValue(variable.var, varsToWatch[rowNr].savedValue, rowNr);
+          variable.setValue(varsToWatch[rowNr].savedValue, rowNr);
         return true;
       default: return false;
     }});

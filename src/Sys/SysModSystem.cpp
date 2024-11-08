@@ -49,7 +49,7 @@ void SysModSystem::setup() {
       char name[24];
       removeInvalidCharacters(name, variable.value());
       ppf("instance name stripped %s\n", name);
-      mdl->setValue(variable.var, JsonString(name, JsonString::Copied)); //update with stripped name
+      variable.setValue(JsonString(name, JsonString::Copied)); //update with stripped name
       mdns->resetMDNS(); // set the new name for mdns
       return true;
     default: return false;
@@ -60,7 +60,7 @@ void SysModSystem::setup() {
       variable.setComment("s. Uptime of board");
       return true;
     case onLoop1s:
-      mdl->setValue(variable.var, millis()/1000);
+      variable.setValue(millis()/1000);
       return true; 
     default: return false;
   }});
@@ -70,7 +70,7 @@ void SysModSystem::setup() {
       variable.setComment("s");
       return true;
     case onLoop1s:
-      mdl->setValue(variable.var, now/1000);
+      variable.setValue(now/1000);
       return true;
     default: return false;
   }});
@@ -80,7 +80,7 @@ void SysModSystem::setup() {
       variable.setComment("s");
       return true;
     case onLoop1s:
-      mdl->setValue(variable.var, (now<millis())? - (UINT32_MAX - timebase)/1000:timebase/1000);
+      variable.setValue((now<millis())? - (UINT32_MAX - timebase)/1000:timebase/1000);
       return true;
     default: return false;
   }});
@@ -105,7 +105,7 @@ void SysModSystem::setup() {
       variable.setComment("Loops per second");
       return true;
     case onLoop1s:
-      mdl->setValue(variable.var, loopCounter);
+      variable.setValue(loopCounter);
       loopCounter = 0;
       return true;
     default: return false;
@@ -122,7 +122,7 @@ void SysModSystem::setup() {
       //esp_get_free_heap_size can be bigger in case of heap
       return true;
     case onLoop1s:
-      mdl->setValue(variable.var, (ESP.getHeapSize()-ESP.getFreeHeap()) / 1000);
+      variable.setValue((ESP.getHeapSize()-ESP.getFreeHeap()) / 1000);
       return true;
     default: return false;
   }});
@@ -134,7 +134,7 @@ void SysModSystem::setup() {
         web->addResponse(variable.var, "comment", "%d / %d (%d) B", ESP.getFreePsram(), ESP.getPsramSize(), ESP.getMinFreePsram());
         return true;
     case onLoop1s:
-      mdl->setValue(variable.var, (ESP.getPsramSize()-ESP.getFreePsram()) / 1000);
+      variable.setValue((ESP.getPsramSize()-ESP.getFreePsram()) / 1000);
       return true;
       default: return false;
     }});
@@ -146,7 +146,7 @@ void SysModSystem::setup() {
       web->addResponse(variable.var, "comment", "%d of %d B", sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize());
       return true;
     case onLoop1s:
-      mdl->setValue(variable.var, sysTools_get_arduino_maxStackUsage());
+      variable.setValue(sysTools_get_arduino_maxStackUsage());
       return true;
     default: return false;
   }});
@@ -156,7 +156,7 @@ void SysModSystem::setup() {
       web->addResponse(variable.var, "comment", "%d of %d B", sysTools_get_webserver_maxStackUsage(), CONFIG_ASYNC_TCP_STACK_SIZE);
       return true;
     case onLoop1s:
-      mdl->setValue(variable.var, sysTools_get_webserver_maxStackUsage());
+      variable.setValue(sysTools_get_webserver_maxStackUsage());
       return true;
     default: return false;
   }});
