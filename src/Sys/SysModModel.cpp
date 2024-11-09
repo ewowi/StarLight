@@ -385,26 +385,24 @@
     return false;
   }
 
-   JsonObject Variable::setValueJV(JsonVariant value, uint8_t rowNr) {
+   void Variable::setValueJV(JsonVariant value, uint8_t rowNr) {
     if (value.is<JsonArray>()) {
       uint8_t rowNr = 0;
       // ppf("   %s is Array\n", value.as<String>().c_str);
-      JsonObject var;
       for (JsonVariant el: value.as<JsonArray>()) {
-        var = setValueJV(el, rowNr++);
+        setValueJV(el, rowNr++);
       }
-      return var;
     }
     else if (value.is<const char *>())
-      return setValue(JsonString(value, JsonString::Copied), rowNr);
+      setValue(JsonString(value, JsonString::Copied), rowNr);
     else if (value.is<Coord3D>()) //otherwise it will be treated as JsonObject and toJson / fromJson will not be triggered!!!
-      return setValue(value.as<Coord3D>(), rowNr);
+      setValue(value.as<Coord3D>(), rowNr);
     else
-      return setValue(value, rowNr);
+      setValue(value, rowNr);
   }
 
   //Set value with argument list
-  JsonObject Variable::setValueF(const char * format, ...) {
+  void Variable::setValueF(const char * format, ...) {
     va_list args;
     va_start(args, format);
 
@@ -413,7 +411,7 @@
 
     va_end(args);
 
-    return setValue(JsonString(value, JsonString::Copied));
+    setValue(JsonString(value, JsonString::Copied));
   }
 
   JsonVariant Variable::getValue(uint8_t rowNr) {
@@ -431,6 +429,67 @@
     }
     else
       return var["value"];
+  }
+
+  bool Variable::initValue(int min, int max, int pointer) {
+
+    if (pointer != 0) {
+      if (mdl->setValueRowNr == UINT8_MAX)
+        var["p"] = pointer; //store pointer!
+      else
+        var["p"][mdl->setValueRowNr] = pointer; //store pointer in array!
+      // ppf("initValue pointer stored %s: %s\n", id(), (void *)(var["p"].as<String>().c_str()));
+    }
+
+    if (min) var["min"] = min;
+    if (max && max != UINT16_MAX) var["max"] = max;
+
+    //value needs update if varVal not set yet or varVal is array and setValueRowNr is not in it
+    bool doSetValue = false;
+    if (var["type"] != "button") { //button never gets a value
+      if (var["value"].isNull()) {
+        doSetValue = true;
+        // print->printJson("initValue varEvent value is null", var);
+      } else if (var["value"].is<JsonArray>()) {
+        JsonArray valueArray = valArray();
+        if (mdl->setValueRowNr != UINT8_MAX) { // if var in table
+          if (mdl->setValueRowNr >= valueArray.size())
+            doSetValue = true;
+          else if (valueArray[mdl->setValueRowNr].isNull())
+            doSetValue = true;
+        }
+      }
+    }
+
+    //sets the default values, by varEvent if exists, otherwise manually (by returning true)
+    if (doSetValue) {
+      bool onSetValueExists = false;
+      if (!var["fun"].isNull()) {
+        onSetValueExists = triggerEvent(onSetValue, mdl->setValueRowNr);
+      }
+      if (!onSetValueExists) { //setValue provided (if not null)
+        return true;
+      }
+    }
+    else { //do onChange on existing value
+      //no call of onChange for buttons otherwise all buttons will be fired which is highly undesirable
+      if (var["type"] != "button") { // && !var["fun"].isNull(): also if no varEvent to update pointers   !isPointer because 0 is also a value then && (!isPointer || value)
+        bool onChangeExists = false;
+        if (var["value"].is<JsonArray>()) {
+          //refill the vector
+          for (uint8_t rowNr = 0; rowNr < valArray().size(); rowNr++) {
+            onChangeExists |= triggerEvent(onChange, rowNr, true); //init, also set var["p"]
+          }
+        }
+        else {
+          onChangeExists = triggerEvent(onChange, mdl->setValueRowNr, true); //init, also set var["p"] 
+        }
+
+        if (onChangeExists)
+          ppf("initValue onChange %s.%s <- %s\n", pid(), id(), valueString().c_str());
+      }
+    }
+    return false;
   }
 
 SysModModel::SysModModel() :SysModule("Model") {
@@ -517,8 +576,8 @@ void SysModModel::loop20ms() {
 }
 
 void SysModModel::loop1s() {
-  mdl->walkThroughModel([](JsonObject var) {
-    Variable(var).triggerEvent(onLoop1s);
+  mdl->walkThroughModel([](Variable variable) {
+    variable.triggerEvent(onLoop1s);
     return false; //don't stop
   });
 }
@@ -571,7 +630,84 @@ void SysModModel::cleanUpModel(Variable parent, bool oPos, bool ro) {
   }
 }
 
-bool SysModModel::walkThroughModel(std::function<bool(JsonObject)> fun, JsonObject parent) {
+Variable SysModModel::initVar(Variable parent, const char * id, const char * type, bool readOnly, VarEvent varEvent) {
+  const char * parentId = parent.var["id"];
+  if (!parentId) parentId = "m"; //m=module
+  JsonObject var = mdl->findVar(parentId, id);
+  Variable variable = Variable(var);
+
+  //create new var
+  if (var.isNull()) {
+    // ppf("initVar new %s: %s.%s\n", type, parentId, id); //parentId not null otherwise crash
+    if (parent.var.isNull()) {
+      JsonArray vars = mdl->model->as<JsonArray>();
+      var = vars.add<JsonObject>();
+    } else {
+      if (parent.var["n"].isNull()) parent.var["n"].to<JsonArray>(); //TO!!! if parent exist and no "n" array, create it
+      var = parent.var["n"].add<JsonObject>();
+      // serializeJson(model, Serial);Serial.println();
+    }
+    var["id"] = JsonString(id, JsonString::Copied);
+  }
+  // else {
+  //   ppf("initVar Var %s->%s already defined\n", modelParentId, id);
+  // }
+
+  if (!var.isNull()) {
+    if (var["type"].isNull() || var["type"] != type) {
+      var["type"] = JsonString(type, JsonString::Copied);
+      // print->printJson("initVar set type", var);
+    }
+
+    variable = Variable(var);
+
+    var["pid"] = parentId;
+
+    if (var["ro"].isNull() || variable.readOnly() != readOnly) variable.readOnly(readOnly);
+
+    //set order. make order negative to check if not obsolete, see cleanUpModel
+    if (variable.order() >= 1000) //predefined! (modules) - positive as saved in model.json
+      variable.order( -variable.order()); //leave the order as is
+    else {
+      if (!parent.var.isNull() && Variable(parent).order() >= 0) // if checks on the parent already done so vars added later, e.g. controls, will be autochecked
+        variable.order( mdl->varCounter++); //redefine order
+      else
+        variable.order( -mdl->varCounter++); //redefine order
+    }
+
+    //if varEvent, add it to the list
+    if (varEvent) {
+      //if fun already in ucFunctions then reuse, otherwise add new fun in ucFunctions
+      //lambda update: when replacing typedef void(*UCFun)(JsonObject); with typedef std::function<void(JsonObject)> UCFun; this gives error:
+      //  mismatched types 'T*' and 'std::function<void(ArduinoJson::V6213PB2::JsonObject)>' { return *__it == _M_value; }
+      //  it also looks like functions are not added more then once anyway
+      // std::vector<UCFun>::iterator itr = find(ucFunctions.begin(), ucFunctions.end(), varEvent);
+      // if (itr!=ucFunctions.end()) //found
+      //   var["varEvent"] = distance(ucFunctions.begin(), itr); //assign found function
+      // else { //not found
+        mdl->varEvents.push_back(varEvent); //add new function
+        var["fun"] = mdl->varEvents.size()-1;
+      // }
+      
+      if (varEvent(var, UINT8_MAX, onLoop)) { //test run if it supports loop
+        //no need to check if already in...
+        VarLoop loop;
+        loop.loopFun = varEvent;
+        loop.var = var;
+
+        ui->loopFunctions.push_back(loop);
+        var["loopFun"] = ui->loopFunctions.size()-1;
+        // ppf("iObject loopFun %s %u %u %d %d\n", variable.id());
+      }
+    }
+  }
+  else
+    ppf("initVar could not find or create var %s with %s\n", id, type);
+
+  return variable;
+}
+
+bool SysModModel::walkThroughModel(std::function<bool(Variable)> fun, JsonObject parent) {
   JsonArray root;
   if (parent.isNull())
     root = model->as<JsonArray>();
@@ -580,7 +716,7 @@ bool SysModModel::walkThroughModel(std::function<bool(JsonObject)> fun, JsonObje
 
   for (JsonObject var : root) {
     // ppf(" %s", var["id"].as<String>());
-    if (fun(var)) return true;
+    if (fun(Variable(var))) return true;
 
     if (!var["n"].isNull()) {
       if (walkThroughModel(fun, var)) return true;

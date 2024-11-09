@@ -25,6 +25,8 @@ class SysModUI: public SysModule {
 
 public:
 
+  std::vector<VarLoop> loopFunctions;
+
   SysModUI();
 
   //serve index.htm
@@ -168,9 +170,9 @@ public:
   //initVarAndValue using basic value
   template <typename Type>
   Variable initVarAndValue(Variable parent, const char * id, const char * type, Type value, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
-    Variable variable = initVar(parent, id, type, readOnly, varEvent);
+    Variable variable = mdl->initVar(parent, id, type, readOnly, varEvent);
 
-    if (initValue(variable, min, max, 0)) { //no pointer
+    if (variable.initValue(min, max, 0)) { //no pointer
       variable.setValue(value, mdl->setValueRowNr); //does onChange if needed, if var in table, update the table row
     }
 
@@ -180,9 +182,9 @@ public:
   //initVarAndValue using referenced value
   template <typename Type>
   Variable initVarAndValue(Variable parent, const char * id, const char * type, Type * value, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
-    Variable variable = initVar(parent, id, type, readOnly, varEvent);
+    Variable variable = mdl->initVar(parent, id, type, readOnly, varEvent);
 
-    if (initValue(variable, min, max, int(value))) {
+    if (variable.initValue(min, max, int(value))) {
       variable.setValue(*value, mdl->setValueRowNr); //does onChange if needed, if var in table, update the table row
     }
 
@@ -192,14 +194,14 @@ public:
   //initVarAndValue using vector of values
   template <typename Type>
   Variable initVarAndValue(Variable parent, const char * id, const char * type, std::vector<Type> *values, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
-    Variable variable = initVar(parent, id, type, readOnly, varEvent);
+    Variable variable = mdl->initVar(parent, id, type, readOnly, varEvent);
 
     if (!variable.var["value"].isNull()) {
       print->printJson("Clearing the vector", variable.var);
       (*values).clear(); // if values already then rebuild the vector with it
     }
 
-    if (initValue(variable.var, min, max, (int)values)) {
+    if (variable.initValue(min, max, (int)values)) {
       uint8_t rowNrL = 0;
       for (Type value: *values) { //loop over vector
         variable.setValue(value, rowNrL); //does onChange if needed, if var in table, update the table row
@@ -212,14 +214,14 @@ public:
 
   //initVarAndValue using vector of values .  WIP!!!
   Variable initVarAndValueVector(Variable parent, const char * id, const char * type, std::vector<VectorString> *values, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
-    Variable variable = initVar(parent, id, type, readOnly, varEvent);
+    Variable variable = mdl->initVar(parent, id, type, readOnly, varEvent);
 
     if (!variable.var["value"].isNull()) {
       print->printJson("Clearing the vector", variable.var);
       (*values).clear(); // if values already then rebuild the vector with it
     }
 
-    if (initValue(variable, min, max, (int)values)) {
+    if (variable.initValue(min, max, (int)values)) {
       uint8_t rowNrL = 0;
       for (VectorString value: *values) { //loop over vector
         variable.setValue(JsonString(value.s, JsonString::Copied), rowNrL); //does onChange if needed, if var in table, update the table row
@@ -228,71 +230,6 @@ public:
     }
 
     return variable;
-  }
-
-  //adds a variable to the model
-  Variable initVar(Variable parent, const char * id, const char * type, bool readOnly = true, VarEvent varEvent = nullptr);
-
-  //gives a variable an initital value returns true if setValue must be called 
-  bool initValue(Variable variable, int min = 0, int max = 255, int pointer = 0) {
-
-    if (pointer != 0) {
-      if (mdl->setValueRowNr == UINT8_MAX)
-        variable.var["p"] = pointer; //store pointer!
-      else
-        variable.var["p"][mdl->setValueRowNr] = pointer; //store pointer in array!
-      // ppf("initValue pointer stored %s: %s\n", variable.id(), (void *)(var["p"].as<String>().c_str()));
-    }
-
-    if (min) variable.var["min"] = min;
-    if (max && max != UINT16_MAX) variable.var["max"] = max;
-
-    //value needs update if varVal not set yet or varVal is array and setValueRowNr is not in it
-    bool doSetValue = false;
-    if (variable.var["type"] != "button") { //button never gets a value
-      if (variable.var["value"].isNull()) {
-        doSetValue = true;
-        // print->printJson("initValue varEvent value is null", var);
-      } else if (variable.var["value"].is<JsonArray>()) {
-        JsonArray valueArray = variable.valArray();
-        if (mdl->setValueRowNr != UINT8_MAX) { // if var in table
-          if (mdl->setValueRowNr >= valueArray.size())
-            doSetValue = true;
-          else if (valueArray[mdl->setValueRowNr].isNull())
-            doSetValue = true;
-        }
-      }
-    }
-
-    //sets the default values, by varEvent if exists, otherwise manually (by returning true)
-    if (doSetValue) {
-      bool onSetValueExists = false;
-      if (!variable.var["fun"].isNull()) {
-        onSetValueExists = variable.triggerEvent(onSetValue, mdl->setValueRowNr);
-      }
-      if (!onSetValueExists) { //setValue provided (if not null)
-        return true;
-      }
-    }
-    else { //do onChange on existing value
-      //no call of onChange for buttons otherwise all buttons will be fired which is highly undesirable
-      if (variable.var["type"] != "button") { // && !var["fun"].isNull(): also if no varEvent to update pointers   !isPointer because 0 is also a value then && (!isPointer || value)
-        bool onChangeExists = false;
-        if (variable.var["value"].is<JsonArray>()) {
-          //refill the vector
-          for (uint8_t rowNr = 0; rowNr < variable.valArray().size(); rowNr++) {
-            onChangeExists |= variable.triggerEvent(onChange, rowNr, true); //init, also set var["p"]
-          }
-        }
-        else {
-          onChangeExists = variable.triggerEvent(onChange, mdl->setValueRowNr, true); //init, also set var["p"] 
-        }
-
-        if (onChangeExists)
-          ppf("initValue onChange %s.%s <- %s\n", variable.pid(), variable.id(), variable.valueString().c_str());
-      }
-    }
-    return false;
   }
 
   // assuming Variable(varId).triggerEvent(onUI); has been called before
@@ -317,7 +254,6 @@ public:
 
 
 private:
-  std::vector<VarLoop> loopFunctions;
 
 };
 

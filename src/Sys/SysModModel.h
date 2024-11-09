@@ -262,10 +262,10 @@ class Variable {
   bool findOptionsTextRec(JsonVariant options, uint8_t * startValue, uint8_t value, JsonString *groupName, JsonString *optionName, JsonString parentGroup = JsonString());
 
   //setValue for JsonVariants (extract the StarMod supported types)
-  JsonObject setValueJV(JsonVariant value, uint8_t rowNr = UINT8_MAX);
+  void setValueJV(JsonVariant value, uint8_t rowNr = UINT8_MAX);
 
   template <typename Type>
-  JsonObject setValue(Type value, uint8_t rowNr = UINT8_MAX) {
+  void setValue(Type value, uint8_t rowNr = UINT8_MAX) {
     bool changed = false;
 
     if (rowNr == UINT8_MAX) { //normal situation
@@ -319,14 +319,15 @@ class Variable {
     }
 
     if (changed) triggerEvent(onChange, rowNr);
-    
-    return var;    
   }
 
   //Set value with argument list
-  JsonObject setValueF(const char * format = nullptr, ...);
+  void setValueF(const char * format = nullptr, ...);
 
   JsonVariant getValue(uint8_t rowNr = UINT8_MAX);
+
+  //gives a variable an initital value returns true if setValue must be called 
+  bool initValue(int min = 0, int max = 255, int pointer = 0);
 
 }; //class Variable
 
@@ -356,20 +357,22 @@ public:
   void setup();
   void loop20ms();
   void loop1s();
-  
+
+  //adds a variable to the model
+  Variable initVar(Variable parent, const char * id, const char * type, bool readOnly = true, VarEvent varEvent = nullptr);
+
   //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
   void cleanUpModel(Variable parent = Variable(), bool oPos = true, bool ro = false);
 
   //sets the value of var with id
   template <typename Type>
-  JsonObject setValue(const char * pid, const char * id, Type value, uint8_t rowNr = UINT8_MAX) {
+  void setValue(const char * pid, const char * id, Type value, uint8_t rowNr = UINT8_MAX) {
     JsonObject var = findVar(pid, id);
     if (!var.isNull()) {
-      return Variable(var).setValue(value, rowNr);
+      Variable(var).setValue(value, rowNr);
     }
     else {
       ppf("setValue var %s.%s not found\n", pid, id);
-      return JsonObject();
     }
   }
 
@@ -385,7 +388,7 @@ public:
   }
 
   //returns the var defined by id (parent to recursively call findVar)
-  bool walkThroughModel(std::function<bool(JsonObject)> fun, JsonObject parent = JsonObject());
+  bool walkThroughModel(std::function<bool(Variable)> fun, JsonObject parent = JsonObject());
   JsonObject findVar(const char * pid, const char * id, JsonObject parent = JsonObject());
   void findVars(const char * id, bool value, FindFun fun, JsonArray parent = JsonArray());
 

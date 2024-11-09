@@ -229,7 +229,7 @@ public:
       print->fFormat(columnVarID, sizeof(columnVarID), "ins%s_%s", variable.pid(), variable.id());
 
       //create a var of the same type. InitVar is not calling onChange which is good in this situation!  // = ui->cloneVar(var, columnVarID, [this, var](JsonObject insVar){});
-      Variable insVariable = ui->initVar(tableVar, columnVarID, variable.var["type"], false, [this](Variable insVariable, uint8_t rowNr, uint8_t eventType) {
+      Variable insVariable = mdl->initVar(tableVar, columnVarID, variable.var["type"], false, [this](Variable insVariable, uint8_t rowNr, uint8_t eventType) {
         //extract the variable from insVariable.id()
         char pid[32]; strlcpy(pid, insVariable.id() + 3, sizeof(pid)); //+3 : remove ins
         char * id = strtok(pid, "_"); if (id != NULL ) {strlcpy(pid, id, sizeof(pid)); id = strtok(NULL, "_");} //split pid and id
@@ -244,7 +244,7 @@ public:
 
             web->addResponse(insVariable.var, "value", instances[rowNrL].jsonData[variable.id()], rowNrL); // error: passing 'const Variable' as 'this' argument discards qualifiers
 
-            // mdl->setValue(insVariable.var, instances[rowNrL].jsonData[Variable(var).id()], rowNr);
+            // mdl->setValue(insVariable.var, instances[rowNrL].jsonData[variable.id()], rowNr);
           //send to ws?
           }
           return true;
@@ -615,10 +615,10 @@ public:
         mdl->findVars("dash", true, [&instance](Variable variable) { //varEvent
           instance.jsonData[variable.id()] = variable.value();
           // // print->printJson("setVar", var);
-          // JsonArray valArray = Variable(var).valArray();
+          // JsonArray valArray = variable.valArray();
           // if (valArray.isNull())
           // else if (valArray.size())
-          //   instance.jsonData[Variable(var).id()] = valArray;
+          //   instance.jsonData[variable.id()] = valArray;
         });
 
         serializeJson(instance.jsonData, starMessage.jsonString);
