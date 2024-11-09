@@ -83,15 +83,15 @@
   void LedModFixture::setup() {
     SysModule::setup();
 
-    parentVar = ui->initAppMod(parentVar, name, 1100);
+    Variable parentVar = ui->initAppMod(Variable(), name, 1100);
 
-    JsonObject currentVar = ui->initCheckBox(parentVar, "on", true, false, [](EventArguments) { switch (eventType) {
+    Variable currentVar = ui->initCheckBox(parentVar, "on", true, false, [](EventArguments) { switch (eventType) {
       case onChange:
         Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
         return true;
       default: return false;
     }});
-    currentVar["dash"] = true;
+    currentVar.var["dash"] = true;
 
     //logarithmic slider (10)
     currentVar = ui->initSlider(parentVar, "brightness", &bri, 0, 255, false, [this](EventArguments) { switch (eventType) {
@@ -109,8 +109,8 @@
         return true; }
       default: return false; 
     }});
-    currentVar["log"] = true; //logarithmic
-    currentVar["dash"] = true; //these values override model.json???
+    currentVar.var["log"] = true; //logarithmic
+    currentVar.var["dash"] = true; //these values override model.json???
 
     currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI:

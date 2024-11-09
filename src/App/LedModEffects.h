@@ -27,7 +27,7 @@ public:
 
   void setup();
 
-  //this loop is run as often as possible so coding should also be as efficient as possible (no findVars etc)
+  //this loop is run as often as possible so coding should also be as efficient as possible (no findVar etc)
   void loop();
 
   void initEffect(LedsLayer &leds, uint8_t rowNr);

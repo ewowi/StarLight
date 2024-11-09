@@ -446,10 +446,10 @@ public:
   void setup() {
     SysModule::setup();
 
-    parentVar = ui->initAppMod(parentVar, name, 6302); //created as a usermod, not an appmod to have it in the usermods tab
-    parentVar["s"] = true; //setup
+    Variable parentVar = ui->initAppMod(Variable(), name, 6302); //created as a usermod, not an appmod to have it in the usermods tab
+    parentVar.var["s"] = true; //setup
 
-    JsonObject currentVar = ui->initSelect(parentVar, "fixture", (uint8_t)0, false, [this](EventArguments) { switch (eventType) {
+    Variable currentVar = ui->initSelect(parentVar, "fixture", (uint8_t)0, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
         variable.setComment("Predefined fixture");
         JsonArray options = variable.setOptions(); //See enum Fixtures for order of options
@@ -598,7 +598,7 @@ public:
 
     JsonObject fixtureVar = mdl->findVar("FixtureGenerator", "fixture");
 
-    // JsonObject parentVar = mdl->findVar(var["id"]); //local parentVar
+    // Variable parentVar = mdl->findVar(var["id"]); //local parentVar
     uint8_t fgValue = Variable(fixtureVar).value();
 
     //find option group and text
@@ -675,7 +675,7 @@ public:
     // Variable(fixtureVar).preDetails();
 
     bool showTable = true;
-    JsonObject parentVar = fixtureVar;
+    Variable parentVar = fixtureVar;
 
     //default table variables - part 1
     if (showTable) {

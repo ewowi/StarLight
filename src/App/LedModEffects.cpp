@@ -132,11 +132,9 @@ inline uint16_t getRGBWsize(uint16_t nleds){
   void LedModEffects::setup() {
     SysModule::setup();
 
-    parentVar = ui->initAppMod(parentVar, name, 1201);
+    Variable parentVar = ui->initAppMod(Variable(), name, 1201);
 
-    JsonObject currentVar;
-
-    JsonObject tableVar = ui->initTable(parentVar, "layers", nullptr, false, [this](EventArguments) { switch (eventType) {
+    Variable tableVar = ui->initTable(parentVar, "layers", nullptr, false, [this](EventArguments) { switch (eventType) {
       case onUI:
         variable.setComment("List of effects");
         return true;
@@ -159,7 +157,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       default: return false;
     }});
 
-    currentVar = ui->initSelect(tableVar, "effect", (uint8_t)0, false, [this](EventArguments) { switch (eventType) {
+    Variable currentVar = ui->initSelect(tableVar, "effect", (uint8_t)0, false, [this](EventArguments) { switch (eventType) {
       // case onSetValue:
       //   for (size_t rowNr = 0; rowNr < fix->layers.size(); rowNr++)
       //     variable.setValue(fix->layers[rowNr]->effectNr, rowNr);
@@ -225,7 +223,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true;
       default: return false;
     }});
-    currentVar["dash"] = true;
+    currentVar.var["dash"] = true;
 
     //projection, default projection is 'default'
     currentVar = ui->initSelect(tableVar, "projection", 1, false, [this](EventArguments) { switch (eventType) {
@@ -287,7 +285,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true;
       default: return false;
     }});
-    currentVar["dash"] = true;
+    currentVar.var["dash"] = true;
 
     ui->initCoord3D(tableVar, "start", {0,0,0}, 0, STARLIGHT_MAXLEDS, false, [this](EventArguments) { switch (eventType) {
       case onSetValue:
@@ -423,7 +421,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     varSystem = mdl->findVar("m", "System");
   }
 
-  //this loop is run as often as possible so coding should also be as efficient as possible (no findVars etc)
+  //this loop is run as often as possible so coding should also be as efficient as possible (no findVar etc)
   void LedModEffects::loop() {
     // SysModule::loop();
 

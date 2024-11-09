@@ -45,7 +45,7 @@ public:
   void setup() {
     SysModule::setup();
 
-    parentVar = ui->initUserMod(parentVar, name, 6000);
+    Variable parentVar = ui->initUserMod(Variable(), name, 6000);
 
     ui->initIP(parentVar, "instance", UINT16_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI: {

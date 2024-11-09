@@ -13,6 +13,8 @@
 
 #include <WLED-sync.h> // https://github.com/netmindz/WLED-sync
 
+#include "SysModules.h"
+
 #define MAX_FREQUENCY   11025          // sample frequency / 2 (as per Nyquist criterion)
 
 enum UM_SoundSimulations {
@@ -35,7 +37,7 @@ public:
   //setup filesystem
   void setup() {
     SysModule::setup();
-    parentVar = ui->initUserMod(parentVar, name, 6300);
+    Variable parentVar = ui->initUserMod(Variable(), name, 6300);
   
     ui->initText(parentVar, "status", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s: {

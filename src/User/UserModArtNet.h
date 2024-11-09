@@ -30,7 +30,7 @@ public:
   void setup() {
     SysModule::setup();
 
-    parentVar = ui->initUserMod(parentVar, name, 6100);
+    Variable parentVar = ui->initUserMod(Variable(), name, 6100);
 
     ui->initNumber(parentVar, "targetIP", 11, 0, 255, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
@@ -43,7 +43,7 @@ public:
       default: return false;
     }});
 
-    JsonObject tableVar = ui->initTable(parentVar, "outputs");
+    Variable tableVar = ui->initTable(parentVar, "outputs");
 
     ui->initNumber(tableVar, "start", &hardware_outputs_universe_start, 0, UINT16_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI:
