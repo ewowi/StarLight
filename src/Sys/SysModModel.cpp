@@ -450,8 +450,8 @@ SysModModel::SysModModel() :SysModule("Model") {
 void SysModModel::setup() {
   SysModule::setup();
 
-  parentVar = ui->initSysMod(parentVar, name, 4303);
-  parentVar["s"] = true; //setup
+  Variable parentVar = ui->initSysMod(Variable(), name, 4303);
+  parentVar.var["s"] = true; //setup
 
   ui->initButton(parentVar, "saveModel", false, [this](EventArguments) { switch (eventType) {
     case onUI:
@@ -499,7 +499,7 @@ void SysModModel::loop20ms() {
 
     // files->writeObjectToFile("/model.json", model);
 
-    cleanUpModel(JsonObject(), false, true);//remove if var["o"] is negative (not cleanedUp) and remove ro values
+    cleanUpModel(Variable(), false, true);//remove if var["o"] is negative (not cleanedUp) and remove ro values
 
     StarJson starJson("/model.json", "w"); //open fileName for deserialize
     //comment exclusions out in case of generating model.json for github
@@ -523,10 +523,10 @@ void SysModModel::loop1s() {
   });
 }
 
-void SysModModel::cleanUpModel(JsonObject parent, bool oPos, bool ro) {
+void SysModModel::cleanUpModel(Variable parent, bool oPos, bool ro) {
 
   JsonArray vars;
-  if (parent.isNull()) //no parent
+  if (parent.var.isNull()) //no parent
     vars = model->as<JsonArray>();
   else
     vars = Variable(parent).children();
@@ -559,7 +559,7 @@ void SysModModel::cleanUpModel(JsonObject parent, bool oPos, bool ro) {
 
       //remove ro values (ro vars cannot be deleted as SM uses these vars)
       // remove if var is ro or table is instance table (exception here, values don't need to be saved)
-      if (ro && (parent["id"] == "instances" || variable.readOnly())) {// && !value().isNull())
+      if (ro && (parent.var["id"] == "instances" || variable.readOnly())) {// && !value().isNull())
         // ppf("remove ro value %s\n", variable.id());          
         var.remove("value");
       }
@@ -623,7 +623,7 @@ void SysModModel::findVars(const char * property, bool value, FindFun fun, JsonA
 
   for (JsonObject var : root) {
     if (var[property] == value)
-      fun(var);
+      fun(Variable(var));
     if (!var["n"].isNull())
       findVars(property, value, fun, var["n"]);
   }

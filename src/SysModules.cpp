@@ -33,9 +33,9 @@ void SysModules::setup() {
   }
 
   //do its own setup: will be shown as last module
-  JsonObject parentVar = ui->initSysMod(parentVar, "Modules", 4203);
+  Variable parentVar = ui->initSysMod(Variable(), "Modules", 4203);
 
-  JsonObject tableVar = ui->initTable(parentVar, "Modules", nullptr, true, [](EventArguments) { switch (eventType) {
+  Variable tableVar = ui->initTable(parentVar, "Modules", nullptr, true, [](EventArguments) { switch (eventType) {
     case onUI:
       variable.setComment("List of modules");
       return true;

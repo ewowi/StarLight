@@ -45,9 +45,9 @@ SysModWeb::SysModWeb() :SysModule("Web") {
 
 void SysModWeb::setup() {
   SysModule::setup();
-  parentVar = ui->initSysMod(parentVar, name, 3101);
+  Variable parentVar = ui->initSysMod(Variable(), name, 3101);
 
-  JsonObject tableVar = ui->initTable(parentVar, "clients", nullptr, true, [](EventArguments) { switch (eventType) {
+  Variable tableVar = ui->initTable(parentVar, "clients", nullptr, true, [](EventArguments) { switch (eventType) {
     case onLoop1s:
       for (JsonObject childVar: variable.children())
         Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)

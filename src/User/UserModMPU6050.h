@@ -34,7 +34,7 @@ public:
 
   void setup() {
     SysModule::setup();
-    parentVar = ui->initUserMod(parentVar, name, 6305);
+    Variable parentVar = ui->initUserMod(Variable(), name, 6305);
 
     ui->initCheckBox(parentVar, "ready", &motionTrackingReady, true, [](EventArguments) { switch (eventType) {
       case onUI:

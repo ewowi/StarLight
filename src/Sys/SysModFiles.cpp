@@ -28,9 +28,9 @@ SysModFiles::SysModFiles() :SysModule("Files") {
 
 void SysModFiles::setup() {
   SysModule::setup();
-  parentVar = ui->initSysMod(parentVar, name, 2101);
+  Variable parentVar = ui->initSysMod(Variable(), name, 2101);
 
-  JsonObject tableVar = ui->initTable(parentVar, "files", nullptr, false, [this](EventArguments) { switch (eventType) {
+  Variable tableVar = ui->initTable(parentVar, "files", nullptr, false, [this](EventArguments) { switch (eventType) {
     case onUI:
       variable.setComment("List of files");
       return true;

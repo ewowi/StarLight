@@ -33,228 +33,227 @@ public:
   void loop20ms();
 
   //order: order%4 determines the column (WIP)
-  JsonObject initAppMod(JsonObject parent, const char * id, int order = 0) {
-    JsonObject var = initVarAndValue<const char *>(parent, id, "appmod", (const char *)nullptr);
-    if (order) Variable(var).defaultOrder(order + 1000);
-    return var;
+  Variable initAppMod(Variable parent, const char * id, int order = 0) {
+    Variable variable = initVarAndValue<const char *>(parent, id, "appmod", (const char *)nullptr);
+    if (order) variable.defaultOrder(order + 1000);
+    return variable;
   }
-  JsonObject initSysMod(JsonObject parent, const char * id, int order = 0) {
-    JsonObject var = initVarAndValue<const char *>(parent, id, "sysmod", (const char *)nullptr);
-    if (order) Variable(var).defaultOrder(order + 1000);
-    return var;
+  Variable initSysMod(Variable parent, const char * id, int order = 0) {
+    Variable variable = initVarAndValue<const char *>(parent, id, "sysmod", (const char *)nullptr);
+    if (order) variable.defaultOrder(order + 1000);
+    return variable;
   }
-  JsonObject initUserMod(JsonObject parent, const char * id, int order = 0) {
-    JsonObject var = initVarAndValue<const char *>(parent, id, "usermod", (const char *)nullptr);
-    if (order) Variable(var).defaultOrder(order + 1000);
-    return var;
+  Variable initUserMod(Variable parent, const char * id, int order = 0) {
+    Variable variable = initVarAndValue<const char *>(parent, id, "usermod", (const char *)nullptr);
+    if (order) variable.defaultOrder(order + 1000);
+    return variable;
   }
 
-  JsonObject initTable(JsonObject parent, const char * id, const char * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initTable(Variable parent, const char * id, const char * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "table", value, 0, 0, readOnly, varEvent);
   }
 
-  JsonObject initText(JsonObject parent, const char * id, const char * value = nullptr, uint16_t max = 32, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initText(Variable parent, const char * id, const char * value = nullptr, uint16_t max = 32, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "text", value, 0, max, readOnly, varEvent);
   }
 
   //vector of text
-  JsonObject initTextVector(JsonObject parent, const char * id, std::vector<VectorString> *values, uint16_t max = 32, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initTextVector(Variable parent, const char * id, std::vector<VectorString> *values, uint16_t max = 32, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValueVector(parent, id, "text", values, 0, max, readOnly, varEvent);
   }
 
-  JsonObject initFileUpload(JsonObject parent, const char * id, const char * value = nullptr, uint16_t max = 32, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initFileUpload(Variable parent, const char * id, const char * value = nullptr, uint16_t max = 32, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "fileUpload", value, 0, max, readOnly, varEvent);
   }
-  JsonObject initPassword(JsonObject parent, const char * id, const char * value = nullptr, uint8_t max = 32, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initPassword(Variable parent, const char * id, const char * value = nullptr, uint8_t max = 32, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "password", value, 0, max, readOnly, varEvent);
   }
 
   //number is uint16_t for the time being (because it is called by uint16_t referenced vars...)
-  JsonObject initNumber(JsonObject parent, const char * id, uint16_t value = UINT16_MAX, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initNumber(Variable parent, const char * id, uint16_t value = UINT16_MAX, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<uint16_t>(parent, id, "number", value, min, max, readOnly, varEvent);
   }
   //init a number using referenced value
-  JsonObject initNumber(JsonObject parent, const char * id, uint16_t * value = nullptr, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initNumber(Variable parent, const char * id, uint16_t * value = nullptr, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<uint16_t>(parent, id, "number", value, min, max, readOnly, varEvent);
   }
   //init a number using a vector of integers
-  JsonObject initNumber(JsonObject parent, const char * id, std::vector<uint16_t> *values, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initNumber(Variable parent, const char * id, std::vector<uint16_t> *values, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<uint16_t>(parent, id, "number", values, min, max, readOnly, varEvent);
   }
 
-  JsonObject initPin(JsonObject parent, const char * id, uint8_t value = UINT8_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initPin(Variable parent, const char * id, uint8_t value = UINT8_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<uint8_t>(parent, id, "pin", value, 0, NUM_DIGITAL_PINS, readOnly, varEvent);
   }
 
   //referenced value
-  JsonObject initPin(JsonObject parent, const char * id, uint8_t *value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initPin(Variable parent, const char * id, uint8_t *value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<uint8_t>(parent, id, "pin", value, 0, NUM_DIGITAL_PINS, readOnly, varEvent);
   }
 
   //type int!
-  JsonObject initProgress(JsonObject parent, const char * id, int value = UINT16_MAX, int min = 0, int max = 255, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initProgress(Variable parent, const char * id, int value = UINT16_MAX, int min = 0, int max = 255, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<int>(parent, id, "progress", value, min, max, readOnly, varEvent);
   }
 
-  JsonObject initCoord3D(JsonObject parent, const char * id, Coord3D value = {UINT16_MAX, UINT16_MAX, UINT16_MAX}, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initCoord3D(Variable parent, const char * id, Coord3D value = {UINT16_MAX, UINT16_MAX, UINT16_MAX}, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<Coord3D>(parent, id, "coord3D", value, min, max, readOnly, varEvent);
   }
   //init a Coord3D using referenced value
-  JsonObject initCoord3D(JsonObject parent, const char * id, Coord3D *value = nullptr, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initCoord3D(Variable parent, const char * id, Coord3D *value = nullptr, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<Coord3D>(parent, id, "coord3D", value, min, max, readOnly, varEvent);
   }
 
   //init a range slider, range between 0 and 255!
-  JsonObject initSlider(JsonObject parent, const char * id, uint8_t value = UINT8_MAX, int min = 0, int max = 255, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initSlider(Variable parent, const char * id, uint8_t value = UINT8_MAX, int min = 0, int max = 255, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<uint8_t>(parent, id, "range", value, min, max, readOnly, varEvent);
   }
   //init a range slider using referenced value
-  JsonObject initSlider(JsonObject parent, const char * id, uint8_t * value = nullptr, int min = 0, int max = 255, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initSlider(Variable parent, const char * id, uint8_t * value = nullptr, int min = 0, int max = 255, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<uint8_t>(parent, id, "range", value, min, max, readOnly, varEvent);
   }
 
-  JsonObject initCanvas(JsonObject parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initCanvas(Variable parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<int>(parent, id, "canvas", value, 0, 0, readOnly, varEvent);
   }
 
   //supports 3 state value: if UINT8_MAX it is indeterminated
-  JsonObject initCheckBox(JsonObject parent, const char * id, bool3State value = UINT8_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initCheckBox(Variable parent, const char * id, bool3State value = UINT8_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<bool3State>(parent, id, "checkbox", value, 0, 0, readOnly, varEvent);
   }
   //init a checkbox using referenced value
-  JsonObject initCheckBox(JsonObject parent, const char * id, bool3State *value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initCheckBox(Variable parent, const char * id, bool3State *value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<bool3State>(parent, id, "checkbox", value, 0, 0, readOnly, varEvent);
   }
 
   //a button never gets a value
-  JsonObject initButton(JsonObject parent, const char * id, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initButton(Variable parent, const char * id, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<bool>(parent, id, "button", false, 0, 0, readOnly, varEvent);
   }
-  // JsonObject initButton2(JsonObject parent, const char * id, bool readOnly = false, VarEvent varEvent = nullptr) {
+  // Variable initButton2(Variable parent, const char * id, bool readOnly = false, VarEvent varEvent = nullptr) {
   //   // return initVarAndValue<bool>(parent, id, "button", false, 0, 0, readOnly, varEvent);
   //   return JsonObject();
   // }
 
   //int value ?
-  JsonObject initSelect(JsonObject parent, const char * id, uint8_t value = UINT8_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initSelect(Variable parent, const char * id, uint8_t value = UINT8_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<uint8_t>(parent, id, "select", value, 0, 0, readOnly, varEvent);
   }
   //init a select using referenced value
-  JsonObject initSelect(JsonObject parent, const char * id, uint8_t * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initSelect(Variable parent, const char * id, uint8_t * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<uint8_t>(parent, id, "select", value, 0, 0, readOnly, varEvent);
   }
 
-  JsonObject initIP(JsonObject parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initIP(Variable parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<int>(parent, id, "ip", value, 0, 255, readOnly, varEvent);
   }
 
-  JsonObject initTextArea(JsonObject parent, const char * id, const char * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initTextArea(Variable parent, const char * id, const char * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "textarea", value, 0, 0, readOnly, varEvent);
   }
 
-  JsonObject initFileEdit(JsonObject parent, const char * id, const char * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initFileEdit(Variable parent, const char * id, const char * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "fileEdit", value, 0, 0, readOnly, varEvent);
   }
 
   //vector of fileEdit
-  JsonObject initFileEditVector(JsonObject parent, const char * id, std::vector<VectorString> *values, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initFileEditVector(Variable parent, const char * id, std::vector<VectorString> *values, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValueVector(parent, id, "fileEdit", values, 0, 0, readOnly, varEvent);
   }
 
-  JsonObject initURL(JsonObject parent, const char * id, const char * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initURL(Variable parent, const char * id, const char * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "url", value, 0, 0, readOnly, varEvent);
   }
 
   //initVarAndValue using basic value
   template <typename Type>
-  JsonObject initVarAndValue(JsonObject parent, const char * id, const char * type, Type value, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
-    JsonObject var = initVar(parent, id, type, readOnly, varEvent);
+  Variable initVarAndValue(Variable parent, const char * id, const char * type, Type value, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
+    Variable variable = initVar(parent, id, type, readOnly, varEvent);
 
-    if (initValue(var, min, max, 0)) { //no pointer
-      Variable(var).setValue(value, mdl->setValueRowNr); //does onChange if needed, if var in table, update the table row
+    if (initValue(variable, min, max, 0)) { //no pointer
+      variable.setValue(value, mdl->setValueRowNr); //does onChange if needed, if var in table, update the table row
     }
 
-    return var;
+    return variable;
   }
 
   //initVarAndValue using referenced value
   template <typename Type>
-  JsonObject initVarAndValue(JsonObject parent, const char * id, const char * type, Type * value, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
-    JsonObject var = initVar(parent, id, type, readOnly, varEvent);
+  Variable initVarAndValue(Variable parent, const char * id, const char * type, Type * value, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
+    Variable variable = initVar(parent, id, type, readOnly, varEvent);
 
-    if (initValue(var, min, max, int(value))) {
-      Variable(var).setValue(*value, mdl->setValueRowNr); //does onChange if needed, if var in table, update the table row
+    if (initValue(variable, min, max, int(value))) {
+      variable.setValue(*value, mdl->setValueRowNr); //does onChange if needed, if var in table, update the table row
     }
 
-    return var;
+    return variable;
   }
 
   //initVarAndValue using vector of values
   template <typename Type>
-  JsonObject initVarAndValue(JsonObject parent, const char * id, const char * type, std::vector<Type> *values, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
-    JsonObject var = initVar(parent, id, type, readOnly, varEvent);
+  Variable initVarAndValue(Variable parent, const char * id, const char * type, std::vector<Type> *values, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
+    Variable variable = initVar(parent, id, type, readOnly, varEvent);
 
-    if (!var["value"].isNull()) {
-      print->printJson("Clearing the vector", var);
+    if (!variable.var["value"].isNull()) {
+      print->printJson("Clearing the vector", variable.var);
       (*values).clear(); // if values already then rebuild the vector with it
     }
 
-    if (initValue(var, min, max, (int)values)) {
+    if (initValue(variable.var, min, max, (int)values)) {
       uint8_t rowNrL = 0;
       for (Type value: *values) { //loop over vector
-        Variable(var).setValue(value, rowNrL); //does onChange if needed, if var in table, update the table row
+        variable.setValue(value, rowNrL); //does onChange if needed, if var in table, update the table row
         rowNrL++;
       }
     }
 
-    return var;
+    return variable;
   }
 
   //initVarAndValue using vector of values .  WIP!!!
-  JsonObject initVarAndValueVector(JsonObject parent, const char * id, const char * type, std::vector<VectorString> *values, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
-    JsonObject var = initVar(parent, id, type, readOnly, varEvent);
+  Variable initVarAndValueVector(Variable parent, const char * id, const char * type, std::vector<VectorString> *values, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
+    Variable variable = initVar(parent, id, type, readOnly, varEvent);
 
-    if (!var["value"].isNull()) {
-      print->printJson("Clearing the vector", var);
+    if (!variable.var["value"].isNull()) {
+      print->printJson("Clearing the vector", variable.var);
       (*values).clear(); // if values already then rebuild the vector with it
     }
 
-    if (initValue(var, min, max, (int)values)) {
+    if (initValue(variable, min, max, (int)values)) {
       uint8_t rowNrL = 0;
       for (VectorString value: *values) { //loop over vector
-        Variable(var).setValue(JsonString(value.s, JsonString::Copied), rowNrL); //does onChange if needed, if var in table, update the table row
+        variable.setValue(JsonString(value.s, JsonString::Copied), rowNrL); //does onChange if needed, if var in table, update the table row
         rowNrL++;
       }
     }
 
-    return var;
+    return variable;
   }
 
   //adds a variable to the model
-  JsonObject initVar(JsonObject parent, const char * id, const char * type, bool readOnly = true, VarEvent varEvent = nullptr);
+  Variable initVar(Variable parent, const char * id, const char * type, bool readOnly = true, VarEvent varEvent = nullptr);
 
   //gives a variable an initital value returns true if setValue must be called 
-  bool initValue(JsonObject var, int min = 0, int max = 255, int pointer = 0) {
-    Variable variable = Variable(var);
+  bool initValue(Variable variable, int min = 0, int max = 255, int pointer = 0) {
 
     if (pointer != 0) {
       if (mdl->setValueRowNr == UINT8_MAX)
-        var["p"] = pointer; //store pointer!
+        variable.var["p"] = pointer; //store pointer!
       else
-        var["p"][mdl->setValueRowNr] = pointer; //store pointer in array!
+        variable.var["p"][mdl->setValueRowNr] = pointer; //store pointer in array!
       // ppf("initValue pointer stored %s: %s\n", variable.id(), (void *)(var["p"].as<String>().c_str()));
     }
 
-    if (min) var["min"] = min;
-    if (max && max != UINT16_MAX) var["max"] = max;
+    if (min) variable.var["min"] = min;
+    if (max && max != UINT16_MAX) variable.var["max"] = max;
 
     //value needs update if varVal not set yet or varVal is array and setValueRowNr is not in it
     bool doSetValue = false;
-    if (var["type"] != "button") { //button never gets a value
-      if (var["value"].isNull()) {
+    if (variable.var["type"] != "button") { //button never gets a value
+      if (variable.var["value"].isNull()) {
         doSetValue = true;
         // print->printJson("initValue varEvent value is null", var);
-      } else if (var["value"].is<JsonArray>()) {
+      } else if (variable.var["value"].is<JsonArray>()) {
         JsonArray valueArray = variable.valArray();
         if (mdl->setValueRowNr != UINT8_MAX) { // if var in table
           if (mdl->setValueRowNr >= valueArray.size())
@@ -268,7 +267,7 @@ public:
     //sets the default values, by varEvent if exists, otherwise manually (by returning true)
     if (doSetValue) {
       bool onSetValueExists = false;
-      if (!var["fun"].isNull()) {
+      if (!variable.var["fun"].isNull()) {
         onSetValueExists = variable.triggerEvent(onSetValue, mdl->setValueRowNr);
       }
       if (!onSetValueExists) { //setValue provided (if not null)
@@ -277,9 +276,9 @@ public:
     }
     else { //do onChange on existing value
       //no call of onChange for buttons otherwise all buttons will be fired which is highly undesirable
-      if (var["type"] != "button") { // && !var["fun"].isNull(): also if no varEvent to update pointers   !isPointer because 0 is also a value then && (!isPointer || value)
+      if (variable.var["type"] != "button") { // && !var["fun"].isNull(): also if no varEvent to update pointers   !isPointer because 0 is also a value then && (!isPointer || value)
         bool onChangeExists = false;
-        if (var["value"].is<JsonArray>()) {
+        if (variable.var["value"].is<JsonArray>()) {
           //refill the vector
           for (uint8_t rowNr = 0; rowNr < variable.valArray().size(); rowNr++) {
             onChangeExists |= variable.triggerEvent(onChange, rowNr, true); //init, also set var["p"]

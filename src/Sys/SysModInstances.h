@@ -16,6 +16,7 @@
 #endif
 #include "SysModSystem.h"
 #include "SysModNetwork.h" //for localIP
+#include "SysModules.h"
 
 struct DMX {
   byte universe:3; //3 bits / 8
@@ -112,9 +113,9 @@ public:
   void setup() {
     SysModule::setup();
 
-    parentVar = ui->initSysMod(parentVar, name, 3000);
+    Variable parentVar = ui->initSysMod(Variable(), name, 3000);
 
-    JsonObject tableVar = ui->initTable(parentVar, "instances", nullptr, true);
+    Variable tableVar = ui->initTable(parentVar, "instances", nullptr, true);
     
     ui->initText(tableVar, "name", nullptr, 32, false, [this](EventArguments) { switch (eventType) {
       case onSetValue:
@@ -213,19 +214,27 @@ public:
       default: return false;
     }});
 
-    JsonObject currentVar;
-
     //find dash variables and add them to the table
-    mdl->findVars("dash", true, [tableVar, this](JsonObject var) { //findFun
+    mdl->findVars("dash", true, [tableVar, this](Variable variable) { //findFun
 
-      ppf("dash %s %s found\n", Variable(var).id(), Variable(var).valueString().c_str());
+      ppf("dash %s.%s %s found\n", variable.pid(), variable.id(), variable.valueString().c_str());
+      // dash Fixture.on 1 found
+      // dash Fixture.brightness 94 found
+      // dash layers.effect [30] found
+      // dash layers.projection [1] found
+      // dash E131.channel 1 found
 
-      char columnVarID[32] = "ins";
-      strlcat(columnVarID, var["id"], sizeof(columnVarID));
-      JsonObject insVar; // = ui->cloneVar(var, columnVarID, [this, var](JsonObject insVar){});
+      //todo: add pid to it
+      char columnVarID[64];
+      print->fFormat(columnVarID, sizeof(columnVarID), "ins%s_%s", variable.pid(), variable.id());
 
-      //create a var of the same type. InitVar is not calling onChange which is good in this situation!
-      insVar = ui->initVar(tableVar, columnVarID, var["type"], false, [this, var](Variable insVariable, uint8_t rowNr, uint8_t eventType) { switch (eventType) { //varEvent
+      //create a var of the same type. InitVar is not calling onChange which is good in this situation!  // = ui->cloneVar(var, columnVarID, [this, var](JsonObject insVar){});
+      Variable insVariable = ui->initVar(tableVar, columnVarID, variable.var["type"], false, [this](Variable insVariable, uint8_t rowNr, uint8_t eventType) {
+        //extract the variable from insVariable.id()
+        char pid[32]; strlcpy(pid, insVariable.id() + 3, sizeof(pid)); //+3 : remove ins
+        char * id = strtok(pid, "_"); if (id != NULL ) {strlcpy(pid, id, sizeof(pid)); id = strtok(NULL, "_");} //split pid and id
+        Variable variable = Variable(mdl->findVar(pid, id)); 
+        switch (eventType) { //varEvent
         case onSetValue:
           //should not trigger onChange
           for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++) {
@@ -233,7 +242,7 @@ public:
             //do what setValue is doing except calling onChange
             // insVar["value"][rowNrL] = instances[rowNrL].jsonData[variable.id()]; //only int values...
 
-            web->addResponse(insVariable.var, "value", instances[rowNrL].jsonData[Variable(var).id()], rowNrL);
+            web->addResponse(insVariable.var, "value", instances[rowNrL].jsonData[variable.id()], rowNrL); // error: passing 'const Variable' as 'this' argument discards qualifiers
 
             // mdl->setValue(insVariable.var, instances[rowNrL].jsonData[Variable(var).id()], rowNr);
           //send to ws?
@@ -241,16 +250,16 @@ public:
           return true;
         case onUI:
           // call onUI of the base variable for the new variable
-          mdl->varEvents[var["fun"]](insVariable, rowNr, onUI);
+          mdl->varEvents[variable.var["fun"]](insVariable, rowNr, onUI);
           return true;
         case onChange: {
           //do not set this initially!!!
           if (rowNr != UINT8_MAX) {
             //if this instance update directly, otherwise send over network
             if (instances[rowNr].ip == net->localIP()) {
-              Variable(var).setValue(insVariable.getValue(rowNr).as<uint8_t>()); //this will call sendDataWS (tbd...), do not set for rowNr
+              variable.setValue(insVariable.getValue(rowNr).as<uint8_t>()); //this will call sendDataWS (tbd...), do not set for rowNr
             } else {
-              sendMessageUDP(instances[rowNr].ip, var, insVariable.getValue(rowNr));
+              sendMessageUDP(instances[rowNr].ip, variable.var, insVariable.getValue(rowNr));
             }
           }
           // print->printJson(" ", var);
@@ -258,10 +267,10 @@ public:
         default: return false;
       }});
 
-      if (insVar) {
-        if (!var["min"].isNull()) insVar["min"] = var["min"];
-        if (!var["max"].isNull()) insVar["max"] = var["max"];
-        if (!var["log"].isNull()) insVar["log"] = var["log"];
+      if (insVariable.var) {
+        if (!variable.var["min"].isNull()) insVariable.var["min"] = variable.var["min"];
+        if (!variable.var["max"].isNull()) insVariable.var["max"] = variable.var["max"];
+        if (!variable.var["log"].isNull()) insVariable.var["log"] = variable.var["log"];
         // insVar["fun"] = var["fun"]; //copy the onUI
       }
 
@@ -603,8 +612,8 @@ public:
         instance.jsonData.to<JsonObject>(); //clear
 
         //send dash values
-        mdl->findVars("dash", true, [&instance](JsonObject var) { //varEvent
-          instance.jsonData[Variable(var).id()] = var["value"];
+        mdl->findVars("dash", true, [&instance](Variable variable) { //varEvent
+          instance.jsonData[variable.id()] = variable.value();
           // // print->printJson("setVar", var);
           // JsonArray valArray = Variable(var).valArray();
           // if (valArray.isNull())

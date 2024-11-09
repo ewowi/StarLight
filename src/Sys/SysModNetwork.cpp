@@ -28,16 +28,14 @@ SysModNetwork::SysModNetwork() :SysModule("Network") {};
 void SysModNetwork::setup() {
   SysModule::setup();
 
-  parentVar = ui->initSysMod(parentVar, name, 3502);
-  parentVar["s"] = true; //setup
+  Variable parentVar = ui->initSysMod(Variable(), name, 3502);
+  parentVar.var["s"] = true; //setup
 
-  // JsonObject tableVar = ui->initTable(parentVar, "wfTbl", nullptr, false, [this](EventArguments) { //varEvent ro false: create and delete row possible
+  // Variable tableVar = ui->initTable(parentVar, "wfTbl", nullptr, false, [this](EventArguments) { //varEvent ro false: create and delete row possible
   //   variable.setComment("List of defined and available Wifi APs");
   // });
 
-  JsonObject currentVar;
-
-  currentVar = ui->initCheckBox(parentVar, "wiFi", true, false, [this](EventArguments) { switch (eventType) {
+  Variable currentVar = ui->initCheckBox(parentVar, "wiFi", true, false, [this](EventArguments) { switch (eventType) {
     case onChange:
       if (variable.value().as<bool>())
         initWiFiConnection();

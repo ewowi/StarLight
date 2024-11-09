@@ -20,9 +20,9 @@ SysModUI::SysModUI() :SysModule("UI") {
 void SysModUI::setup() {
   SysModule::setup();
 
-  parentVar = initSysMod(parentVar, name, 4101);
+  Variable parentVar = initSysMod(Variable(), name, 4101);
 
-  JsonObject tableVar = initTable(parentVar, "loops", nullptr, true, [](EventArguments) { switch (eventType) {
+  Variable tableVar = initTable(parentVar, "loops", nullptr, true, [](EventArguments) { switch (eventType) {
     case onUI:
       variable.setComment("Loops initiated by a variable");
       return true;
@@ -65,20 +65,21 @@ void SysModUI::loop20ms() { //never more then 50 times a second!
   }
 }
 
-JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * type, bool readOnly, VarEvent varEvent) {
-  const char * parentId = parent["id"];
+Variable SysModUI::initVar(Variable parent, const char * id, const char * type, bool readOnly, VarEvent varEvent) {
+  const char * parentId = parent.var["id"];
   if (!parentId) parentId = "m"; //m=module
   JsonObject var = mdl->findVar(parentId, id);
+  Variable variable = Variable(var);
 
   //create new var
   if (var.isNull()) {
     // ppf("initVar new %s: %s.%s\n", type, parentId, id); //parentId not null otherwise crash
-    if (parent.isNull()) {
+    if (parent.var.isNull()) {
       JsonArray vars = mdl->model->as<JsonArray>();
       var = vars.add<JsonObject>();
     } else {
-      if (parent["n"].isNull()) parent["n"].to<JsonArray>(); //TO!!! if parent exist and no "n" array, create it
-      var = parent["n"].add<JsonObject>();
+      if (parent.var["n"].isNull()) parent.var["n"].to<JsonArray>(); //TO!!! if parent exist and no "n" array, create it
+      var = parent.var["n"].add<JsonObject>();
       // serializeJson(model, Serial);Serial.println();
     }
     var["id"] = JsonString(id, JsonString::Copied);
@@ -93,7 +94,7 @@ JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * ty
       // print->printJson("initVar set type", var);
     }
 
-    Variable variable = Variable(var);
+    variable = Variable(var);
 
     var["pid"] = parentId;
 
@@ -103,7 +104,7 @@ JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * ty
     if (variable.order() >= 1000) //predefined! (modules) - positive as saved in model.json
       variable.order( -variable.order()); //leave the order as is
     else {
-      if (!parent.isNull() && Variable(parent).order() >= 0) // if checks on the parent already done so vars added later, e.g. controls, will be autochecked
+      if (!parent.var.isNull() && Variable(parent).order() >= 0) // if checks on the parent already done so vars added later, e.g. controls, will be autochecked
         variable.order( mdl->varCounter++); //redefine order
       else
         variable.order( -mdl->varCounter++); //redefine order
@@ -138,7 +139,7 @@ JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * ty
   else
     ppf("initVar could not find or create var %s with %s\n", id, type);
 
-  return var;
+  return variable;
 }
 
 void SysModUI::processJson(JsonVariant json) {

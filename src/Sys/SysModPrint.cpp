@@ -15,6 +15,7 @@
 #include "SysModModel.h"
 #include "SysModWeb.h"
 #include "SysModSystem.h"
+#include "SysModules.h"
 
 SysModPrint::SysModPrint() :SysModule("Print") {
 
@@ -54,7 +55,7 @@ SysModPrint::SysModPrint() :SysModule("Print") {
 void SysModPrint::setup() {
   SysModule::setup();
 
-  parentVar = ui->initSysMod(parentVar, name, 2302);
+  Variable parentVar = ui->initSysMod(Variable(), name, 2302);
 
   //default to Serial
   ui->initSelect(parentVar, "output", 1, false, [](EventArguments) { switch (eventType) {

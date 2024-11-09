@@ -10,18 +10,18 @@
 */
 
 #pragma once
-#include "SysModule.h"
+// #include "SysModule.h"
 #include "SysModPrint.h"
 #include "SysModWeb.h"
-#include "SysModules.h" //isConnected
-
-typedef std::function<void(JsonObject)> FindFun;
+// #include "SysModules.h" //isConnected
 
 struct Coord3D {
   int x;
   int y;
   int z;
 
+  //int as Coordinates can go negative in some effects
+  
   // Coord3D() {
   //   x = 0;
   //   y = 0;
@@ -208,11 +208,12 @@ class Variable {
 
   JsonObject var;
 
+  Variable() {this->var = JsonObject();} //undefined variable
   Variable(JsonObject var) {this->var = var;}
 
   //core methods 
-  const char * pid() {return var["pid"];}
-  const char * id() {return var["id"]; }
+  const char *pid() {return var["pid"];}
+  const char *id() {return var["id"];}
 
   JsonVariant value() {return var["value"];}
   JsonVariant value(uint8_t rowNr) {return var["value"][rowNr];}
@@ -329,12 +330,14 @@ class Variable {
 
 }; //class Variable
 
+typedef std::function<void(Variable)> FindFun;
+
 #define EventArguments Variable variable, uint8_t rowNr, uint8_t eventType
 
 // https://stackoverflow.com/questions/59111610/how-do-you-declare-a-lambda-function-using-typedef-and-then-use-it-by-passing-to
 typedef std::function<uint8_t(EventArguments)> VarEvent;
 
-class SysModModel:public SysModule {
+class SysModModel: public SysModule {
 
 public:
 
@@ -355,7 +358,7 @@ public:
   void loop1s();
   
   //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
-  void cleanUpModel(JsonObject parent = JsonObject(), bool oPos = true, bool ro = false);
+  void cleanUpModel(Variable parent = Variable(), bool oPos = true, bool ro = false);
 
   //sets the value of var with id
   template <typename Type>

@@ -46,8 +46,6 @@ public:
   unsigned long oneSecondMillis = millis() - random(1000); //random so not all 1s are fired at once
   unsigned long tenSecondMillis = millis() - random(10000); //random within a second
 
-  JsonObject parentVar;
-
   SysModule(const char * name) {
     this->name = name;
     success = true;

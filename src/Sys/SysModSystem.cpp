@@ -38,8 +38,9 @@ SysModSystem::SysModSystem() :SysModule("System") {};
 
 void SysModSystem::setup() {
   SysModule::setup();
-  parentVar = ui->initSysMod(parentVar, name, 2000);
-  parentVar["s"] = true; //setup
+  
+  Variable parentVar = ui->initSysMod(Variable(), name, 2000);
+  parentVar.var["s"] = true; //setup
 
   ui->initText(parentVar, "name", _INIT(TOSTRING(APP)), 24, false, [this](EventArguments) { switch (eventType) {
     case onUI:

@@ -23,10 +23,10 @@ SysModPins::SysModPins() :SysModule("Pins") {
 
 void SysModPins::setup() {
   SysModule::setup();
-  parentVar = ui->initSysMod(parentVar, name, 2202);
+  Variable parentVar = ui->initSysMod(Variable(), name, 2202);
 
   //show table of allocated pins
-  JsonObject tableVar = ui->initTable(parentVar, "pins", nullptr, true, [](EventArguments) { switch (eventType) {
+  Variable tableVar = ui->initTable(parentVar, "pins", nullptr, true, [](EventArguments) { switch (eventType) {
     case onUI: {
       variable.setComment("Allocated Pins");
       return true; }

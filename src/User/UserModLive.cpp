@@ -128,7 +128,7 @@ static float _time(float j) {
 
     //note: -mtext-section-literals needed in pio.ini, first only for s2, now for all due to something in setup...
 
-    parentVar = ui->initUserMod(parentVar, name, 6310);
+    Variable parentVar = ui->initUserMod(Variable(), name, 6310);
 
     ui->initSelect(parentVar, "script", UINT8_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
@@ -192,7 +192,7 @@ static float _time(float j) {
       default: return false; 
     }});
 
-    JsonObject tableVar = ui->initTable(parentVar, "scripts", nullptr, true);
+    Variable tableVar = ui->initTable(parentVar, "scripts", nullptr, true);
 
     ui->initText(tableVar, "name", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:

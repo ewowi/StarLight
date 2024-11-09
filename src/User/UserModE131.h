@@ -12,6 +12,8 @@
 #pragma once
 #include <ESPAsyncE131.h>
 
+#include "SysModules.h"
+
 #define maxChannels 513
 
 class UserModE131:public SysModule {
@@ -25,11 +27,11 @@ public:
   void setup() {
     SysModule::setup();
 
-    parentVar = ui->initUserMod(parentVar, name, 6201);
+    Variable parentVar = ui->initUserMod(Variable(), name, 6201);
 
     ui->initNumber(parentVar, "universe", &universe, 0, 7);
 
-    JsonObject currentVar = ui->initNumber(parentVar, "channel", &channel, 1, 512, false, [this](EventArguments) { switch (eventType) {
+    Variable currentVar = ui->initNumber(parentVar, "channel", &channel, 1, 512, false, [this](EventArguments) { switch (eventType) {
       case onUI:
         variable.setComment("First channel");
         return true;
@@ -39,9 +41,9 @@ public:
         return true;
       default: return false;
     }});
-    currentVar["dash"] = true;
+    currentVar.var["dash"] = true;
 
-    JsonObject tableVar = ui->initTable(parentVar, "watches", nullptr, true, [](EventArguments) { switch (eventType) {
+    Variable tableVar = ui->initTable(parentVar, "watches", nullptr, true, [](EventArguments) { switch (eventType) {
       case onUI:
         variable.setComment("Variables to watch");
         return true;
