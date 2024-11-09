@@ -18,7 +18,7 @@ class NoneProjection: public Projection {
   //uint8_t dim() {return _1D;} // every projection should work for all D
   const char * tags() {return "💫";}
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
   }
 }; //NoneProjection
 
@@ -28,7 +28,7 @@ class NoneProjection: public Projection {
     //uint8_t dim() {return _1D;} // every projection should work for all D
     const char * tags() {return "💫";}
 
-    void setup(LedsLayer &leds, JsonObject parentVar) {
+    void setup(LedsLayer &leds, Variable parentVar) {
     }
   }; //LiveMappingProjection
 #endif
@@ -141,7 +141,7 @@ class PinwheelProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
     uint8_t *petals   = leds.projectionData.write<uint8_t>(60); // Initalize petal first for addPixel
     uint8_t *swirlVal = leds.projectionData.write<uint8_t>(30);
     bool3State    *reverse  = leds.projectionData.write<bool3State>(false);
@@ -243,7 +243,7 @@ class MultiplyProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
     Coord3D *proMulti = leds.projectionData.write<Coord3D>({2,2,1});
     bool3State *mirror = leds.projectionData.write<bool3State>(false);
     ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds](EventArguments) { switch (eventType) {
@@ -304,7 +304,7 @@ class TiltPanRollProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
     //tbd: implement variable by reference for rowNrs
     #ifdef STARBASE_USERMOD_MPU6050
       ui->initCheckBox(parentVar, "gyro", false, false, [&leds](EventArguments) { switch (eventType) {
@@ -432,7 +432,7 @@ class Preset1Projection: public Projection {
   const char * name() {return "Preset1";}
   const char * tags() {return "💫";}
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
     MultiplyProjection mp;
     mp.setup(leds, parentVar);
     TiltPanRollProjection tp;
@@ -468,7 +468,7 @@ class RandomProjection: public Projection {
   const char * name() {return "Random";}
   const char * tags() {return "💫";}
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) {
@@ -500,7 +500,7 @@ class MirrorReverseTransposeProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
       MRTData *data = leds.projectionData.readWrite<MRTData>();
       ui->initCheckBox(parentVar, "Mirror X", false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
@@ -625,7 +625,7 @@ class MirrorProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
     bool3State *mirrorX = leds.projectionData.write<bool3State>(false);
     bool3State *mirrorY = leds.projectionData.write<bool3State>(false);
     bool3State *mirrorZ = leds.projectionData.write<bool3State>(false);
@@ -692,7 +692,7 @@ class MirrorProjection: public Projection {
 // 
 //   public:
 // 
-//   void setup(LedsLayer &leds, JsonObject parentVar) {
+//   void setup(LedsLayer &leds, Variable parentVar) {
 //     bool3State *reverseX = leds.projectionData.write<bool3State>(false);
 //     bool3State *reverseY = leds.projectionData.write<bool3State>(false);
 //     bool3State *reverseZ = leds.projectionData.write<bool3State>(false);
@@ -742,7 +742,7 @@ class MirrorProjection: public Projection {
 // 
 //   public:
 // 
-//   void setup(LedsLayer &leds, JsonObject parentVar) {
+//   void setup(LedsLayer &leds, Variable parentVar) {
 //     bool3State *transposeXY = leds.projectionData.write<bool3State>(false);
 //     bool3State *transposeXZ = leds.projectionData.write<bool3State>(false);
 //     bool3State *transposeYZ = leds.projectionData.write<bool3State>(false);
@@ -805,7 +805,7 @@ class GroupingSpacingProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
     Coord3D *grouping = leds.projectionData.write<Coord3D>({2,2,2});
     Coord3D *spacing  = leds.projectionData.write<Coord3D>({0,0,0});
     ui->initCoord3D(parentVar, "grouping", grouping, 0, 100, false, [&leds](EventArguments) { switch (eventType) {
@@ -855,7 +855,7 @@ class ScrollingProjection: public Projection {
   const char * name() {return "Scrolling";}
   const char * tags() {return "💫";}
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
     MirrorProjection mp;
     mp.setup(leds, parentVar);
 
@@ -902,7 +902,7 @@ class AccelerationProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
     bool3State *wrap = leds.projectionData.write<bool3State>(false);
     uint8_t *sensitivity = leds.projectionData.write<uint8_t>(0);
     uint8_t *deadzone = leds.projectionData.write<uint8_t>(10);
@@ -948,7 +948,7 @@ class CheckerboardProjection: public Projection {
   const char * name() {return "Checkerboard";}
   const char * tags() {return "💫";}
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
     Coord3D *size = leds.projectionData.write<Coord3D>({3,3,3});
     bool3State *invert = leds.projectionData.write<bool3State>(false);
     bool3State *group = leds.projectionData.write<bool3State>(false);
@@ -1029,7 +1029,7 @@ class RotateProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, JsonObject parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) {
     RotateData *data = leds.projectionData.readWrite<RotateData>();
 
     ui->initSelect(parentVar, "direction", (uint8_t)0, false, [data](EventArguments) { switch (eventType) {

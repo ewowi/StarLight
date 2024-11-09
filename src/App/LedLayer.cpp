@@ -37,7 +37,7 @@ void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, uint8_t init
   fill_rainbow(targetArray, numToFill, initialhue, deltahue);
 }
 
-void Effect::setup(LedsLayer &leds, JsonObject parentVar) {
+void Effect::setup(LedsLayer &leds, Variable parentVar) {
     ui->initSelect(parentVar, "palette", 4, false, [&leds](EventArguments) { switch (eventType) {
       case onUI: {
         JsonArray options = variable.setOptions();

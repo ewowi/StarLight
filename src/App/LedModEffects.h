@@ -36,7 +36,7 @@ public:
 
 private:
   unsigned long frameMillis = 0;
-  JsonObject varSystem = JsonObject();
+  JsonObject varSystem = JsonObject(); //for use in loop
 
 };
 
