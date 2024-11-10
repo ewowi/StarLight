@@ -24,7 +24,7 @@ public:
   void setup() override {
     SysModule::setup();
 
-    parentVar = ui->initUserMod(parentVar, name, 6300);
+    Variable parentVar = ui->initUserMod(Variable(), name, 6300);
 
     ui->initText(parentVar, "mqttAddr");
     ui->initText(parentVar, "mqttUser");

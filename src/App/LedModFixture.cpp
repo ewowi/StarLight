@@ -71,7 +71,7 @@
           else
             Y = Y * 16 + 15 - y;
 
-          return (verticalPanels * 16 - 1 - Y) * 16 * horizontalPanels + (horizontalPanels * 16 - 1 - X);
+          return Y * 16 * horizontalPanels + X;
         }
       } else
         return pos;
@@ -83,18 +83,18 @@
   void LedModFixture::setup() {
     SysModule::setup();
 
-    parentVar = ui->initAppMod(parentVar, name, 1100);
+    Variable parentVar = ui->initAppMod(Variable(), name, 1100);
 
-    JsonObject currentVar = ui->initCheckBox(parentVar, "on", true, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    Variable currentVar = ui->initCheckBox(parentVar, "on", true, false, [](EventArguments) { switch (eventType) {
       case onChange:
-        mdl->callVarOnChange(mdl->findVar("Fixture", "brightness"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+        Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
         return true;
       default: return false;
     }});
-    currentVar["dash"] = true;
+    currentVar.var["dash"] = true;
 
     //logarithmic slider (10)
-    currentVar = ui->initSlider(parentVar, "brightness", &bri, 0, 255, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    currentVar = ui->initSlider(parentVar, "brightness", &bri, 0, 255, false, [this](EventArguments) { switch (eventType) {
       case onChange: {
         //bri set by StarMod during onChange
         uint8_t result = mdl->getValue("Fixture", "on").as<bool>()?mdl->linearToLogarithm(bri):0;
@@ -105,14 +105,14 @@
           FastLED.setBrightness(result);
         #endif
 
-        ppf("Set Brightness to %d -> b:%d r:%d\n", var["value"].as<int>(), bri, result);
+        ppf("Set Brightness to %d -> b:%d r:%d\n", variable.value().as<int>(), bri, result);
         return true; }
       default: return false; 
     }});
-    currentVar["log"] = true; //logarithmic
-    currentVar["dash"] = true; //these values override model.json???
+    currentVar.var["log"] = true; //logarithmic
+    currentVar.var["dash"] = true; //these values override model.json???
 
-    currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI:
         if (bytesPerPixel) {
           mappingStatus = 1; //rebuild the fixture - so it is send to ui
@@ -121,8 +121,8 @@
         }
         return true;
       case onLoop: {
-        if (mappingStatus == 0 && bytesPerPixel && !doSendFixtureDefinition && web->ws.getClients().length()) { //not remapping and clients exists
-          var["interval"] = max(nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
+        if (!web->isBusy && mappingStatus == 0 && bytesPerPixel && !doSendFixtureDefinition && web->ws.getClients().length()) { //not remapping and clients exists
+          variable.var["interval"] = max(nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
 
           #define headerBytesPreview 5
           // ppf("(%d %d %d,%d,%d)", len, headerBytesPreview + nrOfLeds * bytesPerPixel, fixSize.x, fixSize.y, fixSize.z);
@@ -209,9 +209,9 @@
       default: return false;
     }});
 
-    ui->initSelect(currentVar, "rotation", &viewRotation, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(currentVar, "rotation", &viewRotation, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
-        JsonArray options = ui->setOptions(var);
+        JsonArray options = variable.setOptions();
         options.add("None");
         options.add("Tilt");
         options.add("Pan");
@@ -223,9 +223,9 @@
       default: return false; 
     }});
 
-    ui->initSelect(currentVar, "PixelBytes", &bytesPerPixel, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(currentVar, "PixelBytes", &bytesPerPixel, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
-        JsonArray options = ui->setOptions(var);
+        JsonArray options = variable.setOptions();
         options.add("None");
         options.add("1-byte RGB");
         options.add("2-byte RGB");
@@ -234,15 +234,15 @@
       default: return false; 
     }});
 
-    currentVar = ui->initSelect(parentVar, "fixture", &fixtureNr, false ,[this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    currentVar = ui->initSelect(parentVar, "fixture", &fixtureNr, false ,[this](EventArguments) { switch (eventType) {
       case onUI: {
-        // ui->setComment(var, "Fixture to display effect on");
-        JsonArray options = ui->setOptions(var);
+        // variable.setComment("Fixture to display effect on");
+        JsonArray options = variable.setOptions();
         files->dirToJson(options, true, "F_"); //only files containing F(ixture), alphabetically
 
         // ui needs to load the file also initially
         char fileName[32] = "";
-        if (files->seqNrToName(fileName, var["value"])) {
+        if (files->seqNrToName(fileName, variable.value())) {
           web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName, JsonString::Copied));
         }
         return true; }
@@ -266,30 +266,30 @@
       default: return false; 
     }}); //fixture
 
-    ui->initCoord3D(currentVar, "size", &fixSize, 0, STARLIGHT_MAXLEDS, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(currentVar, "size", &fixSize, 0, STARLIGHT_MAXLEDS, true, [](EventArguments) { switch (eventType) {
       default: return false;
     }});
 
-    ui->initNumber(currentVar, "count", &nrOfLeds, 0, UINT16_MAX, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(currentVar, "count", &nrOfLeds, 0, UINT16_MAX, true, [](EventArguments) { switch (eventType) {
       case onUI:
-        web->addResponse(var, "comment", "Max %d", STARLIGHT_MAXLEDS, 0); //0 is to force format overload used
+        web->addResponse(variable.var, "comment", "Max %d", STARLIGHT_MAXLEDS, 0); //0 is to force format overload used
         return true;
       default: return false;
     }});
 
-    ui->initNumber(parentVar, "fps", &fps, 1, 999, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "fps", &fps, 1, 999, false, [](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "Frames per second");
+        variable.setComment("Frames per second");
         return true;
       default: return false; 
     }});
 
-    ui->initNumber(parentVar, "realFps", &realFps, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "realFps", &realFps, 0, UINT16_MAX, true, [this](EventArguments) { switch (eventType) {
       case onUI:
-        web->addResponse(var, "comment", "f(%d leds)", nrOfLeds, 0); //0 is to force format overload used
+        web->addResponse(variable.var, "comment", "f(%d leds)", nrOfLeds, 0); //0 is to force format overload used
         return true;
       case onLoop1s:
-          mdl->setValue(var, eff->frameCounter);
+          variable.setValue(eff->frameCounter);
           eff->frameCounter = 0;
         return true;
       default: return false;
@@ -297,24 +297,24 @@
 
     ui->initCheckBox(parentVar, "tickerTape", &showTicker);
 
-    ui->initCheckBox(parentVar, "driverShow", &driverShow, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "driverShow", &driverShow, false, [this](EventArguments) { switch (eventType) {
       case onUI:
         #if STARLIGHT_CLOCKLESS_LED_DRIVER
-          ui->setLabel(var, "CLD Show");
+          variable.setLabel("CLD Show");
         #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-          ui->setLabel(var, "CLVD Show");
+          variable.setLabel("CLVD Show");
         #else
-          ui->setLabel(var, "FastLED Show");
+          variable.setLabel("FastLED Show");
         #endif
-        ui->setComment(var, "dev performance tuning");
+        variable.setComment("dev performance tuning");
         return true;
       default: return false; 
     }});
 
     // #if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-    //   ui->initNumber(parentVar, "dma", UINT16_MAX, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    //   ui->initNumber(parentVar, "dma", UINT16_MAX, 0, UINT16_MAX, true, [this](EventArguments) { switch (eventType) {
     //     case onLoop1s:
-    //         mdl->setValue(var, _proposed_dma_extension);
+    //         variable.setValue(_proposed_dma_extension);
     //       return true;
     //     default: return false;
     //   }});
@@ -345,7 +345,7 @@
 
     #endif
 
-    if (driverShow) {
+    if (driverShow && !web->isBusy) {
       // if statement needed as we need to wait until the driver is initialised
       #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
         #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
@@ -371,6 +371,14 @@
   void LedModFixture::mapInitAlloc() {
 
     mappingStatus = 2; //mapping in progress
+
+    //init pixels, with some debugging for panels
+    for (int i = 0; i < STARLIGHT_MAXLEDS / 256; i++) //panels
+    {
+      //pixels in panels
+      for (int j=0;j<256;j++)
+        ledsP[j+i*256]=j < i + 1?CRGB::Red: CRGB::Black; //each panel get as much red pixels as its sequence in the chain
+    }
 
     char fileName[32] = "";
 
@@ -482,14 +490,6 @@
         eff->initEffect(*leds, rowNr);
       }
       rowNr++;
-    }
-
-    //init pixels, with some debugging for panels
-    for (int i = 0; i < STARLIGHT_MAXLEDS / 256; i++) //panels
-    {
-      //pixels in panels
-      for (int j=0;j<256;j++)
-        ledsP[j+i*256]=j < i + 1?CRGB::Red: CRGB::Black; //each panel get as much red pixels as its sequence in the chain
     }
 
     //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
@@ -744,18 +744,25 @@
             driver.setGamma(255.0/255.0, 176.0/255.0, 240.0/255.0);
             //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
           #endif
-          mdl->callVarOnChange(mdl->findVar("Fixture", "brightness"), UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+          Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
           // driver.setBrightness(setMaxPowerBrightnessFactor / 256); //not brighter then the set limit (WIP)
         }
       #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+
+        for (int i=0; i< STARLIGHT_MAXLEDS; i++) ledsP[i] = CRGB::Black; //avoid very bright pixels during reboot (WIP)
         int pins[6] = { STARLIGHT_ICVLD_PINS };
+        
         driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN);
         // driver.enableShowPixelsOnCore(1);
         #if STARLIGHT_LIVE_MAPPING
           driver.setMapLed(&mapLed);
         #endif
         driver.setGamma(255.0/255.0, 176.0/255.0, 240.0/255.0);
-        driver.setBrightness(10);
+
+        if (driver.driverInit) driver.showPixels(WAIT);  //avoid very bright pixels during reboot (WIP)
+        driver.setBrightness(10); //avoid very bright pixels during reboot (WIP)
+
+        Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
       #endif
 
       doAllocPins = false;

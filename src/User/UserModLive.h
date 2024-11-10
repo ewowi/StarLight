@@ -46,7 +46,6 @@ public:
   //return the id of the executable
   uint8_t compile(const char *fileName, const char *post = nullptr);
 
-  //void * for the time being, should be Executable * but importing ESPLiveScript.h in this .h gives multiple definition errors
   uint8_t findExecutable(const char *fileName);
   
   void executeTask(uint8_t exeID, const char *function = "main", int val = UINT16_MAX);

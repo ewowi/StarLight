@@ -38,54 +38,55 @@ SysModSystem::SysModSystem() :SysModule("System") {};
 
 void SysModSystem::setup() {
   SysModule::setup();
-  parentVar = ui->initSysMod(parentVar, name, 2000);
-  parentVar["s"] = true; //setup
+  
+  Variable parentVar = ui->initSysMod(Variable(), name, 2000);
+  parentVar.var["s"] = true; //setup
 
-  ui->initText(parentVar, "name", _INIT(TOSTRING(APP)), 24, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "name", _INIT(TOSTRING(APP)), 24, false, [this](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "Instance name");
+      variable.setComment("Instance name");
       return true;
     case onChange:
       char name[24];
-      removeInvalidCharacters(name, var["value"]);
+      removeInvalidCharacters(name, variable.value());
       ppf("instance name stripped %s\n", name);
-      mdl->setValue(var, JsonString(name, JsonString::Copied)); //update with stripped name
+      variable.setValue(JsonString(name, JsonString::Copied)); //update with stripped name
       mdns->resetMDNS(); // set the new name for mdns
       return true;
     default: return false;
   }});
 
-  ui->initText(parentVar, "uptime", nullptr, 16, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "uptime", nullptr, 16, true, [](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "s. Uptime of board");
+      variable.setComment("s. Uptime of board");
       return true;
     case onLoop1s:
-      mdl->setValue(var, millis()/1000);
+      variable.setValue(millis()/1000);
       return true; 
     default: return false;
   }});
 
-  ui->initNumber(parentVar, "now", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initNumber(parentVar, "now", UINT16_MAX, 0, (unsigned long)-1, true, [this](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "s");
+      variable.setComment("s");
       return true;
     case onLoop1s:
-      mdl->setValue(var, now/1000);
+      variable.setValue(now/1000);
       return true;
     default: return false;
   }});
 
-  ui->initNumber(parentVar, "timeBase", UINT16_MAX, 0, (unsigned long)-1, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initNumber(parentVar, "timeBase", UINT16_MAX, 0, (unsigned long)-1, true, [this](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "s");
+      variable.setComment("s");
       return true;
     case onLoop1s:
-      mdl->setValue(var, (now<millis())? - (UINT32_MAX - timebase)/1000:timebase/1000);
+      variable.setValue((now<millis())? - (UINT32_MAX - timebase)/1000:timebase/1000);
       return true;
     default: return false;
   }});
 
-  ui->initButton(parentVar, "reboot", false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initButton(parentVar, "reboot", false, [](EventArguments) { switch (eventType) {
     case onChange:
       web->ws.closeAll(1012);
 
@@ -100,12 +101,12 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  ui->initText(parentVar, "loops", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "loops", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "Loops per second");
+      variable.setComment("Loops per second");
       return true;
     case onLoop1s:
-      mdl->setValue(var, loopCounter);
+      variable.setValue(loopCounter);
       loopCounter = 0;
       return true;
     default: return false;
@@ -114,73 +115,74 @@ void SysModSystem::setup() {
   print->fFormat(chipInfo, sizeof(chipInfo), "%s %s (%d.%d.%d) c#:%d %d mHz f:%d KB %d mHz %d", ESP.getChipModel(), ESP.getSdkVersion(), ESP_ARDUINO_VERSION_MAJOR, ESP_ARDUINO_VERSION_MINOR, ESP_ARDUINO_VERSION_PATCH, ESP.getChipCores(), ESP.getCpuFreqMHz(), ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed()/1000000, ESP.getFlashChipMode());
   ui->initText(parentVar, "chip", chipInfo, 16, true);
 
-  ui->initProgress(parentVar, "heap", 0, 0, ESP.getHeapSize()/1000, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initProgress(parentVar, "heap", 0, 0, ESP.getHeapSize()/1000, true, [](EventArguments) { switch (eventType) {
     case onChange:
-      var["max"] = ESP.getHeapSize()/1000; //makes sense?
-      web->addResponse(var, "comment", "f:%d / t:%d (l:%d) B [%d %d]", ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+      variable.var["max"] = ESP.getHeapSize()/1000; //makes sense?
+      web->addResponse(variable.var, "comment", "f:%d / t:%d (l:%d) B [%d %d]", ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
       //temporary add esp_get_free_heap_size(), esp_get_free_internal_heap_size() to see if/how it differs
+      //esp_get_free_heap_size can be bigger in case of heap
       return true;
     case onLoop1s:
-      mdl->setValue(var, (ESP.getHeapSize()-ESP.getFreeHeap()) / 1000);
+      variable.setValue((ESP.getHeapSize()-ESP.getFreeHeap()) / 1000);
       return true;
     default: return false;
   }});
 
   if (psramFound()) {
-    ui->initProgress(parentVar, "psram", 0, 0, ESP.getPsramSize()/1000, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initProgress(parentVar, "psram", 0, 0, ESP.getPsramSize()/1000, true, [](EventArguments) { switch (eventType) {
       case onChange:
-        var["max"] = ESP.getPsramSize()/1000; //makes sense?
-        web->addResponse(var, "comment", "%d / %d (%d) B", ESP.getFreePsram(), ESP.getPsramSize(), ESP.getMinFreePsram());
+        variable.var["max"] = ESP.getPsramSize()/1000; //makes sense?
+        web->addResponse(variable.var, "comment", "%d / %d (%d) B", ESP.getFreePsram(), ESP.getPsramSize(), ESP.getMinFreePsram());
         return true;
     case onLoop1s:
-      mdl->setValue(var, (ESP.getPsramSize()-ESP.getFreePsram()) / 1000);
+      variable.setValue((ESP.getPsramSize()-ESP.getFreePsram()) / 1000);
       return true;
       default: return false;
     }});
   }
 
-  ui->initProgress(parentVar, "mainStack", 0, 0, getArduinoLoopTaskStackSize(), true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initProgress(parentVar, "mainStack", 0, 0, getArduinoLoopTaskStackSize(), true, [this](EventArguments) { switch (eventType) {
     case onChange:
-      var["max"] = getArduinoLoopTaskStackSize(); //makes sense?
-      web->addResponse(var, "comment", "%d of %d B", sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize());
+      variable.var["max"] = getArduinoLoopTaskStackSize(); //makes sense?
+      web->addResponse(variable.var, "comment", "%d of %d B", sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize());
       return true;
     case onLoop1s:
-      mdl->setValue(var, sysTools_get_arduino_maxStackUsage());
+      variable.setValue(sysTools_get_arduino_maxStackUsage());
       return true;
     default: return false;
   }});
 
-  ui->initProgress(parentVar, "TCPStack", 0, 0, CONFIG_ASYNC_TCP_STACK_SIZE, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initProgress(parentVar, "TCPStack", 0, 0, CONFIG_ASYNC_TCP_STACK_SIZE, true, [this](EventArguments) { switch (eventType) {
     case onChange:
-      web->addResponse(var, "comment", "%d of %d B", sysTools_get_webserver_maxStackUsage(), CONFIG_ASYNC_TCP_STACK_SIZE);
+      web->addResponse(variable.var, "comment", "%d of %d B", sysTools_get_webserver_maxStackUsage(), CONFIG_ASYNC_TCP_STACK_SIZE);
       return true;
     case onLoop1s:
-      mdl->setValue(var, sysTools_get_webserver_maxStackUsage());
+      variable.setValue(sysTools_get_webserver_maxStackUsage());
       return true;
     default: return false;
   }});
 
-  ui->initSelect(parentVar, "reset 0", (int)rtc_get_reset_reason(0), true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initSelect(parentVar, "reset 0", (int)rtc_get_reset_reason(0), true, [this](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "Reason Core 0");
-      addResetReasonsSelect(ui->setOptions(var));
+      variable.setComment("Reason Core 0");
+      addResetReasonsSelect(variable.setOptions());
       return true;
     default: return false;
   }});
 
   if (ESP.getChipCores() > 1)
-    ui->initSelect(parentVar, "reset 1", (int)rtc_get_reset_reason(1), true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(parentVar, "reset 1", (int)rtc_get_reset_reason(1), true, [this](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "Reason Core 1");
-        addResetReasonsSelect(ui->setOptions(var));
+        variable.setComment("Reason Core 1");
+        addResetReasonsSelect(variable.setOptions());
         return true;
       default: return false;
     }});
 
-  ui->initSelect(parentVar, "restart", (int)esp_reset_reason(), true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initSelect(parentVar, "restart", (int)esp_reset_reason(), true, [this](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "Restart reason");
-      addRestartReasonsSelect(ui->setOptions(var));
+      variable.setComment("Restart reason");
+      addRestartReasonsSelect(variable.setOptions());
       return true;
     default: return false;
   }});
@@ -206,9 +208,9 @@ void SysModSystem::setup() {
   // ui->initText(parentVar, "date", __DATE__, 16, true);
   // ui->initText(parentVar, "time", __TIME__, 16, true);
 
-  ui->initFileUpload(parentVar, "update", nullptr, UINT16_MAX, false, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initFileUpload(parentVar, "update", nullptr, UINT16_MAX, false, [](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "OTA Firmware Update");
+      variable.setComment("OTA Firmware Update");
       return true;
     default: return false;
   }});

@@ -23,53 +23,53 @@ SysModPins::SysModPins() :SysModule("Pins") {
 
 void SysModPins::setup() {
   SysModule::setup();
-  parentVar = ui->initSysMod(parentVar, name, 2202);
+  Variable parentVar = ui->initSysMod(Variable(), name, 2202);
 
   //show table of allocated pins
-  JsonObject tableVar = ui->initTable(parentVar, "pins", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  Variable tableVar = ui->initTable(parentVar, "pins", nullptr, true, [](EventArguments) { switch (eventType) {
     case onUI: {
-      ui->setComment(var, "Allocated Pins");
+      variable.setComment("Allocated Pins");
       return true; }
     default: return false;
   }});
 
-  ui->initPin(tableVar, "pin", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initPin(tableVar, "pin", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
-      var.remove("value");
-      ppf("pin onSetValue %s %d\n", var["value"].as<String>().c_str(), getNrOfAllocatedPins());
+      variable.var.remove("value");
+      ppf("pin onSetValue %s %d\n", variable.valueString().c_str(), getNrOfAllocatedPins());
       for (uint8_t rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++)
-        mdl->setValue(var, getPinNr(rowNr), rowNr);
+        variable.setValue(getPinNr(rowNr), rowNr);
       return true;
     default: return false;
   }});
 
-  ui->initText(tableVar, "owner", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(tableVar, "owner", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
-      var.remove("value");
+      variable.var.remove("value");
       for (uint8_t rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++)
-        mdl->setValue(var, JsonString(getNthAllocatedPinObject(rowNr).owner, JsonString::Copied), rowNr);
+        variable.setValue(JsonString(getNthAllocatedPinObject(rowNr).owner, JsonString::Copied), rowNr);
       return true;
     default: return false;
   }});
 
-  ui->initText(tableVar, "details", nullptr, 256, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(tableVar, "details", nullptr, 256, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
-      var.remove("value");
+      variable.var.remove("value");
       for (uint8_t rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++) {
         // ppf("details[%d] d:%s\n", rowNr, getNthAllocatedPinObject(rowNr).details);
-        mdl->setValue(var, JsonString(getNthAllocatedPinObject(rowNr).details, JsonString::Copied), rowNr);
+        variable.setValue(JsonString(getNthAllocatedPinObject(rowNr).details, JsonString::Copied), rowNr);
       }
       return true;
     default: return false;
   }});
 
-  ui->initCanvas(parentVar, "board", UINT16_MAX, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initCanvas(parentVar, "board", UINT16_MAX, true, [](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "Pin viewer 🚧");
+      variable.setComment("Pin viewer 🚧");
       return true;
     case onLoop:
-      if (web->ws.getClients().length()) {
-        var["interval"] = 100; //every 100 ms
+      if (!web->isBusy && web->ws.getClients().length()) {
+        variable.var["interval"] = 100; //every 100 ms
 
         size_t len = NUM_DIGITAL_PINS + 5;
         AsyncWebSocketMessageBuffer *wsBuf= web->ws.makeBuffer(len); //global wsBuf causes crash in audio sync module!!!
@@ -102,14 +102,14 @@ void SysModPins::setup() {
   allocatePin(19, "Pins", "Relais");
   pinMode(19, OUTPUT); //tbd: part of allocatePin?
 
-  ui->initCheckBox(parentVar, "pin19", true, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initCheckBox(parentVar, "pin19", true, false, [this](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "🚧 used for relais on Serg shields");
+      variable.setComment("🚧 used for relais on Serg shields");
       return true;
     case onChange: {
-      bool pinValue = var["value"];
+      bool pinValue = variable.value();
 
-      ppf("onChange pin19 %s:=%d\n", Variable(var).id(), pinValue);
+      ppf("onChange pin19 %s.%s:=%d\n", variable.pid(), variable.id(), pinValue);
 
       // softhack007: writing these pins on S3/C3/S2 may cause major problems (crashes included)
       digitalWrite(19, pinValue?HIGH:LOW);
@@ -125,7 +125,7 @@ void SysModPins::loop20ms() {
     pinsChanged = false;
 
     for (JsonObject childVar: Variable(mdl->findVar("Pins", "pins")).children())
-      ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
+      Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
   }
 }
 

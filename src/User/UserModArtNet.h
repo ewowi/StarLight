@@ -30,30 +30,30 @@ public:
   void setup() {
     SysModule::setup();
 
-    parentVar = ui->initUserMod(parentVar, name, 6100);
+    Variable parentVar = ui->initUserMod(Variable(), name, 6100);
 
-    ui->initNumber(parentVar, "targetIP", 11, 0, 255, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(parentVar, "targetIP", 11, 0, 255, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
-        ui->setComment(var, "IP to send data to");
+        variable.setComment("IP to send data to");
         return true; }
       case onChange: {
-        uint8_t value = var["value"];
+        uint8_t value = variable.value();
         targetIp[3] = value;
         return true; }
       default: return false;
     }});
 
-    JsonObject tableVar = ui->initTable(parentVar, "outputs");
+    Variable tableVar = ui->initTable(parentVar, "outputs");
 
-    ui->initNumber(tableVar, "start", &hardware_outputs_universe_start, 0, UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "start", &hardware_outputs_universe_start, 0, UINT16_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "Start universe");
+        variable.setComment("Start universe");
         return true;
       default: return false;
     }});
-    ui->initNumber(tableVar, "size", &hardware_outputs, 0, UINT16_MAX, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initNumber(tableVar, "size", &hardware_outputs, 0, UINT16_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "# pixels");
+        variable.setComment("# pixels");
         return true;
       default: return false;
     }});

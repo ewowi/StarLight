@@ -11,6 +11,8 @@
 
 #include <ESPmDNS.h>
 
+#include "SysModules.h"
+
 class UserModMDNS:public SysModule {
 
 public:

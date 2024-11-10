@@ -20,30 +20,30 @@ SysModUI::SysModUI() :SysModule("UI") {
 void SysModUI::setup() {
   SysModule::setup();
 
-  parentVar = initSysMod(parentVar, name, 4101);
+  Variable parentVar = initSysMod(Variable(), name, 4101);
 
-  JsonObject tableVar = initTable(parentVar, "loops", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  Variable tableVar = initTable(parentVar, "loops", nullptr, true, [](EventArguments) { switch (eventType) {
     case onUI:
-      ui->setComment(var, "Loops initiated by a variable");
+      variable.setComment("Loops initiated by a variable");
       return true;
     default: return false;
   }});
 
-  initText(tableVar, "variable", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  initText(tableVar, "variable", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
       for (size_t rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
-        mdl->setValue(var, JsonString(loopFunctions[rowNr].var["id"], JsonString::Copied), rowNr);
+        variable.setValue(JsonString(loopFunctions[rowNr].var["id"], JsonString::Copied), rowNr);
       return true;
     default: return false;
   }});
 
-  initNumber(tableVar, "#loops", UINT16_MAX, 0, 999, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  initNumber(tableVar, "#loops", UINT16_MAX, 0, 999, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
       for (size_t rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
-        mdl->setValue(var, loopFunctions[rowNr].counter, rowNr);
+        variable.setValue(loopFunctions[rowNr].counter, rowNr);
       return true;
     case onLoop1s:
-      callVarFun(var, UINT8_MAX, onSetValue); //set the value (WIP)
+      variable.triggerEvent(onSetValue); //set the value (WIP)
       for (VarLoop &varLoop : loopFunctions)
         varLoop.counter = 0;
       return true;
@@ -65,86 +65,10 @@ void SysModUI::loop20ms() { //never more then 50 times a second!
   }
 }
 
-JsonObject SysModUI::initVar(JsonObject parent, const char * id, const char * type, bool readOnly, VarFun varFun) {
-  const char * parentId = parent["id"];
-  if (!parentId) parentId = "m"; //m=module
-  JsonObject var = mdl->findVar(parentId, id);
-
-  //create new var
-  if (var.isNull()) {
-    // ppf("initVar new %s: %s.%s\n", type, parentId, id); //parentId not null otherwise crash
-    if (parent.isNull()) {
-      JsonArray vars = mdl->model->as<JsonArray>();
-      var = vars.add<JsonObject>();
-    } else {
-      if (parent["n"].isNull()) parent["n"].to<JsonArray>(); //TO!!! if parent exist and no "n" array, create it
-      var = parent["n"].add<JsonObject>();
-      // serializeJson(model, Serial);Serial.println();
-    }
-    var["id"] = JsonString(id, JsonString::Copied);
-  }
-  // else {
-  //   ppf("initVar Var %s->%s already defined\n", modelParentId, id);
-  // }
-
-  if (!var.isNull()) {
-    if (var["type"].isNull() || var["type"] != type) {
-      var["type"] = JsonString(type, JsonString::Copied);
-      // print->printJson("initVar set type", var);
-    }
-
-    Variable variable = Variable(var);
-
-    var["pid"] = parentId;
-
-    if (var["ro"].isNull() || variable.readOnly() != readOnly) variable.readOnly(readOnly);
-
-    //set order. make order negative to check if not obsolete, see cleanUpModel
-    if (variable.order() >= 1000) //predefined! (modules) - positive as saved in model.json
-      variable.order( -variable.order()); //leave the order as is
-    else {
-      if (!parent.isNull() && Variable(parent).order() >= 0) // if checks on the parent already done so vars added later, e.g. controls, will be autochecked
-        variable.order( mdl->varCounter++); //redefine order
-      else
-        variable.order( -mdl->varCounter++); //redefine order
-    }
-
-    //if varFun, add it to the list
-    if (varFun) {
-      //if fun already in ucFunctions then reuse, otherwise add new fun in ucFunctions
-      //lambda update: when replacing typedef void(*UCFun)(JsonObject); with typedef std::function<void(JsonObject)> UCFun; this gives error:
-      //  mismatched types 'T*' and 'std::function<void(ArduinoJson::V6213PB2::JsonObject)>' { return *__it == _M_value; }
-      //  it also looks like functions are not added more then once anyway
-      // std::vector<UCFun>::iterator itr = find(ucFunctions.begin(), ucFunctions.end(), varFun);
-      // if (itr!=ucFunctions.end()) //found
-      //   var["varFun"] = distance(ucFunctions.begin(), itr); //assign found function
-      // else { //not found
-        varFunctions.push_back(varFun); //add new function
-        var["fun"] = varFunctions.size()-1;
-      // }
-      
-      if (varFun(var, UINT8_MAX, onLoop)) { //test run if it supports loop
-        //no need to check if already in...
-        VarLoop loop;
-        loop.loopFun = varFun;
-        loop.var = var;
-
-        loopFunctions.push_back(loop);
-        var["loopFun"] = loopFunctions.size()-1;
-        // ppf("iObject loopFun %s %u %u %d %d\n", Variable(var).id());
-      }
-    }
-  }
-  else
-    ppf("initVar could not find or create var %s with %s\n", id, type);
-
-  return var;
-}
-
 void SysModUI::processJson(JsonVariant json) {
   if (json.is<JsonObject>()) //should be
   {
-     //varFun adds object elements to json which would be processed in the for loop. So we freeze the original pairs in a vector and loop on this
+     //varEvent adds object elements to json which would be processed in the for loop. So we freeze the original pairs in a vector and loop on this
     std::vector<JsonPair> pairs;
     for (JsonPair pair : json.as<JsonObject>()) { //iterate json elements
       pairs.push_back(pair);
@@ -172,7 +96,7 @@ void SysModUI::processJson(JsonVariant json) {
           uint8_t rowNr = command["rowNr"].isNull()?UINT8_MAX:command["rowNr"];
           ppf("processJson %s - %s[%d]\n", key, Variable(var).id(), rowNr);
 
-          callVarFun(var, rowNr, pair.key() == "onAdd"?onAdd:onDelete);
+          Variable(var).triggerEvent(pair.key() == "onAdd"?onAdd:onDelete, rowNr);
 
           //first remove the deleted row both on server and on client(s)
           if (pair.key() == "onDelete") {
@@ -197,7 +121,7 @@ void SysModUI::processJson(JsonVariant json) {
 
             JsonObject var = mdl->findVar(pid, id); //value is the id
             if (!var.isNull()) {
-              callVarFun(var, UINT8_MAX, onUI);
+              Variable(var).triggerEvent(onUI);
               //sendDataWs done in caller of processJson
             }
             else
@@ -244,11 +168,11 @@ void SysModUI::processJson(JsonVariant json) {
           {
             //a button never sets the value
             if (var["type"] == "button") { //button always
-              mdl->callVarOnChange(var, rowNr);
+              Variable(var).triggerEvent(onChange, rowNr);
               if (rowNr != UINT8_MAX) web->getResponseObject()[pidid]["rowNr"] = rowNr;
             }
             else {
-              mdl->setValueJV(var, newValue, rowNr);
+              Variable(var).setValueJV(newValue, rowNr);
               //we do need the response! to update multiple clients and also things within a client (e.g. systemName)
               // json.remove(key); //key / var["id"] processed we don't need the key in the response
               // print->printJson("setValueJV", web->getResponseObject());

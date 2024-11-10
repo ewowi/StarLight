@@ -48,10 +48,6 @@ class StarJson {
   //returns false if not all vars to look for are found
   bool deserialize(bool lazy = false);
 
-  void seek(uint32_t pos) {
-    f.seek(pos);
-  }
-
 private:
   struct VarDetails {
     const char * id;

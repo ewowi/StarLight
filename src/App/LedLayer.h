@@ -40,7 +40,7 @@ public:
   virtual const char * tags() {return "";}
   virtual uint8_t dim() {return _1D;};
 
-  virtual void setup(LedsLayer &leds, JsonObject parentVar);
+  virtual void setup(LedsLayer &leds, Variable parentVar);
 
   virtual void loop(LedsLayer &leds) {}
 };
@@ -50,7 +50,7 @@ public:
   virtual const char * name() {return "noname";}
   virtual const char * tags() {return "";}
 
-  virtual void setup(LedsLayer &leds, JsonObject parentVar) {}
+  virtual void setup(LedsLayer &leds, Variable parentVar) {}
 
   //setupPixels
   virtual void addPixelsPre(LedsLayer &leds) {}

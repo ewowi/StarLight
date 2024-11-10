@@ -10,18 +10,18 @@
 */
 
 #pragma once
-#include "SysModule.h"
+// #include "SysModule.h"
 #include "SysModPrint.h"
 #include "SysModWeb.h"
-#include "SysModules.h" //isConnected
-
-typedef std::function<void(JsonObject)> FindFun;
+// #include "SysModules.h" //isConnected
 
 struct Coord3D {
   int x;
   int y;
   int z;
 
+  //int as Coordinates can go negative in some effects
+  
   // Coord3D() {
   //   x = 0;
   //   y = 0;
@@ -190,30 +190,35 @@ struct RAM_Allocator: ArduinoJson::Allocator {
   }
 };
 
+enum eventTypes
+{
+  onSetValue,
+  onUI,
+  onChange,
+  onLoop,
+  onLoop1s,
+  onAdd,
+  onDelete,
+  f_count
+};
+
+
 class Variable {
   public:
 
   JsonObject var;
 
-  Variable(JsonObject var) {
-    this->var = var;
-  }
+  Variable() {this->var = JsonObject();} //undefined variable
+  Variable(JsonObject var) {this->var = var;}
 
   //core methods 
-  const char * pid() {
-    return var["pid"];
-  }
+  const char *pid() {return var["pid"];}
+  const char *id() {return var["id"];}
 
-  const char * id() {
-    return var["id"];
-  }
+  JsonVariant value() {return var["value"];}
+  JsonVariant value(uint8_t rowNr) {return var["value"][rowNr];}
 
-  String valueString(uint8_t rowNr = UINT8_MAX) {
-    if (rowNr == UINT8_MAX)
-      return var["value"].as<String>();
-    else
-      return var["value"][rowNr].as<String>();
-  }
+  String valueString(uint8_t rowNr = UINT8_MAX);
 
   int order() {return var["o"];}
   void order(int value) {var["o"] = value;}
@@ -226,195 +231,58 @@ class Variable {
   void defaultOrder(int value) {if (order() > -1000) order(- value); } //set default order (in range >=1000). Don't use auto generated order as order can be changed in the ui (WIP)
 
   //recursively remove all value[rowNr] from children of var
-  void removeValuesForRow(uint8_t rowNr) {
-    for (JsonObject childVar: children()) {
-      Variable childVariable = Variable(childVar);
-      JsonArray valArray = childVariable.valArray();
-      if (!valArray.isNull()) {
-        valArray.remove(rowNr);
-        //recursive
-        childVariable.removeValuesForRow(rowNr);
-      }
-    }
-  }
+  void removeValuesForRow(uint8_t rowNr);
 
   JsonArray valArray() {if (var["value"].is<JsonArray>()) return var["value"]; else return JsonArray(); }
 
   //if variable is a table, loop through its rows
-  void rows(std::function<void(Variable, uint8_t)> fun = nullptr) {
-    //tbd table check ... 
-    //tbd move to table subclass??
-    // get the first child
-    JsonObject firstChild = children()[0];
-    //loop through its rows
-    uint8_t rowNr = 0;
-    for (JsonVariant value: Variable(firstChild).valArray()) {
-      if (fun) fun(*this, rowNr);
-      // find the other columns
-      //loop over children to get the table columns
-      // ppf("row %d:", rowNr);
-      // for (JsonObject child: children()) {
-      //   Variable childVariable = Variable(child);
-      //   ppf(" %s: %s", childVariable.id(), childVariable.valueString(rowNr));
-      //   //process each ...
-      // }
-      // ppf("\n");
-      rowNr++;
-    }
-  }
+  void rows(std::function<void(Variable, uint8_t)> fun = nullptr);
 
   //extra methods
 
-  void preDetails() {
-    for (JsonObject varChild: children()) { //for all controls
-      if (Variable(varChild).order() >= 0) { //post init
-        Variable(varChild).order( -Variable(varChild).order()); // set all negative
-      }
-    }
-    ppf("preDetails post ");
-    print->printVar(var);
-    ppf("\n");
-  }
+  void preDetails();
 
-  void postDetails(uint8_t rowNr) {
+  void postDetails(uint8_t rowNr);
 
-    ppf("varPostDetails pre ");
-    print->printVar(var);
-    ppf("\n");
+  //checks if var has fun of type eventType implemented by calling it and checking result (for onUI on RO var, also onSetValue is called)
+  //onChange: sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
+  bool triggerEvent(uint8_t eventType = onSetValue, uint8_t rowNr = UINT8_MAX, bool init = false);
 
-    //check if post init added: parent is already >=0
-    if (order() >= 0) {
-      for (JsonArray::iterator childVarIt=children().begin(); childVarIt!=children().end(); ++childVarIt) { //use iterator to make .remove work!!!
-      // for (JsonObject &childVarIt: children) { //use iterator to make .remove work!!!
-        JsonObject childVar = *childVarIt;
-        Variable childVariable = Variable(childVar);
-        JsonArray valArray = childVariable.valArray();
-        if (!valArray.isNull())
-        {
-          if (rowNr != UINT8_MAX) {
-            if (childVariable.order() < 0) { //if not updated
-              valArray[rowNr] = (char*)0; // set element in valArray to 0
+  void setLabel(const char * text);
+  void setComment(const char * text);
+  JsonArray setOptions();
+  //return the options from onUI (don't forget to clear responseObject)
+  JsonArray getOptions();
+  void clearOptions();
 
-              ppf("varPostDetails %s.%s[%d] <- null\n", id(), childVariable.id(), rowNr);
-              // setValue(var, -99, rowNr); //set value -99
-              childVariable.order(-childVariable.order());
-              //if some values in array are not -99
-            }
+  //find options text in a hierarchy of options
+  void findOptionsText(uint8_t value, char * groupName, char * optionName);
 
-            //if all values null, remove value
-            bool allNull = true;
-            for (JsonVariant element: valArray) {
-              if (!element.isNull())
-                allNull = false;
-            }
-            if (allNull) {
-              ppf("remove allnulls %s\n", childVariable.id());
-              children().remove(childVarIt);
-            }
-            web->getResponseObject()["details"]["rowNr"] = rowNr;
-
-          }
-          else
-            print->printJson("dev array but not rowNr", var);
-        }
-        else {
-          if (childVariable.order() < 0) { //if not updated
-            // childVar["value"] = (char*)0;
-            ppf("varPostDetails %s.%s <- null\n", id(), childVariable.id());
-              // setValue(var, -99, rowNr); //set value -99
-            // childVariable.order(-childVariable.order());
-            print->printJson("remove", childVar);
-            children().remove(childVarIt);
-          }
-        }
-
-      }
-    } //if new added
-    ppf("varPostDetails post ");
-    print->printVar(var);
-    ppf("\n");
-
-    //post update details
-    web->getResponseObject()["details"]["var"] = var;
-  }
-
-}; //class Variable
-
-
-class SysModModel:public SysModule {
-
-public:
-
-  RAM_Allocator allocator;
-  JsonDocument *model = nullptr;
-
-  bool doWriteModel = false;
-
-  uint8_t setValueRowNr = UINT8_MAX;
-  uint8_t getValueRowNr = UINT8_MAX;
-  int varCounter = 1; //start with 1 so it can be negative, see var["o"]
-
-  SysModModel();
-  void setup();
-  void loop20ms();
-  void loop1s();
-  
-  //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
-  void cleanUpModel(JsonObject parent = JsonObject(), bool oPos = true, bool ro = false);
+  // (groupName and optionName as pointers? String is already a pointer?)
+  bool findOptionsTextRec(JsonVariant options, uint8_t * startValue, uint8_t value, JsonString *groupName, JsonString *optionName, JsonString parentGroup = JsonString());
 
   //setValue for JsonVariants (extract the StarMod supported types)
-  JsonObject setValueJV(JsonObject var, JsonVariant value, uint8_t rowNr = UINT8_MAX) {
-    if (value.is<JsonArray>()) {
-      uint8_t rowNr = 0;
-      // ppf("   %s is Array\n", value.as<String>().c_str);
-      JsonObject var;
-      for (JsonVariant el: value.as<JsonArray>()) {
-        var = setValueJV(var, el, rowNr++);
-      }
-      return var;
-    }
-    else if (value.is<const char *>())
-      return setValue(var, JsonString(value, JsonString::Copied), rowNr);
-    else if (value.is<Coord3D>()) //otherwise it will be treated as JsonObject and toJson / fromJson will not be triggered!!!
-      return setValue(var, value.as<Coord3D>(), rowNr);
-    else
-      return setValue(var, value, rowNr);
-  }
-
-  //sets the value of var with id
-  template <typename Type>
-  JsonObject setValue(const char * pid, const char * id, Type value, uint8_t rowNr = UINT8_MAX) {
-    JsonObject var = findVar(pid, id);
-    if (!var.isNull()) {
-      return setValue(var, value, rowNr);
-    }
-    else {
-      ppf("setValue var %s.%s not found\n", pid, id);
-      return JsonObject();
-    }
-  }
+  void setValueJV(JsonVariant value, uint8_t rowNr = UINT8_MAX);
 
   template <typename Type>
-  JsonObject setValue(JsonObject var, Type value, uint8_t rowNr = UINT8_MAX) {
-    Variable variable = Variable(var);
-
+  void setValue(Type value, uint8_t rowNr = UINT8_MAX) {
     bool changed = false;
 
     if (rowNr == UINT8_MAX) { //normal situation
       if (var["value"].isNull() || var["value"].as<Type>() != value) { //const char * will be JsonString so comparison works
-        if (!var["value"].isNull() && !variable.readOnly()) var["oldValue"] = var["value"];
+        if (!var["value"].isNull() && !readOnly()) var["oldValue"] = var["value"];
         var["value"] = value;
         //trick to remove null values
         if (var["value"].isNull() || var["value"].as<uint16_t>() == UINT16_MAX) {
           var.remove("value");
-          // ppf("dev setValue value removed %s %s\n", Variable(var).id(), var["oldValue"].as<String>().c_str());
+          // ppf("dev setValue value removed %s %s\n", id(), var["oldValue"].as<String>().c_str());
         }
         else {
           //only print if ! read only
-          // if (!variable.readOnly())
-          //   ppf("setValue changed %s.%s %s -> %s\n", variable.pid(), variable.id(), var["oldValue"].as<String>().c_str(), variable.valueString().c_str());
+          // if (!readOnly())
+          //   ppf("setValue changed %s.%s %s -> %s\n", pid(), id(), var["oldValue"].as<String>().c_str(), valueString().c_str());
           // else
-          //   ppf("setValue changed %s %s\n", Variable(var).id(), var["value"].as<String>().c_str());
+          //   ppf("setValue changed %s %s\n", id(), var["value"].as<String>().c_str());
           web->addResponse(var, "value", var["value"]);
           changed = true;
         }
@@ -424,12 +292,12 @@ public:
       //if we deal with multiple rows, value should be an array, if not we create one
 
       if (var["value"].isNull() || !var["value"].is<JsonArray>()) {
-        // ppf("setValue var %s[%d] value %s not array, creating\n", Variable(var).id(), rowNr, var["value"].as<String>().c_str());
+        // ppf("setValue var %s[%d] value %s not array, creating\n", id(), rowNr, var["value"].as<String>().c_str());
         var["value"].to<JsonArray>();
       }
 
       if (var["value"].is<JsonArray>()) {
-        JsonArray valueArray = variable.valArray();
+        JsonArray valueArray = valArray();
         //set the right value in the array (if array did not contain values yet, all values before rownr are set to false)
         bool notSame = true; //rowNr >= size
 
@@ -446,66 +314,83 @@ public:
         }
       }
       else {
-        ppf("setValue %s.%s could not create value array\n", variable.pid(), variable.id());
+        ppf("setValue %s.%s could not create value array\n", pid(), id());
       }
     }
 
-    if (changed) callVarOnChange(var, rowNr);
-    
-    return var;
+    if (changed) triggerEvent(onChange, rowNr);
   }
 
   //Set value with argument list
-  JsonObject setValue(JsonObject var, const char * format = nullptr, ...) {
-    va_list args;
-    va_start(args, format);
+  void setValueF(const char * format = nullptr, ...);
 
-    char value[128];
-    vsnprintf(value, sizeof(value)-1, format, args);
+  JsonVariant getValue(uint8_t rowNr = UINT8_MAX);
 
-    va_end(args);
+  //gives a variable an initital value returns true if setValue must be called 
+  bool initValue(int min = 0, int max = 255, int pointer = 0);
 
-    return setValue(var, JsonString(value, JsonString::Copied));
+}; //class Variable
+
+typedef std::function<void(Variable)> FindFun;
+
+#define EventArguments Variable variable, uint8_t rowNr, uint8_t eventType
+
+// https://stackoverflow.com/questions/59111610/how-do-you-declare-a-lambda-function-using-typedef-and-then-use-it-by-passing-to
+typedef std::function<uint8_t(EventArguments)> VarEvent;
+
+class SysModModel: public SysModule {
+
+public:
+
+  RAM_Allocator allocator;
+  JsonDocument *model = nullptr;
+
+  bool doWriteModel = false;
+
+  uint8_t setValueRowNr = UINT8_MAX;
+  uint8_t getValueRowNr = UINT8_MAX;
+  int varCounter = 1; //start with 1 so it can be negative, see var["o"]
+
+  std::vector<VarEvent> varEvents;
+
+  SysModModel();
+  void setup();
+  void loop20ms();
+  void loop1s();
+
+  //adds a variable to the model
+  Variable initVar(Variable parent, const char * id, const char * type, bool readOnly = true, VarEvent varEvent = nullptr);
+
+  //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
+  void cleanUpModel(Variable parent = Variable(), bool oPos = true, bool ro = false);
+
+  //sets the value of var with id
+  template <typename Type>
+  void setValue(const char * pid, const char * id, Type value, uint8_t rowNr = UINT8_MAX) {
+    JsonObject var = findVar(pid, id);
+    if (!var.isNull()) {
+      Variable(var).setValue(value, rowNr);
+    }
+    else {
+      ppf("setValue var %s.%s not found\n", pid, id);
+    }
   }
 
   JsonVariant getValue(const char * pid, const char * id, uint8_t rowNr = UINT8_MAX) {
     JsonObject var = findVar(pid, id);
     if (!var.isNull()) {
-      return getValue(var, rowNr);
+      return Variable(var).getValue(rowNr);
     }
     else {
       // ppf("getValue: Var %s does not exist!!\n", id);
       return JsonVariant();
     }
   }
-  JsonVariant getValue(JsonObject var, uint8_t rowNr = UINT8_MAX) {
-    Variable variable = Variable(var);
-    if (var["value"].is<JsonArray>()) {
-      JsonArray valueArray = variable.valArray();
-      if (rowNr == UINT8_MAX) rowNr = getValueRowNr;
-      if (rowNr != UINT8_MAX && rowNr < valueArray.size())
-        return valueArray[rowNr];
-      else if (valueArray.size())
-        return valueArray[0]; //return the first element
-      else {
-        ppf("dev getValue no array or rownr wrong %s %s %d\n", variable.id(), variable.valueString().c_str(), rowNr);
-        return JsonVariant(); // return null
-      }
-    }
-    else
-      return var["value"];
-  }
 
   //returns the var defined by id (parent to recursively call findVar)
-  bool walkThroughModel(std::function<bool(JsonObject)> fun, JsonObject parent = JsonObject());
+  bool walkThroughModel(std::function<bool(Variable)> fun, JsonObject parent = JsonObject());
   JsonObject findVar(const char * pid, const char * id, JsonObject parent = JsonObject());
   void findVars(const char * id, bool value, FindFun fun, JsonArray parent = JsonArray());
-
-  //recursively add values in  a variant, currently not used
-  // void varToValues(JsonObject var, JsonArray values);
-
-  //sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
-  bool callVarOnChange(JsonObject var, uint8_t rowNr = UINT8_MAX, bool init = false);
 
   uint8_t linearToLogarithm(uint8_t value, uint8_t minp = 0, uint8_t maxp = UINT8_MAX) {
     if (value == 0) return 0;

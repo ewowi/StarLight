@@ -28,18 +28,16 @@ SysModNetwork::SysModNetwork() :SysModule("Network") {};
 void SysModNetwork::setup() {
   SysModule::setup();
 
-  parentVar = ui->initSysMod(parentVar, name, 3502);
-  parentVar["s"] = true; //setup
+  Variable parentVar = ui->initSysMod(Variable(), name, 3502);
+  parentVar.var["s"] = true; //setup
 
-  // JsonObject tableVar = ui->initTable(parentVar, "wfTbl", nullptr, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { //varFun ro false: create and delete row possible
-  //   ui->setComment(var, "List of defined and available Wifi APs");
+  // Variable tableVar = ui->initTable(parentVar, "wfTbl", nullptr, false, [this](EventArguments) { //varEvent ro false: create and delete row possible
+  //   variable.setComment("List of defined and available Wifi APs");
   // });
 
-  JsonObject currentVar;
-
-  currentVar = ui->initCheckBox(parentVar, "wiFi", true, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  Variable currentVar = ui->initCheckBox(parentVar, "wiFi", true, false, [this](EventArguments) { switch (eventType) {
     case onChange:
-      if (var["value"].as<bool>())
+      if (variable.value().as<bool>())
         initWiFiConnection();
       else
         stopWiFiConnection();
@@ -47,7 +45,7 @@ void SysModNetwork::setup() {
     default: return false;
   }});
 
-  ui->initText(currentVar, "ssid", "", 31, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(currentVar, "ssid", "", 31, false, [this](EventArguments) { switch (eventType) {
     case onChange:
       if (mdl->getValue("Network", "wiFi").as<bool>()) {
         stopWiFiConnection();
@@ -57,7 +55,7 @@ void SysModNetwork::setup() {
     default: return false;
   }});
 
-  ui->initPassword(currentVar, "password", "", 63, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initPassword(currentVar, "password", "", 63, false, [this](EventArguments) { switch (eventType) {
     case onChange:
       if (mdl->getValue("Network", "wiFi").as<bool>()) {
         stopWiFiConnection();
@@ -67,70 +65,70 @@ void SysModNetwork::setup() {
     default: return false;
   }});
 
-  ui->initText(currentVar, "rssi", nullptr, 32, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(currentVar, "rssi", nullptr, 32, true, [](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(var, "%d dBm", WiFi.RSSI(), 0); //0 is to force format overload used
+      variable.setValueF("%d dBm", WiFi.RSSI(), 0); //0 is to force format overload used
       return true;
     default: return false;
   }});
 
-  ui->initText(currentVar, "status", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(currentVar, "status", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(var, "%s %s (s:%d)",  wfActive?WiFi.localIP()[0]?"🟢":"🟠":"🛑", wfActive?WiFi.localIP().toString().c_str():"inactive", WiFi.status());
+      variable.setValueF("%s %s (s:%d)",  wfActive?WiFi.localIP()[0]?"🟢":"🟠":"🛑", wfActive?WiFi.localIP().toString().c_str():"inactive", WiFi.status());
       return true;
     default: return false;
   }});
 
   #ifdef STARBASE_ETHERNET
 
-    currentVar = ui->initCheckBox(parentVar, "ethernet", false, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    currentVar = ui->initCheckBox(parentVar, "ethernet", false, false, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
       //initEthernet not done in onChange as initEthernet needs a bit of a delay
-      if (!ethActive && mdl->getValue(var).as<bool>())
+      if (!ethActive && variable.getValue().as<bool>())
         initEthernet();
     default: return false;
     }});
 
     //set olimex default as details hidden then
-    ui->initSelect(currentVar, "config", 1, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initSelect(currentVar, "config", 1, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
-        JsonArray options = ui->setOptions(var);
+        JsonArray options = variable.setOptions();
         options.add("Manual");
         options.add("Olimex ESP32 Gateway");
         return true;
       }
       case onChange:
-        Variable(var).preDetails();
+        variable.preDetails();
         mdl->setValueRowNr = rowNr;
 
-        if (var["value"] == 0) {//manual
-          ui->initNumber(var, "address", (uint16_t)0, 0, 255, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+        if (variable.value() == 0) {//manual
+          ui->initNumber(variable.var, "address", (uint16_t)0, 0, 255, false, [this](EventArguments) { switch (eventType) {
             case onChange:
               ethActive = false;
               return true;
             default: return false;
           }});
-          ui->initPin(var, "power", 14, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          ui->initPin(variable.var, "power", 14, false, [this](EventArguments) { switch (eventType) {
             case onChange:
               ethActive = false;
               return true;
             default: return false;
           }});
-          ui->initPin(var, "mdc", 23, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          ui->initPin(variable.var, "mdc", 23, false, [this](EventArguments) { switch (eventType) {
             case onChange:
               ethActive = false;
               return true;
             default: return false;
           }});
-          ui->initPin(var, "mdio", 18, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          ui->initPin(variable.var, "mdio", 18, false, [this](EventArguments) { switch (eventType) {
             case onChange:
               ethActive = false;
               return true;
             default: return false;
           }});
-          ui->initSelect(var, "type", ETH_PHY_LAN8720, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          ui->initSelect(variable.var, "type", ETH_PHY_LAN8720, false, [this](EventArguments) { switch (eventType) {
             case onUI: {
-              JsonArray options = ui->setOptions(var);
+              JsonArray options = variable.setOptions();
               options.add("LAN8720");
               options.add("TLK110");
               options.add("RTL8201");
@@ -146,9 +144,9 @@ void SysModNetwork::setup() {
               return true;
             default: return false;
           }});
-          ui->initSelect(var, "clockMode", ETH_CLOCK_GPIO17_OUT, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+          ui->initSelect(variable.var, "clockMode", ETH_CLOCK_GPIO17_OUT, false, [this](EventArguments) { switch (eventType) {
             case onUI: {
-              JsonArray options = ui->setOptions(var);
+              JsonArray options = variable.setOptions();
               options.add("GPIO0_IN");
               options.add("GPIO0_OUT");
               options.add("GPIO16_OUT");
@@ -162,7 +160,7 @@ void SysModNetwork::setup() {
           }});
         }
 
-        Variable(var).postDetails(rowNr);
+        variable.postDetails(rowNr);
         mdl->setValueRowNr = UINT8_MAX;
 
         ethActive = false;
@@ -172,33 +170,33 @@ void SysModNetwork::setup() {
       default: return false;
     }});
 
-    ui->initText(currentVar, "status", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initText(currentVar, "status", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
       case onLoop1s:
-          mdl->setValue(var, "%s %s", ethActive?ETH.localIP()[0]?"🟢":"🟠":"🛑", ethActive?ETH.localIP().toString().c_str():"inactive");
+          variable.setValueF("%s %s", ethActive?ETH.localIP()[0]?"🟢":"🟠":"🛑", ethActive?ETH.localIP().toString().c_str():"inactive");
         return true;
       default: return false;
     }});
 
   #endif
 
-  currentVar = ui->initCheckBox(parentVar, "AP", false, false, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  currentVar = ui->initCheckBox(parentVar, "AP", false, false, [this](EventArguments) { switch (eventType) {
     case onChange:
-      if (var["value"].as<bool>())
+      if (variable.value().as<bool>())
         initAP();
       else
         stopAP();
       return true;
     // case onLoop1s:
-      // if (!apActive && mdl->getValue(var).as<bool>()) {
+      // if (!apActive && variable.getValue().as<bool>()) {
       //   stopAP();
       //   initAP();
       // }
       // return true;
     default: return false;
   }});
-  ui->initText(currentVar, "status", nullptr, 32, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(currentVar, "status", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(var, "%s %s",  apActive?WiFi.softAPIP()[0]?"🟢":"🟠":"🛑", apActive?WiFi.softAPIP().toString().c_str():"inactive");
+      variable.setValueF("%s %s",  apActive?WiFi.softAPIP()[0]?"🟢":"🟠":"🛑", apActive?WiFi.softAPIP().toString().c_str():"inactive");
       return true;
     default: return false;
   }});

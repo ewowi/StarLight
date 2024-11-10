@@ -34,31 +34,31 @@ public:
 
   void setup() {
     SysModule::setup();
-    parentVar = ui->initUserMod(parentVar, name, 6305);
+    Variable parentVar = ui->initUserMod(Variable(), name, 6305);
 
-    ui->initCheckBox(parentVar, "ready", &motionTrackingReady, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCheckBox(parentVar, "ready", &motionTrackingReady, true, [](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "tracking ready");
+        variable.setComment("tracking ready");
         return true;
       default: return false;
     }}); 
 
-    ui->initCoord3D(parentVar, "gyro", &gyro, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "gyro", &gyro, 0, UINT16_MAX, true, [this](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "in degrees");
+        variable.setComment("in degrees");
         return true;
       case onLoop1s:
-        mdl->setValue(var, gyro); //automatic as var is referenced???
+        variable.setValue(gyro); //automatic as var is referenced???
         return true;
       default: return false;
     }});
 
-    ui->initCoord3D(parentVar, "accell", &accell, 0, UINT16_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+    ui->initCoord3D(parentVar, "accell", &accell, 0, UINT16_MAX, true, [this](EventArguments) { switch (eventType) {
       case onUI:
-        ui->setComment(var, "in m/s²");
+        variable.setComment("in m/s²");
         return true;
       case onLoop1s:
-        mdl->setValue(var, accell); //automatic as var is referenced???
+        variable.setValue(accell); //automatic as var is referenced???
         return true;
       default: return false;
     }}); 

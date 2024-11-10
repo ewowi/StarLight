@@ -559,7 +559,7 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
         let file = fileNode.files[0];
         let formData = new FormData();
         console.log("fileUpload " + variable.id, file, formData, file.size);
-        fileNode.parentNode.querySelector("progress").max = Math.round(file.size / 10000); //set progress max in blocks of 10K
+        fileNode.parentNode.querySelector("progress").max = Math.round(file.size / 50000); //set progress max in blocks of 50K
              
         formData.append("file", file);
         fetch('/' + variable.id, {method: "POST", body: formData});

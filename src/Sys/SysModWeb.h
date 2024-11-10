@@ -57,6 +57,8 @@ public:
   uint8_t recvUDPCounter = 0;
   uint16_t recvUDPBytes = 0;
 
+  bool isBusy = false;
+
   #ifdef STARBASE_USERMOD_LIVE
     char lastFileUpdated[30] = ""; //workaround!
   #endif
@@ -90,6 +92,7 @@ public:
   // curl -F 'data=@fixture1.json' 192.168.1.213/upload
   void serveUpload(WebRequest *request, const String& fileName, size_t index, byte *data, size_t len, bool final);
   // curl -s -F "update=@/Users/ewoudwijma/Developer/GitHub/ewowi/StarBase/.pio/build/esp32dev/firmware.bin" 192.168.1.102/update /dev/null &
+  // curl -s -F "update=@/Users/ewoudwijma/Downloads/StarLight_24110513_esp32devICVLD.bin" 192.168.1.245/update /dev/null &
   void serveUpdate(WebRequest *request, const String& fileName, size_t index, byte *data, size_t len, bool final);
   void serveFiles(WebRequest *request);
 

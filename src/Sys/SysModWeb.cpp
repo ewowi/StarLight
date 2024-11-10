@@ -45,49 +45,49 @@ SysModWeb::SysModWeb() :SysModule("Web") {
 
 void SysModWeb::setup() {
   SysModule::setup();
-  parentVar = ui->initSysMod(parentVar, name, 3101);
+  Variable parentVar = ui->initSysMod(Variable(), name, 3101);
 
-  JsonObject tableVar = ui->initTable(parentVar, "clients", nullptr, true, [](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  Variable tableVar = ui->initTable(parentVar, "clients", nullptr, true, [](EventArguments) { switch (eventType) {
     case onLoop1s:
-      for (JsonObject childVar: Variable(var).children())
-        ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
+      for (JsonObject childVar: variable.children())
+        Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
     default: return false;
   }});
 
-  ui->initNumber(tableVar, "nr", UINT16_MAX, 0, 999, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initNumber(tableVar, "nr", UINT16_MAX, 0, 999, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(var, client->id(), rowNr++);
+        variable.setValue(client->id(), rowNr++);
       return true; }
     default: return false;
   }});
 
-  ui->initText(tableVar, "ip", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(tableVar, "ip", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(var, JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
+        variable.setValue(JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
       return true; }
     default: return false;
   }});
 
   //UINT8_MAX: tri state boolean: not true not false
-  ui->initCheckBox(tableVar, "full", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initCheckBox(tableVar, "full", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(var, client->queueIsFull(), rowNr++);
+        variable.setValue(client->queueIsFull(), rowNr++);
       return true; }
     default: return false;
   }});
 
-  ui->initSelect(tableVar, "status", UINT8_MAX, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initSelect(tableVar, "status", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(var, client->status(), rowNr++);
+        variable.setValue(client->status(), rowNr++);
       return true; }
     case onUI:
     {
       //tbd: not working yet in ui
-      JsonArray options = ui->setOptions(var);
+      JsonArray options = variable.setOptions();
       options.add("Disconnected"); //0
       options.add("Connected"); //1
       options.add("Disconnecting"); //2
@@ -96,46 +96,46 @@ void SysModWeb::setup() {
     default: return false;
   }});
 
-  ui->initNumber(tableVar, "length", UINT16_MAX, 0, WS_MAX_QUEUED_MESSAGES, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initNumber(tableVar, "length", UINT16_MAX, 0, WS_MAX_QUEUED_MESSAGES, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        mdl->setValue(var, client->queueLen(), rowNr++);
+        variable.setValue(client->queueLen(), rowNr++);
       return true; }
     default: return false;
   }});
 
   ui->initNumber(parentVar, "maxQueue", WS_MAX_QUEUED_MESSAGES, 0, WS_MAX_QUEUED_MESSAGES, true);
 
-  ui->initText(parentVar, "WSSend", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "WSSend", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(var, "#: %d /s T: %d B/s B:%d B/s", sendWsCounter, sendWsTBytes, sendWsBBytes);
+      variable.setValueF("#: %d /s T: %d B/s B:%d B/s", sendWsCounter, sendWsTBytes, sendWsBBytes);
       sendWsCounter = 0;
       sendWsTBytes = 0;
       sendWsBBytes = 0;
     default: return false;
   }});
 
-  ui->initText(parentVar, "WSRecv", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "WSRecv", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(var, "#: %d /s %d B/s", recvWsCounter, recvWsBytes);
+      variable.setValueF("#: %d /s %d B/s", recvWsCounter, recvWsBytes);
       recvWsCounter = 0;
       recvWsBytes = 0;
       return true;
     default: return false;
   }});
 
-  ui->initText(parentVar, "UDPSend", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "UDPSend", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(var, "#: %d /s %d B/s", sendUDPCounter, sendUDPBytes);
+      variable.setValueF("#: %d /s %d B/s", sendUDPCounter, sendUDPBytes);
       sendUDPCounter = 0;
       sendUDPBytes = 0;
       return true;
     default: return false;
   }});
 
-  ui->initText(parentVar, "UDPRecv", nullptr, 16, true, [this](JsonObject var, uint8_t rowNr, uint8_t funType) { switch (funType) { //varFun
+  ui->initText(parentVar, "UDPRecv", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
-      mdl->setValue(var, "#: %d /s %d B/s", recvUDPCounter, recvUDPBytes);
+      variable.setValueF("#: %d /s %d B/s", recvUDPCounter, recvUDPBytes);
       recvUDPCounter = 0;
       recvUDPBytes = 0;
     default: return false;
@@ -158,7 +158,7 @@ void SysModWeb::loop20ms() {
 
     // ppf("SysModWeb clientsChanged\n");
     for (JsonObject childVar: Variable(mdl->findVar("Web", "clients")).children())
-      ui->callVarFun(childVar, UINT8_MAX, onSetValue); //set the value (WIP)
+      Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
   }
 
 }
@@ -477,12 +477,14 @@ void SysModWeb::serveNewUI(WebRequest *request) {
 void SysModWeb::serveUpload(WebRequest *request, const String& fileName, size_t index, byte *data, size_t len, bool final) {
 
   // curl -F 'data=@fixture1.json' 192.168.1.213/upload
-  ppf("serveUpload r:%s f:%s i:%d l:%d f:%d\n", request->url().c_str(), fileName.c_str(), index, len, final);
+  // ppf("serveUpload i:%d l:%d f:%d\n", index, len, final);
 
-  mdl->setValue("Files", "upload", index/10000);
+  mdl->setValue("Files", "upload", index/50000);
   sendResponseObject(); //otherwise not send in asyn_tcp thread
 
   if (!index) {
+    isBusy = true;
+    ppf("File upload %s %s start\n", request->url().c_str(), fileName.c_str());
     String finalname = fileName;
     if (finalname.charAt(0) != '/') {
       finalname = '/' + finalname; // prepend slash if missing
@@ -506,6 +508,8 @@ void SysModWeb::serveUpload(WebRequest *request, const String& fileName, size_t 
 
     files->filesChanged = true;
 
+    ppf("File upload %s %s finished\n", request->url().c_str(), fileName.c_str());
+
     //if sc files send command to live
     #ifdef STARBASE_USERMOD_LIVE
 
@@ -525,19 +529,23 @@ void SysModWeb::serveUpload(WebRequest *request, const String& fileName, size_t 
       // if (filename.indexOf(".sc") > 0)
       //   liveM->run(filename.c_str());
     #endif
+
+    isBusy = false;
   }
 }
 
 void SysModWeb::serveUpdate(WebRequest *request, const String& fileName, size_t index, byte *data, size_t len, bool final) {
 
   // curl -F 'data=@fixture1.json' 192.168.1.213/upload
-  // ppf("serveUpdate r:%s f:%s i:%d l:%d f:%d\n", request->url().c_str(), fileName.c_str(), index, len, final);
+  // ppf("serveUpdate r:%s f:%s i:%d l:%d f:%d\n", index, len, final);
   
-  mdl->setValue("System", "update", index/10000);
+  mdl->setValue("System", "update", index/50000); //therefore about once per second
   sendResponseObject(); //otherwise not send in asyn_tcp thread
 
   if (!index) {
-    ppf("OTA Update Start\n");
+    isBusy = true;
+
+    ppf("OTA Update %s %s start\n", request->url().c_str(), fileName.c_str());
     // WLED::instance().disableWatchdog();
     // usermods.onUpdateBegin(true); // notify usermods that update is about to begin (some may require task de-init)
     // lastEditTime = millis(); // make sure PIN does not lock during update
@@ -566,6 +574,8 @@ void SysModWeb::serveUpdate(WebRequest *request, const String& fileName, size_t 
 
     // usermods.onUpdateBegin(false); // notify usermods that update has failed (some may require task init)
     // WLED::instance().enableWatchdog();
+
+    isBusy = false;
   }
 }
 
@@ -575,7 +585,9 @@ void SysModWeb::serveFiles(WebRequest *request) {
   const char * path = urlString + strnlen("/file", 6); //remove the uri from the path (skip their positions)
   ppf("fileServer request %s\n", path);
   if(LittleFS.exists(path)) {
+    isBusy = true;
     request->send(LittleFS, path, "text/plain");//"application/json");
+    isBusy = false;
   }
 }
 
