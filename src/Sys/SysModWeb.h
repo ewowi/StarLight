@@ -41,11 +41,9 @@ public:
     WebSocket ws = WebSocket();
     WebServer server = WebServer();
   #else
-    WebSocket ws = WebSocket("/ws");
+    WebSocket *ws = new WebSocket("/ws");
     WebServer server = WebServer(80);
   #endif
-
-  SemaphoreHandle_t wsMutex = xSemaphoreCreateMutex();
 
   uint8_t sendWsCounter = 0;
   uint16_t sendWsTBytes = 0;
@@ -65,6 +63,11 @@ public:
 
   SysModWeb();
 
+  //this will never happen but just to show we clean up things
+  ~SysModWeb() {
+    free(ws); 
+  }
+
   void setup();
   void loop20ms();
   void loop1s();
@@ -77,7 +80,6 @@ public:
   
   //send json to client or all clients
   void sendDataWs(JsonVariant json = JsonVariant(), WebClient * client = nullptr);
-  void sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fill, size_t len, bool isBinary, WebClient * client = nullptr);
   void sendBuffer(AsyncWebSocketMessageBuffer * wsBuf, bool isBinary, WebClient * client = nullptr, bool lossless = true);
 
   //add an url to the webserver to listen to

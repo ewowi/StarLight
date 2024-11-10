@@ -56,7 +56,7 @@ void SysModWeb::setup() {
 
   ui->initNumber(tableVar, "nr", UINT16_MAX, 0, 999, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
-      uint8_t rowNr = 0; for (auto &client:ws.getClients())
+      uint8_t rowNr = 0; for (auto &client:ws->getClients())
         variable.setValue(client->id(), rowNr++);
       return true; }
     default: return false;
@@ -64,7 +64,7 @@ void SysModWeb::setup() {
 
   ui->initText(tableVar, "ip", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
-      uint8_t rowNr = 0; for (auto &client:ws.getClients())
+      uint8_t rowNr = 0; for (auto &client:ws->getClients())
         variable.setValue(JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
       return true; }
     default: return false;
@@ -73,7 +73,7 @@ void SysModWeb::setup() {
   //UINT8_MAX: tri state boolean: not true not false
   ui->initCheckBox(tableVar, "full", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
-      uint8_t rowNr = 0; for (auto &client:ws.getClients())
+      uint8_t rowNr = 0; for (auto &client:ws->getClients())
         variable.setValue(client->queueIsFull(), rowNr++);
       return true; }
     default: return false;
@@ -81,7 +81,7 @@ void SysModWeb::setup() {
 
   ui->initSelect(tableVar, "status", UINT8_MAX, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
-      uint8_t rowNr = 0; for (auto &client:ws.getClients())
+      uint8_t rowNr = 0; for (auto &client:ws->getClients())
         variable.setValue(client->status(), rowNr++);
       return true; }
     case onUI:
@@ -98,7 +98,7 @@ void SysModWeb::setup() {
 
   ui->initNumber(tableVar, "length", UINT16_MAX, 0, WS_MAX_QUEUED_MESSAGES, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
-      uint8_t rowNr = 0; for (auto &client:ws.getClients())
+      uint8_t rowNr = 0; for (auto &client:ws->getClients())
         variable.setValue(client->queueLen(), rowNr++);
       return true; }
     default: return false;
@@ -169,7 +169,7 @@ void SysModWeb::loop1s() {
 
 void SysModWeb::reboot() {
   ppf("SysModWeb reboot\n");
-  ws.closeAll(1012);
+  ws->closeAll(1012);
 }
 
 void SysModWeb::connectedChanged() {
@@ -178,15 +178,15 @@ void SysModWeb::connectedChanged() {
 
       server.listen(80);
 
-      ws.onOpen(wsEventOpen);
-      ws.onFrame(wsEventFrame);
-      ws.onClose(wsEventClose);
+      ws->onOpen(wsEventOpen);
+      ws->onFrame(wsEventFrame);
+      ws->onClose(wsEventClose);
 
       server.on("/ws")->setHandler(&ws);
     
     #else
-      ws.onEvent( [this](WebSocket * server, WebClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len) {wsEvent(server, client, type, arg, data, len);});
-      server.addHandler(&ws);
+      ws->onEvent( [this](WebSocket * server, WebClient * client, AwsEventType type, void * arg, uint8_t *data, size_t len) {wsEvent(server, client, type, arg, data, len);});
+      server.addHandler(ws);
       server.begin();
     #endif
 
@@ -306,12 +306,12 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
       //message is comprised of multiple frames or the frame is split into multiple packets
       if(info->index == 0){
         // if(info->num == 0)
-        //   ppf("ws[%s][%u] %s-message start\n", ws.url(), client->id(), (info->message_opcode == WS_TEXT)?"text":"binary");
-        // ppf("ws[%s][%u] frame[%u] start[%llu]\n", ws.url(), client->id(), info->num, info->len);
+        //   ppf("ws[%s][%u] %s-message start\n", ws->url(), client->id(), (info->message_opcode == WS_TEXT)?"text":"binary");
+        // ppf("ws[%s][%u] frame[%u] start[%llu]\n", ws->url(), client->id(), info->num, info->len);
         ppf("💀");
       }
 
-      // ppf("ws[%s][%u] frame[%u] %s[%llu - %llu]: ", ws.url(), client->id(), info->num, (info->message_opcode == WS_TEXT)?"text":"binary", info->index, info->index + len);
+      // ppf("ws[%s][%u] frame[%u] %s[%llu - %llu]: ", ws->url(), client->id(), info->num, (info->message_opcode == WS_TEXT)?"text":"binary", info->index, info->index + len);
       ppf("💀");
 
       if(info->opcode == WS_TEXT){
@@ -329,10 +329,10 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
       ppf("%s\n",msg.c_str());
 
       if ((info->index + len) == info->len) {
-        // ppf("ws[%s][%u] frame[%u] end[%llu]\n", ws.url(), client->id(), info->num, info->len);
+        // ppf("ws[%s][%u] frame[%u] end[%llu]\n", ws->url(), client->id(), info->num, info->len);
         ppf("👻");
         if(info->final){
-          // ppf("ws[%s][%u] %s-message end\n", ws.url(), client->id(), (info->message_opcode == WS_TEXT)?"text":"binary");
+          // ppf("ws[%s][%u] %s-message end\n", ws->url(), client->id(), (info->message_opcode == WS_TEXT)?"text":"binary");
           ppf("☠️");
           if(info->message_opcode == WS_TEXT)
             client->text("I got your text message");
@@ -370,56 +370,45 @@ void SysModWeb::wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, v
     //pong message was received (in response to a ping request maybe)
     // printClient("WS pong", client); //crashes!
     // ppf("WS pong\n");
-    // ppf("ws[%s][%u] pong[%u]: %s\n", ws.url(), client->id(), len, (len)?(char*)data:"");
+    // ppf("ws[%s][%u] pong[%u]: %s\n", ws->url(), client->id(), len, (len)?(char*)data:"");
     ppf("ws[%s][%u] pong[%u]: \n", ws->url(), client->id(), len);//, (len)?(char*)data:"");
   }
 }
 
 void SysModWeb::sendDataWs(JsonVariant json, WebClient * client) {
 
-  size_t len = measureJson(json);
-  sendDataWs([json, len](AsyncWebSocketMessageBuffer * wsBuf) {
-    serializeJson(json, wsBuf->get(), len);
-  }, len, false, client); //false -> text
-}
+  ws->cleanupClients(); //only if above threshold
 
-//https://kcwong-joe.medium.com/passing-a-function-as-a-parameter-in-c-a132e69669f6
-void SysModWeb::sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fill, size_t len, bool isBinary, WebClient * client) {
+  if (ws->count()) {
 
-  xSemaphoreTake(wsMutex, portMAX_DELAY);
-
-  ws.cleanupClients(); //only if above threshold
-
-  if (ws.count()) {
+    size_t len = measureJson(json);
     if (len > 8192)
       ppf("dev sendDataWs BufferLen too high !!!%d\n", len);
-    AsyncWebSocketMessageBuffer * wsBuf = ws.makeBuffer(len); //assert failed: block_trim_free heap_tlsf.c:371 (block_is_free(block) && "block must be free"), AsyncWebSocket::makeBuffer(unsigned int)
+    AsyncWebSocketMessageBuffer * wsBuf = ws->makeBuffer(len); //assert failed: block_trim_free heap_tlsf.c:371 (block_is_free(block) && "block must be free"), AsyncWebSocket::makeBuffer(unsigned int)
 
     if (wsBuf) {
       wsBuf->lock();
 
-      fill(wsBuf); //function parameter
+      serializeJson(json, wsBuf->get(), len);
 
-      sendBuffer(wsBuf, isBinary, client);
+      sendBuffer(wsBuf, false, client);
 
       wsBuf->unlock();
-      ws._cleanBuffers();
+      ws->_cleanBuffers();
     }
     else {
       ppf("sendDataWs WS buffer allocation failed\n");
-      ws.closeAll(1013); //code 1013 = temporary overload, try again later
-      ws.cleanupClients(0); //disconnect ALL clients to release memory
-      ws._cleanBuffers();
+      ws->closeAll(1013); //code 1013 = temporary overload, try again later
+      ws->cleanupClients(0); //disconnect ALL clients to release memory
+      ws->_cleanBuffers();
     }
   }
-
-  xSemaphoreGive(wsMutex);
 }
 
 void SysModWeb::sendBuffer(AsyncWebSocketMessageBuffer * wsBuf, bool isBinary, WebClient * client, bool lossless) {
-  for (auto &loopClient:ws.getClients()) {
+  for (auto &loopClient:ws->getClients()) {
     if (!client || client == loopClient) {
-      if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws.count() / 2)) { //binary is lossy
+      if (loopClient->status() == WS_CONNECTED && !loopClient->queueIsFull()) { //WS_MAX_QUEUED_MESSAGES / ws->count() / 2)) { //binary is lossy
         if (!isBinary || !lossless || loopClient->queueLen() <= 3) {
           isBinary?loopClient->binary(wsBuf): loopClient->text(wsBuf);
           sendWsCounter++;
@@ -433,8 +422,8 @@ void SysModWeb::sendBuffer(AsyncWebSocketMessageBuffer * wsBuf, bool isBinary, W
       else {
         printClient("sendDataWs client full or not connected", loopClient);
         // ppf("sendDataWs client full or not connected\n");
-        ws.cleanupClients(); //only if above threshold
-        ws._cleanBuffers();
+        ws->cleanupClients(); //only if above threshold
+        ws->_cleanBuffers();
       }
     }
   }
@@ -622,7 +611,7 @@ void SysModWeb::jsonHandler(WebRequest *request, JsonVariant json) {
 }
 
 void SysModWeb::clientsToJson(JsonArray array, bool nameOnly, const char * filter) {
-  for (auto &client:ws.getClients()) {
+  for (auto &client:ws->getClients()) {
     if (nameOnly) {
       array.add(JsonString(client->remoteIP().toString().c_str(), JsonString::Copied));
     } else {
@@ -639,15 +628,13 @@ void SysModWeb::clientsToJson(JsonArray array, bool nameOnly, const char * filte
 
 bool SysModWeb::captivePortal(WebRequest *request)
 {
-  ppf("captivePortal %d %d\n", net->localIP()[3], request->client()->localIP()[3]);
-
   if (ON_STA_FILTER(request)) return false; //only serve captive in AP mode
   String hostH;
   if (!request->hasHeader("Host")) return false;
   hostH = request->getHeader("Host")->value();
 
   if (!isIp(hostH) && hostH.indexOf(mdns->cmDNS) < 0) { //&& hostH.indexOf("wled.me") < 0
-    ppf("Captive portal\n");
+    ppf("captivePortal %d %d\n", net->localIP()[3], request->client()->localIP()[3]);
     WebResponse *response = request->beginResponse(302);
     response->addHeader(F("Location"), F("http://4.3.2.1"));
     request->send(response);
@@ -689,7 +676,7 @@ void SysModWeb::sendResponseObject(WebClient * client) {
     // }
 
     size_t len = measureJson(responseObject);
-    AsyncWebSocketMessageBuffer * wsBuf = ws.makeBuffer(len); //assert failed: block_trim_free heap_tlsf.c:371 (block_is_free(block) && "block must be free"), AsyncWebSocket::makeBuffer(unsigned int)
+    AsyncWebSocketMessageBuffer * wsBuf = ws->makeBuffer(len); //assert failed: block_trim_free heap_tlsf.c:371 (block_is_free(block) && "block must be free"), AsyncWebSocket::makeBuffer(unsigned int)
     if (wsBuf) {
       wsBuf->lock();
 
@@ -698,13 +685,13 @@ void SysModWeb::sendResponseObject(WebClient * client) {
       sendBuffer(wsBuf, false, client); //text
 
       wsBuf->unlock();
-      ws._cleanBuffers();
+      ws->_cleanBuffers();
     }
     else {
       ppf("sendDataWs WS buffer allocation failed\n");
-      ws.closeAll(1013); //code 1013 = temporary overload, try again later
-      ws.cleanupClients(0); //disconnect ALL clients to release memory
-      ws._cleanBuffers();
+      ws->closeAll(1013); //code 1013 = temporary overload, try again later
+      ws->cleanupClients(0); //disconnect ALL clients to release memory
+      ws->_cleanBuffers();
     }
 
     getResponseDoc()->to<JsonObject>(); //recreate!

@@ -68,11 +68,11 @@ void SysModPins::setup() {
       variable.setComment("Pin viewer 🚧");
       return true;
     case onLoop:
-      if (!web->isBusy && web->ws.getClients().length()) {
+      if (!web->isBusy && web->ws->count()) {
         variable.var["interval"] = 100; //every 100 ms
 
         size_t len = NUM_DIGITAL_PINS + 5;
-        AsyncWebSocketMessageBuffer *wsBuf= web->ws.makeBuffer(len); //global wsBuf causes crash in audio sync module!!!
+        AsyncWebSocketMessageBuffer *wsBuf= web->ws->makeBuffer(len); //global wsBuf causes crash in audio sync module!!!
         if (wsBuf) {
           wsBuf->lock();
           byte* buffer = wsBuf->get();
@@ -88,7 +88,7 @@ void SysModPins::setup() {
           web->sendBuffer(wsBuf, true);
 
           wsBuf->unlock();
-          web->ws._cleanBuffers();
+          web->ws->_cleanBuffers();
         }
       }
       return true;

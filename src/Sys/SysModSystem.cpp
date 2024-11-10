@@ -88,7 +88,7 @@ void SysModSystem::setup() {
 
   ui->initButton(parentVar, "reboot", false, [](EventArguments) { switch (eventType) {
     case onChange:
-      web->ws.closeAll(1012);
+      web->ws->closeAll(1012);
 
       // mdls->reboot(); //not working yet
       // long dly = millis();
