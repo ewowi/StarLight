@@ -63,38 +63,6 @@ public:
       default: return false;
     }}); 
 
-    if (pinsM->initI2S()) {
-      mpu.initialize();
-
-      // verify connection
-      if (mpu.testConnection()) {
-        ppf("MPU6050 connection successful Initializing DMP...\n");
-        uint8_t devStatus = mpu.dmpInitialize();
-
-        if (devStatus == 0) {
-          // // Calibration Time: generate offsets and calibrate our MPU6050
-          mpu.CalibrateAccel(6);
-          mpu.CalibrateGyro(6);
-          // mpu.PrintActiveOffsets();
-          
-          mpu.setDMPEnabled(true); //mandatory
-
-          // mpuIntStatus = mpu.getIntStatus();
-
-          motionTrackingReady = true;
-        }
-        else {
-          // ERROR!
-          // 1 = initial memory load failed
-          // 2 = DMP configuration updates failed
-          // (if it's going to break, usually the code will be 1)
-          ppf("DMP Initialization failed (code %d)\n", devStatus);
-        }
-      }
-      else
-        ppf("Testing device connections MPU6050 connection failed\n");
-    }
-
     mdl->setValue("Motion Tracking", "ready", motionTrackingReady);
   }
 
@@ -127,6 +95,43 @@ public:
       accell.x = aaReal.x;
       accell.y = aaReal.y;
       accell.z = aaReal.z;
+    }
+  }
+
+  void onOffChanged() {
+    if (isEnabled) {
+      if (pinsM->initI2S()) {
+        mpu.initialize();
+
+        // verify connection
+        if (mpu.testConnection()) {
+          ppf("MPU6050 connection successful Initializing DMP...\n");
+          uint8_t devStatus = mpu.dmpInitialize();
+
+          if (devStatus == 0) {
+            // // Calibration Time: generate offsets and calibrate our MPU6050
+            mpu.CalibrateAccel(6);
+            mpu.CalibrateGyro(6);
+            // mpu.PrintActiveOffsets();
+            
+            mpu.setDMPEnabled(true); //mandatory
+
+            // mpuIntStatus = mpu.getIntStatus();
+
+            motionTrackingReady = true;
+          }
+          else {
+            // ERROR!
+            // 1 = initial memory load failed
+            // 2 = DMP configuration updates failed
+            // (if it's going to break, usually the code will be 1)
+            ppf("DMP Initialization failed (code %d)\n", devStatus);
+          }
+        }
+        else
+          ppf("Testing device connections MPU6050 connection failed\n");
+      }
+    } else {
     }
   }
 
