@@ -1198,6 +1198,128 @@ class OctopusEffect: public Effect {
   
 }; // Octopus
 
+  const uint32_t colors[] = {
+    0x000000,
+    0x100000,
+    0x300000,
+    0x600000,
+    0x800000,
+    0xA00000,
+    0xC02000,
+    0xC04000,
+    0xC06000,
+    0xC08000,
+    0x807080
+  };
+
+//https://github.com/toggledbits/MatrixFireFast/blob/master/MatrixFireFast/MatrixFireFast.ino
+class FireEffect: public Effect {
+  const char * name() {return "Fire";}
+  uint8_t dim() {return _2D;}
+  const char * tags() {return "💫";}
+
+  const uint8_t NCOLORS = (sizeof(colors)/sizeof(colors[0]));
+
+  void glow(int x, int y, int z, uint8_t flareDecay, LedsLayer &leds, bool usePalette) {
+    int b = z * 10 / flareDecay + 1;
+    for ( int i=(y-b); i<(y+b); ++i ) {
+      for ( int j=(x-b); j<(x+b); ++j ) {
+        if ( i >=0 && j >= 0 && i < leds.size.y && j < leds.size.x ) {
+          int d = ( flareDecay * isqrt((x-j)*(x-j) + (y-i)*(y-i)) + 5 ) / 10;
+          uint8_t n = 0;
+          if ( z > d ) n = z - d;
+          if ( leds[leds.XY(j, leds.size.y - 1 - i)] < usePalette?ColorFromPalette(leds.palette, n*23): colors[n]) { // can only get brighter
+            leds[leds.XY(j, leds.size.y - 1 - i)] = usePalette?ColorFromPalette(leds.palette, n*23): colors[n]; //23*11 -> within palette range
+          }
+        }
+      }
+    }
+  }
+
+  //utility function?
+  uint32_t isqrt(uint32_t n) {
+    if ( n < 2 ) return n;
+    uint32_t smallCandidate = isqrt(n >> 2) << 1;
+    uint32_t largeCandidate = smallCandidate + 1;
+    return (largeCandidate*largeCandidate > n) ? smallCandidate : largeCandidate;
+  }
+
+  void setup(LedsLayer &leds, Variable parentVar) {
+    Effect::setup(leds, parentVar); //palette
+
+    ui->initCheckBox(parentVar, "usePalette",    leds.effectData.write<bool3State>(false));
+    ui->initSlider(parentVar, "flareRows", leds.effectData.write<uint8_t>(2), 0, 5);    /* number of rows (from bottom) allowed to flare */
+    ui->initSlider(parentVar, "maxFlare", leds.effectData.write<uint8_t>(8), 0, 18);     /* max number of simultaneous flares */
+    ui->initSlider(parentVar, "flareChance", leds.effectData.write<uint8_t>(50), 0, 100); /* chance (%) of a new flare (if there's room) */
+    ui->initSlider(parentVar, "flareDecay", leds.effectData.write<uint8_t>(14), 0, 28);  /* decay rate of flare radiation; 14 is good */
+  }
+
+  void loop(LedsLayer &leds) {
+
+    bool3State usePalette = leds.effectData.read<bool3State>();
+    uint8_t flareRows = leds.effectData.read<uint8_t>();
+    uint8_t maxFlare = leds.effectData.read<uint8_t>();
+    uint8_t flareChance = leds.effectData.read<uint8_t>();
+    uint8_t flareDecay = leds.effectData.read<uint8_t>();
+
+    // Effect Variables
+    uint8_t *nflare = leds.effectData.readWrite<uint8_t>();
+    uint32_t *flare = leds.effectData.readWrite<uint32_t>(18);
+
+    // First, move all existing heat points up the display and fade
+    for (int y=leds.size.y-1; y>0; --y ) {
+      for (int x=0; x<leds.size.x; ++x ) {
+        CRGB n = CRGB::Black;
+        if ( leds[leds.XY(x, leds.size.y - y)] != CRGB::Black) {
+          n = leds[leds.XY(x, leds.size.y - y)] - 0; //-0 to force conversion to CRGB
+          if (n.red > 10) n.red -= 10; else n.red = 0;
+          if (n.green > 10) n.green -= 10; else n.green = 0;
+          if (n.blue > 10) n.blue -= 10; else n.blue = 0;
+        }
+        leds[leds.XY(x, leds.size.y - 1 - y)] = n;
+      }
+    }
+
+    // Heat the bottom row
+    for (int x=0; x<leds.size.x; ++x ) {
+      CRGB i = leds[leds.XY(x, leds.size.y - 1 - 0)] - 0; //-0 to force conversion to CRGB
+      if ( i != CRGB::Black ) {
+        leds[leds.XY(x, leds.size.y - 1 - 0)] = usePalette?ColorFromPalette(leds.palette, random8()): colors[random(NCOLORS-6, NCOLORS-2)];
+      }
+    }
+
+    // flare
+    for (int i=0; i<*nflare; ++i ) {
+      int x = flare[i] & 0xff;
+      int y = (flare[i] >> 8) & 0xff;
+      int z = (flare[i] >> 16) & 0xff;
+
+      glow( x, y, z, flareDecay, leds, usePalette);
+
+      if ( z > 1 ) {
+        flare[i] = (flare[i] & 0xffff) | ((z-1)<<16);
+      } else {
+        // This flare is out
+        for ( int j=i+1; j<*nflare; ++j ) {
+          flare[j-1] = flare[j];
+        }
+        --(*nflare);
+      }
+    }
+
+    //newflare();
+    if ( *nflare < maxFlare && random(1,101) <= flareChance ) {
+      int x = random(0, leds.size.x);
+      int y = random(0, flareRows);
+      int z = NCOLORS - 1;
+      flare[(*nflare)++] = (z<<16) | (y<<8) | (x&0xff);
+
+      glow( x, y, z, flareDecay, leds, usePalette);
+    }
+  }
+  
+}; // Fire Effect
+
 //Lissajous inspired by WLED, Andrew Tuline 
 class LissajousEffect: public Effect {
   const char * name() {return "Lissajous";}

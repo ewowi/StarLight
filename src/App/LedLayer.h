@@ -212,8 +212,6 @@ public:
   std::vector<std::vector<uint16_t>> mappingTableIndexes;
   uint16_t mappingTableIndexesSizeUsed = 0;
   
-  uint16_t indexVLocal = 0; //set in operator[], used by operator=
-
   bool doMap = true; //so a mapping will be made
 
   CRGBPalette16 palette;
@@ -251,43 +249,71 @@ public:
 
   void triggerMapping();
 
-  // indexVLocal stored to be used by other operators
+  //set in operator[], used by other operators
+  uint16_t operatorIndexV = 0;
+  CRGB operatorCRGB;
+
+  //leds = leds[indexV] ,[] needs to return LedsLayer to allow other operators to work on it
   LedsLayer& operator[](uint16_t indexV) {
-    indexVLocal = indexV;
+    operatorIndexV = indexV;
+    operatorCRGB = getPixelColor(operatorIndexV); 
     return *this;
   }
 
+  //leds = leds[pos]
   LedsLayer& operator[](Coord3D pos) {
-    indexVLocal = XYZ(pos.x, pos.y, pos.z);
+    operatorIndexV = XYZ(pos.x, pos.y, pos.z);
+    operatorCRGB = getPixelColor(operatorIndexV);
     return *this;
   }
 
-  // CRGB& operator[](uint16_t indexV) {
-  //   // indexVLocal = indexV;
-  //   CRGB x = getPixelColor(indexV);
-  //   return x;
-  // }
-
-  // uses indexVLocal and color to call setPixelColor
+  //leds = color
   LedsLayer& operator=(const CRGB color) {
-    setPixelColor(indexVLocal, color);
+    setPixelColor(operatorIndexV, color);
     return *this;
   }
 
+  //leds = leds += color
   LedsLayer& operator+=(const CRGB color) {
-    setPixelColor(indexVLocal, getPixelColor(indexVLocal) + color);
-    return *this;
-  }
-  LedsLayer& operator|=(const CRGB color) {
-    // setPixelColor(indexVLocal, color);
-    setPixelColor(indexVLocal, getPixelColor(indexVLocal) | color);
+    setPixelColor(operatorIndexV, operatorCRGB + color);
     return *this;
   }
 
-  // LedsLayer& operator+(const CRGB color) {
-  //   setPixelColor(indexVLocal, getPixelColor(indexVLocal) + color);
-  //   return *this;
+  //leds = leds != color
+  LedsLayer& operator|=(const CRGB color) {
+    // setPixelColor(operatorIndexV, color);
+    setPixelColor(operatorIndexV, operatorCRGB | color);
+    return *this;
+  }
+
+  //leds = leds + color
+  LedsLayer& operator+(const CRGB color) {
+    setPixelColor(operatorIndexV, operatorCRGB + color);
+    return *this;
+  }
+
+  //CRGB = leds[].color - color
+  CRGB& operator-(const CRGB color) {
+    // setPixelColor(operatorIndexV, getPixelColor(operatorIndexV) + color);
+    operatorCRGB -= color;
+    return operatorCRGB;
+  }
+
+  //CRGB = leds[] = leds[]
+  // CRGB& operator=(LedsLayer& leds) {
+  //   return operatorCRGB;
   // }
+
+
+  //bool = leds != color
+  bool operator!=(const CRGB color) {
+    return operatorCRGB != color;
+  }
+
+  //bool = leds[]<crgb
+  bool operator<(const CRGB color) {
+    return operatorCRGB < color;
+  }
 
 
   // maps the virtual led to the physical led(s) and assign a color to it
