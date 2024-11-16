@@ -1,4 +1,4 @@
-//F_panel128-96.sc
+//F_panel128-096.sc
 
 define horizontalPanels 8
 define verticalPanels 6
@@ -8,7 +8,6 @@ void mapLed(uint16_t pos) {
   int datainpanel = pos % 256;
 
   int Xp = horizontalPanels - 1 - panelnumber % horizontalPanels; //wired from right to left
-  Xp = (Xp + 1) % horizontalPanels; //fix for ewowi panels
 
   int yp = panelnumber / horizontalPanels;
   int X = Xp; //panel on the x axis
@@ -30,12 +29,10 @@ void main() {
   for (int panelY = 0; panelY < verticalPanels; panelY++) {
     for (int panelX = horizontalPanels-1; panelX >=0; panelX--) {
 
-      int panelX2 = (panelX + 1) % horizontalPanels; //ewowi panel correction
-
       for (int x=0; x<16;x++) {
         for (int y=15; y>=0; y--) {
-          int y2 = y; if (x%2 == 0) {y2=15-y;} //serpentine
-          addPixel(panelX2*16+x,panelY*16+y2,0);
+          int y2 = y; if (x%2 == 0) {y2 = 15 - y;} //serpentine
+          addPixel(panelX * 16 + x, panelY * 16 + y2, 0);
         }
       }
 

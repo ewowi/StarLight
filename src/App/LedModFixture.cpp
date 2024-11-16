@@ -99,7 +99,7 @@
         //bri set by StarMod during onChange
         uint8_t result = mdl->getValue("Fixture", "on").as<bool>()?mdl->linearToLogarithm(bri):0;
 
-        #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+        #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
           driver.setBrightness(result * setMaxPowerBrightnessFactor / 256);
         #else
           FastLED.setBrightness(result);
@@ -301,7 +301,7 @@
       case onUI:
         #if STARLIGHT_CLOCKLESS_LED_DRIVER
           variable.setLabel("CLD Show");
-        #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+        #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
           variable.setLabel("CLVD Show");
         #else
           variable.setLabel("FastLED Show");
@@ -320,7 +320,7 @@
     //   }});
     // #endif
 
-    #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+    #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
       fix->setMaxPowerBrightnessFactor = 90; //0..255
     #else
       FastLED.setMaxPowerInMilliWatts(10000); // 5v, 2000mA
@@ -355,7 +355,7 @@
           if (driver.total_leds > 0)
             driver.showPixels(WAIT);
         #endif
-      #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+      #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
         if (driver.driverInit)
           driver.showPixels(WAIT);
       #else
@@ -412,9 +412,7 @@
           liveM->addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
           liveM->addExternalFun("void", "addPin", "(uint8_t a1)", (void *)_addPin);
           liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
-          #ifdef STARLIGHT_LIVE_MAPPING
-            liveM->addExternalVal("uint16_t", "mapResult", &mapResult); //used in map function
-          #endif
+          liveM->addExternalVal("uint16_t", "mapResult", &mapResult); //for STARLIGHT_LIVE_MAPPING but script with this can also run when live mapping is disabled
 
           liveFixtureID = liveM->compile(fileName, "void c(){addPixelsPre();main();addPixelsPost();}");
         }
@@ -504,7 +502,7 @@
         int lengths[16]; //max 16 pins
         int nb_pins=0;
       #endif
-      #ifndef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+      #if !defined(STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER) & ! defined(STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3)
       for (PinObject &pinObject: pinsM->pinObjects) {
 
         if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in addPin)
@@ -747,7 +745,7 @@
           Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
           // driver.setBrightness(setMaxPowerBrightnessFactor / 256); //not brighter then the set limit (WIP)
         }
-      #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+      #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
 
         for (int i=0; i< STARLIGHT_MAXLEDS; i++) ledsP[i] = CRGB::Black; //avoid very bright pixels during reboot (WIP)
         int pins[6] = { STARLIGHT_ICVLD_PINS };
@@ -759,7 +757,7 @@
         #endif
         driver.setGamma(255.0/255.0, 176.0/255.0, 240.0/255.0);
 
-        if (driver.driverInit) driver.showPixels(WAIT);  //avoid very bright pixels during reboot (WIP)
+        // if (driver.driverInit) driver.showPixels(WAIT);  //avoid very bright pixels during reboot (WIP)
         driver.setBrightness(10); //avoid very bright pixels during reboot (WIP)
 
         Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
