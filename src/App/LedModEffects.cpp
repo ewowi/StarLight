@@ -191,15 +191,16 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
           // leds->doMap = true; //stop the effects loop already here
 
-          // #ifdef STARBASE_USERMOD_LIVE
-          //   //kill Live Script if moving to other effect
-          //   // if (leds->effectNr < effects.size()) {
-          //   //   Effect* effect = effects[leds->effectNr];
-          //     if (leds->effect && strncmp(leds->effect->name(), "Live Effect", 12) == 0) {
-          //       // liveM->kill();
-          //     }
-          //   // }
-          // #endif
+          #ifdef STARBASE_USERMOD_LIVE
+            //kill Live Script if moving to other effect
+            // if (leds->effectNr < effects.size()) {
+            //   Effect* effect = effects[leds->effectNr];
+              if (leds->effect && strncmp(leds->effect->name(), "Live Effect", 12) == 0) {
+                liveM->killAndDelete(leds->liveEffectID);
+                leds->liveEffectID = UINT8_MAX;
+              }
+            // }
+          #endif
 
           uint16_t effectNr = variable.getValue(rowNr);
 
@@ -459,7 +460,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
               print->fFormat(text, sizeof(text), "%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
             else
               print->fFormat(text, sizeof(text), "%.3d %s", fix->realFps, fix->tickerTape);
-            leds->drawText(text, 16, 0, 1); //16 should be 0 after I have my first panel working ;-)
+            leds->drawText(text, 0, 0, 1);
           }
 
           // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
