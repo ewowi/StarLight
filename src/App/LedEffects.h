@@ -2826,16 +2826,17 @@ class RipplesEffect: public Effect {
     uint8_t speed = leds.effectData.read<uint8_t>();
     uint8_t interval = leds.effectData.read<uint8_t>();
 
-    float ripple_interval = 1.3f * (interval/128.0f);
+    float ripple_interval = 1.3f * ((255.0f - interval)/128.0f) * sqrtf(leds.size.y);
+    uint32_t time_interval = sys->now/(100 - speed)/((256.0f-128.0f)/20.0f);
 
     leds.fill_solid(CRGB::Black);
 
     Coord3D pos = {0,0,0};
     for (pos.z=0; pos.z<leds.size.z; pos.z++) {
       for (pos.x=0; pos.x<leds.size.x; pos.x++) {
-        float d = distance(3.5f, 3.5f, 0.0f, (float)pos.y, (float)pos.z, 0.0f) / 9.899495f * leds.size.y;
-        uint32_t time_interval = sys->now/(100 - speed)/((256.0f-128.0f)/20.0f);
-        pos.y = floor(leds.size.y/2.0f + sinf(d/ripple_interval + time_interval) * leds.size.y/2.0f); //between 0 and leds.size.y
+
+        float d = distance(leds.size.x/2.0f, leds.size.z/2.0f, 0.0f, (float)pos.x, (float)pos.z, 0.0f) / 9.899495f * leds.size.y;
+        pos.y = floor(leds.size.y/2.0f * (1 + sinf(d/ripple_interval + time_interval))); //between 0 and leds.size.y
 
         leds[pos] = CHSV( sys->now/50 + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri);
       }
@@ -2861,9 +2862,9 @@ class SphereMoveEffect: public Effect {
     uint32_t time_interval = sys->now/(100 - speed)/((256.0f-128.0f)/20.0f);
 
     Coord3D origin;
-    origin.x = 3.5f+sinf(time_interval)*2.5f;
-    origin.y = 3.5f+cosf(time_interval)*2.5f;
-    origin.z = 3.5f+cosf(time_interval)*2.0f;
+    origin.x = leds.size.x / 2.0 * ( 1 + sinf(time_interval));
+    origin.y = leds.size.y / 2.0 * ( 1 + cosf(time_interval));
+    origin.z = leds.size.z / 2.0 * ( 1 + cosf(time_interval));
 
     float diameter = 2.0f+sinf(time_interval/3.0f);
 

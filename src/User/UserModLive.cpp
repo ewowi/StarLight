@@ -87,7 +87,7 @@ static void preKill()
   ppf("ELS preKill\n");
   // LEDS specific
   //tbd: move this to LedModFixture...
-  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
     fix->driver.__enableDriver=false;
     while(fix->driver.isDisplaying){};
     //delay(20);
@@ -97,7 +97,7 @@ static void postKill()
 {
   ppf("ELS postKill\n");
   // LEDS specific
-  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
     // delay(10);
     fix->driver.__enableDriver=true;
   #endif
