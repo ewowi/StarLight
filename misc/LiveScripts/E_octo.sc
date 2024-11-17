@@ -1,11 +1,11 @@
-//octoSL.sc
+//E_octo.sc
 
 //import memset
 //save_reg
 define PI 3.1415926535
 define speed 1
 int nb_branches;
-uint8_t C_X ;
+uint8_t C_X;
 uint8_t C_Y;
 uint8_t mapp;
 uint8_t rMapRadius[NUM_LEDS];

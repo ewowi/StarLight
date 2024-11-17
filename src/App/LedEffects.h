@@ -2989,7 +2989,7 @@ class LiveEffect: public Effect {
         // variable.setComment("Fixture to display effect on");
         JsonArray options = variable.setOptions();
         options.add("None");
-        files->dirToJson(options, true, ".sc"); //only files containing F(ixture), alphabetically
+        files->dirToJson(options, true, "E_"); //only files containing F(ixture), alphabetically
 
         return true; }
       case onChange: {
@@ -3031,14 +3031,16 @@ class LiveEffect: public Effect {
                 liveM->addExternalFun("void", "sCFP", "(uint16_t a1, uint8_t a2, uint8_t a3)", (void *)sCFPLive);
                 liveM->addExternalFun("void", "fadeToBlackBy", "(uint8_t a1)", (void *)_fadeToBlackBy);
 
-                liveM->addExternalVal("uint8_t", "slider1", &slider1); //used in map function
-                liveM->addExternalVal("uint8_t", "slider2", &slider2); //used in map function
-                liveM->addExternalVal("uint8_t", "slider3", &slider3); //used in map function
+                liveM->addExternalVal("uint8_t", "slider1", &slider1);
+                liveM->addExternalVal("uint8_t", "slider2", &slider2);
+                liveM->addExternalVal("uint8_t", "slider3", &slider3);
 
-                liveM->scScript += "define width " + std::to_string(leds.size.x) + "\n";
-                liveM->scScript += "define height " + std::to_string(leds.size.y) + "\n";
-                liveM->scScript += "define NUM_LEDS " + std::to_string(leds.nrOfLeds) + "\n";
-                liveM->scScript += "define panel_width " + std::to_string(leds.size.x) + "\n"; //isn't panel_width always the same as width?
+                liveM->addExternalVal("uint16_t", "width", &leds.size.x);
+                liveM->addExternalVal("uint16_t", "height", &leds.size.y);
+                liveM->addExternalVal("uint16_t", "depth", &leds.size.z);
+                liveM->addExternalVal("uint16_t", "panel_width", &leds.size.x);
+                // liveM->addExternalVal("uint16_t", "NUM_LEDS", &leds.nrOfLeds);
+                liveM->scScript += "define NUM_LEDS " + std::to_string(leds.nrOfLeds) + "\n"; //NUM_LEDS is used in arrays -> must be define e.g. uint8_t rMapRadius[NUM_LEDS];
 
                 leds.liveEffectID = liveM->compile(fileName, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
               }

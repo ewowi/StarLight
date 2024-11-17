@@ -1,4 +1,4 @@
-//animwleSL.sc
+//E_animwle.sc
 
 // WIP, By Yves but time and triangle is now external, not working yet
 // Unexpected    at line:115

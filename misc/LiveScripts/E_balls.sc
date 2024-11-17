@@ -1,3 +1,5 @@
+//E_balls.sc
+
 import rand
 define max_nb_balls 25
 define rmax 6
