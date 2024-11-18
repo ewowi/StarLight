@@ -110,7 +110,7 @@ void loop()
          sPC(i+panel_width*j, hsv(i+h+j,255,180));
       }
    }
-   for (int i = 0; i < slider1/10; i++)
+   for (int i = 0; i < intensityControl/10; i++)
    {
       Balls[i].updateBall();
    }

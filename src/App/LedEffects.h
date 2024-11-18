@@ -2973,9 +2973,12 @@ class MarioTestEffect: public Effect {
   static void sPCLive(uint16_t pixel, CRGB color) {if (gLeds) gLeds->setPixelColor(pixel, color);} //setPixelColor with color
   static void sCFPLive(uint16_t pixel, uint8_t index, uint8_t brightness) {if (gLeds) gLeds->setPixelColor(pixel, ColorFromPalette(gLeds->palette, index, brightness));} //setPixelColor within palette
 
-  uint8_t slider1 = 128;
-  uint8_t slider2 = 128;
-  uint8_t slider3 = 128;
+  //WLED nostalgia
+  uint8_t speedControl = 128;
+  uint8_t intensityControl = 128;
+  uint8_t custom1Control = 128;
+  uint8_t custom2Control = 128;
+  uint8_t custom3Control = 128;
 
 class LiveEffect: public Effect {
   const char * name() {return "Live Effect";}
@@ -3031,16 +3034,19 @@ class LiveEffect: public Effect {
                 liveM->addExternalFun("void", "sCFP", "(uint16_t a1, uint8_t a2, uint8_t a3)", (void *)sCFPLive);
                 liveM->addExternalFun("void", "fadeToBlackBy", "(uint8_t a1)", (void *)_fadeToBlackBy);
 
-                liveM->addExternalVal("uint8_t", "slider1", &slider1);
-                liveM->addExternalVal("uint8_t", "slider2", &slider2);
-                liveM->addExternalVal("uint8_t", "slider3", &slider3);
+                //WLED nostalgia
+                liveM->addExternalVal("uint8_t", "speedControl", &speedControl);
+                liveM->addExternalVal("uint8_t", "intensityControl", &intensityControl);
+                liveM->addExternalVal("uint8_t", "custom1Control", &custom1Control);
+                liveM->addExternalVal("uint8_t", "custom2Control", &custom2Control);
+                liveM->addExternalVal("uint8_t", "custom3Control", &custom3Control);
 
                 liveM->addExternalVal("uint16_t", "width", &leds.size.x);
                 liveM->addExternalVal("uint16_t", "height", &leds.size.y);
                 liveM->addExternalVal("uint16_t", "depth", &leds.size.z);
                 liveM->addExternalVal("uint16_t", "panel_width", &leds.size.x);
-                // liveM->addExternalVal("uint16_t", "NUM_LEDS", &leds.nrOfLeds);
-                liveM->scScript += "define NUM_LEDS " + std::to_string(leds.nrOfLeds) + "\n"; //NUM_LEDS is used in arrays -> must be define e.g. uint8_t rMapRadius[NUM_LEDS];
+
+                liveM->scScript += "define NUM_LEDS " + std::to_string(fix.nrOfLeds) + "\n"; //NUM_LEDS is used in arrays -> must be define e.g. uint8_t rMapRadius[NUM_LEDS];
 
                 leds.liveEffectID = liveM->compile(fileName, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
               }
@@ -3062,9 +3068,12 @@ class LiveEffect: public Effect {
       default: return false; 
     }}); //script
 
-    ui->initSlider(parentVar, "Slider1", &slider1);
-    ui->initSlider(parentVar, "Slider2", &slider2);
-    ui->initSlider(parentVar, "Slider3", &slider3);
+    //WLED nostalgia
+    ui->initSlider(parentVar, "speed", &speedControl);
+    ui->initSlider(parentVar, "intensity", &intensityControl);
+    ui->initSlider(parentVar, "Custom 1", &custom1Control);
+    ui->initSlider(parentVar, "Custom 2", &custom2Control);
+    ui->initSlider(parentVar, "Custom 3", &custom3Control);
   }
 
   void loop(LedsLayer &leds) {

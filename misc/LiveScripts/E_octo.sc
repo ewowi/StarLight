@@ -32,7 +32,7 @@ void setup()
 
 void loop() {
 
-  nb_branches = slider1 / 25;
+  nb_branches = intensityControl / 25;
 
   // memset(leds, 0, width * height * 3);
   for (uint8_t x = 0; x < width; x++) {

@@ -3,6 +3,7 @@
 define horizontalPanels 8
 define verticalPanels 6
 
+//STARLIGHT_LIVE_MAPPING
 void mapLed(uint16_t pos) {
   int panelnumber = pos / 256;
   int datainpanel = pos % 256;
