@@ -92,5 +92,4 @@ external void fadeToBlackBy(uint8_t a1);
 define width 32
 define height 32
 define NUM_LEDS 1024
-define panel_width 32
 */

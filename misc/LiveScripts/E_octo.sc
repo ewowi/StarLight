@@ -40,11 +40,11 @@ void loop() {
       uint8_t angle = rMapAngle[x*height+y];
       uint8_t radius = rMapRadius[x*height+y];
 
-      // leds[y*panel_width+x] = hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches));
+      // leds[y*width+x] = hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches));
       // int h=sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches);
-      // leds[y*panel_width+x] = hsv(t + radius, 255, h);
+      // leds[y*width+x] = hsv(t + radius, 255, h);
 
-      sPC(y*panel_width+x, hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches)));
+      sPC(y*width+x, hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches)));
     }
   }
   t=t+speed;

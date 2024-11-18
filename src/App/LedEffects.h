@@ -3044,9 +3044,8 @@ class LiveEffect: public Effect {
                 liveM->addExternalVal("uint16_t", "width", &leds.size.x);
                 liveM->addExternalVal("uint16_t", "height", &leds.size.y);
                 liveM->addExternalVal("uint16_t", "depth", &leds.size.z);
-                liveM->addExternalVal("uint16_t", "panel_width", &leds.size.x);
 
-                liveM->scScript += "define NUM_LEDS " + std::to_string(fix.nrOfLeds) + "\n"; //NUM_LEDS is used in arrays -> must be define e.g. uint8_t rMapRadius[NUM_LEDS];
+                liveM->scScript += "define NUM_LEDS " + std::to_string(fix->nrOfLeds) + "\n"; //NUM_LEDS is used in arrays -> must be define e.g. uint8_t rMapRadius[NUM_LEDS];
 
                 leds.liveEffectID = liveM->compile(fileName, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
               }

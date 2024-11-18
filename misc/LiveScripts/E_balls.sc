@@ -33,10 +33,10 @@ struct ball {
             v = 255 * (1 - distance^2 / (r4));
             CRGB cc=hsv(color,255,v);
             
-               sPC(i + j * panel_width,cc);
-               sPC((int)(2 * xc - i) + j * panel_width,cc);
-               sPC((int)(2 * xc - i) + (int)(2 * yc - j) * panel_width,  cc);
-               sPC(i + (int)(2 * yc - j) * panel_width, cc);
+               sPC(i + j * width,cc);
+               sPC((int)(2 * xc - i) + j * width,cc);
+               sPC((int)(2 * xc - i) + (int)(2 * yc - j) * width,  cc);
+               sPC(i + (int)(2 * yc - j) * width, cc);
          }
       }
    }
@@ -107,7 +107,7 @@ void loop()
    {
       for(int j=0;j<height;j++)
       {
-         sPC(i+panel_width*j, hsv(i+h+j,255,180));
+         sPC(i+width*j, hsv(i+h+j,255,180));
       }
    }
    for (int i = 0; i < intensityControl/10; i++)
