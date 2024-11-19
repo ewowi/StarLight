@@ -719,11 +719,12 @@ function varRemoveValuesForRow(variable, rowNr) {
 
 //process json from server, json is assumed to be an object
 function receiveData(json) {
-  // console.log("receiveData", json);
 
   if (isObject(json)) {
     for (let key of Object.keys(json)) {
       let value = json[key];
+
+      // console.log("receiveData", key + ": " + JSON.stringify(json[key]));
 
       //tbd: for each node of a variable (rowNr)
 

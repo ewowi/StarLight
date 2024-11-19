@@ -388,9 +388,9 @@ public:
   }
 
   //returns the var defined by id (parent to recursively call findVar)
-  bool walkThroughModel(std::function<bool(Variable)> fun, JsonObject parent = JsonObject());
-  JsonObject findVar(const char * pid, const char * id, JsonObject parent = JsonObject());
-  void findVars(const char * id, bool value, FindFun fun, JsonArray parent = JsonArray());
+  JsonObject walkThroughModel(std::function<JsonObject(JsonObject, JsonObject)> fun, JsonObject parentVar = JsonObject());
+  JsonObject findVar(const char * pid, const char * id, JsonObject parentVar = JsonObject());
+  void findVars(const char * id, bool value, FindFun fun, JsonObject parentVar = JsonObject());
 
   uint8_t linearToLogarithm(uint8_t value, uint8_t minp = 0, uint8_t maxp = UINT8_MAX) {
     if (value == 0) return 0;

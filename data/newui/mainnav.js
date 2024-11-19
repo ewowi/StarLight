@@ -22,7 +22,7 @@ class MainNav {
        or shrink if there is nothing to show in the alerts area -->
   <div id="alerts" class="text-center bg-error">
     <!-- Place the alert text in a padded div so that when it's not present the alert area will be hidden-->
-    <div class="pa-3 text-center">some alert text</div>
+    <!-- <div class="pa-3 text-center">some alert text</div>-->
   </div>
   
   <!-- Main navigation bar has a fixed height and so it is always visible -->
@@ -105,14 +105,14 @@ class MainNav {
 
     // Update the page content
     if (this.#createHTMLFun) {
-        gId('page').innerHTML = 
+      gId('page').innerHTML = 
       `<div class="d-flex flex-column h-100 overflow-hidden">
         <div class="flex-shrink-0">
           <h1 class="title">${this.#activeModuleJson.id}</h1>
         </div>
-        <div class="overflow-y-auto">` + this.#createHTMLFun(this.#activeModuleJson) +
-        `</div>
+        <div id="Module.main" class="overflow-y-auto"></div>
       </div>`
+      this.#createHTMLFun(this.#activeModuleJson, gId("Module.main"))
     }
     //done after innerHTML as it needs to find the nodes. tbd: createHTMLFun adds to dom directly
     if (this.#setDefaultValuesFun) {

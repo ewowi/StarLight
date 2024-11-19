@@ -36,14 +36,14 @@ public:
         variable.setComment("First channel");
         return true;
       case onChange:
-        for (JsonObject childVar: Variable(mdl->findVar("E131", "watches")).children())
+        for (JsonObject childVar: Variable(mdl->findVar("E131", "patches")).children())
           Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
         return true;
       default: return false;
     }});
     currentVar.var["dash"] = true;
 
-    Variable tableVar = ui->initTable(parentVar, "watches", nullptr, true, [](EventArguments) { switch (eventType) {
+    Variable tableVar = ui->initTable(parentVar, "patches", nullptr, true, [](EventArguments) { switch (eventType) {
       case onUI:
         variable.setComment("Variables to watch");
         return true;

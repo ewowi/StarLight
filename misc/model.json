@@ -169,7 +169,7 @@
       {
         "id": "reset 1",
         "type": "select",
-        "ro": true,
+        "ro": false,
         "pid": "System",
         "o": 56,
         "fun": 42
@@ -612,14 +612,14 @@
         "dash": true
       },
       {
-        "id": "watches",
+        "id": "patches",
         "type": "table",
         "ro": true,
         "n": [
           {
             "id": "channel",
             "type": "number",
-            "pid": "watches",
+            "pid": "patches",
             "ro": true,
             "min": 1,
             "max": 512,
@@ -629,7 +629,7 @@
           {
             "id": "variable",
             "type": "text",
-            "pid": "watches",
+            "pid": "patches",
             "ro": true,
             "max": 32,
             "o": 111,
@@ -638,7 +638,7 @@
           {
             "id": "max",
             "type": "number",
-            "pid": "watches",
+            "pid": "patches",
             "ro": true,
             "o": 76,
             "fun": 61
@@ -646,7 +646,7 @@
           {
             "id": "value",
             "type": "number",
-            "pid": "watches",
+            "pid": "patches",
             "ro": true,
             "max": 255,
             "o": 113,
@@ -936,7 +936,8 @@
   },
   {
     "id": "LiveScripts",
-    "type": "usermod",
+    "type": "User",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "n": [
@@ -945,8 +946,9 @@
         "type": "select",
         "pid": "LiveScripts",
         "ro": false,
-        "o": 107,
-        "fun": 87
+        "value": 255,
+        "o": 101,
+        "fun": 74
       },
       {
         "id": "fps1",
@@ -954,7 +956,9 @@
         "pid": "LiveScripts",
         "ro": true,
         "max": 10,
-        "o": 148
+        "o": 102,
+        "fun": 75,
+        "value": "0 /s"
       },
       {
         "id": "fps2",
@@ -962,10 +966,84 @@
         "pid": "LiveScripts",
         "ro": true,
         "max": 10,
-        "o": 149
+        "o": 103,
+        "fun": 76,
+        "value": "0 /s"
+      },
+      {
+        "id": "scripts",
+        "type": "table",
+        "pid": "LiveScripts",
+        "ro": true,
+        "n": [
+          {
+            "id": "name",
+            "type": "text",
+            "pid": "scripts",
+            "ro": true,
+            "max": 32,
+            "o": 105,
+            "fun": 77,
+            "value": []
+          },
+          {
+            "id": "running",
+            "type": "checkbox",
+            "pid": "scripts",
+            "ro": true,
+            "o": 106,
+            "fun": 78,
+            "value": []
+          },
+          {
+            "id": "halted",
+            "type": "checkbox",
+            "pid": "scripts",
+            "ro": true,
+            "o": 107,
+            "fun": 79,
+            "value": []
+          },
+          {
+            "id": "exe",
+            "type": "checkbox",
+            "pid": "scripts",
+            "ro": true,
+            "o": 108,
+            "fun": 80,
+            "value": []
+          },
+          {
+            "id": "handle",
+            "type": "number",
+            "pid": "scripts",
+            "ro": true,
+            "o": 109,
+            "fun": 81,
+            "value": []
+          },
+          {
+            "id": "size",
+            "type": "text",
+            "pid": "scripts",
+            "ro": true,
+            "max": 32,
+            "o": 110,
+            "fun": 82,
+            "value": []
+          },
+          {
+            "id": "Kill",
+            "type": "button",
+            "pid": "scripts",
+            "ro": false,
+            "o": 111,
+            "fun": 83
+          }
+        ],
+        "o": 104
       }
     ],
-    "pid": "m",
     "o": 7310
   },
   {

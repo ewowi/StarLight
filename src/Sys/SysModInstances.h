@@ -274,7 +274,7 @@ public:
         // insVar["fun"] = var["fun"]; //copy the onUI
       }
 
-    });
+    }); //findVars
 
     if (sizeof(UDPWLEDMessage) != 44) {
       ppf("dev Size of UDP message is not 44: %d\n", sizeof(UDPWLEDMessage));

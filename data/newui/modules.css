@@ -9,28 +9,175 @@
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
 
+body {
+	font-family: Arial, Helvetica, sans-serif;
+	background: black;
+	color: var(--text-color);
+	font-size: var(--font-size);
+}
+
+h1,h2 {
+	color: var(--h-color);
+	line-height: 5px;
+}
+
+div {
+	line-height: 2.0; /* 1.6 is recommended height */
+}
+
 /* default nodes */
 label {
-	margin-right: 6px; /*space after*/
-	color: var(--label-color);
-  }
-  
-  comment {
-	/* font-size: 10px; */
-	font-style: italic;
-	margin-left: 6px; /*space before*/
-	color: var(--comment-color);
-  }
-  
-  input {
-	  background: transparent;
-	  color: var(--text-color);
-	  font-size: 8px; /*var(--font-size-s) not working for some reason */
-  }
-  
-  .ndiv {
+  margin-right: 6px; /*space after*/
+  color: var(--label-color);
+}
+
+comment {
+  /* font-size: 10px; */
+  font-style: italic;
+  margin-left: 6px; /*space before*/
+  color: var(--comment-color);
+}
+
+input {
+	background: grey;
+	color: var(--text-color);
+	font-size: 12px; /*var(--font-size-s) not working for some reason */
+}
+
+/* input[type="button"] {
+	padding: 7px;
+}
+*/
+
+ select {
+	background: transparent;
+	color: var(--text-color);
+	font-size: 12px; /*var(--font-size-s) not working for some reason */
+}
+
+option {
+	color: var(--text-color);
+	background: var(--bg-color);
+}
+
+a {
+	color: var(--h-color); 
+	text-decoration: none;
+}
+
+/* text { /*currently only for buttonSaveNode and buttonCancelNode
+	font-size: 10px;
+} */
+
+/* For textarea variables */
+textarea {
+	width: 100%;
+	height: 100%;
+	border-radius: 12px;
+	background: transparent;
+	color: var(--text-color);
+}
+
+canvas {
+	width: 100%;
+	height: 100%;
+	border-radius: 12px;
+	border: 1px solid black;
+	background: transparent;
+	cursor: default;
+}
+
+.ndiv {
     /* border: 2px solid black; */
     margin-left: 20px;
     /* border-radius: 12px; */
   }
   
+  /*table layout */
+.table {
+  font-family: Arial, Helvetica, sans-serif;
+  border-collapse: collapse;
+  width: 0;
+  border-radius: 10px; /*does not seem to work */
+  border-style: hidden; /* hide standard table (collapsed) border */
+  box-shadow: 0 0 0 1px #666; /* this draws the table border  */ 
+}
+
+.table td, .table th {
+  border: 1px solid #000000;
+  padding: 6px;
+  vertical-align: top;
+}
+
+.table th {
+  /* padding-top: 12px;
+  padding-bottom: 12px; */
+  text-align: left;
+  background-color: var(--th-color);
+  color: var(--label-color);
+}
+
+.module, .appmod, .sysmod, .usermod {
+  border: 2px solid var(--border-color);
+  /* background-color: #ddd; */
+  /* background: linear-gradient(to bottom, #33ccff 0%, #ff99cc 100%); */
+  background: var(--bg-color); /* linear-gradient(to bottom, #ffbe33 0%, #b60f62 100%); */
+  border-radius: 10px; /* from .5em */
+  padding: 5px;
+  margin: 5px; /*space around modules */
+  cursor: move;
+}
+
+
+.tooltip {
+	position: relative;
+	display: inline-block;
+	border-bottom: 1px dotted black; /* If you want dots under the hoverable text */
+  }
+  
+  /* Tooltip text */
+  .tooltip .tooltiptext {
+	visibility: hidden;
+	width: 120px;
+	background-color: var(--bg-color);
+	font-style: italic;
+	color: var(--comment-color);
+	text-align: center;
+	padding: 5px 0;
+	border-radius: 6px;
+	/* font-size: 10px; SM */
+
+	/* Position the tooltip text */
+	position: absolute;
+	z-index: 1;
+	bottom: 125%;
+	left: 50%;
+	margin-left: -60px;
+  
+	/* Fade in tooltip */
+	opacity: 0;
+	transition: opacity 0.3s;
+  }
+  
+  /* Tooltip arrow */
+  .tooltip .tooltiptext::after {
+	content: "";
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	margin-left: -5px;
+	border-width: 5px;
+	border-style: solid;
+	border-color: #555 transparent transparent transparent;
+  }
+  
+  /* Show the tooltip text when you mouse over the tooltip mdlContainer */
+  .tooltip:hover .tooltiptext {
+	visibility: visible;
+	opacity: 1;
+  }
+
+  /*used for view buttons*/
+  .selected {
+	background: var(--select-color);
+  }
