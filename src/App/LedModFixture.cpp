@@ -99,7 +99,7 @@
         //bri set by StarMod during onChange
         uint8_t result = mdl->getValue("Fixture", "on").as<bool>()?mdl->linearToLogarithm(bri):0;
 
-        #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
+        #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
           driver.setBrightness(result * setMaxPowerBrightnessFactor / 256);
         #else
           FastLED.setBrightness(result);
@@ -301,7 +301,7 @@
       case onUI:
         #if STARLIGHT_CLOCKLESS_LED_DRIVER
           variable.setLabel("CLD Show");
-        #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
+        #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
           variable.setLabel("CLVD Show");
         #else
           variable.setLabel("FastLED Show");
@@ -320,7 +320,7 @@
     //   }});
     // #endif
 
-    #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
+    #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
       fix->setMaxPowerBrightnessFactor = 90; //0..255
     #else
       FastLED.setMaxPowerInMilliWatts(10000); // 5v, 2000mA
@@ -355,7 +355,7 @@
           if (driver.total_leds > 0)
             driver.showPixels(WAIT);
         #endif
-      #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
+      #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
         if (driver.driverInit)
           driver.showPixels(WAIT);
       #else
@@ -502,7 +502,7 @@
         int lengths[16]; //max 16 pins
         int nb_pins=0;
       #endif
-      #if !defined(STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER) & ! defined(STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3)
+      #if !defined(STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER)
       for (PinObject &pinObject: pinsM->pinObjects) {
 
         if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in addPin)
@@ -745,7 +745,7 @@
           Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
           // driver.setBrightness(setMaxPowerBrightnessFactor / 256); //not brighter then the set limit (WIP)
         }
-      #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
+      #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
 
         for (int i=0; i< STARLIGHT_MAXLEDS; i++) ledsP[i] = CRGB::Black; //avoid very bright pixels during reboot (WIP)
         int pins[6] = { STARLIGHT_ICVLD_PINS };

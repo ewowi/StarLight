@@ -24,7 +24,7 @@
     #include "I2SClocklessLedDriver.h"
   #endif
 #endif
-#if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
+#if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
   //used in I2SClocklessVirtualLedDriver.h,
   //see https://github.com/ewowi/I2SClocklessVirtualLedDriver read me
   #define NUM_LEDS_PER_STRIP 256 // for I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY ...
@@ -51,13 +51,9 @@
     #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) //works but mapping using StarLight mappingTable needed
   #endif
 
-  #if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
-    #define TAG "StarLight"
-    #define OVERCLOCK_1MHZ
-    #include "I2SClocklessVirtualLedDriveresp32s3.h"
-  #else
-    #include "I2SClocklessVirtualLedDriver.h"
-  #endif
+  #define TAG "StarLight" // for S3 (todo also for non s3...)
+  #define OVERCLOCK_1MHZ // for S3 (OVERCLOCK_1_1MHZ)
+  #include "I2SClocklessVirtualLedDriver.h"
 
 
   //StarLight specific
@@ -169,10 +165,6 @@ public:
   #endif
   #if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
     I2SClocklessVirtualLedDriver driver;
-    uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
-  #endif
-  #if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER_S3
-    I2SClocklessVirtualLedDriveresp32s3 driver;
     uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
   #endif
 };
