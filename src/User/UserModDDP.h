@@ -42,7 +42,7 @@ public:
   };
 
   //setup filesystem
-  void setup() {
+  void setup() override {
     SysModule::setup();
 
     Variable parentVar = ui->initUserMod(Variable(), name, 6000);
@@ -80,7 +80,7 @@ public:
     }}); //instance
   }
 
-  void loop() {
+  void loop() override {
     // SysModule::loop();
 
     if(!mdls->isConnected) return;

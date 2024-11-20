@@ -104,10 +104,10 @@ public:
     #endif
   };
 
-  void setup();
+  void setup() override;
 
-  void loop();
-  void loop1s();
+  void loop() override;
+  void loop1s() override;
 
   Coord3D fixSize = {8,8,1};
   uint16_t nrOfLeds = 64; //amount of physical leds

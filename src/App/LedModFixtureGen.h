@@ -443,7 +443,7 @@ public:
 
   LedModFixtureGen() :SysModule("FixtureGenerator") {};
 
-  void setup() {
+  void setup() override {
     SysModule::setup();
 
     Variable parentVar = ui->initAppMod(Variable(), name, 6302); //created as a usermod, not an appmod to have it in the usermods tab
@@ -502,7 +502,7 @@ public:
 
   } //setup
 
-  void loop() {
+  void loop() override {
     // SysModule::loop();
   }
 

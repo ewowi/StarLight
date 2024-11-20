@@ -36,6 +36,8 @@ class LedsLayer; //forward
 //should not contain variables/bytes to keep mem as small as possible!!
 class Effect {
 public:
+  virtual ~Effect() = default;
+
   virtual const char * name() {return "noname";}
   virtual const char * tags() {return "";}
   virtual uint8_t dim() {return _1D;};
@@ -47,6 +49,8 @@ public:
 
 class Projection {
 public:
+  virtual ~Projection() = default;
+
   virtual const char * name() {return "noname";}
   virtual const char * tags() {return "";}
 
@@ -56,7 +60,7 @@ public:
   virtual void addPixelsPre(LedsLayer &leds) {}
 
   //setupPixel
-  virtual void addPixel(LedsLayer &leds, Coord3D &pixelAdjusted) {}
+  virtual void addPixel(LedsLayer &leds, Coord3D &pixel) {}
   
   //loopPixel
   virtual void XYZ(LedsLayer &leds, Coord3D &pixel) {}
@@ -535,6 +539,8 @@ static unsigned trigoCached = 1;
 static unsigned trigoUnCached = 1;
 
 struct Trigo {
+  virtual ~Trigo() = default;
+
   uint16_t period = 360; //default period 360
   Trigo(uint16_t period = 360) {this->period = period;}
   float sinValue[3]; uint16_t sinAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of sinValue=sin(sinAngle) for tilt, pan and roll
@@ -582,13 +588,13 @@ struct Trigo {
 
 struct Trigo8: Trigo { //FastLed sin8 and cos8
   using Trigo::Trigo;
-  float sinBase(uint16_t angle) {return (sin8(256.0f * angle / period) - 128) / 127.0f;}
-  float cosBase(uint16_t angle) {return (cos8(256.0f * angle / period) - 128) / 127.0f;}
+  float sinBase(uint16_t angle) override {return (sin8(256.0f * angle / period) - 128) / 127.0f;}
+  float cosBase(uint16_t angle) override {return (cos8(256.0f * angle / period) - 128) / 127.0f;}
 };
 struct Trigo16: Trigo { //FastLed sin16 and cos16
   using Trigo::Trigo;
-  float sinBase(uint16_t angle) {return sin16(65536.0f * angle / period) / 32645.0f;}
-  float cosBase(uint16_t angle) {return cos16(65536.0f * angle / period) / 32645.0f;}
+  float sinBase(uint16_t angle) override {return sin16(65536.0f * angle / period) / 32645.0f;}
+  float cosBase(uint16_t angle) override {return cos16(65536.0f * angle / period) / 32645.0f;}
 };
 
 static Trigo trigoTiltPanRoll(255); // Trigo8 is hardly any faster (27 vs 28 fps) (spanXY=28)

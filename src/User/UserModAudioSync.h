@@ -35,7 +35,7 @@ public:
   };
 
   //setup filesystem
-  void setup() {
+  void setup() override {
     SysModule::setup();
     Variable parentVar = ui->initUserMod(Variable(), name, 6300);
   
@@ -64,7 +64,7 @@ public:
 
   }
 
-  void onOffChanged() {
+  void onOffChanged() override {
     if (mdls->isConnected && isEnabled) {
       sync.begin();
     } else {
@@ -76,7 +76,7 @@ public:
     return ((millis() - lastData) > 10000);
   }
 
-  void loop20ms() {
+  void loop20ms() override {
     // SysModule::loop();
     if (mdls->isConnected && sync.read()) {
       lastData = millis();
