@@ -22,8 +22,8 @@ class SysModPrint:public SysModule {
 public:
 
   SysModPrint();
-  void setup();
-  void loop20ms();
+  void setup() override;
+  void loop20ms() override;
 
   //generic print function
   void printf(const char * format, ...);

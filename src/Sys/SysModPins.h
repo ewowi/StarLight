@@ -34,8 +34,8 @@ public:
   PinObject pinObjects[NUM_DIGITAL_PINS]; //all pins
 
   SysModPins();
-  void setup();
-  void loop20ms();
+  void setup() override;
+  void loop20ms() override;
 
   void allocatePin(uint8_t pin, const char * owner, const char * details);
   void deallocatePin(uint8_t pin = UINT8_MAX, const char * owner = nullptr);

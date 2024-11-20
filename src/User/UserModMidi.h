@@ -18,7 +18,7 @@ public:
   UserModMidi() :SysModule("Midi") {
   };
 
-  void setup() {
+  void setup() override {
     SysModule::setup();
 
     // UsbMidi_Setup();
@@ -34,7 +34,7 @@ public:
     }
   }
 
-  void loop() {
+  void loop() override {
     // if (esp32_usb_midi.available()) {
     //     esp32_usb_midi.read();  // Read MIDI data
     // }

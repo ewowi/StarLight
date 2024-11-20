@@ -65,13 +65,13 @@ public:
 
   SysModWeb();
 
-  void setup();
-  void loop20ms();
-  void loop1s();
+  void setup() override;
+  void loop20ms() override;
+  void loop1s() override;
 
-  void reboot();
+  void reboot() override;
 
-  void connectedChanged();
+  void connectedChanged() override;
 
   void wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, void * arg, byte *data, size_t len);
   

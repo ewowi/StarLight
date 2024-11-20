@@ -354,12 +354,12 @@ public:
   std::vector<VarEvent> varEvents;
 
   SysModModel();
-  void setup();
-  void loop20ms();
-  void loop1s();
+  void setup() override;
+  void loop20ms() override;
+  void loop1s() override;
 
   //adds a variable to the model
-  Variable initVar(Variable parent, const char * id, const char * type, bool readOnly = true, VarEvent varEvent = nullptr);
+  Variable initVar(Variable parent, const char * id, const char * type, bool readOnly = true, const VarEvent &varEvent = nullptr);
 
   //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
   void cleanUpModel(Variable parent = Variable(), bool oPos = true, bool ro = false);

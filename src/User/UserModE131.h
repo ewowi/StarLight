@@ -24,7 +24,7 @@ public:
     isEnabled = false; //default not enabled
   };
 
-  void setup() {
+  void setup() override {
     SysModule::setup();
 
     Variable parentVar = ui->initUserMod(Variable(), name, 6201);
@@ -119,7 +119,7 @@ public:
     }
   }
 
-  void loop20ms() {
+  void loop20ms() override {
     if(!e131Created) {
       return;
     }

@@ -25,9 +25,9 @@ public:
   std::vector<uint16_t> fileTimes;
 
   SysModFiles();
-  void setup();
-  void loop20ms();
-  void loop10s();
+  void setup() override;
+  void loop20ms() override;
+  void loop10s() override;
 
   bool remove(const char * path);
 

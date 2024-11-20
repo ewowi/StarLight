@@ -21,10 +21,10 @@ public:
   SysModNetwork();
 
   //setup wifi an async webserver
-  void setup();
+  void setup() override;
 
-  void loop1s();
-  void loop10s();
+  void loop1s() override;
+  void loop10s() override;
 
   // void handleConnections();
 

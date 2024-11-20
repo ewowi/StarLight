@@ -32,7 +32,7 @@ public:
   }
 
 
-  void connectedChanged() {
+  void connectedChanged() override {
     ppf("connectedChanged\n");
     if (mdls->isConnected) {
       // set device's details (optional)

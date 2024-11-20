@@ -110,7 +110,7 @@ public:
   SysModInstances() :SysModule("Instances") {
   };
 
-  void setup() {
+  void setup() override {
     SysModule::setup();
 
     Variable parentVar = ui->initSysMod(Variable(), name, 3000);
@@ -291,7 +291,7 @@ public:
     ppf("UDP message sizes WLED:%d Star:%d WLED-Sync:%d\n", sizeof(UDPWLEDMessage), sizeof(UDPStarMessage), sizeof(UDPWLEDSyncMessage));
   }
 
-  void onOffChanged() {
+  void onOffChanged() override {
     if (mdls->isConnected && isEnabled) {
       udpConnected = notifierUdp.begin(notifierUDPPort); //sync
       udp2Connected = instanceUDP.begin(instanceUDPPort); //instances
@@ -307,7 +307,7 @@ public:
     }
   }
 
-  void loop20ms() { //20 ms instead of loop() tripples the loops/sec!
+  void loop20ms() override { //20 ms instead of loop() tripples the loops/sec!
 
     handleNotifications();
 
@@ -319,7 +319,7 @@ public:
 
   }
 
-  void loop10s() {
+  void loop10s() override {
     sendSysInfoUDP();  //temporary every second
   }
 

@@ -30,9 +30,9 @@ public:
   SysModUI();
 
   //serve index.htm
-  void setup();
+  void setup() override;
 
-  void loop20ms();
+  void loop20ms() override;
 
   //order: order%4 determines the column (WIP)
   Variable initAppMod(Variable parent, const char * id, int order = 0) {
@@ -51,125 +51,125 @@ public:
     return variable;
   }
 
-  Variable initTable(Variable parent, const char * id, const char * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initTable(Variable parent, const char * id, const char * value = nullptr, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "table", value, 0, 0, readOnly, varEvent);
   }
 
-  Variable initText(Variable parent, const char * id, const char * value = nullptr, uint16_t max = 32, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initText(Variable parent, const char * id, const char * value = nullptr, uint16_t max = 32, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "text", value, 0, max, readOnly, varEvent);
   }
 
   //vector of text
-  Variable initTextVector(Variable parent, const char * id, std::vector<VectorString> *values, uint16_t max = 32, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initTextVector(Variable parent, const char * id, std::vector<VectorString> *values, uint16_t max = 32, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValueVector(parent, id, "text", values, 0, max, readOnly, varEvent);
   }
 
-  Variable initFileUpload(Variable parent, const char * id, const char * value = nullptr, uint16_t max = 32, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initFileUpload(Variable parent, const char * id, const char * value = nullptr, uint16_t max = 32, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "fileUpload", value, 0, max, readOnly, varEvent);
   }
-  Variable initPassword(Variable parent, const char * id, const char * value = nullptr, uint8_t max = 32, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initPassword(Variable parent, const char * id, const char * value = nullptr, uint8_t max = 32, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "password", value, 0, max, readOnly, varEvent);
   }
 
   //number is uint16_t for the time being (because it is called by uint16_t referenced vars...)
-  Variable initNumber(Variable parent, const char * id, uint16_t value = UINT16_MAX, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initNumber(Variable parent, const char * id, uint16_t value = UINT16_MAX, int min = 0, int max = UINT16_MAX, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<uint16_t>(parent, id, "number", value, min, max, readOnly, varEvent);
   }
   //init a number using referenced value
-  Variable initNumber(Variable parent, const char * id, uint16_t * value = nullptr, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initNumber(Variable parent, const char * id, uint16_t * value = nullptr, int min = 0, int max = UINT16_MAX, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<uint16_t>(parent, id, "number", value, min, max, readOnly, varEvent);
   }
   //init a number using a vector of integers
-  Variable initNumber(Variable parent, const char * id, std::vector<uint16_t> *values, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initNumber(Variable parent, const char * id, std::vector<uint16_t> *values, int min = 0, int max = UINT16_MAX, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<uint16_t>(parent, id, "number", values, min, max, readOnly, varEvent);
   }
 
-  Variable initPin(Variable parent, const char * id, uint8_t value = UINT8_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initPin(Variable parent, const char * id, uint8_t value = UINT8_MAX, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<uint8_t>(parent, id, "pin", value, 0, NUM_DIGITAL_PINS, readOnly, varEvent);
   }
 
   //referenced value
-  Variable initPin(Variable parent, const char * id, uint8_t *value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initPin(Variable parent, const char * id, uint8_t *value = nullptr, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<uint8_t>(parent, id, "pin", value, 0, NUM_DIGITAL_PINS, readOnly, varEvent);
   }
 
   //type int!
-  Variable initProgress(Variable parent, const char * id, int value = UINT16_MAX, int min = 0, int max = 255, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initProgress(Variable parent, const char * id, int value = UINT16_MAX, int min = 0, int max = 255, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<int>(parent, id, "progress", value, min, max, readOnly, varEvent);
   }
 
-  Variable initCoord3D(Variable parent, const char * id, Coord3D value = {UINT16_MAX, UINT16_MAX, UINT16_MAX}, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initCoord3D(Variable parent, const char * id, Coord3D value = {UINT16_MAX, UINT16_MAX, UINT16_MAX}, int min = 0, int max = UINT16_MAX, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<Coord3D>(parent, id, "coord3D", value, min, max, readOnly, varEvent);
   }
   //init a Coord3D using referenced value
-  Variable initCoord3D(Variable parent, const char * id, Coord3D *value = nullptr, int min = 0, int max = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initCoord3D(Variable parent, const char * id, Coord3D *value = nullptr, int min = 0, int max = UINT16_MAX, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<Coord3D>(parent, id, "coord3D", value, min, max, readOnly, varEvent);
   }
 
   //init a range slider, range between 0 and 255!
-  Variable initSlider(Variable parent, const char * id, uint8_t value = UINT8_MAX, int min = 0, int max = 255, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initSlider(Variable parent, const char * id, uint8_t value = UINT8_MAX, int min = 0, int max = 255, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<uint8_t>(parent, id, "range", value, min, max, readOnly, varEvent);
   }
   //init a range slider using referenced value
-  Variable initSlider(Variable parent, const char * id, uint8_t * value = nullptr, int min = 0, int max = 255, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initSlider(Variable parent, const char * id, uint8_t * value = nullptr, int min = 0, int max = 255, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<uint8_t>(parent, id, "range", value, min, max, readOnly, varEvent);
   }
 
-  Variable initCanvas(Variable parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initCanvas(Variable parent, const char * id, int value = UINT16_MAX, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<int>(parent, id, "canvas", value, 0, 0, readOnly, varEvent);
   }
 
   //supports 3 state value: if UINT8_MAX it is indeterminated
-  Variable initCheckBox(Variable parent, const char * id, bool3State value = UINT8_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initCheckBox(Variable parent, const char * id, bool3State value = UINT8_MAX, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<bool3State>(parent, id, "checkbox", value, 0, 0, readOnly, varEvent);
   }
   //init a checkbox using referenced value
-  Variable initCheckBox(Variable parent, const char * id, bool3State *value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initCheckBox(Variable parent, const char * id, bool3State *value = nullptr, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<bool3State>(parent, id, "checkbox", value, 0, 0, readOnly, varEvent);
   }
 
   //a button never gets a value
-  Variable initButton(Variable parent, const char * id, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initButton(Variable parent, const char * id, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<bool>(parent, id, "button", false, 0, 0, readOnly, varEvent);
   }
-  // Variable initButton2(Variable parent, const char * id, bool readOnly = false, VarEvent varEvent = nullptr) {
+  // Variable initButton2(Variable parent, const char * id, bool readOnly = false, const VarEvent &varEvent = nullptr) {
   //   // return initVarAndValue<bool>(parent, id, "button", false, 0, 0, readOnly, varEvent);
   //   return JsonObject();
   // }
 
   //int value ?
-  Variable initSelect(Variable parent, const char * id, uint8_t value = UINT8_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initSelect(Variable parent, const char * id, uint8_t value = UINT8_MAX, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<uint8_t>(parent, id, "select", value, 0, 0, readOnly, varEvent);
   }
   //init a select using referenced value
-  Variable initSelect(Variable parent, const char * id, uint8_t * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initSelect(Variable parent, const char * id, uint8_t * value = nullptr, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<uint8_t>(parent, id, "select", value, 0, 0, readOnly, varEvent);
   }
 
-  Variable initIP(Variable parent, const char * id, int value = UINT16_MAX, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initIP(Variable parent, const char * id, int value = UINT16_MAX, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<int>(parent, id, "ip", value, 0, 255, readOnly, varEvent);
   }
 
-  Variable initTextArea(Variable parent, const char * id, const char * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initTextArea(Variable parent, const char * id, const char * value = nullptr, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "textarea", value, 0, 0, readOnly, varEvent);
   }
 
-  Variable initFileEdit(Variable parent, const char * id, const char * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initFileEdit(Variable parent, const char * id, const char * value = nullptr, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "fileEdit", value, 0, 0, readOnly, varEvent);
   }
 
   //vector of fileEdit
-  Variable initFileEditVector(Variable parent, const char * id, std::vector<VectorString> *values, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initFileEditVector(Variable parent, const char * id, std::vector<VectorString> *values, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValueVector(parent, id, "fileEdit", values, 0, 0, readOnly, varEvent);
   }
 
-  Variable initURL(Variable parent, const char * id, const char * value = nullptr, bool readOnly = false, VarEvent varEvent = nullptr) {
+  Variable initURL(Variable parent, const char * id, const char * value = nullptr, bool readOnly = false, const VarEvent &varEvent = nullptr) {
     return initVarAndValue<const char *>(parent, id, "url", value, 0, 0, readOnly, varEvent);
   }
 
   //initVarAndValue using basic value
   template <typename Type>
-  Variable initVarAndValue(Variable parent, const char * id, const char * type, Type value, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
+  Variable initVarAndValue(Variable parent, const char * id, const char * type, Type value, int min = 0, int max = 255, bool readOnly = true, const VarEvent &varEvent = nullptr) {
     Variable variable = mdl->initVar(parent, id, type, readOnly, varEvent);
 
     if (variable.initValue(min, max, 0)) { //no pointer
@@ -181,7 +181,7 @@ public:
 
   //initVarAndValue using referenced value
   template <typename Type>
-  Variable initVarAndValue(Variable parent, const char * id, const char * type, Type * value, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
+  Variable initVarAndValue(Variable parent, const char * id, const char * type, Type * value, int min = 0, int max = 255, bool readOnly = true, const VarEvent &varEvent = nullptr) {
     Variable variable = mdl->initVar(parent, id, type, readOnly, varEvent);
 
     if (variable.initValue(min, max, int(value))) {
@@ -193,7 +193,7 @@ public:
 
   //initVarAndValue using vector of values
   template <typename Type>
-  Variable initVarAndValue(Variable parent, const char * id, const char * type, std::vector<Type> *values, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
+  Variable initVarAndValue(Variable parent, const char * id, const char * type, std::vector<Type> *values, int min = 0, int max = 255, bool readOnly = true, const VarEvent &varEvent = nullptr) {
     Variable variable = mdl->initVar(parent, id, type, readOnly, varEvent);
 
     if (!variable.var["value"].isNull()) {
@@ -213,7 +213,7 @@ public:
   }
 
   //initVarAndValue using vector of values .  WIP!!!
-  Variable initVarAndValueVector(Variable parent, const char * id, const char * type, std::vector<VectorString> *values, int min = 0, int max = 255, bool readOnly = true, VarEvent varEvent = nullptr) {
+  Variable initVarAndValueVector(Variable parent, const char * id, const char * type, std::vector<VectorString> *values, int min = 0, int max = 255, bool readOnly = true, const VarEvent &varEvent = nullptr) {
     Variable variable = mdl->initVar(parent, id, type, readOnly, varEvent);
 
     if (!variable.var["value"].isNull()) {

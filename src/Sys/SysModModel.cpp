@@ -630,7 +630,7 @@ void SysModModel::cleanUpModel(Variable parent, bool oPos, bool ro) {
   }
 }
 
-Variable SysModModel::initVar(Variable parent, const char * id, const char * type, bool readOnly, VarEvent varEvent) {
+Variable SysModModel::initVar(Variable parent, const char * id, const char * type, bool readOnly, const VarEvent &varEvent) {
   const char * parentId = parent.var["id"];
   if (!parentId) parentId = "m"; //m=module
   JsonObject var = mdl->findVar(parentId, id);

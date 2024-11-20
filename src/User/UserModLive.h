@@ -37,11 +37,11 @@ public:
   //testing class functions instead of static
   void showM();
 
-  void loop();
+  void loop() override;
 
-  void loop20ms();
+  void loop20ms() override;
 
-  void loop1s();
+  void loop1s() override;
 
   //return the id of the executable
   uint8_t compile(const char *fileName, const char *post = nullptr);
