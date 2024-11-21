@@ -552,7 +552,11 @@
         for (int i=0; i< STARLIGHT_MAXLEDS; i++) ledsP[i] = CRGB::Black; //avoid very bright pixels during reboot (WIP)
         int pins[NBIS2SERIALPINS] = { STARLIGHT_ICVLD_PINS };
         
-        driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN, clock_1000KHZ);
+        #if CONFIG_IDF_TARGET_ESP32S3
+          driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN, clock_1000KHZ);
+        #else
+          driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN);
+        #endif
         // driver.enableShowPixelsOnCore(1);
         #if STARLIGHT_LIVE_MAPPING
           driver.setMapLed(&mapLed);
