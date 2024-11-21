@@ -52,9 +52,8 @@
   #endif
 
   #define TAG "StarLight" // for S3 (todo also for non s3...)
-  #define OVERCLOCK_1MHZ // for S3 (OVERCLOCK_1_1MHZ)
-  #include "I2SClocklessVirtualLedDriver.h"
 
+  #include "I2SClocklessVirtualLedDriver.h"
 
   //StarLight specific
   #ifndef STARLIGHT_ICVLD_PINS

@@ -552,7 +552,7 @@
         for (int i=0; i< STARLIGHT_MAXLEDS; i++) ledsP[i] = CRGB::Black; //avoid very bright pixels during reboot (WIP)
         int pins[NBIS2SERIALPINS] = { STARLIGHT_ICVLD_PINS };
         
-        driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN);
+        driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN, clock_1000KHZ);
         // driver.enableShowPixelsOnCore(1);
         #if STARLIGHT_LIVE_MAPPING
           driver.setMapLed(&mapLed);
