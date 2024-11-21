@@ -3,6 +3,8 @@
 define horizontalPanels 5
 define verticalPanels 3
 
+int pins[6]; //for virtual driver, max 6 pins supported atm
+
 //STARLIGHT_LIVE_MAPPING
 void mapLed(uint16_t pos) {
   int panelnumber = pos / 256;
@@ -27,7 +29,11 @@ void mapLed(uint16_t pos) {
 }
 
 void main() {
+  //pins = [9,10,12,8,18,17];
+  pins[0] = 9; pins[1] = 10; pins[2] = 12; pins[3] = 8; pins[4] = 18; pins[5] = 17;
+
   for (int panelY = 0; panelY < verticalPanels; panelY++) {
+
     for (int panelX = horizontalPanels-1; panelX >=0; panelX--) {
 
       for (int x=0; x<16;x++) {
@@ -38,5 +44,12 @@ void main() {
       }
 
     }
+
+    addPin(pins[panelY]);
+
   }
+  //temporary as nr of pins is fixed to 6:
+  addPin(pins[3]);
+  addPin(pins[4]);
+  addPin(pins[5]);
 }

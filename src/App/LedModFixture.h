@@ -132,7 +132,7 @@ public:
   uint16_t realFps = 200;
   bool3State showTicker = true;
   char tickerTape[20] = "";
-  bool3State driverShow = true;
+  bool3State driverShow = false;
 
   //temporary here  
   uint16_t indexP = 0;
@@ -150,6 +150,7 @@ public:
   void addPixel(Coord3D pixel);
   void addPin(uint8_t pin);
   void addPixelsPost();
+  void fastLEDAddPin(uint8_t pinNr, uint16_t startLed, uint16_t nrOfLeds);
 
   #ifdef STARBASE_USERMOD_LIVE
     uint8_t liveFixtureID = UINT8_MAX;
