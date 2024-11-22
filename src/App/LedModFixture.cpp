@@ -767,14 +767,14 @@ void LedModFixture::addPixelsPost() {
 
 #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
   void LedModFixture::driverInit(const std::vector<SortedPin> &sortedPins) {
-    int pinAssignment[16]; //max 16 pins
+    int pins[16]; //max 16 pins
     int lengths[16];
     int nb_pins=0;
 
     for (const SortedPin &sortedPin : sortedPins) {
       ppf("sortpins s:%d #:%d p:%d\n", sortedPin.startLed, sortedPin.nrOfLeds, sortedPin.pin);
       if (nb_pins < NUMSTRIPS) {
-        pinAssignment[nb_pins] = sortedPin.pin;
+        pins[nb_pins] = sortedPin.pin;
         lengths[nb_pins] = sortedPin.nrOfLeds;
         nb_pins++;
       }
@@ -783,21 +783,21 @@ void LedModFixture::addPixelsPost() {
     //fill the rest of the pins with the pins already used
     //prefrably NUMSTRIPS is a variable...
     for (uint8_t i = nb_pins; i < NUMSTRIPS; i++) {
-      pinAssignment[i] = pinAssignment[i%nb_pins];
+      pins[i] = pins[i%nb_pins];
       lengths[i] = 0;
     }
     ppf("pins[");
     for (int i=0; i<NUMSTRIPS; i++) {
-      ppf(", %d", pinAssignment[i]);
+      ppf(", %d", pins[i]);
     }
     ppf("]\n");
 
     if (nb_pins > 0) {
       #if CONFIG_IDF_TARGET_ESP32S3 | CONFIG_IDF_TARGET_ESP32S2
-        driver.initled((uint8_t*) ledsP, pinAssignment, nb_pins, lengths[0]); //s3 doesn't support lengths so we pick the first
+        driver.initled((uint8_t*) ledsP, pins, nb_pins, lengths[0]); //s3 doesn't support lengths so we pick the first
         //void initled( uint8_t * leds, int * pins, int numstrip, int NUM_LED_PER_STRIP)
       #else
-        driver.initled((uint8_t*) ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
+        driver.initled((uint8_t*) ledsP, pins, lengths, nb_pins, ORDER_GRB);
         #if STARLIGHT_LIVE_MAPPING
           driver.setMapLed(&mapLed);
         #endif
@@ -820,14 +820,14 @@ void LedModFixture::addPixelsPost() {
   }
 #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
   void LedModFixture::driverInit(const std::vector<SortedPin> &sortedPins) {
-    int pinAssignment[NBIS2SERIALPINS]; //each pin going to shift register
+    int pins[NBIS2SERIALPINS]; //each pin going to shift register
     int lengths[NBIS2SERIALPINS]; //only for STARLIGHT_CLOCKLESS_LED_DRIVER
     int nb_pins=0;
 
     for (const SortedPin &sortedPin : sortedPins) {
       ppf("sortpins s:%d #:%d p:%d\n", sortedPin.startLed, sortedPin.nrOfLeds, sortedPin.pin);
       if (nb_pins < NBIS2SERIALPINS) {
-        pinAssignment[nb_pins] = sortedPin.pin;
+        pins[nb_pins] = sortedPin.pin;
         lengths[nb_pins] = sortedPin.nrOfLeds;
         nb_pins++;
       }
@@ -836,12 +836,12 @@ void LedModFixture::addPixelsPost() {
     //fill the rest of the pins with the pins already used
     //prefrably NBIS2SERIALPINS is a variable...
     for (uint8_t i = nb_pins; i < NBIS2SERIALPINS; i++) {
-      pinAssignment[i] = pinAssignment[i%nb_pins];
+      pins[i] = pins[i%nb_pins];
       lengths[i] = 0;
     }
     ppf("pins[");
     for (int i=0; i<NBIS2SERIALPINS; i++) {
-      ppf(", %d", pinAssignment[i]);
+      ppf(", %d", pins[i]);
     }
     ppf("]\n");
 
