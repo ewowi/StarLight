@@ -1226,7 +1226,7 @@
         "fun": 9
       },
       {
-        "id": "driverShow",
+        "id": "showDriver",
         "type": "checkbox",
         "ro": false,
         "value": false,

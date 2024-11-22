@@ -19,15 +19,13 @@
 
 #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
   #define NUMSTRIPS 16 //can this be changed e.g. when we have 20 pins?
-  #define NBIS2SERIALPINS NUMSTRIPS //for compatability reasons with virtual driver
   #define NUM_LEDS_PER_STRIP 256 //could this be removed from driver lib as makes not so much sense
   #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
     #include "I2SClockLessLedDriveresp32s3.h"
   #else
     #include "I2SClocklessLedDriver.h"
   #endif
-#endif
-#if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+#elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
   //used in I2SClocklessVirtualLedDriver.h,
   //see https://github.com/ewowi/I2SClocklessVirtualLedDriver read me
   #define NUM_LEDS_PER_STRIP 256 // for I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY ...
@@ -65,7 +63,15 @@
   #ifndef STARLIGHT_ICVLD_LATCH_PIN
     #define STARLIGHT_ICVLD_LATCH_PIN 27
   #endif
+#elif STARLIGHT_HUB75_DRIVER
+  #include "WhateverHubDriver.h"
 #endif
+
+struct SortedPin {
+  uint16_t startLed;
+  uint16_t nrOfLeds;
+  uint8_t pin;
+};
 
 class LedModFixture: public SysModule {
 
@@ -92,6 +98,7 @@ public:
     ppf("Fixture constructor ptb:%d", pixelsToBlend.size());
 
     #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+      //'hack' to make sure show is not called before init
       #if !(CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2)
         driver.total_leds = 0;
       #endif
@@ -134,7 +141,7 @@ public:
   uint16_t realFps = 200;
   bool3State showTicker = false;
   char tickerTape[20] = "";
-  bool3State driverShow = true;
+  bool3State showDriver = true;
 
   //temporary here  
   uint16_t indexP = 0;
@@ -152,7 +159,8 @@ public:
   void addPixel(Coord3D pixel);
   void addPin(uint8_t pin);
   void addPixelsPost();
-  void fastLEDAddPin(uint8_t pinNr, uint16_t startLed, uint16_t nrOfLeds);
+  void driverInit(const std::vector<SortedPin> &sortedPins);
+  void driverShow();
 
   #ifdef STARBASE_USERMOD_LIVE
     uint8_t liveFixtureID = UINT8_MAX;
@@ -165,10 +173,11 @@ public:
       I2SClocklessLedDriver driver;
     #endif
     uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
-  #endif
-  #if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+  #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
     I2SClocklessVirtualLedDriver driver;
     uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
+  #elif STARLIGHT_HUB75_DRIVER
+    WhateverHubDriver driver;
   #endif
 };
 
