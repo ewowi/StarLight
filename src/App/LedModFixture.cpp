@@ -847,7 +847,11 @@ void LedModFixture::addPixelsPost() {
 
     for (int i=0; i< STARLIGHT_MAXLEDS; i++) ledsP[i] = CRGB::Black; //avoid very bright pixels during reboot (WIP)
     
-    driver.initled(ledsP, pinAssignment, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN, clock_1111KHZ);
+    #if CONFIG_IDF_TARGET_ESP32S3
+      driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN, clock_1000KHZ);
+    #else
+      driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN);
+    #endif
     // driver.enableShowPixelsOnCore(1);
     #if STARLIGHT_LIVE_MAPPING
       driver.setMapLed(&mapLed);
