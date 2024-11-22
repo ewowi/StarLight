@@ -381,11 +381,7 @@ static float _time(float j) {
 
   uint8_t UserModLive::compile(const char * fileName, const char * post) {
     ppf("live compile n:%s o:%s \n", fileName, this->fileName);
-    //if(this->fileName!=NULL)
-    killAndDelete(); //doesn't this kill running scripts, e.g. when changing a Live Fixture, a running Live Effect will be killed !
-    killAndDelete(fileName); //kill any old script
-    
-    //this->fileName=(char *)_fileName;
+
     File f = files->open(fileName, "r");
     if (!f)
     {

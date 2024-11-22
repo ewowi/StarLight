@@ -497,8 +497,23 @@
         }
       }//Live Fixture
     } //if fileName
-    else
-      ppf("mapInitAlloc: Filename for fixture %d not found\n", fixtureNr);
+    else {
+      ppf("mapInitAlloc: Filename for fixture %d not found show default 16x16 panel\n", fixtureNr);
+
+      //first count then setup
+      for (pass = 1; pass <=2; pass++)
+      {
+        addPixelsPre();
+
+        for (uint16_t y = 0; y < 16; y++) {
+          for (uint16_t x = 0; x < 16; x++) {
+            addPixel({x,y,0});
+          }
+        }
+
+        addPixelsPost();
+      }
+    }
 
     //reinit the effect after an effect change causing a mapping change
     uint8_t rowNr = 0;

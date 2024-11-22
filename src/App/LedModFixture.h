@@ -132,9 +132,9 @@ public:
 
   uint16_t fps = 200;
   uint16_t realFps = 200;
-  bool3State showTicker = true;
+  bool3State showTicker = false;
   char tickerTape[20] = "";
-  bool3State driverShow = false;
+  bool3State driverShow = true;
 
   //temporary here  
   uint16_t indexP = 0;
