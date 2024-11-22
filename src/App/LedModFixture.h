@@ -18,6 +18,9 @@
 #include "FastLED.h"
 
 #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+  #define NUMSTRIPS 16 //can this be changed e.g. when we have 20 pins?
+  #define NBIS2SERIALPINS NUMSTRIPS //for compatability reasons with virtual driver
+  #define NUM_LEDS_PER_STRIP 256 //could this be removed from driver lib as makes not so much sense
   #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
     #include "I2SClockLessLedDriveresp32s3.h"
   #else
@@ -54,11 +57,6 @@
   #define TAG "StarLight" // for S3 (todo also for non s3...)
 
   #include "I2SClocklessVirtualLedDriver.h"
-
-  //StarLight specific
-  #ifndef STARLIGHT_ICVLD_PINS
-    #define STARLIGHT_ICVLD_PINS 14,12,13,25,33,32 // must be 6, see initLed
-  #endif
 
   #ifndef STARLIGHT_ICVLD_CLOCK_PIN
     #define STARLIGHT_ICVLD_CLOCK_PIN 26
@@ -114,6 +112,10 @@ public:
   uint8_t viewRotation = 0;
   uint8_t bri = 10;
   uint8_t bytesPerPixel = 2;
+
+  uint8_t gammaRed = 255;
+  uint8_t gammaGreen = 176;
+  uint8_t gammaBlue = 240;
 
   uint8_t fixtureNr = UINT8_MAX;
 
