@@ -277,6 +277,27 @@
       default: return false;
     }});
 
+    #if STARLIGHT_CLOCKLESS_LED_DRIVER | STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+      ui->initSlider(parentVar, "gammaRed", &gammaRed, 0, 255, false, [this](EventArguments) { switch (eventType) {
+        case onChange:
+          driver.setGamma(gammaRed/255.0, gammaGreen/255.0, gammaBlue/255.0);
+          return true;
+        default: return false;
+      }});
+      ui->initSlider(parentVar, "gammaGreen", &gammaGreen, 0, 255, false, [this](EventArguments) { switch (eventType) {
+        case onChange:
+          driver.setGamma(gammaRed/255.0, gammaGreen/255.0, gammaBlue/255.0);
+          return true;
+        default: return false;
+      }});
+      ui->initSlider(parentVar, "gammaBlue", &gammaBlue, 0, 255, false, [this](EventArguments) { switch (eventType) {
+        case onChange:
+          driver.setGamma(gammaRed/255.0, gammaGreen/255.0, gammaBlue/255.0);
+          return true;
+        default: return false;
+      }});
+    #endif
+
     ui->initNumber(parentVar, "fps", &fps, 1, 999, false, [](EventArguments) { switch (eventType) {
       case onUI:
         variable.setComment("Frames per second");
@@ -465,7 +486,6 @@
 
               addPixel(pixel);
             } //if 1D-3D pixel
-
             else { // end of leds array
               addPin(currPin);
             }
@@ -495,75 +515,119 @@
     //connect allocated Pins to gpio
 
     if (doAllocPins) {
-      unsigned pinNr = 0;
 
-      #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+      #if STARLIGHT_CLOCKLESS_LED_DRIVER
         int pinAssignment[16]; //max 16 pins
-        int lengths[16]; //max 16 pins
+        int lengths[16];
         int nb_pins=0;
       #endif
-      #if !defined(STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER)
+      #if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+        int pinAssignment[NBIS2SERIALPINS]; //each pin going to shift register
+        int lengths[NBIS2SERIALPINS]; //only for STARLIGHT_CLOCKLESS_LED_DRIVER
+        int nb_pins=0;
+      #endif
+
+      struct SortedPin {
+        uint16_t startLed;
+        uint16_t nrOfLeds;
+        uint8_t pin;
+      };
+
+      std::vector<SortedPin> sortedPins;
+      unsigned pinNr = 0;
+
       for (PinObject &pinObject: pinsM->pinObjects) {
+        // ppf("addLeds new v2 pin: %d\n", pinNr);
 
         if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in addPin)
           //dirty trick to decode nrOfLedsPerPin
           char details[32];
           strlcpy(details, pinObject.details, sizeof(details)); //copy as strtok messes with the string
           char * after = strtok((char *)details, "-");
-          if (after != NULL ) {
-            char * before;
-            before = after;
-            after = strtok(NULL, " ");
+          if (after != nullptr ) {
+            char *before = after;
+            after = strtok(nullptr, "-");
 
-            uint16_t startLed = atoi(before);
-            uint16_t nrOfLeds = atoi(after) - atoi(before) + 1;
-            ppf("addLeds new %d: %d-%d\n", pinNr, startLed, nrOfLeds-1);
+            SortedPin sortedPin{};
+            sortedPin.startLed = atoi(before);
+            sortedPin.nrOfLeds = atoi(after) - atoi(before) + 1;
+            sortedPin.pin = pinNr;
+            sortedPins.push_back(sortedPin);
 
-            #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-              pinAssignment[nb_pins] = pinNr;
-              lengths[nb_pins] = nrOfLeds;
-              nb_pins++;
-            #else
-              fastLEDAddPin(pinNr, startLed, nrOfLeds);
-            #endif //STARLIGHT_CLOCKLESS_LED_DRIVER
-          } //if led range in details (- in details e.g. 0-1023)
-        } //if pin owned by leds
-        pinNr++;
-      } // for pins
-      #endif //not virtual driver
-      #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-        if (nb_pins > 0) {
-          #if CONFIG_IDF_TARGET_ESP32S3 | CONFIG_IDF_TARGET_ESP32S2
-            driver.initled((uint8_t*) ledsP, pinAssignment, nb_pins, lengths[0]); //s3 doesn't support lengths so we pick the first
-            //void initled( uint8_t * leds, int * pins, int numstrip, int NUM_LED_PER_STRIP)
-          #else
-            driver.initled((uint8_t*) ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
-            #if STARLIGHT_LIVE_MAPPING
-              driver.setMapLed(&mapLed);
-            #endif
-            driver.setGamma(255.0/255.0, 176.0/255.0, 240.0/255.0);
-            //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
-          #endif
-          Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
-          // driver.setBrightness(setMaxPowerBrightnessFactor / 256); //not brighter then the set limit (WIP)
+            ppf("addLeds new v2 %d: %d-%d\n", pinNr, sortedPin.startLed, sortedPin.nrOfLeds-1);
+          }
         }
-      #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+        pinNr++;
+      }
 
-        for (int i=0; i< STARLIGHT_MAXLEDS; i++) ledsP[i] = CRGB::Black; //avoid very bright pixels during reboot (WIP)
-        int pins[NBIS2SERIALPINS] = { STARLIGHT_ICVLD_PINS };
-        
-        driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN);
-        // driver.enableShowPixelsOnCore(1);
-        #if STARLIGHT_LIVE_MAPPING
-          driver.setMapLed(&mapLed);
+      // if pins defined
+      if (sortedPins.size()) {
+
+        //sort the vector by the starLed
+        std::sort(sortedPins.begin(), sortedPins.end(), [](const SortedPin &a, const SortedPin &b) {return a.startLed < b.startLed;});
+
+        #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+          for (const SortedPin &sortedPin : sortedPins) {
+            ppf("sortpins s:%d #:%d p:%d\n", sortedPin.startLed, sortedPin.nrOfLeds, sortedPin.pin);
+            if (nb_pins < NBIS2SERIALPINS) {
+              pinAssignment[nb_pins] = sortedPin.pin;
+              lengths[nb_pins] = sortedPin.nrOfLeds;
+              nb_pins++;
+            }
+          }
+
+          //fill the rest of the pins with the pins already used
+          //prefrably NBIS2SERIALPINS is a variable...
+          for (uint8_t i = nb_pins; i < NBIS2SERIALPINS; i++) {
+            pinAssignment[i] = pinAssignment[i%nb_pins];
+            lengths[i] = 0;
+          }
+          ppf("pins[");
+          for (int i=0; i<NBIS2SERIALPINS; i++) {
+            ppf(", %d", pinAssignment[i]);
+          }
+          ppf("]\n");
         #endif
-        driver.setGamma(255.0/255.0, 176.0/255.0, 240.0/255.0);
 
-        // if (driver.driverInit) driver.showPixels(WAIT);  //avoid very bright pixels during reboot (WIP)
-        driver.setBrightness(10); //avoid very bright pixels during reboot (WIP)
+        #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+          if (nb_pins > 0) {
+            #if CONFIG_IDF_TARGET_ESP32S3 | CONFIG_IDF_TARGET_ESP32S2
+              driver.initled((uint8_t*) ledsP, pinAssignment, nb_pins, lengths[0]); //s3 doesn't support lengths so we pick the first
+              //void initled( uint8_t * leds, int * pins, int numstrip, int NUM_LED_PER_STRIP)
+            #else
+              driver.initled((uint8_t*) ledsP, pinAssignment, lengths, nb_pins, ORDER_GRB);
+              #if STARLIGHT_LIVE_MAPPING
+                driver.setMapLed(&mapLed);
+              #endif
+              driver.setGamma(gammaRed/255.0, gammaGreen/255.0, gammaBlue/255.0);
+              //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
+            #endif
+            Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+            // driver.setBrightness(setMaxPowerBrightnessFactor / 256); //not brighter then the set limit (WIP)
+          }
+        #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
 
-        Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
-      #endif
+          for (int i=0; i< STARLIGHT_MAXLEDS; i++) ledsP[i] = CRGB::Black; //avoid very bright pixels during reboot (WIP)
+          
+          driver.initled(ledsP, pinAssignment, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN);
+          // driver.enableShowPixelsOnCore(1);
+          #if STARLIGHT_LIVE_MAPPING
+            driver.setMapLed(&mapLed);
+          #endif
+          driver.setGamma(gammaRed/255.0, gammaGreen/255.0, gammaBlue/255.0);
+
+          // if (driver.driverInit) driver.showPixels(WAIT);  //avoid very bright pixels during reboot (WIP)
+          driver.setBrightness(10); //avoid very bright pixels during reboot (WIP)
+
+          Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+        #else
+          for (const SortedPin &sortedPin : sortedPins) {
+            ppf("sortpins s:%d #:%d p:%d\n", sortedPin.startLed, sortedPin.nrOfLeds, sortedPin.pin);
+            fastLEDAddPin(sortedPin.pin, sortedPin.startLed, sortedPin.nrOfLeds);
+          }
+        #endif
+
+      } //pins defined
 
       doAllocPins = false;
     } //doAllocPins
