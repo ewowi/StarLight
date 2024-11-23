@@ -40,64 +40,52 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
     //1D Basis
     effects.push_back(new SolidEffect);
-    // 1D FastLed
+
+    effects.push_back(new BlackHoleEffect);
+    effects.push_back(new BouncingBallsEffect);
     effects.push_back(new BPMEffect);
     effects.push_back(new ConfettiEffect);
-    effects.push_back(new JuggleEffect);
-    effects.push_back(new RainbowWithGlitterEffect);
-    effects.push_back(new SinelonEffect);
-    //1D StarLight
-    effects.push_back(new RingRandomFlowEffect);
-    effects.push_back(new RunningEffect);
-    // 1D WLED
-    effects.push_back(new BouncingBallsEffect);
+    effects.push_back(new DistortionWavesEffect);
+    effects.push_back(new DNAEffect);
     effects.push_back(new DripEffect);
     effects.push_back(new FlowEffect);
-    effects.push_back(new HeartBeatEffect);
-    effects.push_back(new PopCornEffect); //contains wledaudio: useaudio, conditional compile
-    effects.push_back(new RainEffect);
-    effects.push_back(new RainbowEffect);
-
-    #ifdef STARLIGHT_USERMOD_AUDIOSYNC
-      //1D Volume
-      effects.push_back(new FreqMatrixEffect);
-      effects.push_back(new NoiseMeterEffect);
-      //1D frequency
-      effects.push_back(new AudioRingsEffect);
-      effects.push_back(new DJLightEffect);
-    #endif
-
-    //2D StarLight
-    effects.push_back(new GameOfLifeEffect); //2D & 3D
-    effects.push_back(new LinesEffect);
-    effects.push_back(new ParticleTestEffect); //2D & 3D
-    effects.push_back(new StarFieldEffect);
-    effects.push_back(new PraxisEffect);
-    
-    //2D WLED
-    effects.push_back(new BlackHoleEffect);
-    effects.push_back(new DNAEffect);
-    effects.push_back(new DistortionWavesEffect);
     effects.push_back(new FrizzlesEffect);
+    effects.push_back(new GameOfLifeEffect); //2D & 3D
+    effects.push_back(new HeartBeatEffect);
+    effects.push_back(new JuggleEffect);
+    effects.push_back(new LinesEffect);
     effects.push_back(new LissajousEffect);
+    effects.push_back(new MarioTestEffect);
     effects.push_back(new Noise2DEffect);
     effects.push_back(new OctopusEffect);
+    effects.push_back(new ParticleTestEffect); //2D & 3D
+    effects.push_back(new PopCornEffect); //contains wledaudio: useaudio, conditional compile
+    effects.push_back(new PixelMapEffect);
+    effects.push_back(new PraxisEffect);
+    effects.push_back(new RainEffect);
+    effects.push_back(new RainbowEffect);
+    effects.push_back(new RainbowWithGlitterEffect);
+    effects.push_back(new RingRandomFlowEffect);
+    effects.push_back(new RipplesEffect);
+    effects.push_back(new RubiksCubeEffect);
+    effects.push_back(new RunningEffect);
     effects.push_back(new ScrollingTextEffect);
+    effects.push_back(new SinelonEffect);
+    effects.push_back(new SphereMoveEffect);
+    effects.push_back(new StarFieldEffect);
+
     #ifdef STARLIGHT_USERMOD_AUDIOSYNC
-      //2D WLED
+      effects.push_back(new AudioRingsEffect);
+      effects.push_back(new DJLightEffect);
+      effects.push_back(new FreqMatrixEffect);
       effects.push_back(new FunkyPlankEffect);
       effects.push_back(new GEQEffect);
       effects.push_back(new LaserGEQEffect);
+      effects.push_back(new NoiseMeterEffect);
       effects.push_back(new PaintbrushEffect);
-      effects.push_back(new WaverlyEffect);
       effects.push_back(new VUMeterEffect);
+      effects.push_back(new WaverlyEffect);
     #endif
-    //3D
-    effects.push_back(new RipplesEffect);
-    effects.push_back(new RubiksCubeEffect);
-    effects.push_back(new SphereMoveEffect);
-    effects.push_back(new PixelMapEffect);
-    effects.push_back(new MarioTestEffect);
 
     #ifdef STARBASE_USERMOD_LIVE
       effects.push_back(new LiveEffect);
@@ -127,7 +115,8 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     #endif
     projections.push_back(new CheckerboardProjection);
     projections.push_back(new RotateProjection);
-  };
+    projections.push_back(new RippleYZ);
+  }; //constructor
 
   void LedModEffects::setup() {
     SysModule::setup();
@@ -146,9 +135,9 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         }
         return true;
       case onDelete:
-        // ppf("layers onDelete %s[%d]\n", variable.id(), rowNr);
+        ppf("layers onDelete %s[%d]\n", variable.id(), rowNr);
         //tbd: fade to black
-        if (rowNr <fix->layers.size()) {
+        if (rowNr < fix->layers.size()) {
           LedsLayer *leds = fix->layers[rowNr];
           fix->layers.erase(fix->layers.begin() + rowNr); //remove from vector
           delete leds; //remove leds itself
@@ -262,9 +251,6 @@ inline uint16_t getRGBWsize(uint16_t nleds){
             else
               leds->projection = projections[proValue];
 
-            // leds->addPixelCached = &Projection::addPixel;
-            // leds->XYZCached = &Projection::XYZ;
-
             ppf("initProjection leds[%d] effect:%s a:%d\n", rowNr, leds->effect->name(), leds->projectionData.bytesAllocated);
 
             leds->projectionData.clear(); //delete effectData memory so it can be rebuild
@@ -375,7 +361,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         uint8_t rowNr = 0;
         for (LedsLayer *leds:fix->layers) {
           char message[32];
-          print->fFormat(message, sizeof(message), "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
+          print->fFormat(message, sizeof(message), "%d x %d x %d", leds->size.x, leds->size.y, leds->size.z);
           ppf("onSetValue ledsSize[%d] = %s\n", rowNr, message);
           variable.setValue(JsonString(message, JsonString::Copied), rowNr); //rowNr
           rowNr++;
@@ -452,6 +438,12 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
           mdl->getValueRowNr = rowNr;
           leds->effect->loop(*leds);
+          //using cached virtual class methods! (so no need for if projectionNr optimizations!)
+          if (leds->projection) {
+            leds->projectionData.begin();
+            (leds->projection->*leds->loopCached)(*leds);
+          }
+
           mdl->getValueRowNr = UINT8_MAX;
 
           if (fix->showTicker && rowNr == fix->layers.size() -1) { //last effect, add sysinfo

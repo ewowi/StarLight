@@ -69,8 +69,8 @@ class RainbowEffect: public Effect {
     uint16_t counter = (sys->now * ((speed >> 2) +2)) & 0xFFFF;
     counter = counter >> 8;
 
-    for (uint16_t i = 0; i < leds.nrOfLeds; i++) {
-      uint8_t index = (i * (16 << (scale / 29)) / leds.nrOfLeds) + counter;
+    for (uint16_t i = 0; i < leds.size.x; i++) {
+      uint8_t index = (i * (16 << (scale / 29)) / leds.size.x) + counter;
       // leds.setPixelColor(i, ColorFromPalette(leds.palette, index));
       leds.setPixelColorPal(i, index);
     }
@@ -102,7 +102,7 @@ class RainbowWithGlitterEffect: public Effect {
   void addGlitter(LedsLayer &leds, fract8 chanceOfGlitter) 
   {
     if( random8() < chanceOfGlitter) {
-      leds[ random16(leds.nrOfLeds) ] += CRGB::White;
+      leds[ random16(leds.size.x) ] += CRGB::White;
     }
   }
 };
@@ -130,12 +130,12 @@ class FlowEffect: public Effect {
       counter = counter >> 8;
     }
 
-    uint16_t maxZones = leds.nrOfLeds / 6; //only looks good if each zone has at least 6 LEDs
+    uint16_t maxZones = leds.size.x / 6; //only looks good if each zone has at least 6 LEDs
     uint16_t zones    = (zonesUI * maxZones) >> 8;
     if (zones & 0x01) zones++; //zones must be even
     if (zones < 2)    zones = 2;
-    uint16_t zoneLen = leds.nrOfLeds / zones;
-    uint16_t offset  = (leds.nrOfLeds - zones * zoneLen) >> 1;
+    uint16_t zoneLen = leds.size.x / zones;
+    uint16_t offset  = (leds.size.x - zones * zoneLen) >> 1;
 
     leds.fill_solid(ColorFromPalette(leds.palette, -counter));
 
@@ -166,7 +166,7 @@ class SinelonEffect: public Effect {
 
     leds.fadeToBlackBy(20);
 
-    int pos = beatsin16( bpm, 0, leds.nrOfLeds-1 );
+    int pos = beatsin16( bpm, 0, leds.size.x-1 );
     leds[pos] += CHSV( sys->now/50, 255, 255);
   }
 }; //Sinelon
@@ -181,7 +181,7 @@ class ConfettiEffect: public Effect {
   void loop(LedsLayer &leds) override {
     // random colored speckles that blink in and fade smoothly
     leds.fadeToBlackBy(10);
-    int pos = random16(leds.nrOfLeds);
+    int pos = random16(leds.size.x);
     leds[pos] += CHSV( sys->now/50 + random8(64), 200, 255);
   }
 };
@@ -199,7 +199,7 @@ class BPMEffect: public Effect {
   void loop(LedsLayer &leds) override {
     uint8_t BeatsPerMinute = 62;
     uint8_t beat = beatsin8( BeatsPerMinute, 64, 255);
-    for (uint16_t i = 0; i < leds.nrOfLeds; i++) { //9948
+    for (uint16_t i = 0; i < leds.size.x; i++) { //9948
       leds[i] = ColorFromPalette(leds.palette, sys->now/50+(i*2), beat-sys->now/50+(i*10));
     }
   }
@@ -217,7 +217,7 @@ class JuggleEffect: public Effect {
     leds.fadeToBlackBy(20);
     uint8_t dothue = 0;
     for (unsigned i = 0; i < 8; i++) {
-      leds[beatsin16( i+7, 0, leds.nrOfLeds-1 )] |= CHSV(dothue, 200, 255);
+      leds[beatsin16( i+7, 0, leds.size.x-1 )] |= CHSV(dothue, 200, 255);
       dothue += 32;
     }
   }
@@ -246,10 +246,10 @@ class RunningEffect: public Effect {
     uint8_t fade = leds.effectData.read<uint8_t>();
 
     leds.fadeToBlackBy(fade); //physical leds
-    int pos = map(beat16( bpm), 0, UINT16_MAX, 0, leds.nrOfLeds-1 ); //instead of call%leds.nrOfLeds
-    // int pos2 = map(beat16( bpm, 1000), 0, UINT16_MAX, 0, leds.nrOfLeds-1 ); //one second later
+    int pos = map(beat16( bpm), 0, UINT16_MAX, 0, leds.size.x-1 ); //instead of call%leds.size.x
+    // int pos2 = map(beat16( bpm, 1000), 0, UINT16_MAX, 0, leds.size.x-1 ); //one second later
     leds[pos] = CHSV( sys->now/50, 255, 255); //make sure the right physical leds get their value
-    // leds[leds.nrOfLeds -1 - pos2] = CHSV( sys->now/50, 255, 255); //make sure the right physical leds get their value
+    // leds[leds.size.x -1 - pos2] = CHSV( sys->now/50, 255, 255); //make sure the right physical leds get their value
   }
 };
 
@@ -271,13 +271,13 @@ class RingRandomFlowEffect: public RingEffect {
 
   void loop(LedsLayer &leds) override {
     //binding of loop persistent values (pointers)
-    uint8_t *hue = leds.effectData.readWrite<uint8_t>(leds.nrOfLeds); //array
+    uint8_t *hue = leds.effectData.readWrite<uint8_t>(leds.size.x); //array
 
     hue[0] = random(0, 255);
-    for (int r = 0; r < leds.nrOfLeds; r++) {
+    for (int r = 0; r < leds.size.x; r++) {
       setRing(leds, r, CHSV(hue[r], 255, 255));
     }
-    for (int r = (leds.nrOfLeds - 1); r >= 1; r--) {
+    for (int r = (leds.size.x - 1); r >= 1; r--) {
       hue[r] = hue[(r - 1)]; // set this ruing based on the inner
     }
     // FastLED.delay(SPEED);
@@ -352,12 +352,12 @@ class BouncingBallsEffect: public Effect {
       //   color = SEGCOLOR(i % NUM_COLORS);
       // }
 
-      int pos = roundf(balls[i].height * (leds.nrOfLeds - 1));
+      int pos = roundf(balls[i].height * (leds.size.x - 1));
 
       CRGB color = ColorFromPalette(leds.palette, i*(256/max(numBalls, (uint8_t)8))); //error: no matching function for call to 'max(uint8_t&, int)'
 
       leds[pos] = color;
-      // if (leds.nrOfLeds<32) leds.setPixelColor(indexToVStrip(pos, stripNr), color); // encode virtual strip into index
+      // if (leds.size.x<32) leds.setPixelColor(indexToVStrip(pos, stripNr), color); // encode virtual strip into index
       // else           leds.setPixelColor(balls[i].height + (stripNr+1)*10.0f, color);
     } //balls
   }
@@ -370,8 +370,8 @@ void mode_fireworks(LedsLayer &leds, uint16_t *aux0, uint16_t *aux1, uint8_t spe
   //   *aux0 = UINT16_MAX;
   //   *aux1 = UINT16_MAX;
   // }
-  bool valid1 = (*aux0 < leds.nrOfLeds);
-  bool valid2 = (*aux1 < leds.nrOfLeds);
+  bool valid1 = (*aux0 < leds.size.x);
+  bool valid2 = (*aux1 < leds.size.x);
   CRGB sv1 = 0, sv2 = 0;
   if (valid1) sv1 = leds.getPixelColor(*aux0);
   if (valid2) sv2 = leds.getPixelColor(*aux1);
@@ -408,9 +408,9 @@ void mode_fireworks(LedsLayer &leds, uint16_t *aux0, uint16_t *aux1, uint8_t spe
   if (valid2) leds.setPixelColor(*aux1, sv2);
 
   if (addPixels) {                                                                             // WLEDSR
-    for(uint16_t i=0; i<max(1, leds.nrOfLeds/20); i++) {
+    for(uint16_t i=0; i<max(1, leds.size.x/20); i++) {
       if(random8(my_intensity) == 0) {
-        uint16_t index = random(leds.nrOfLeds);
+        uint16_t index = random(leds.size.x);
         if (soundColor < 0)
           leds.setPixelColor(index, ColorFromPalette(leds.palette, random8()));
         else
@@ -448,7 +448,7 @@ class RainEffect: public Effect {
       // SEGMENT.fill(BLACK);
     // }
     *step += 1000 / 40;// FRAMETIME;
-    if (*step > (5U + (50U*(255U - speed))/leds.nrOfLeds)) { //SPEED_FORMULA_L) {
+    if (*step > (5U + (50U*(255U - speed))/leds.size.x)) { //SPEED_FORMULA_L) {
       *step = 1;
       // if (strip.isMatrix) {
       //   //uint32_t ctemp[leds.size.x];
@@ -461,10 +461,10 @@ class RainEffect: public Effect {
       {
         //shift all leds left
         CRGB ctemp = leds.getPixelColor(0);
-        for (int i = 0; i < leds.nrOfLeds - 1; i++) {
+        for (int i = 0; i < leds.size.x - 1; i++) {
           leds.setPixelColor(i, leds.getPixelColor(i+1));
         }
-        leds.setPixelColor(leds.nrOfLeds -1, ctemp); // wrap around
+        leds.setPixelColor(leds.size.x -1, ctemp); // wrap around
         *aux0++;  // increase spark index
         *aux1++;
       }
@@ -514,12 +514,12 @@ class DripEffect: public Effect {
     leds.fill_solid(CRGB::Black);
 
     float gravity = -0.0005f - (grav/25000.0f); //increased gravity (50000 to 25000)
-    gravity *= max(1, leds.nrOfLeds-1);
+    gravity *= max(1, leds.size.x-1);
     int sourcedrop = 12;
 
     for (int j=0;j<drips;j++) {
       if (drops[j].colIndex == 0) { //init
-        drops[j].pos = leds.nrOfLeds-1;    // start at end
+        drops[j].pos = leds.size.x-1;    // start at end
         drops[j].vel = 0;           // speed
         drops[j].col = sourcedrop;  // brightness
         drops[j].colIndex = 1;      // drop state (0 init, 1 forming, 2 falling, 5 bouncing)
@@ -527,10 +527,10 @@ class DripEffect: public Effect {
       }
       CRGB dropColor = drops[j].velX;
 
-      leds.setPixelColor(invert?0:leds.nrOfLeds-1, blend(CRGB::Black, dropColor, sourcedrop));// water source
+      leds.setPixelColor(invert?0:leds.size.x-1, blend(CRGB::Black, dropColor, sourcedrop));// water source
       if (drops[j].colIndex==1) {
         if (drops[j].col>255) drops[j].col=255;
-        leds.setPixelColor(invert?leds.nrOfLeds-1-drops[j].pos:drops[j].pos, blend(CRGB::Black, dropColor, drops[j].col));
+        leds.setPixelColor(invert?leds.size.x-1-drops[j].pos:drops[j].pos, blend(CRGB::Black, dropColor, drops[j].col));
 
         drops[j].col += swell; // swelling
 
@@ -546,12 +546,12 @@ class DripEffect: public Effect {
           drops[j].vel += gravity;           // gravity is negative
 
           for (int i=1;i<7-drops[j].colIndex;i++) { // some minor math so we don't expand bouncing droplets
-            uint16_t pos = constrain(uint16_t(drops[j].pos) +i, 0, leds.nrOfLeds-1); //this is BAD, returns a pos >= leds.nrOfLeds occasionally
-            leds.setPixelColor(invert?leds.nrOfLeds-1-pos:pos, blend(CRGB::Black, dropColor, drops[j].col/i)); //spread pixel with fade while falling
+            uint16_t pos = constrain(uint16_t(drops[j].pos) +i, 0, leds.size.x-1); //this is BAD, returns a pos >= leds.size.x occasionally
+            leds.setPixelColor(invert?leds.size.x-1-pos:pos, blend(CRGB::Black, dropColor, drops[j].col/i)); //spread pixel with fade while falling
           }
 
           if (drops[j].colIndex > 2) {       // during bounce, some water is on the floor
-            leds.setPixelColor(invert?leds.nrOfLeds-1:0, blend(dropColor, CRGB::Black, drops[j].col));
+            leds.setPixelColor(invert?leds.size.x-1:0, blend(dropColor, CRGB::Black, drops[j].col));
           }
         } else {                             // we hit bottom
           if (drops[j].colIndex > 2) {       // already hit once, so back to forming
@@ -612,8 +612,8 @@ class HeartBeatEffect: public Effect {
       *step = sys->now;
     }
 
-    for (int i = 0; i < leds.nrOfLeds; i++) {
-      leds.setPixelColor(i, ColorFromPalette(leds.palette, map(i, 0, leds.nrOfLeds, 0, 255), 255 - (*bri_lower >> 8)));
+    for (int i = 0; i < leds.size.x; i++) {
+      leds.setPixelColor(i, ColorFromPalette(leds.palette, map(i, 0, leds.size.x, 0, 255), 255 - (*bri_lower >> 8)));
     }
   }
 }; // HeartBeatEffect
@@ -672,7 +672,7 @@ class FreqMatrixEffect: public Effect {
 
       // shift the pixels one pixel up
       leds.setPixelColor(0, color);
-      for (int i = leds.nrOfLeds - 1; i > 0; i--) leds.setPixelColor(i, leds.getPixelColor(i-1));
+      for (int i = leds.size.x - 1; i > 0; i--) leds.setPixelColor(i, leds.getPixelColor(i-1));
     }
   }
 
@@ -709,7 +709,7 @@ class PopCornEffect: public Effect {
     leds.fill_solid(CRGB::Black);
 
     float gravity = -0.0001f - (speed/200000.0f); // m/s/s
-    gravity *= leds.nrOfLeds;
+    gravity *= leds.size.x;
 
     if (numPopcorn == 0) numPopcorn = 1;
 
@@ -735,7 +735,7 @@ class PopCornEffect: public Effect {
           popcorn[i].pos = 0.01f;
 
           uint16_t peakHeight = 128 + random8(128); //0-255
-          peakHeight = (peakHeight * (leds.nrOfLeds -1)) >> 8;
+          peakHeight = (peakHeight * (leds.size.x -1)) >> 8;
           popcorn[i].vel = sqrtf(-2.0f * gravity * peakHeight);
 
           // if (SEGMENT.palette)
@@ -753,7 +753,7 @@ class PopCornEffect: public Effect {
         // if (!SEGMENT.palette && popcorn[i].colIndex < NUM_COLORS) col = SEGCOLOR(popcorn[i].colIndex);
         uint16_t ledIndex = popcorn[i].pos;
         CRGB col = ColorFromPalette(leds.palette, popcorn[i].colIndex*(256/maxNumPopcorn));
-        if (ledIndex < leds.nrOfLeds) leds.setPixelColor(ledIndex, col);
+        if (ledIndex < leds.size.x) leds.setPixelColor(ledIndex, col);
       }
     }
   }
@@ -782,9 +782,9 @@ class NoiseMeterEffect: public Effect {
     leds.fadeToBlackBy(fadeRate);
 
     float tmpSound2 = audioSync->sync.volumeRaw * 2.0 * (float)width / 255.0;
-    int maxLen = map(tmpSound2, 0, 255, 0, leds.nrOfLeds); // map to pixels availeable in current segment              // Still a bit too sensitive.
+    int maxLen = map(tmpSound2, 0, 255, 0, leds.size.x); // map to pixels availeable in current segment              // Still a bit too sensitive.
     // if (maxLen <0) maxLen = 0;
-    // if (maxLen >leds.nrOfLeds) maxLen = leds.nrOfLeds;
+    // if (maxLen >leds.size.x) maxLen = leds.size.x;
 
     for (int i=0; i<maxLen; i++) {                                    // The louder the sound, the wider the soundbar. By Andrew Tuline.
       uint8_t index = inoise8(i * audioSync->sync.volumeSmth + (*aux0), (*aux1) + i * audioSync->sync.volumeSmth);  // Get a value from the noise function. I'm using both x and y axis.
@@ -866,7 +866,7 @@ class DJLightEffect: public Effect {
     //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
     uint8_t *aux0 = leds.effectData.readWrite<uint8_t>();
 
-    const int mid = leds.nrOfLeds / 2;
+    const int mid = leds.size.x / 2;
 
     uint8_t *fftResult = audioSync->fftResults;
     float volumeSmth   = audioSync->volumeSmth;
@@ -911,7 +911,7 @@ class DJLightEffect: public Effect {
       if (candyFactory) fadeVal = constrain(fadeVal, 0, 176);  // "candy factory" mode - avoid complete fade-out
       leds.setPixelColor(mid, color.fadeToBlackBy(fadeVal));
 
-      for (int i = leds.nrOfLeds - 1; i > mid; i--)   leds.setPixelColor(i, leds.getPixelColor(i-1)); // move to the left
+      for (int i = leds.size.x - 1; i > mid; i--)   leds.setPixelColor(i, leds.getPixelColor(i-1)); // move to the left
       for (int i = 0; i < mid; i++)            leds.setPixelColor(i, leds.getPixelColor(i+1)); // move to the right
 
       leds.fadeToBlackBy(fade);

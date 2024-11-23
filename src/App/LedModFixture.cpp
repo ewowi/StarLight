@@ -321,9 +321,9 @@
     ui->initCheckBox(parentVar, "showDriver", &showDriver, false, [this](EventArguments) { switch (eventType) {
       case onUI:
         #if STARLIGHT_CLOCKLESS_LED_DRIVER
-          variable.setLabel("CLD Show");
+          variable.setLabel("I2S Driver Show");
         #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-          variable.setLabel("CLVD Show");
+          variable.setLabel("Virtual Driver Show");
         #else
           variable.setLabel("FastLED Show");
         #endif
@@ -366,7 +366,7 @@
 
     #endif
 
-    if (showDriver && !web->isBusy)
+    if (showDriver && !web->isBusy && mappingStatus == 0) //mappingStatus: otherwise driverShow in virtual driver hangs
       driverShow();
   }
 
@@ -379,12 +379,14 @@
     mappingStatus = 2; //mapping in progress
 
     //init pixels, with some debugging for panels
-    for (int i = 0; i < STARLIGHT_MAXLEDS / 256; i++) //panels
-    {
-      //pixels in panels
-      for (int j=0;j<256;j++)
-        ledsP[j+i*256]=j < i + 1?CRGB::Red: CRGB::Black; //each panel get as much red pixels as its sequence in the chain
-    }
+    // for (int i = 0; i < STARLIGHT_MAXLEDS / 256; i++) //panels
+    // {
+    //   //pixels in panels
+    //   for (int j=0;j<256;j++)
+    //     ledsP[j+i*256]=j < i + 1?CRGB::Red: CRGB::Black; //each panel get as much red pixels as its sequence in the chain
+    // }
+    for (int i = 0; i < STARLIGHT_MAXLEDS; i++)
+      ledsP[i] = CRGB::Black;
 
     char fileName[32] = "";
 
@@ -520,7 +522,6 @@
       unsigned pinNr = 0;
 
       for (PinObject &pinObject: pinsM->pinObjects) {
-        // ppf("addLeds new v2 pin: %d\n", pinNr);
 
         if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in addPin)
           //dirty trick to decode nrOfLedsPerPin
@@ -537,7 +538,7 @@
             sortedPin.pin = pinNr;
             sortedPins.push_back(sortedPin);
 
-            ppf("addLeds new v2 %d: %d-%d\n", pinNr, sortedPin.startLed, sortedPin.nrOfLeds-1);
+            ppf("addLeds new %d: %d-%d\n", pinNr, sortedPin.startLed, sortedPin.nrOfLeds-1);
           }
         }
         pinNr++;

@@ -56,12 +56,15 @@ public:
 
   virtual void setup(LedsLayer &leds, Variable parentVar) {}
 
+  //per frame
+  virtual void loop(LedsLayer &leds) {}
+  
   //setupPixels
   virtual void addPixelsPre(LedsLayer &leds) {}
 
   //setupPixel
   virtual void addPixel(LedsLayer &leds, Coord3D &pixel) {}
-  
+
   //loopPixel
   virtual void XYZ(LedsLayer &leds, Coord3D &pixel) {}
 };
@@ -184,7 +187,6 @@ class LedsLayer {
 public:
 
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
-  uint16_t nrOfLeds = 64;  //amount of virtual leds (calculated by projection)
 
   Effect *effect = nullptr;
   Projection *projection = nullptr;
@@ -195,6 +197,7 @@ public:
   void (Projection::*addPixelsPreCached)(LedsLayer &) = &Projection::addPixelsPre;
   void (Projection::*addPixelCached)(LedsLayer &, Coord3D &) = &Projection::addPixel;
   void (Projection::*XYZCached)(LedsLayer &, Coord3D &) = &Projection::XYZ;
+  void (Projection::*loopCached)(LedsLayer &) = &Projection::loop;
 
   uint8_t effectDimension = UINT8_MAX;
   uint8_t projectionDimension = UINT8_MAX;
@@ -325,7 +328,7 @@ public:
     uint8_t keep = 255 - blur_amount;
     uint8_t seep = blur_amount >> 1;
     CRGB carryover = CRGB::Black;
-    for( uint16_t i = 0; i < nrOfLeds; ++i) {
+    for( uint16_t i = 0; i < size.x; ++i) {
         CRGB cur = getPixelColor(i);
         CRGB part = cur;
         part.nscale8( seep);

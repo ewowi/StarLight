@@ -204,7 +204,15 @@ CRGB LedsLayer::getPixelColor(int indexV) {
 }
 
 void LedsLayer::fadeToBlackBy(uint8_t fadeBy) {
-  if (!projection || (fix->layers.size() == 1)) { //faster, else manual 
+  if (effectDimension < projectionDimension) { //only process the effect pixels (so projections can do things with the other dimension)
+    for (int y=0; y < ((effectDimension == _1D)?1:size.y); y++) { //1D effects only on y=0, 2D effects loop over y
+      for (int x=0; x<size.x; x++) {
+        CRGB color = getPixelColor({x,y,0});
+        color.nscale8(255-fadeBy);
+        setPixelColor({x,y,0}, color);
+      }
+    }
+  } else if (!projection || (fix->layers.size() == 1)) { //faster, else manual 
     fastled_fadeToBlackBy(fix->ledsP, fix->nrOfLeds, fadeBy);
   } else {
     for (uint16_t index = 0; index < mappingTableSizeUsed; index++) {
@@ -216,7 +224,13 @@ void LedsLayer::fadeToBlackBy(uint8_t fadeBy) {
 }
 
 void LedsLayer::fill_solid(const struct CRGB& color) {
-  if (!projection || (fix->layers.size() == 1)) { //faster, else manual 
+  if (effectDimension < projectionDimension) { //only process the effect pixels (so projections can do things with the other dimension)
+    for (int y=0; y < ((effectDimension == _1D)?1:size.y); y++) { //1D effects only on y=0, 2D effects loop over y
+      for (int x=0; x<size.x; x++) {
+        setPixelColor({x,y,0}, color);
+      }
+    }
+  } else if (!projection || (fix->layers.size() == 1)) { //faster, else manual 
     fastled_fill_solid(fix->ledsP, fix->nrOfLeds, color);
   } else {
     for (uint16_t index = 0; index < mappingTableSizeUsed; index++)
@@ -225,7 +239,18 @@ void LedsLayer::fill_solid(const struct CRGB& color) {
 }
 
 void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
-  if (!projection || (fix->layers.size() == 1)) { //faster, else manual 
+  if (effectDimension < projectionDimension) { //only process the effect pixels (so projections can do things with the other dimension)
+    CHSV hsv;
+    hsv.hue = initialhue;
+    hsv.val = 255;
+    hsv.sat = 240;
+    for (int y=0; y < ((effectDimension == _1D)?1:size.y); y++) { //1D effects only on y=0, 2D effects loop over y
+      for (int x=0; x<size.x; x++) {
+        setPixelColor({x,y,0}, hsv);
+        hsv.hue += deltahue;
+      }
+    }
+  } else if (!projection || (fix->layers.size() == 1)) { //faster, else manual 
     fastled_fill_rainbow(fix->ledsP, fix->nrOfLeds, initialhue, deltahue);
   } else {
     CHSV hsv;
@@ -320,8 +345,6 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
         (projection->*addPixelsPreCached)(*this);
         mdl->getValueRowNr = UINT8_MAX; // end of run projection functions in the right rowNr context
       }
-
-      nrOfLeds = size.x * size.y * size.z;
     }
   }
 
@@ -332,9 +355,6 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
 
         pixel = pixel / fix->factor - start; //pixel relative to start (also rounded to a 1x1 grid space in case of factor 10)
 
-        // addPixelCached = &Projection::addPixel;
-        // XYZCached = &Projection::XYZ;
-
         // Setup changes leds.size, mapped
         mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
         projectionData.begin();
@@ -344,8 +364,8 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
         if (pixel.x != UINT16_MAX) { //can be set to UINT16_MAX by projection
           uint16_t indexV = XYZUnprojected(pixel);
 
-          if (indexV >= nrOfLeds || indexV >= STARLIGHT_MAXLEDS)
-            ppf("dev addPixel leds[%d] indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, nrOfLeds, STARLIGHT_MAXLEDS, mappingTableSizeUsed, fix->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
+          if (indexV >= size.x * size.y * size.z || indexV >= STARLIGHT_MAXLEDS)
+            ppf("dev addPixel leds[%d] indexV too high %d>=%d or %d (m:%d p:%d) p:%d,%d,%d s:%d,%d,%d\n", rowNr, indexV, size.x * size.y * size.z, STARLIGHT_MAXLEDS, mappingTableSizeUsed, fix->indexP, pixel.x, pixel.y, pixel.z, size.x, size.y, size.z);
           else {
             //create new physMaps if needed
             if (indexV >= mappingTable.size()) {
@@ -380,7 +400,6 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
 
         //defaults
         size = fix->fixSize;
-        nrOfLeds = fix->nrOfLeds;
         nrOfPhysical = fix->nrOfLeds;
 
       } else {
@@ -391,8 +410,6 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
           mappingTable.push_back(PhysMap());
           mappingTableSizeUsed++;
         }
-
-        nrOfLeds = mappingTableSizeUsed;
 
         //debug info + summary values
         for (size_t i = 0; i< mappingTableSizeUsed; i++) {
@@ -421,10 +438,10 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
         }
       }
 
-      ppf("addPixelsPost leds[%d] V:%d x %d x %d -> %d (v:%d - p:%d pm:%d of %d c:%d)\n", rowNr, size.x, size.y, size.z, nrOfLeds, nrOfLogical, nrOfPhysical, nrOfPhysicalM, mappingTableIndexesSizeUsed, nrOfColor);
+      ppf("addPixelsPost leds[%d] V:%d x %d x %d (v:%d - p:%d pm:%d of %d c:%d)\n", rowNr, size.x, size.y, size.z, nrOfLogical, nrOfPhysical, nrOfPhysicalM, mappingTableIndexesSizeUsed, nrOfColor);
 
       char buf[32];
-      print->fFormat(buf, sizeof(buf), "%d x %d x %d -> %d", size.x, size.y, size.z, nrOfLeds);
+      print->fFormat(buf, sizeof(buf), "%d x %d x %d", size.x, size.y, size.z);
       mdl->setValue("layers", "size", JsonString(buf, JsonString::Copied), rowNr);
 
       ppf("addPixelsPost leds[%d].size = so:%d + m:(%d of %d) * %d + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTableSizeUsed, mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164

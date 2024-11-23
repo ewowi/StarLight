@@ -1148,3 +1148,61 @@ class RotateProjection: public Projection {
     else if (pixel.y >= maxY) pixel.y = maxY - 1;
   }
 }; //RotateProjection
+
+//Idea and first implmentation (WLEDMM ARtNet) by @Troy
+class RippleYZ: public Projection {
+  const char * name() override {return "RippleYZ";}
+  const char * tags() override {return "💡💫";}
+
+  public:
+
+  void setup(LedsLayer &leds, Variable parentVar) override {
+    ui->initCheckBox(parentVar, "towardsY", leds.projectionData.write<bool3State>(true), false, [&leds](EventArguments) { switch (eventType) {
+      case onChange: {
+        uint8_t old = leds.projectionDimension;
+        leds.projectionDimension = leds.effectDimension; //trick to force all leds in layer touched
+          leds.fill_solid(CRGB::Black);
+          leds.projectionDimension = old;
+        return true; }
+      default: return false;
+    }});
+    ui->initCheckBox(parentVar, "towardsZ", leds.projectionData.write<bool3State>(true), false, [&leds](EventArguments) { switch (eventType) {
+      case onChange: {
+        uint8_t old = leds.projectionDimension;
+        leds.projectionDimension = leds.effectDimension; //trick to force all leds in layer touched
+          leds.fill_solid(CRGB::Black);
+          leds.projectionDimension = old;
+          return true; }
+      default: return false;
+    }});
+  }
+
+  void loop(LedsLayer &leds) override {
+    bool3State towardsY = leds.projectionData.read<bool3State>();
+    bool3State towardsZ = leds.projectionData.read<bool3State>();
+
+    //1D->2D: each X is rippled through the y-axis
+    if (towardsY) {
+      if (leds.effectDimension == _1D && leds.projectionDimension > _1D) {
+        for (int y=leds.size.y-1; y>=1; y--) {
+          for (int x=0; x<leds.size.x; x++) {
+            leds.setPixelColor({x, y, 0}, leds.getPixelColor({x,y-1,0}));
+          }
+        }
+      }
+    }
+
+    //2D->3D: each XY plane is rippled through the z-axis
+    if (towardsZ) { //not relevant for 2D fixtures
+      if (leds.effectDimension < _3D && leds.projectionDimension == _3D) {
+        for (int z=leds.size.z-1; z>=1; z--) {
+          for (int y=0; y<leds.size.y; y++) {
+            for (int x=0; x<leds.size.x; x++) {
+              leds.setPixelColor({x, y, z}, leds.getPixelColor({x,y,z-1}));
+            }
+          }
+        }
+      }
+    }
+  }
+}; //RippleYZ
