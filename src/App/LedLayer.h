@@ -176,7 +176,7 @@ class SharedData {
     return *result;
   }
 
-  bool success() {
+  bool success() const {
     return dataAllocated;
   }
 
@@ -191,9 +191,9 @@ public:
   Effect *effect = nullptr;
   Projection *projection = nullptr;
 
-  //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
+  //using cached virtual class methods! 4 bytes each - that's for now the price we pay for speed
       //setting cached virtual class methods! (By chatGPT so no source and don't understand how it works - scary!)
-      //   (don't know how it works as it is not refering to derived classes, just to the base class but later it calls the derived class method)
+      //   (don't know how it works as it is not referring to derived classes, just to the base class but later it calls the derived class method)
   void (Projection::*addPixelsPreCached)(LedsLayer &) = &Projection::addPixelsPre;
   void (Projection::*addPixelCached)(LedsLayer &, Coord3D &) = &Projection::addPixel;
   void (Projection::*XYZCached)(LedsLayer &, Coord3D &) = &Projection::XYZ;
@@ -319,7 +319,7 @@ public:
   void fill_rainbow(uint8_t initialhue, uint8_t deltahue);
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
-  bool isMapped(int indexV) {
+  bool isMapped(int indexV) const {
     return indexV < mappingTableSizeUsed && (mappingTable[indexV].mapType == m_onePixel || mappingTable[indexV].mapType == m_morePixels);
   }
 

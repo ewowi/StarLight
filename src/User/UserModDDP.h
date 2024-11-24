@@ -45,7 +45,7 @@ public:
   void setup() override {
     SysModule::setup();
 
-    Variable parentVar = ui->initUserMod(Variable(), name, 6000);
+    const Variable parentVar = ui->initUserMod(Variable(), name, 6000);
 
     ui->initIP(parentVar, "instance", UINT16_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI: {

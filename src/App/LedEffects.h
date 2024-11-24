@@ -8,7 +8,9 @@
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
+#pragma once
 
+#include "../Sys/SysModSystem.h"
 #include "LedModFixture.h"
 
 #ifdef STARLIGHT_USERMOD_AUDIOSYNC
@@ -23,7 +25,7 @@
 #endif
 
 //utility function
-float distance(float x1, float y1, float z1, float x2, float y2, float z2) {
+inline float distance(float x1, float y1, float z1, float x2, float y2, float z2) {
   return sqrtf((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2) + (z1-z2)*(z1-z2));
 }
 

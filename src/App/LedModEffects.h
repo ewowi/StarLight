@@ -8,6 +8,7 @@
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
+#pragma once
 
 #include "LedLayer.h"
 #include <vector>

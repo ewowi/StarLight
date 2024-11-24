@@ -83,7 +83,7 @@
   void LedModFixture::setup() {
     SysModule::setup();
 
-    Variable parentVar = ui->initAppMod(Variable(), name, 1100);
+    const Variable parentVar = ui->initAppMod(Variable(), name, 1100);
 
     Variable currentVar = ui->initCheckBox(parentVar, "on", true, false, [](EventArguments) { switch (eventType) {
       case onChange:
@@ -533,8 +533,8 @@
             after = strtok(nullptr, "-");
 
             SortedPin sortedPin{};
-            sortedPin.startLed = atoi(before);
-            sortedPin.nrOfLeds = atoi(after) - atoi(before) + 1;
+            sortedPin.startLed = strtol(before, nullptr, 10);
+            sortedPin.nrOfLeds = strtol(after, nullptr, 10) - strtol(before, nullptr, 10) + 1;
             sortedPin.pin = pinNr;
             sortedPins.push_back(sortedPin);
 
@@ -545,7 +545,7 @@
       }
 
       // if pins defined
-      if (sortedPins.size()) {
+      if (!sortedPins.empty()) {
 
         //sort the vector by the starLed
         std::sort(sortedPins.begin(), sortedPins.end(), [](const SortedPin &a, const SortedPin &b) {return a.startLed < b.startLed;});
@@ -686,12 +686,11 @@ void LedModFixture::addPin(uint8_t pin) {
 
         //merge already assigned leds with new assignleds in %d-%d
         char * after = strtok((char *)pinObject.details, "-");
-        if (after != NULL ) {
-          char * before;
-          before = after;
-          after = strtok(NULL, "-");
-          uint16_t startLed = atoi(before);
-          uint16_t nrOfLeds = atoi(after) - atoi(before) + 1;
+        if (after != nullptr ) {
+          char *before = after;
+          after = strtok(nullptr, "-");
+          const uint16_t startLed = strtol(before, nullptr, 10);
+          const uint16_t nrOfLeds = strtol(after, nullptr, 10) - strtol(before, nullptr, 10) + 1;
           print->fFormat(details, sizeof(details), "%d-%d", min(prevIndexP, startLed), max((uint16_t)(indexP - 1), nrOfLeds)); //careful: LedModEffects:loop uses this to assign to FastLed
           ppf("pins extend leds %d: %s\n", pin, details);
           //tbd: more check
@@ -812,7 +811,7 @@ void LedModFixture::addPixelsPost() {
   void LedModFixture::driverShow() {
     // if statement needed as we need to wait until the driver is initialised
     #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
-      if (driver.ledsbuff != NULL)
+      if (driver.ledsbuff != nullptr)
         driver.show();
     #else
       if (driver.total_leds > 0)

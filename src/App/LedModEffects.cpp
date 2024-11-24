@@ -121,7 +121,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
   void LedModEffects::setup() {
     SysModule::setup();
 
-    Variable parentVar = ui->initAppMod(Variable(), name, 1201);
+    const Variable parentVar = ui->initAppMod(Variable(), name, 1201);
 
     Variable tableVar = ui->initTable(parentVar, "layers", nullptr, false, [this](EventArguments) { switch (eventType) {
       case onUI:
@@ -419,7 +419,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
       //reset pixelsToBlend if multiple leds effects
       // ppf(" %d-%d", fix->pixelsToBlend.size(), fix->nrOfLeds);
-      if (fix->layers.size()) //if more then one effect
+      if (!fix->layers.empty()) //if more then one effect
         for (uint16_t indexP=0; indexP < fix->pixelsToBlend.size(); indexP++)
           fix->pixelsToBlend[indexP] = false;
 
@@ -459,12 +459,12 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           //   leds->fadeToBlackBy(50);
 
           //loop over mapped pixels and set pixelsToBlend to true
-          if (fix->layers.size()) { //if more then one effect
-            for (std::vector<uint16_t> mappingTableIndex: leds->mappingTableIndexes) {
-              for (uint16_t indexP: mappingTableIndex)
+          if (!fix->layers.empty()) { //if more then one effect
+            for (const std::vector<uint16_t>& mappingTableIndex: leds->mappingTableIndexes) {
+              for (const uint16_t indexP: mappingTableIndex)
                 fix->pixelsToBlend[indexP] = true;
             }
-            for (PhysMap physMap: leds->mappingTable) {
+            for (const PhysMap &physMap: leds->mappingTable) {
               if (physMap.mapType == m_onePixel)
                 fix->pixelsToBlend[physMap.indexP] = true;
             }
@@ -483,25 +483,26 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       const char * canvasData = varSystem["canvasData"]; //0 - 494 - 140,150,0
       ppf("LedModEffects loop canvasData %s\n", canvasData);
 
-      uint8_t rowNr = 0; //currently only leds[0] supported
-      if (fix->layers.size()) { //if more then one effect
+      if (!fix->layers.empty()) {
+        uint8_t rowNr = 0;
+        //if more then one effect
         fix->layers[rowNr]->fadeToBlackBy();
 
         char * token = strtok((char *)canvasData, ":");
-        bool isStart = strncmp(token, "start", 6) == 0;
-        bool isEnd = strncmp(token, "end", 4) == 0;
+        const bool isStart = strncmp(token, "start", 6) == 0;
+        const bool isEnd = strncmp(token, "end", 4) == 0;
 
-        Coord3D midCoord; //placeHolder for mid
+        Coord3D midCoord{}; //placeHolder for mid
 
         Coord3D *newCoord = isStart? &fix->layers[rowNr]->start: isEnd? &fix->layers[rowNr]->end : &midCoord;
 
         if (newCoord) {
-          token = strtok(NULL, ",");
-          if (token != NULL) newCoord->x = atoi(token) / fix->factor; else newCoord->x = 0; //should never happen
-          token = strtok(NULL, ",");
-          if (token != NULL) newCoord->y = atoi(token) / fix->factor; else newCoord->y = 0;
-          token = strtok(NULL, ",");
-          if (token != NULL) newCoord->z = atoi(token) / fix->factor; else newCoord->z = 0;
+          token = strtok(nullptr, ",");
+          if (token != nullptr) newCoord->x = strtol(token, nullptr, 10) / fix->factor; else newCoord->x = 0; //should never happen
+          token = strtok(nullptr, ",");
+          if (token != nullptr) newCoord->y = strtol(token, nullptr, 10) / fix->factor; else newCoord->y = 0;
+          token = strtok(nullptr, ",");
+          if (token != nullptr) newCoord->z = strtol(token, nullptr, 10) / fix->factor; else newCoord->z = 0;
 
           mdl->setValue("layers", isStart?"start":isEnd?"end":"middle", *newCoord, 0); //assuming row 0 for the moment
 

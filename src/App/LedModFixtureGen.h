@@ -446,10 +446,10 @@ public:
   void setup() override {
     SysModule::setup();
 
-    Variable parentVar = ui->initAppMod(Variable(), name, 6302); //created as a usermod, not an appmod to have it in the usermods tab
-    parentVar.var["s"] = true; //setup
+    const Variable parentVariable = ui->initAppMod(Variable(), name, 6302); //created as a usermod, not an appmod to have it in the usermods tab
+    parentVariable.var["s"] = true; //setup
 
-    Variable currentVar = ui->initSelect(parentVar, "fixture", (uint8_t)0, false, [this](EventArguments) { switch (eventType) {
+    Variable currentVar = ui->initSelect(parentVariable, "fixture", (uint8_t)0, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
         variable.setComment("Predefined fixture");
         JsonArray options = variable.setOptions(); //See enum Fixtures for order of options
@@ -597,14 +597,15 @@ public:
   void fixtureOnChange() {
 
     JsonObject fixtureVar = mdl->findVar("FixtureGenerator", "fixture");
+    Variable fixtureVariable = Variable(fixtureVar);
 
-    // Variable parentVar = mdl->findVar(var["id"]); //local parentVar
-    uint8_t fgValue = Variable(fixtureVar).value();
+    // const Variable parentVar = mdl->findVar(var["id"]); //local parentVar
+    uint8_t fgValue = fixtureVariable.value();
 
     //find option group and text
     char fgGroup[32];
     char fgText[32];
-    Variable(fixtureVar).findOptionsText(fgValue, fgGroup, fgText);
+    fixtureVariable.findOptionsText(fgValue, fgGroup, fgText);
 
     //remove all the variables
     fixtureVar.remove("n"); //tbd: we should also remove the varEvent !!
@@ -622,13 +623,13 @@ public:
           width = 10; height = 54;
         }
 
-        ui->initNumber(fixtureVar, "width", width, 1, STARLIGHT_MAXLEDS, false, [this,fgText](EventArguments) { switch (eventType) {
+        ui->initNumber(fixtureVariable, "width", width, 1, STARLIGHT_MAXLEDS, false, [this,fgText](EventArguments) { switch (eventType) {
           case onChange:
             rebuildMatrix(fgText);
             return true;
           default: return false; 
         }});
-        ui->initNumber(fixtureVar, "height", height, 1, STARLIGHT_MAXLEDS, false, [this,fgText](EventArguments) { switch (eventType) {
+        ui->initNumber(fixtureVariable, "height", height, 1, STARLIGHT_MAXLEDS, false, [this,fgText](EventArguments) { switch (eventType) {
           case onChange:
             rebuildMatrix(fgText);
             return true;
@@ -643,7 +644,7 @@ public:
         else if (strnstr(fgText, "CubeBox", 32) != nullptr)
           length = 8;
 
-        ui->initNumber(fixtureVar, "length", length, 1, STARLIGHT_MAXLEDS, false, [this,fgText](EventArguments) { switch (eventType) {
+        ui->initNumber(fixtureVariable, "length", length, 1, STARLIGHT_MAXLEDS, false, [this,fgText](EventArguments) { switch (eventType) {
           case onChange:
             rebuildCube(fgText);
             return true;
@@ -652,7 +653,7 @@ public:
       }
     }
 
-    ui->initButton(fixtureVar, "generate", false, [this](EventArguments) { switch (eventType) {
+    ui->initButton(fixtureVariable, "generate", false, [this](EventArguments) { switch (eventType) {
       case onUI:
         variable.setComment("Create F_ixture.json");
         return true;
@@ -672,22 +673,22 @@ public:
       default: return false;
     }});
 
-    // Variable(fixtureVar).preDetails();
+    // fixtureVariable.preDetails();
 
     bool showTable = true;
-    Variable parentVar = fixtureVar;
+    Variable parentVariable = fixtureVariable;
 
     //default table variables - part 1
     if (showTable) {
 
-      parentVar = ui->initTable(fixtureVar, "elements", nullptr, false, [](EventArguments) { switch (eventType) {
+      parentVariable = ui->initTable(fixtureVariable, "elements", nullptr, false, [](EventArguments) { switch (eventType) {
         case onUI:
           variable.setComment("Multiple parts");
           return true;
         default: return false;
       }});
 
-      ui->initCoord3D(parentVar, "firstLed", {0,0,0}, 0, STARLIGHT_MAXLEDS, false, [fgGroup](EventArguments) { switch (eventType) {
+      ui->initCoord3D(parentVariable, "firstLed", {0,0,0}, 0, STARLIGHT_MAXLEDS, false, [fgGroup](EventArguments) { switch (eventType) {
         case onUI:
           //show Top Left for all fixture except Matrix as it has its own
           if (strncmp(fgGroup, "Matrices", 9) != 0 && strncmp(fgGroup, "Cubes", 6) != 0)
@@ -701,26 +702,26 @@ public:
     //custom variables
     if (strncmp(fgGroup, "Strips", 7) == 0) {
       if (strnstr(fgText, "Spiral", 32) != nullptr) {
-        ui->initNumber(parentVar, "#Leds", 64, 1, STARLIGHT_MAXLEDS);
-        ui->initNumber(parentVar, "radius", 100, 1, 1000);
+        ui->initNumber(parentVariable, "#Leds", 64, 1, STARLIGHT_MAXLEDS);
+        ui->initNumber(parentVariable, "radius", 100, 1, 1000);
       }
       else if (strnstr(fgText, "Helix", 32) != nullptr) {
-        ui->initNumber(parentVar, "#Leds", 100, 1, STARLIGHT_MAXLEDS);
-        ui->initNumber(parentVar, "radius", 60, 1, 600);
-        ui->initNumber(parentVar, "pitch", 30, 1, 100);
-        ui->initNumber(parentVar, "deltaLed", 30, 1, 100);
+        ui->initNumber(parentVariable, "#Leds", 100, 1, STARLIGHT_MAXLEDS);
+        ui->initNumber(parentVariable, "radius", 60, 1, 600);
+        ui->initNumber(parentVariable, "pitch", 30, 1, 100);
+        ui->initNumber(parentVariable, "deltaLed", 30, 1, 100);
       }
     }
     else if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0) {
 
-      ui->initCoord3D(parentVar, "rowEnd", {7,0,0}, 0, STARLIGHT_MAXLEDS, false, [](EventArguments) { switch (eventType) {
+      ui->initCoord3D(parentVariable, "rowEnd", {7,0,0}, 0, STARLIGHT_MAXLEDS, false, [](EventArguments) { switch (eventType) {
         case onUI:
           variable.setComment("-> Orientation");
           return true;
         default: return false;
       }});
 
-      ui->initCoord3D(parentVar, "columnEnd", {7,7,0}, 0, STARLIGHT_MAXLEDS, false, [](EventArguments) { switch (eventType) {
+      ui->initCoord3D(parentVariable, "columnEnd", {7,7,0}, 0, STARLIGHT_MAXLEDS, false, [](EventArguments) { switch (eventType) {
         case onUI:
           variable.setComment("Last LED -> nrOfLeds, Serpentine");
           return true;
@@ -728,45 +729,45 @@ public:
       }});
     }
     else if (strncmp(fgGroup, "Rings", 6) == 0) {
-      ui->initNumber(parentVar, "#Leds", 24, 1, STARLIGHT_MAXLEDS);
+      ui->initNumber(parentVariable, "#Leds", 24, 1, STARLIGHT_MAXLEDS);
     }
     else if (strncmp(fgGroup, "Shapes", 7) == 0) {
       if (strnstr(fgText, "Rings241", 32) != nullptr) {
-        ui->initNumber(parentVar, "nrOfRings", 9, 1, 9);
-        ui->initCheckBox(parentVar, "in2out", true);
+        ui->initNumber(parentVariable, "nrOfRings", 9, 1, 9);
+        ui->initCheckBox(parentVariable, "in2out", true);
       }
       else if (strnstr(fgText, "Hexa", 32) != nullptr) {
-        ui->initNumber(parentVar, "ledsPerSide", 12, 1, 255);
+        ui->initNumber(parentVariable, "ledsPerSide", 12, 1, 255);
       }
       else if (strnstr(fgText, "Cone", 32) != nullptr) {
-        ui->initNumber(parentVar, "nrOfRings", 24, 1, 360);
+        ui->initNumber(parentVariable, "nrOfRings", 24, 1, 360);
       }
     }
     else if (strncmp(fgGroup, "Combinations", 13) == 0) {
       if (strnstr(fgText, "Wheel", 32) != nullptr) {
-        ui->initNumber(parentVar, "nrOfSpokes", 36, 1, 360);
-        ui->initNumber(parentVar, "ledsPerSpoke", 24, 1, 360);
+        ui->initNumber(parentVariable, "nrOfSpokes", 36, 1, 360);
+        ui->initNumber(parentVariable, "ledsPerSpoke", 24, 1, 360);
       }
       else if (strnstr(fgText, "Human", 32) != nullptr) {
       }
       else if (strnstr(fgText, "Curtain", 32) != nullptr) {
-        ui->initNumber(parentVar, "width", 20, 1, 100);
-        ui->initNumber(parentVar, "height", 20, 1, 100);
+        ui->initNumber(parentVariable, "width", 20, 1, 100);
+        ui->initNumber(parentVariable, "height", 20, 1, 100);
       }
     }
     else if (strncmp(fgGroup, "Spheres", 8) == 0) {
       if (strnstr(fgText, "Globe", 32) != nullptr) {
-        ui->initNumber(parentVar, "width", 24, 1, 48);
+        ui->initNumber(parentVariable, "width", 24, 1, 48);
       }
       else if (strnstr(fgText, "GeodesicDome", 32) != nullptr) {
-        ui->initNumber(parentVar, "radius", 100, 1, 1000);
+        ui->initNumber(parentVariable, "radius", 100, 1, 1000);
       }
     }
 
 
     //default variables - part 2
     if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0 || strnstr(fgText, "Rings241", 32) != nullptr || strnstr(fgText, "Helix", 32) != nullptr) { //tbd: the rest
-      ui->initCoord3D(parentVar, "rotate", {0,0,0}, 0, 359, false, [](EventArguments) { switch (eventType) {
+      ui->initCoord3D(parentVariable, "rotate", {0,0,0}, 0, 359, false, [](EventArguments) { switch (eventType) {
         case onUI:
           variable.setComment("Tilt, Pan, Roll");
           return true;
@@ -774,14 +775,14 @@ public:
       }});
     }
 
-    ui->initNumber(parentVar, "IP", net->localIP()[3], 1, 256, false, [](EventArguments) { switch (eventType) {
+    ui->initNumber(parentVariable, "IP", net->localIP()[3], 1, 256, false, [](EventArguments) { switch (eventType) {
       case onUI:
         variable.setComment("Super-Sync WIP");
         return true;
       default: return false; 
     }});
 
-    ui->initPin(parentVar, "pin", 2, false, [](EventArguments) { switch (eventType) {
+    ui->initPin(parentVariable, "pin", 2, false, [](EventArguments) { switch (eventType) {
       case onChange: {
         //set remaining rows to same pin
         JsonArray valArray = variable.valArray();
@@ -838,7 +839,7 @@ public:
       }
     }
 
-    Variable(fixtureVar).postDetails(UINT8_MAX);
+    fixtureVariable.postDetails(UINT8_MAX);
     mdl->setValueRowNr = UINT8_MAX;
   }
 
@@ -886,12 +887,14 @@ public:
   void generateOnChange(JsonObject var, char * fileName) {
 
     JsonObject fixtureVar = mdl->findVar("FixtureGenerator", "fixture");
-    uint8_t fgValue = Variable(fixtureVar).value();
+    Variable fixtureVariable = Variable(fixtureVar);
+    uint8_t fgValue = fixtureVariable.value();
+
 
     //find option group and text
     char fgGroup[32];
     char fgText[32];
-    Variable(fixtureVar).findOptionsText(fgValue, fgGroup, fgText);
+    fixtureVariable.findOptionsText(fgValue, fgGroup, fgText);
 
 
     if (strncmp(fgGroup, "Matrices", 9) == 0 || strncmp(fgGroup, "Cubes", 6) == 0) {

@@ -30,7 +30,7 @@ public:
   void setup() override {
     SysModule::setup();
 
-    Variable parentVar = ui->initUserMod(Variable(), name, 6100);
+    const Variable parentVar = ui->initUserMod(Variable(), name, 6100);
 
     ui->initNumber(parentVar, "targetIP", 11, 0, 255, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
@@ -82,8 +82,6 @@ public:
 
     AsyncUDP artnetudp;// AsyncUDP so we can just blast packets.
 
-    const uint_fast16_t ARTNET_CHANNELS_PER_PACKET = 510; // 512/4=128 RGBW LEDs, 510/3=170 RGB LEDs
-
     uint_fast16_t bufferOffset = 0;
     uint_fast16_t hardware_output_universe = 0;
     
@@ -104,7 +102,8 @@ public:
       uint_fast16_t channels_remaining = hardware_outputs[hardware_output] * sizeof(CRGB);
 
       while (channels_remaining > 0) {
-        
+        const uint_fast16_t ARTNET_CHANNELS_PER_PACKET = 510; // 512/4=128 RGBW LEDs, 510/3=170 RGB LEDs
+
         uint_fast16_t packetSize = ARTNET_CHANNELS_PER_PACKET;
 
         if (channels_remaining < ARTNET_CHANNELS_PER_PACKET) {

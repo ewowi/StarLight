@@ -37,7 +37,7 @@ public:
   //setup filesystem
   void setup() override {
     SysModule::setup();
-    Variable parentVar = ui->initUserMod(Variable(), name, 6300);
+    const Variable parentVar = ui->initUserMod(Variable(), name, 6300);
   
     ui->initText(parentVar, "status", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onLoop1s: {

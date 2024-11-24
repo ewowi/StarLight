@@ -11,6 +11,7 @@
 
 //Projections should not contain variables/bytes to keep mem as small as possible!!
 
+#include "../Sys/SysModUI.h"
 #include "LedModFixture.h"
 
 class NoneProjection: public Projection {
@@ -307,7 +308,7 @@ class TiltPanRollProjection: public Projection {
   void setup(LedsLayer &leds, Variable parentVar) override {
     //tbd: implement variable by reference for rowNrs
     #ifdef STARBASE_USERMOD_MPU6050
-      ui->initCheckBox(parentVar, "gyro", false, false, [&leds](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "gyro", (bool3State)false, false, [&leds](EventArguments) { switch (eventType) {
         case onChange:
           leds.proGyro = variable.getValue(rowNr);
           return true;
@@ -472,7 +473,7 @@ class RandomProjection: public Projection {
   }
 
   void XYZ(LedsLayer &leds, Coord3D &pixel) override {
-    pixel = {random(leds.size.x), random(leds.size.y), random(leds.size.z)};
+    pixel = Coord3D({random(leds.size.x), random(leds.size.y), random(leds.size.z)})  ;
   }
 }; //RandomProjection
 
@@ -502,14 +503,14 @@ class MirrorReverseTransposeProjection: public Projection {
 
   void setup(LedsLayer &leds, Variable parentVar) override {
       MRTData *data = leds.projectionData.readWrite<MRTData>();
-      ui->initCheckBox(parentVar, "Mirror X", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Mirror X", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->mirrorX = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
-      ui->initCheckBox(parentVar, "Mirror Y", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Mirror Y", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->mirrorY = variable.getValue(rowNr);
           leds.triggerMapping();
@@ -517,7 +518,7 @@ class MirrorReverseTransposeProjection: public Projection {
         default: return false;
       }});
       if (leds.projectionDimension == _3D) {
-      ui->initCheckBox(parentVar, "Mirror Z", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Mirror Z", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->mirrorZ = variable.getValue(rowNr);
           leds.triggerMapping();
@@ -525,14 +526,14 @@ class MirrorReverseTransposeProjection: public Projection {
         default: return false;
       }});
       }
-      ui->initCheckBox(parentVar, "Reverse X", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Reverse X", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->reverseX = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
-      ui->initCheckBox(parentVar, "Reverse Y", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Reverse Y", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->reverseY = variable.getValue(rowNr);
           leds.triggerMapping();
@@ -540,7 +541,7 @@ class MirrorReverseTransposeProjection: public Projection {
         default: return false;
       }});
       if (leds.projectionDimension == _3D) {
-      ui->initCheckBox(parentVar, "Reverse Z", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Reverse Z", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->reverseZ = variable.getValue(rowNr);
           leds.triggerMapping();
@@ -548,7 +549,7 @@ class MirrorReverseTransposeProjection: public Projection {
         default: return false;
       }});
       }
-      ui->initCheckBox(parentVar, "Transpose XY", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Transpose XY", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->transposeXY = variable.getValue(rowNr);
           leds.triggerMapping();
@@ -556,14 +557,14 @@ class MirrorReverseTransposeProjection: public Projection {
         default: return false;
       }});
       if (leds.projectionDimension == _3D) {
-      ui->initCheckBox(parentVar, "Transpose XZ", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Transpose XZ", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->transposeXZ = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
-      ui->initCheckBox(parentVar, "Transpose YZ", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Transpose YZ", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->transposeYZ = variable.getValue(rowNr);
           leds.triggerMapping();
