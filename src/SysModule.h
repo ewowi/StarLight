@@ -45,8 +45,9 @@ public:
   unsigned long twentyMsMillis = millis() - random(1000); //random so not all 1s are fired at once
   unsigned long oneSecondMillis = millis() - random(1000); //random so not all 1s are fired at once
   unsigned long tenSecondMillis = millis() - random(10000); //random within a second
+  // void (SysModule::*loopCached)() = &SysModule::loop; //use virtual cached function for speed??? tested, no difference ...
 
-  SysModule(const char * name) {
+  explicit SysModule(const char * name) {
     this->name = name;
     success = true;
     isEnabled = true;
@@ -64,9 +65,4 @@ public:
   virtual void connectedChanged() {onOffChanged();}
   virtual void enabledChanged() {onOffChanged();}
   virtual void onOffChanged() {}
-
-  virtual void testManager() {}
-  virtual void performanceManager() {}
-  virtual void dataSizeManager() {}
-  virtual void codeSizeManager() {}
 };

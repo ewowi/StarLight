@@ -15,7 +15,7 @@
 #include "SysModModel.h"
 
 struct VarLoop {
-  JsonObject var;
+  Variable variable;
   VarEvent loopFun;
   unsigned long lastMillis = 0;
   unsigned long counter = 0;
@@ -41,12 +41,12 @@ public:
     return variable;
   }
   Variable initSysMod(Variable parent, const char * id, int order = 0) {
-    Variable variable = initVarAndValue<const char *>(parent, id, "sysmod", (const char *)nullptr);
+    const Variable variable = initVarAndValue<const char *>(parent, id, "sysmod", (const char *)nullptr);
     if (order) variable.defaultOrder(order + 1000);
     return variable;
   }
   Variable initUserMod(Variable parent, const char * id, int order = 0) {
-    Variable variable = initVarAndValue<const char *>(parent, id, "usermod", (const char *)nullptr);
+    const Variable variable = initVarAndValue<const char *>(parent, id, "usermod", (const char *)nullptr);
     if (order) variable.defaultOrder(order + 1000);
     return variable;
   }

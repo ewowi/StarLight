@@ -27,7 +27,7 @@ public:
   void setup() override {
     SysModule::setup();
 
-    Variable parentVar = ui->initUserMod(Variable(), name, 6201);
+    const Variable parentVar = ui->initUserMod(Variable(), name, 6201);
 
     ui->initNumber(parentVar, "universe", &universe, 0, 7);
 

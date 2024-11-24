@@ -31,7 +31,7 @@ public:
 
   }
 
-  void onOffChanged() {
+  void onOffChanged() override {
     if (mdls->isConnected && isEnabled) {
 
       resetMDNS();

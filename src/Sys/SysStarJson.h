@@ -22,7 +22,7 @@ class StarJson {
 
   public:
 
-  StarJson(const char * path, const char * mode = "r");
+  explicit StarJson(const char * path, const char * mode = "r");
 
   ~StarJson();
 
@@ -42,7 +42,7 @@ class StarJson {
   // void lookFor(const char * id, uint16_t * value);
   // void lookFor(const char * id, int * value);
   void lookFor(const char * id, char * value);
-  void lookFor(const char * id, std::function<void(std::vector<uint16_t>)> fun);
+  void lookFor(const char * id, const std::function<void(std::vector<uint16_t>)>& fun);
 
   //reads from file until all vars have been found (then stops reading)
   //returns false if not all vars to look for are found

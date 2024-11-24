@@ -39,7 +39,7 @@ public:
 
   void allocatePin(uint8_t pin, const char * owner, const char * details);
   void deallocatePin(uint8_t pin = UINT8_MAX, const char * owner = nullptr);
-  bool isOwner(uint8_t pin, const char * owner) {
+  bool isOwner(uint8_t pin, const char * owner) const {
     return strncmp(pinObjects[pin].owner, owner, sizeof(PinObject::owner)) == 0;
   }
 

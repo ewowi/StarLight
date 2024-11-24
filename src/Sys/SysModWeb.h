@@ -107,7 +107,7 @@ public:
   void jsonHandler(WebRequest *request, JsonVariant json);
 
   //Is this an IP?
-  bool isIp(String str) {
+  bool isIp(const String& str) {
     for (size_t i = 0; i < str.length(); i++) {
       int c = str.charAt(i);
       if (c != '.' && (c < '0' || c > '9')) {
@@ -120,7 +120,7 @@ public:
   bool captivePortal(WebRequest *request);
 
   template <typename Type>
-  void addResponse(JsonObject var, const char * key, Type value, uint8_t rowNr = UINT8_MAX) {
+  void addResponse(const JsonObject var, const char * key, Type value, const uint8_t rowNr = UINT8_MAX) {
     JsonObject responseObject = getResponseObject();
     // if (responseObject[id].isNull()) responseObject[id].to<JsonObject>();;
     char pidid[64];
@@ -134,7 +134,7 @@ public:
     }
   }
 
-  void addResponse(JsonObject var, const char * key, const char * format = nullptr, ...) {
+  void addResponse(const JsonObject var, const char * key, const char * format = nullptr, ...) {
     va_list args;
     va_start(args, format);
 

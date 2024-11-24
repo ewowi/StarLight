@@ -74,8 +74,8 @@ private:
   String restartCode2InfoLong(esp_reset_reason_t reason);
   String restartCode2Info(esp_reset_reason_t reason);
 
-  TaskHandle_t loop_taskHandle = NULL;                   // to store the task handle for later calls
-  TaskHandle_t tcp_taskHandle = NULL;                   // to store the task handle for later calls
+  TaskHandle_t loop_taskHandle = nullptr;                   // to store the task handle for later calls
+  TaskHandle_t tcp_taskHandle = nullptr;                   // to store the task handle for later calls
 
 };
 

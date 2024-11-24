@@ -15,8 +15,7 @@
 #include "Sys/SysModWeb.h"
 #include "Sys/SysModModel.h"
 
-SysModules::SysModules() {
-};
+SysModules::SysModules() = default;
 
 void SysModules::setup() {
   for (SysModule *module:modules) {
@@ -33,7 +32,7 @@ void SysModules::setup() {
   }
 
   //do its own setup: will be shown as last module
-  Variable parentVar = ui->initSysMod(Variable(), "Modules", 4203);
+  const Variable parentVar = ui->initSysMod(Variable(), "Modules", 4203);
 
   Variable tableVar = ui->initTable(parentVar, "Modules", nullptr, true, [](EventArguments) { switch (eventType) {
     case onUI:
@@ -94,7 +93,8 @@ void SysModules::loop() {
   // }
   for (SysModule *module:modules) {
     if (module->isEnabled && module->success) {
-      module->loop(); //use virtual cached function for speed???
+      module->loop();
+      // (module->*module->loopCached)(); //use virtual cached function for speed??? tested, no difference ...
       if (millis() - module->twentyMsMillis >= 20) {
         module->twentyMsMillis = millis();
         module->loop20ms(); //use virtual cached function for speed???
@@ -107,10 +107,6 @@ void SysModules::loop() {
         module->tenSecondMillis = millis();
         module->loop10s();
       }
-      // module->testManager();
-      // module->performanceManager();
-      // module->dataSizeManager();
-      // module->codeSizeManager();
     }
   }
   if (newConnection) {
@@ -118,7 +114,6 @@ void SysModules::loop() {
     isConnected = true;
     connectedChanged();
   }
-
 }
 
 void SysModules::reboot() {

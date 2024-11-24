@@ -128,7 +128,7 @@ static float _time(float j) {
 
     //note: -mtext-section-literals needed in pio.ini, first only for s2, now for all due to something in setup...
 
-    Variable parentVar = ui->initUserMod(Variable(), name, 6310);
+    const Variable parentVar = ui->initUserMod(Variable(), name, 6310);
 
     ui->initSelect(parentVar, "script", UINT8_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI: {

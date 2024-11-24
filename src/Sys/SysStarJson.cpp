@@ -61,14 +61,14 @@
   }
 
   //look for array of integers
-  void StarJson::lookFor(const char * id, std::function<void(std::vector<uint16_t>)> fun) {
+  void StarJson::lookFor(const char * id, const std::function<void(std::vector<uint16_t>)>& fun) {
     funList.push_back(fun);
     addToVars(id, "fun", funList.size()-1);
   }
 
   //reads from file until all vars have been found (then stops reading)
   //returns false if not all vars to look for are found
-  bool StarJson::deserialize(bool lazy) {
+  bool StarJson::deserialize(const bool lazy) {
     f.read(&character, sizeof(byte));
     while (f.available() && (!foundAll || !lazy))
       next();
@@ -81,7 +81,7 @@
   }
 
   //called by lookedFor, store the var details in varDetails
-  void StarJson::addToVars(const char * id, const char * type, size_t index) {
+  void StarJson::addToVars(const char * id, const char * type, const size_t index) {
     VarDetails vd;
     vd.id = id;
     vd.type = type;
@@ -122,7 +122,7 @@
       check(lastVarId);
 
       //check the parent array, if exists
-      if (varStack.size()-2 >=0) {
+      if (varStack.size() - 2 >= 0) {
         // ppf("  Parent check %s\n", varStack[varStack.size()-2].c_str());
         strlcpy(beforeLastVarId, varStack[varStack.size()-2].c_str(), sizeof(beforeLastVarId));
         check(beforeLastVarId);
@@ -164,7 +164,7 @@
       //number value found
       // ppf("Number var %s: [%s]\n", lastVarId, value);
       if (collectNumbers)
-        uint16CollectList.push_back(atoi(value));
+        uint16CollectList.push_back(strtol(value, nullptr, 10));
 
       check(lastVarId, value);
   
@@ -202,9 +202,9 @@
       // ppf("check %s %s %s\n", vd->id, varId, value);
       if (strncmp(vd->id, varId, 32)==0) {
         // ppf("StarJson found %s:%s %d %s %d %d\n", varId, vd->type, vd->index, value?value:"", uint16CollectList.size(), funList.size());
-        if (strncmp(vd->type, "uint8", 7) ==0 && value) *uint8List[vd->index] = atoi(value);
-        // if (strncmp(vd->type, "uint16", 7) ==0 && value) *uint16List[vd->index] = atoi(value);
-        // if (strncmp(vd->type, "int", 7) ==0 && value) *intList[vd->index] = atoi(value);
+        if (strncmp(vd->type, "uint8", 7) ==0 && value) *uint8List[vd->index] = strtol(value, nullptr, 10);
+        // if (strncmp(vd->type, "uint16", 7) ==0 && value) *uint16List[vd->index] = strtol(value, nullptr, 10);
+        // if (strncmp(vd->type, "int", 7) ==0 && value) *intList[vd->index] = strtol(value, nullptr, 10);
         if (strncmp(vd->type, "char", 5) ==0 && value) strlcpy(charList[vd->index], value, 32); //assuming size 32 here
         if (strncmp(vd->type, "fun", 4) ==0) funList[vd->index](uint16CollectList); //call for every found item (no value check)
         foundCounter++;

@@ -11,6 +11,8 @@
 
 // #include <usbMidiHost.ino>
 
+#include "SysModules.h"
+
 class UserModMidi:public SysModule {
 
 public:
@@ -26,7 +28,7 @@ public:
 
   }
 
-  void onOffChanged() {
+  void onOffChanged() override{
     if (mdls->isConnected && isEnabled) {
 
 

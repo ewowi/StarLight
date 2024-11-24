@@ -509,7 +509,7 @@ SysModModel::SysModModel() :SysModule("Model") {
 void SysModModel::setup() {
   SysModule::setup();
 
-  Variable parentVar = ui->initSysMod(Variable(), name, 4303);
+  const Variable parentVar = ui->initSysMod(Variable(), name, 4303);
   parentVar.var["s"] = true; //setup
 
   ui->initButton(parentVar, "saveModel", false, [this](EventArguments) { switch (eventType) {
@@ -524,7 +524,7 @@ void SysModModel::setup() {
 
   #ifdef STARBASE_DEVMODE
 
-  ui->initCheckBox(parentVar, "showObsolete", false, false, [this](EventArguments) { switch (eventType) {
+  ui->initCheckBox(parentVar, "showObsolete", (bool3State)false, false, [this](EventArguments) { switch (eventType) {
     case onUI:
       variable.setComment("Show in UI (refresh)");
       return true;
@@ -625,7 +625,7 @@ void SysModModel::cleanUpModel(Variable parent, bool oPos, bool ro) {
 
       //recursive call
       if (!variable.children().isNull())
-        cleanUpModel(var, oPos, ro);
+        cleanUpModel(variable, oPos, ro);
     } 
   }
 }
@@ -689,11 +689,11 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
         var["fun"] = mdl->varEvents.size()-1;
       // }
       
-      if (varEvent(var, UINT8_MAX, onLoop)) { //test run if it supports loop
+      if (varEvent(variable, UINT8_MAX, onLoop)) { //test run if it supports loop
         //no need to check if already in...
         VarLoop loop;
         loop.loopFun = varEvent;
-        loop.var = var;
+        loop.variable = variable;
 
         ui->loopFunctions.push_back(loop);
         var["loopFun"] = ui->loopFunctions.size()-1;

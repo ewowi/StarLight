@@ -39,7 +39,7 @@ SysModSystem::SysModSystem() :SysModule("System") {};
 void SysModSystem::setup() {
   SysModule::setup();
   
-  Variable parentVar = ui->initSysMod(Variable(), name, 2000);
+  const Variable parentVar = ui->initSysMod(Variable(), name, 2000);
   parentVar.var["s"] = true; //setup
 
   ui->initText(parentVar, "name", _INIT(TOSTRING(APP)), 24, false, [this](EventArguments) { switch (eventType) {
@@ -240,7 +240,10 @@ void SysModSystem::loop() {
 
 void SysModSystem::loop10s() {
   //heartbeat
-  ppf("❤️");
+  if (sys->now < 60000)
+    ppf("❤️ %s\n", net->localIP().toString().c_str());
+  else
+    ppf("❤️");
 }
 
 //replace code by sentence as soon it occurs, so we know what will happen and what not
@@ -328,22 +331,22 @@ String SysModSystem::sysTools_reset2String(int resetCode) {
 int SysModSystem::sysTools_get_arduino_maxStackUsage(void) {
   char * loop_taskname = pcTaskGetTaskName(loop_taskHandle);    // ask for name of the known task (to make sure we are still looking at the right one)
 
-  if ((loop_taskHandle == NULL) || (loop_taskname == NULL) || (strncmp(loop_taskname, "loopTask", 9) != 0)) {
+  if ((loop_taskHandle == nullptr) || (loop_taskname == nullptr) || (strncmp(loop_taskname, "loopTask", 9) != 0)) {
     loop_taskHandle = xTaskGetHandle("loopTask");              // need to look for the task by name. FreeRTOS docs say this is very slow, so we store the result for next time
   }
 
-  if (loop_taskHandle != NULL) return uxTaskGetStackHighWaterMark(loop_taskHandle); // got it !!
+  if (loop_taskHandle != nullptr) return uxTaskGetStackHighWaterMark(loop_taskHandle); // got it !!
   else return -1;
 }
 
 int SysModSystem::sysTools_get_webserver_maxStackUsage(void) {
   char * tcp_taskname = pcTaskGetTaskName(tcp_taskHandle);     // ask for name of the known task (to make sure we are still looking at the right one)
 
-  if ((tcp_taskHandle == NULL) || (tcp_taskname == NULL) || (strncmp(tcp_taskname, "async_tcp", 10) != 0)) {
+  if ((tcp_taskHandle == nullptr) || (tcp_taskname == nullptr) || (strncmp(tcp_taskname, "async_tcp", 10) != 0)) {
     tcp_taskHandle = xTaskGetHandle("async_tcp");              // need to look for the task by name. FreeRTOS docs say this is very slow, so we store the result for next time
   }
 
-  if (tcp_taskHandle != NULL) return uxTaskGetStackHighWaterMark(tcp_taskHandle); // got it !!
+  if (tcp_taskHandle != nullptr) return uxTaskGetStackHighWaterMark(tcp_taskHandle); // got it !!
   else return -1;
 }
 

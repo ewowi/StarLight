@@ -28,14 +28,14 @@ SysModNetwork::SysModNetwork() :SysModule("Network") {};
 void SysModNetwork::setup() {
   SysModule::setup();
 
-  Variable parentVar = ui->initSysMod(Variable(), name, 3502);
+  const Variable parentVar = ui->initSysMod(Variable(), name, 3502);
   parentVar.var["s"] = true; //setup
 
   // Variable tableVar = ui->initTable(parentVar, "wfTbl", nullptr, false, [this](EventArguments) { //varEvent ro false: create and delete row possible
   //   variable.setComment("List of defined and available Wifi APs");
   // });
 
-  Variable currentVar = ui->initCheckBox(parentVar, "wiFi", true, false, [this](EventArguments) { switch (eventType) {
+  Variable currentVar = ui->initCheckBox(parentVar, "wiFi", (bool3State)true, false, [this](EventArguments) { switch (eventType) {
     case onChange:
       if (variable.value().as<bool>())
         initWiFiConnection();
@@ -81,7 +81,7 @@ void SysModNetwork::setup() {
 
   #ifdef STARBASE_ETHERNET
 
-    currentVar = ui->initCheckBox(parentVar, "ethernet", false, false, [this](EventArguments) { switch (eventType) {
+    currentVar = ui->initCheckBox(parentVar, "ethernet", (bool3State)false, false, [this](EventArguments) { switch (eventType) {
     case onLoop1s:
       //initEthernet not done in onChange as initEthernet needs a bit of a delay
       if (!ethActive && variable.getValue().as<bool>())
@@ -102,31 +102,31 @@ void SysModNetwork::setup() {
         mdl->setValueRowNr = rowNr;
 
         if (variable.value() == 0) {//manual
-          ui->initNumber(variable.var, "address", (uint16_t)0, 0, 255, false, [this](EventArguments) { switch (eventType) {
+          ui->initNumber(variable, "address", (uint16_t)0, 0, 255, false, [this](EventArguments) { switch (eventType) {
             case onChange:
               ethActive = false;
               return true;
             default: return false;
           }});
-          ui->initPin(variable.var, "power", 14, false, [this](EventArguments) { switch (eventType) {
+          ui->initPin(variable, "power", 14, false, [this](EventArguments) { switch (eventType) {
             case onChange:
               ethActive = false;
               return true;
             default: return false;
           }});
-          ui->initPin(variable.var, "mdc", 23, false, [this](EventArguments) { switch (eventType) {
+          ui->initPin(variable, "mdc", 23, false, [this](EventArguments) { switch (eventType) {
             case onChange:
               ethActive = false;
               return true;
             default: return false;
           }});
-          ui->initPin(variable.var, "mdio", 18, false, [this](EventArguments) { switch (eventType) {
+          ui->initPin(variable, "mdio", 18, false, [this](EventArguments) { switch (eventType) {
             case onChange:
               ethActive = false;
               return true;
             default: return false;
           }});
-          ui->initSelect(variable.var, "type", ETH_PHY_LAN8720, false, [this](EventArguments) { switch (eventType) {
+          ui->initSelect(variable, "type", ETH_PHY_LAN8720, false, [this](EventArguments) { switch (eventType) {
             case onUI: {
               JsonArray options = variable.setOptions();
               options.add("LAN8720");
@@ -144,7 +144,7 @@ void SysModNetwork::setup() {
               return true;
             default: return false;
           }});
-          ui->initSelect(variable.var, "clockMode", ETH_CLOCK_GPIO17_OUT, false, [this](EventArguments) { switch (eventType) {
+          ui->initSelect(variable, "clockMode", ETH_CLOCK_GPIO17_OUT, false, [this](EventArguments) { switch (eventType) {
             case onUI: {
               JsonArray options = variable.setOptions();
               options.add("GPIO0_IN");
@@ -179,7 +179,7 @@ void SysModNetwork::setup() {
 
   #endif
 
-  currentVar = ui->initCheckBox(parentVar, "AP", false, false, [this](EventArguments) { switch (eventType) {
+  currentVar = ui->initCheckBox(parentVar, "AP", (bool3State)false, false, [this](EventArguments) { switch (eventType) {
     case onChange:
       if (variable.value().as<bool>())
         initAP();
@@ -315,7 +315,7 @@ void SysModNetwork::initAP() {
 
   const char * apSSID = mdl->getValue("System", "name");
   if (WiFi.softAPConfig(IPAddress(4, 3, 2, 1), IPAddress(4, 3, 2, 1), IPAddress(255, 255, 255, 0))
-      && WiFi.softAP(apSSID, NULL, apChannel, false)) { //no password!!!
+      && WiFi.softAP(apSSID, nullptr, apChannel, false)) { //no password!!!
     ppf("AP success %s %s s:%d\n", apSSID, WiFi.softAPIP().toString().c_str(), WiFi.status()); //6 is disconnected
     #if defined(STARBASE_LOLIN_WIFI_FIX )
       WiFi.setTxPower(WIFI_POWER_8_5dBm );
