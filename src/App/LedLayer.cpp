@@ -30,7 +30,7 @@
 void fastled_fadeToBlackBy(CRGB* leds, uint16_t num_leds, uint8_t fadeBy) {
   fadeToBlackBy(leds, num_leds, fadeBy);
 }
-void fastled_fill_solid( struct CRGB * targetArray, int numToFill, const struct CRGB& color) {
+void fastled_fill_solid( struct CRGB * targetArray, int numToFill, const CRGB& color) {
   fill_solid(targetArray, numToFill, color);
 }
 void fastled_fill_rainbow(struct CRGB * targetArray, int numToFill, uint8_t initialhue, uint8_t deltahue) {
@@ -109,14 +109,14 @@ void LedsLayer::triggerMapping() {
     fix->mappingStatus = 1; //start mapping
 }
 
-bool LedsLayer::inBounds(int x, int y, int z) {
+bool LedsLayer::inBounds(int x, int y, int z) const {
   return x >= 0 && x < size.x && y >= 0 && y < size.y && z >= 0 && z < size.z;
 }
-bool LedsLayer::inBounds(Coord3D pos) {
+bool LedsLayer::inBounds(const Coord3D &pos) const {
   return pos >= 0 && pos < size;
 }
 
-int LedsLayer::XYZUnprojected(Coord3D pixel) {
+int LedsLayer::XYZUnprojected(const Coord3D &pixel) const {
   return pixel.x + pixel.y * size.x + pixel.z * size.x * size.y;
 }
 
@@ -136,7 +136,7 @@ int LedsLayer::XYZ(Coord3D pixel) {
 }
 
 // maps the virtual led to the physical led(s) and assign a color to it
-void LedsLayer::setPixelColor(int indexV, CRGB color) {
+void LedsLayer::setPixelColor(const int indexV, const CRGB& color) {
   if (indexV < 0)
     return;
   else if (indexV < mappingTableSizeUsed) {
@@ -159,6 +159,7 @@ void LedsLayer::setPixelColor(int indexV, CRGB color) {
         else
           ppf("dev setPixelColor i:%d m:%d s:%d\n", indexV, mappingTable[indexV].indexes, mappingTableIndexes.size());
         break;
+      default: ;
     }
   }
   else if (indexV < STARLIGHT_MAXLEDS) //no projection
@@ -168,15 +169,15 @@ void LedsLayer::setPixelColor(int indexV, CRGB color) {
   //   ppf(" dev sPC %d >= %d", indexV, STARLIGHT_MAXLEDS);
 }
 
-void LedsLayer::setPixelColorPal(int indexV, uint8_t palIndex, uint8_t palBri) {
+void LedsLayer::setPixelColorPal(const int indexV, uint8_t palIndex, uint8_t palBri) {
   setPixelColor(indexV, ColorFromPalette(palette, palIndex, palBri));
 }
 
-void LedsLayer::blendPixelColor(int indexV, CRGB color, uint8_t blendAmount) {
+void LedsLayer::blendPixelColor(const int indexV, const CRGB& color, uint8_t blendAmount) {
   setPixelColor(indexV, blend(color, getPixelColor(indexV), blendAmount));
 }
 
-CRGB LedsLayer::getPixelColor(int indexV) {
+CRGB LedsLayer::getPixelColor(const int indexV) const {
   if (indexV < 0)
     return CRGB::Black;
   else if (indexV < mappingTableSizeUsed) {
@@ -203,7 +204,7 @@ CRGB LedsLayer::getPixelColor(int indexV) {
   }
 }
 
-void LedsLayer::fadeToBlackBy(uint8_t fadeBy) {
+void LedsLayer::fadeToBlackBy(const uint8_t fadeBy) {
   if (effectDimension < projectionDimension) { //only process the effect pixels (so projections can do things with the other dimension)
     for (int y=0; y < ((effectDimension == _1D)?1:size.y); y++) { //1D effects only on y=0, 2D effects loop over y
       for (int x=0; x<size.x; x++) {
@@ -223,7 +224,7 @@ void LedsLayer::fadeToBlackBy(uint8_t fadeBy) {
   }
 }
 
-void LedsLayer::fill_solid(const struct CRGB& color) {
+void LedsLayer::fill_solid(const CRGB& color) {
   if (effectDimension < projectionDimension) { //only process the effect pixels (so projections can do things with the other dimension)
     for (int y=0; y < ((effectDimension == _1D)?1:size.y); y++) { //1D effects only on y=0, 2D effects loop over y
       for (int x=0; x<size.x; x++) {
@@ -238,7 +239,7 @@ void LedsLayer::fill_solid(const struct CRGB& color) {
   }
 }
 
-void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
+void LedsLayer::fill_rainbow(const uint8_t initialhue, const uint8_t deltahue) {
   if (effectDimension < projectionDimension) { //only process the effect pixels (so projections can do things with the other dimension)
     CHSV hsv;
     hsv.hue = initialhue;
@@ -304,7 +305,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
     }
   }
 
-  void LedsLayer::addPixelsPre(uint8_t rowNr) {
+  void LedsLayer::addPixelsPre(const uint8_t rowNr) {
     if (doMap) {
       fill_solid(CRGB::Black);
 
@@ -348,7 +349,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
     }
   }
 
-  void LedsLayer::addPixel(Coord3D pixel, uint8_t rowNr) {
+  void LedsLayer::addPixel(Coord3D pixel, const uint8_t rowNr) {
     if (projection && doMap) { //only real projections: add pixel in leds mappingTable
       // ppf("addPixel %d %d", pixel, fix->factor);
       if (pixel >= start * fix->factor && pixel <= end * fix->factor ) { //if pixel between start and end pos
@@ -387,7 +388,7 @@ void LedsLayer::fill_rainbow(uint8_t initialhue, uint8_t deltahue) {
     } //if projection && doMap
   } //addPixel
 
-  void LedsLayer::addPixelsPost(uint8_t rowNr) {
+  void LedsLayer::addPixelsPost(const uint8_t rowNr) {
     if (doMap) {
       ppf("addPixelsPost leds[%d] effect:%s pro:%s\n", rowNr, effect?effect->name():"None", projection?projection->name():"None");
 
