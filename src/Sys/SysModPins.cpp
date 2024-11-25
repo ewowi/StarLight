@@ -23,7 +23,7 @@ SysModPins::SysModPins() :SysModule("Pins") {
 
 void SysModPins::setup() {
   SysModule::setup();
-  Variable parentVar = ui->initSysMod(Variable(), name, 2202);
+  const Variable parentVar = ui->initSysMod(Variable(), name, 2202);
 
   //show table of allocated pins
   Variable tableVar = ui->initTable(parentVar, "pins", nullptr, true, [](EventArguments) { switch (eventType) {

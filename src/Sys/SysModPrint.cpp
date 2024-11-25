@@ -55,7 +55,7 @@ SysModPrint::SysModPrint() :SysModule("Print") {
 void SysModPrint::setup() {
   SysModule::setup();
 
-  Variable parentVar = ui->initSysMod(Variable(), name, 2302);
+  const Variable parentVar = ui->initSysMod(Variable(), name, 2302);
 
   //default to Serial
   ui->initSelect(parentVar, "output", 1, false, [](EventArguments) { switch (eventType) {
@@ -84,12 +84,12 @@ void SysModPrint::printf(const char * format, ...) {
 
   va_start(args, format);
 
-  uint8_t output = 1; //default serial
   char buffer[512]; //this is a lot for the stack - move to heap?
   vsnprintf(buffer, sizeof(buffer), format, args);
   bool toSerial = false;
   
   if (mdls->isConnected) {
+    uint8_t output = 1;
     if (mdl->model)
       output = mdl->getValue("Print", "output"); //"Print", 
 
@@ -113,7 +113,7 @@ void SysModPrint::printf(const char * format, ...) {
     toSerial = true;
 
   if (toSerial) {
-    Serial.print(strncmp(pcTaskGetTaskName(NULL), "loopTask", 9) == 0?"":"α"); //looptask λ/ asyncTCP task α
+    Serial.print(strncmp(pcTaskGetTaskName(nullptr), "loopTask", 9) == 0?"":"α"); //looptask λ/ asyncTCP task α
     Serial.print(buffer);
   }
 

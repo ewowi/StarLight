@@ -40,65 +40,53 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
     //1D Basis
     effects.push_back(new SolidEffect);
-    // 1D FastLed
+
+    effects.push_back(new BlackHoleEffect);
+    effects.push_back(new BouncingBallsEffect);
     effects.push_back(new BPMEffect);
     effects.push_back(new ConfettiEffect);
-    effects.push_back(new JuggleEffect);
-    effects.push_back(new RainbowWithGlitterEffect);
-    effects.push_back(new SinelonEffect);
-    //1D StarLight
-    effects.push_back(new RingRandomFlowEffect);
-    effects.push_back(new RunningEffect);
-    // 1D WLED
-    effects.push_back(new BouncingBallsEffect);
-    effects.push_back(new DripEffect);
-    effects.push_back(new FlowEffect);
-    effects.push_back(new HeartBeatEffect);
-    effects.push_back(new PopCornEffect); //contains wledaudio: useaudio, conditional compile
-    effects.push_back(new RainEffect);
-    effects.push_back(new RainbowEffect);
-
-    #ifdef STARLIGHT_USERMOD_AUDIOSYNC
-      //1D Volume
-      effects.push_back(new FreqMatrixEffect);
-      effects.push_back(new NoiseMeterEffect);
-      //1D frequency
-      effects.push_back(new AudioRingsEffect);
-      effects.push_back(new DJLightEffect);
-    #endif
-
-    //2D StarLight
-    effects.push_back(new GameOfLifeEffect); //2D & 3D
-    effects.push_back(new LinesEffect);
-    effects.push_back(new ParticleTestEffect); //2D & 3D
-    effects.push_back(new StarFieldEffect);
-    effects.push_back(new PraxisEffect);
-    
-    //2D WLED
-    effects.push_back(new BlackHoleEffect);
-    effects.push_back(new DNAEffect);
     effects.push_back(new DistortionWavesEffect);
+    effects.push_back(new DNAEffect);
+    effects.push_back(new DripEffect);
+    effects.push_back(new FireEffect);
+    effects.push_back(new FlowEffect);
     effects.push_back(new FrizzlesEffect);
+    effects.push_back(new GameOfLifeEffect); //2D & 3D
+    effects.push_back(new HeartBeatEffect);
+    effects.push_back(new JuggleEffect);
+    effects.push_back(new LinesEffect);
     effects.push_back(new LissajousEffect);
+    effects.push_back(new MarioTestEffect);
     effects.push_back(new Noise2DEffect);
     effects.push_back(new OctopusEffect);
-    effects.push_back(new FireEffect);
+    effects.push_back(new ParticleTestEffect); //2D & 3D
+    effects.push_back(new PopCornEffect); //contains wledaudio: useaudio, conditional compile
+    effects.push_back(new PixelMapEffect);
+    effects.push_back(new PraxisEffect);
+    effects.push_back(new RainEffect);
+    effects.push_back(new RainbowEffect);
+    effects.push_back(new RainbowWithGlitterEffect);
+    effects.push_back(new RingRandomFlowEffect);
+    effects.push_back(new RipplesEffect);
+    effects.push_back(new RubiksCubeEffect);
+    effects.push_back(new RunningEffect);
     effects.push_back(new ScrollingTextEffect);
+    effects.push_back(new SinelonEffect);
+    effects.push_back(new SphereMoveEffect);
+    effects.push_back(new StarFieldEffect);
+
     #ifdef STARLIGHT_USERMOD_AUDIOSYNC
-      //2D WLED
+      effects.push_back(new AudioRingsEffect);
+      effects.push_back(new DJLightEffect);
+      effects.push_back(new FreqMatrixEffect);
       effects.push_back(new FunkyPlankEffect);
       effects.push_back(new GEQEffect);
       effects.push_back(new LaserGEQEffect);
+      effects.push_back(new NoiseMeterEffect);
       effects.push_back(new PaintbrushEffect);
-      effects.push_back(new WaverlyEffect);
       effects.push_back(new VUMeterEffect);
+      effects.push_back(new WaverlyEffect);
     #endif
-    //3D
-    effects.push_back(new RipplesEffect);
-    effects.push_back(new RubiksCubeEffect);
-    effects.push_back(new SphereMoveEffect);
-    effects.push_back(new PixelMapEffect);
-    effects.push_back(new MarioTestEffect);
 
     #ifdef STARBASE_USERMOD_LIVE
       effects.push_back(new LiveEffect);
@@ -128,12 +116,13 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     #endif
     projections.push_back(new CheckerboardProjection);
     projections.push_back(new RotateProjection);
-  };
+    projections.push_back(new RippleYZ);
+  }; //constructor
 
   void LedModEffects::setup() {
     SysModule::setup();
 
-    Variable parentVar = ui->initAppMod(Variable(), name, 1201);
+    const Variable parentVar = ui->initAppMod(Variable(), name, 1201);
 
     Variable tableVar = ui->initTable(parentVar, "layers", nullptr, false, [this](EventArguments) { switch (eventType) {
       case onUI:
@@ -147,9 +136,9 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         }
         return true;
       case onDelete:
-        // ppf("layers onDelete %s[%d]\n", variable.id(), rowNr);
+        ppf("layers onDelete %s[%d]\n", variable.id(), rowNr);
         //tbd: fade to black
-        if (rowNr <fix->layers.size()) {
+        if (rowNr < fix->layers.size()) {
           LedsLayer *leds = fix->layers[rowNr];
           fix->layers.erase(fix->layers.begin() + rowNr); //remove from vector
           delete leds; //remove leds itself
@@ -192,15 +181,16 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
           // leds->doMap = true; //stop the effects loop already here
 
-          // #ifdef STARBASE_USERMOD_LIVE
-          //   //kill Live Script if moving to other effect
-          //   // if (leds->effectNr < effects.size()) {
-          //   //   Effect* effect = effects[leds->effectNr];
-          //     if (leds->effect && strncmp(leds->effect->name(), "Live Effect", 12) == 0) {
-          //       // liveM->kill();
-          //     }
-          //   // }
-          // #endif
+          #ifdef STARBASE_USERMOD_LIVE
+            //kill Live Script if moving to other effect
+            // if (leds->effectNr < effects.size()) {
+            //   Effect* effect = effects[leds->effectNr];
+              if (leds->effect && strncmp(leds->effect->name(), "Live Effect", 12) == 0) {
+                liveM->killAndDelete(leds->liveEffectID);
+                leds->liveEffectID = UINT8_MAX;
+              }
+            // }
+          #endif
 
           uint16_t effectNr = variable.getValue(rowNr);
 
@@ -261,9 +251,6 @@ inline uint16_t getRGBWsize(uint16_t nleds){
               leds->projection = nullptr; //not projections[0] so test on if (leds->projection) can be used
             else
               leds->projection = projections[proValue];
-
-            // leds->addPixelCached = &Projection::addPixel;
-            // leds->XYZCached = &Projection::XYZ;
 
             ppf("initProjection leds[%d] effect:%s a:%d\n", rowNr, leds->effect->name(), leds->projectionData.bytesAllocated);
 
@@ -375,7 +362,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         uint8_t rowNr = 0;
         for (LedsLayer *leds:fix->layers) {
           char message[32];
-          print->fFormat(message, sizeof(message), "%d x %d x %d -> %d", leds->size.x, leds->size.y, leds->size.z, leds->nrOfLeds);
+          print->fFormat(message, sizeof(message), "%d x %d x %d", leds->size.x, leds->size.y, leds->size.z);
           ppf("onSetValue ledsSize[%d] = %s\n", rowNr, message);
           variable.setValue(JsonString(message, JsonString::Copied), rowNr); //rowNr
           rowNr++;
@@ -433,7 +420,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
       //reset pixelsToBlend if multiple leds effects
       // ppf(" %d-%d", fix->pixelsToBlend.size(), fix->nrOfLeds);
-      if (fix->layers.size()) //if more then one effect
+      if (!fix->layers.empty()) //if more then one effect
         for (uint16_t indexP=0; indexP < fix->pixelsToBlend.size(); indexP++)
           fix->pixelsToBlend[indexP] = false;
 
@@ -452,6 +439,12 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
           mdl->getValueRowNr = rowNr;
           leds->effect->loop(*leds);
+          //using cached virtual class methods! (so no need for if projectionNr optimizations!)
+          if (leds->projection) {
+            leds->projectionData.begin();
+            (leds->projection->*leds->loopCached)(*leds);
+          }
+
           mdl->getValueRowNr = UINT8_MAX;
 
           if (fix->showTicker && rowNr == fix->layers.size() -1) { //last effect, add sysinfo
@@ -460,19 +453,19 @@ inline uint16_t getRGBWsize(uint16_t nleds){
               print->fFormat(text, sizeof(text), "%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
             else
               print->fFormat(text, sizeof(text), "%.3d %s", fix->realFps, fix->tickerTape);
-            leds->drawText(text, 16, 0, 1); //16 should be 0 after I have my first panel working ;-)
+            leds->drawText(text, 0, 0, 1);
           }
 
           // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
           //   leds->fadeToBlackBy(50);
 
           //loop over mapped pixels and set pixelsToBlend to true
-          if (fix->layers.size()) { //if more then one effect
-            for (std::vector<uint16_t> mappingTableIndex: leds->mappingTableIndexes) {
-              for (uint16_t indexP: mappingTableIndex)
+          if (!fix->layers.empty()) { //if more then one effect
+            for (const std::vector<uint16_t>& mappingTableIndex: leds->mappingTableIndexes) {
+              for (const uint16_t indexP: mappingTableIndex)
                 fix->pixelsToBlend[indexP] = true;
             }
-            for (PhysMap physMap: leds->mappingTable) {
+            for (const PhysMap &physMap: leds->mappingTable) {
               if (physMap.mapType == m_onePixel)
                 fix->pixelsToBlend[physMap.indexP] = true;
             }
@@ -491,25 +484,26 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       const char * canvasData = varSystem["canvasData"]; //0 - 494 - 140,150,0
       ppf("LedModEffects loop canvasData %s\n", canvasData);
 
-      uint8_t rowNr = 0; //currently only leds[0] supported
-      if (fix->layers.size()) { //if more then one effect
+      if (!fix->layers.empty()) {
+        uint8_t rowNr = 0;
+        //if more then one effect
         fix->layers[rowNr]->fadeToBlackBy();
 
         char * token = strtok((char *)canvasData, ":");
-        bool isStart = strncmp(token, "start", 6) == 0;
-        bool isEnd = strncmp(token, "end", 4) == 0;
+        const bool isStart = strncmp(token, "start", 6) == 0;
+        const bool isEnd = strncmp(token, "end", 4) == 0;
 
-        Coord3D midCoord; //placeHolder for mid
+        Coord3D midCoord{}; //placeHolder for mid
 
         Coord3D *newCoord = isStart? &fix->layers[rowNr]->start: isEnd? &fix->layers[rowNr]->end : &midCoord;
 
         if (newCoord) {
-          token = strtok(NULL, ",");
-          if (token != NULL) newCoord->x = atoi(token) / fix->factor; else newCoord->x = 0; //should never happen
-          token = strtok(NULL, ",");
-          if (token != NULL) newCoord->y = atoi(token) / fix->factor; else newCoord->y = 0;
-          token = strtok(NULL, ",");
-          if (token != NULL) newCoord->z = atoi(token) / fix->factor; else newCoord->z = 0;
+          token = strtok(nullptr, ",");
+          if (token != nullptr) newCoord->x = strtol(token, nullptr, 10) / fix->factor; else newCoord->x = 0; //should never happen
+          token = strtok(nullptr, ",");
+          if (token != nullptr) newCoord->y = strtol(token, nullptr, 10) / fix->factor; else newCoord->y = 0;
+          token = strtok(nullptr, ",");
+          if (token != nullptr) newCoord->z = strtol(token, nullptr, 10) / fix->factor; else newCoord->z = 0;
 
           mdl->setValue("layers", isStart?"start":isEnd?"end":"middle", *newCoord, 0); //assuming row 0 for the moment
 

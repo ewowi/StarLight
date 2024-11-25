@@ -22,7 +22,7 @@ public:
   UserModMDNS() :SysModule("MDNS") {
   };
 
-  void setup() {
+  void setup() override {
     SysModule::setup();
 
     escapedMac = WiFi.macAddress();
@@ -31,7 +31,7 @@ public:
 
   }
 
-  void onOffChanged() {
+  void onOffChanged() override {
     if (mdls->isConnected && isEnabled) {
 
       resetMDNS();

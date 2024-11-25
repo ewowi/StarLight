@@ -17,7 +17,7 @@ class UserModLive: public SysModule {
 public:
 
   char fileName[32] = ""; //running sc file
-  std::string scScript = ""; //externals etc generated (would prefer String for esp32...)
+  std::string scScript; //externals etc generated (would prefer String for esp32...)
 
   UserModLive() :SysModule("LiveScripts") {
     isEnabled = false; //need to enable after fresh setup
@@ -37,11 +37,11 @@ public:
   //testing class functions instead of static
   void showM();
 
-  void loop();
+  void loop() override;
 
-  void loop20ms();
+  void loop20ms() override;
 
-  void loop1s();
+  void loop1s() override;
 
   //return the id of the executable
   uint8_t compile(const char *fileName, const char *post = nullptr);
@@ -76,9 +76,9 @@ external uint32_t millis();
 external void pinMode(int a1, int a2);
 external void digitalWrite(int a1, int a2);
 external void delay(int a1);
-external uint8_t slider1;
-external uint8_t slider2;
-external uint8_t slider3;
+external uint8_t custom1Control;
+external uint8_t custom2Control;
+external uint8_t custom3Control;
 external CRGB hsv(int a1, int a2, int a3);
 external CRGB rgb(int a1, int a2, int a3);
 external uint8_t beatSin8(uint8_t a1, uint8_t a2, uint8_t a3);
@@ -92,5 +92,4 @@ external void fadeToBlackBy(uint8_t a1);
 define width 32
 define height 32
 define NUM_LEDS 1024
-define panel_width 32
 */

@@ -36,6 +36,8 @@ class LedsLayer; //forward
 //should not contain variables/bytes to keep mem as small as possible!!
 class Effect {
 public:
+  virtual ~Effect() = default;
+
   virtual const char * name() {return "noname";}
   virtual const char * tags() {return "";}
   virtual uint8_t dim() {return _1D;};
@@ -47,17 +49,22 @@ public:
 
 class Projection {
 public:
+  virtual ~Projection() = default;
+
   virtual const char * name() {return "noname";}
   virtual const char * tags() {return "";}
 
   virtual void setup(LedsLayer &leds, Variable parentVar) {}
 
+  //per frame
+  virtual void loop(LedsLayer &leds) {}
+  
   //setupPixels
   virtual void addPixelsPre(LedsLayer &leds) {}
 
   //setupPixel
-  virtual void addPixel(LedsLayer &leds, Coord3D &pixelAdjusted) {}
-  
+  virtual void addPixel(LedsLayer &leds, Coord3D &pixel) {} //not const as pixel is changed
+
   //loopPixel
   virtual void XYZ(LedsLayer &leds, Coord3D &pixel) {}
 };
@@ -169,7 +176,7 @@ class SharedData {
     return *result;
   }
 
-  bool success() {
+  bool success() const {
     return dataAllocated;
   }
 
@@ -180,17 +187,17 @@ class LedsLayer {
 public:
 
   Coord3D size = {8,8,1}; //not 0,0,0 to prevent div0 eg in Octopus2D
-  uint16_t nrOfLeds = 64;  //amount of virtual leds (calculated by projection)
 
   Effect *effect = nullptr;
   Projection *projection = nullptr;
 
-  //using cached virtual class methods! 4 bytes each - thats for now the price we pay for speed
+  //using cached virtual class methods! 4 bytes each - that's for now the price we pay for speed
       //setting cached virtual class methods! (By chatGPT so no source and don't understand how it works - scary!)
-      //   (don't know how it works as it is not refering to derived classes, just to the base class but later it calls the derived class method)
+      //   (don't know how it works as it is not referring to derived classes, just to the base class but later it calls the derived class method)
   void (Projection::*addPixelsPreCached)(LedsLayer &) = &Projection::addPixelsPre;
   void (Projection::*addPixelCached)(LedsLayer &, Coord3D &) = &Projection::addPixel;
   void (Projection::*XYZCached)(LedsLayer &, Coord3D &) = &Projection::XYZ;
+  void (Projection::*loopCached)(LedsLayer &) = &Projection::loop;
 
   uint8_t effectDimension = UINT8_MAX;
   uint8_t projectionDimension = UINT8_MAX;
@@ -225,12 +232,13 @@ public:
   }
 
   //use inBounds with care (or not at all) is sPC, gPC just ignores out of bounds
-  bool inBounds(int x, int y, int z = 0);
-  bool inBounds(Coord3D pos);
+  bool inBounds(int x, int y, int z = 0) const;
+  bool inBounds(const Coord3D & pos) const;
 
-  int XYZUnprojected(Coord3D pixel);
+  int XYZUnprojected(const Coord3D &pixel) const;
+
   int XYZ(int x, int y, int z);
-  int XYZ(Coord3D pixel);
+  int XYZ(Coord3D pixel); //not const as pixel can be changed, not & because called with {x,y,z} ...
 
   LedsLayer() {
     ppf("LedsLayer constructor (PhysMap:%d)\n", sizeof(PhysMap));
@@ -254,46 +262,46 @@ public:
   CRGB operatorCRGB;
 
   //leds = leds[indexV] ,[] needs to return LedsLayer to allow other operators to work on it
-  LedsLayer& operator[](uint16_t indexV) {
+  LedsLayer& operator[](const uint16_t indexV) {
     operatorIndexV = indexV;
     operatorCRGB = getPixelColor(operatorIndexV); 
     return *this;
   }
 
   //leds = leds[pos]
-  LedsLayer& operator[](Coord3D pos) {
+  LedsLayer& operator[](const Coord3D &pos) {
     operatorIndexV = XYZ(pos.x, pos.y, pos.z);
     operatorCRGB = getPixelColor(operatorIndexV);
     return *this;
   }
 
   //leds = color
-  LedsLayer& operator=(const CRGB color) {
+  LedsLayer& operator=(const CRGB &color) {
     setPixelColor(operatorIndexV, color);
     return *this;
   }
 
   //leds = leds += color
-  LedsLayer& operator+=(const CRGB color) {
+  LedsLayer& operator+=(const CRGB &color) {
     setPixelColor(operatorIndexV, operatorCRGB + color);
     return *this;
   }
 
   //leds = leds != color
-  LedsLayer& operator|=(const CRGB color) {
+  LedsLayer& operator|=(const CRGB &color) {
     // setPixelColor(operatorIndexV, color);
     setPixelColor(operatorIndexV, operatorCRGB | color);
     return *this;
   }
 
   //leds = leds + color
-  LedsLayer& operator+(const CRGB color) {
+  LedsLayer& operator+(const CRGB &color) {
     setPixelColor(operatorIndexV, operatorCRGB + color);
     return *this;
   }
 
   //CRGB = leds[].color - color
-  CRGB& operator-(const CRGB color) {
+  CRGB& operator-(const CRGB &color) {
     // setPixelColor(operatorIndexV, getPixelColor(operatorIndexV) + color);
     operatorCRGB -= color;
     return operatorCRGB;
@@ -306,48 +314,48 @@ public:
 
 
   //bool = leds != color
-  bool operator!=(const CRGB color) {
+  bool operator!=(const CRGB &color) const {
     return operatorCRGB != color;
   }
 
   //bool = leds[]<crgb
-  bool operator<(const CRGB color) {
+  bool operator<(const CRGB &color) const {
     return operatorCRGB < color;
   }
 
 
   // maps the virtual led to the physical led(s) and assign a color to it
-  void setPixelColor(int indexV, CRGB color);
-  void setPixelColor(Coord3D pixel, CRGB color) {setPixelColor(XYZ(pixel), color);}
+  void setPixelColor(int indexV, const CRGB& color);
+  void setPixelColor(const Coord3D &pixel, const CRGB& color) {setPixelColor(XYZ(pixel), color);}
 
   // temp methods until all effects have been converted to Palette / 2 byte mapping mode
   void setPixelColorPal(int indexV, uint8_t palIndex, uint8_t palBri = 255);
-  void setPixelColorPal(Coord3D pixel, uint8_t palIndex, uint8_t palBri = 255) {setPixelColorPal(XYZ(pixel), palIndex, palBri);}
+  void setPixelColorPal(const Coord3D &pixel, const uint8_t palIndex, const uint8_t palBri = 255) {setPixelColorPal(XYZ(pixel), palIndex, palBri);}
 
-  void blendPixelColor(int indexV, CRGB color, uint8_t blendAmount);
-  void blendPixelColor(Coord3D pixel, CRGB color, uint8_t blendAmount) {blendPixelColor(XYZ(pixel), color, blendAmount);}
+  void blendPixelColor(int indexV, const CRGB& color, uint8_t blendAmount);
+  void blendPixelColor(const Coord3D &pixel, const CRGB& color, const uint8_t blendAmount) {blendPixelColor(XYZ(pixel), color, blendAmount);}
 
-  CRGB getPixelColor(int indexV);
-  CRGB getPixelColor(Coord3D pixel) {return getPixelColor(XYZ(pixel));}
+  CRGB getPixelColor(int indexV) const;
+  CRGB getPixelColor(const Coord3D &pixel) {return getPixelColor(XYZ(pixel));}
 
-  void addPixelColor(int indexV, CRGB color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
-  void addPixelColor(Coord3D pixel, CRGB color) {setPixelColor(pixel, getPixelColor(pixel) + color);}
+  void addPixelColor(const int indexV, const CRGB &color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
+  void addPixelColor(const Coord3D &pixel, const CRGB &color) {setPixelColor(pixel, getPixelColor(pixel) + color);}
 
   void fadeToBlackBy(uint8_t fadeBy = 255);
-  void fill_solid(const struct CRGB& color);
+  void fill_solid(const CRGB& color);
   void fill_rainbow(uint8_t initialhue, uint8_t deltahue);
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
-  bool isMapped(int indexV) {
+  bool isMapped(const int indexV) const {
     return indexV < mappingTableSizeUsed && (mappingTable[indexV].mapType == m_onePixel || mappingTable[indexV].mapType == m_morePixels);
   }
 
   void blur1d(fract8 blur_amount)
   {
-    uint8_t keep = 255 - blur_amount;
-    uint8_t seep = blur_amount >> 1;
+    const uint8_t keep = 255 - blur_amount;
+    const uint8_t seep = blur_amount >> 1;
     CRGB carryover = CRGB::Black;
-    for( uint16_t i = 0; i < nrOfLeds; ++i) {
+    for( uint16_t i = 0; i < size.x; ++i) {
         CRGB cur = getPixelColor(i);
         CRGB part = cur;
         part.nscale8( seep);
@@ -561,6 +569,8 @@ static unsigned trigoCached = 1;
 static unsigned trigoUnCached = 1;
 
 struct Trigo {
+  virtual ~Trigo() = default;
+
   uint16_t period = 360; //default period 360
   Trigo(uint16_t period = 360) {this->period = period;}
   float sinValue[3]; uint16_t sinAngle[3] = {UINT16_MAX,UINT16_MAX,UINT16_MAX}; //caching of sinValue=sin(sinAngle) for tilt, pan and roll
@@ -608,13 +618,13 @@ struct Trigo {
 
 struct Trigo8: Trigo { //FastLed sin8 and cos8
   using Trigo::Trigo;
-  float sinBase(uint16_t angle) {return (sin8(256.0f * angle / period) - 128) / 127.0f;}
-  float cosBase(uint16_t angle) {return (cos8(256.0f * angle / period) - 128) / 127.0f;}
+  float sinBase(uint16_t angle) override {return (sin8(256.0f * angle / period) - 128) / 127.0f;}
+  float cosBase(uint16_t angle) override {return (cos8(256.0f * angle / period) - 128) / 127.0f;}
 };
 struct Trigo16: Trigo { //FastLed sin16 and cos16
   using Trigo::Trigo;
-  float sinBase(uint16_t angle) {return sin16(65536.0f * angle / period) / 32645.0f;}
-  float cosBase(uint16_t angle) {return cos16(65536.0f * angle / period) / 32645.0f;}
+  float sinBase(uint16_t angle) override {return sin16(65536.0f * angle / period) / 32645.0f;}
+  float cosBase(uint16_t angle) override {return cos16(65536.0f * angle / period) / 32645.0f;}
 };
 
 static Trigo trigoTiltPanRoll(255); // Trigo8 is hardly any faster (27 vs 28 fps) (spanXY=28)

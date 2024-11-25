@@ -18,13 +18,14 @@
 #include "FastLED.h"
 
 #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+  #define NUMSTRIPS 16 //can this be changed e.g. when we have 20 pins?
+  #define NUM_LEDS_PER_STRIP 256 //could this be removed from driver lib as makes not so much sense
   #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
     #include "I2SClockLessLedDriveresp32s3.h"
   #else
     #include "I2SClocklessLedDriver.h"
   #endif
-#endif
-#ifdef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+#elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
   //used in I2SClocklessVirtualLedDriver.h,
   //see https://github.com/ewowi/I2SClocklessVirtualLedDriver read me
   #define NUM_LEDS_PER_STRIP 256 // for I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY ...
@@ -51,12 +52,10 @@
     #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) //works but mapping using StarLight mappingTable needed
   #endif
 
-  #include "I2SClocklessVirtualLedDriver.h"
+  #define TAG "StarLight" // for S3 (todo also for non s3...)
+  #define OVERCLOCK_1MHZ // for S3 (OVERCLOCK_1_1MHZ)
 
-  //StarLight specific
-  #ifndef STARLIGHT_ICVLD_PINS
-    #define STARLIGHT_ICVLD_PINS 14,12,13,25,33,32 // must be 6, see initLed
-  #endif
+  #include "I2SClocklessVirtualLedDriver.h"
 
   #ifndef STARLIGHT_ICVLD_CLOCK_PIN
     #define STARLIGHT_ICVLD_CLOCK_PIN 26
@@ -64,7 +63,15 @@
   #ifndef STARLIGHT_ICVLD_LATCH_PIN
     #define STARLIGHT_ICVLD_LATCH_PIN 27
   #endif
+#elif STARLIGHT_HUB75_DRIVER
+  #include "WhateverHubDriver.h"
 #endif
+
+struct SortedPin {
+  uint16_t startLed;
+  uint16_t nrOfLeds;
+  uint8_t pin;
+};
 
 class LedModFixture: public SysModule {
 
@@ -91,16 +98,17 @@ public:
     ppf("Fixture constructor ptb:%d", pixelsToBlend.size());
 
     #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+      //'hack' to make sure show is not called before init
       #if !(CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2)
         driver.total_leds = 0;
       #endif
     #endif
   };
 
-  void setup();
+  void setup() override;
 
-  void loop();
-  void loop1s();
+  void loop() override;
+  void loop1s() override;
 
   Coord3D fixSize = {8,8,1};
   uint16_t nrOfLeds = 64; //amount of physical leds
@@ -112,6 +120,10 @@ public:
   uint8_t viewRotation = 0;
   uint8_t bri = 10;
   uint8_t bytesPerPixel = 2;
+
+  uint8_t gammaRed = 255;
+  uint8_t gammaGreen = 176;
+  uint8_t gammaBlue = 240;
 
   uint8_t fixtureNr = UINT8_MAX;
 
@@ -127,9 +139,9 @@ public:
 
   uint16_t fps = 200;
   uint16_t realFps = 200;
-  bool3State showTicker = true;
+  bool3State showTicker = false;
   char tickerTape[20] = "";
-  bool3State driverShow = true;
+  bool3State showDriver = true;
 
   //temporary here  
   uint16_t indexP = 0;
@@ -147,6 +159,8 @@ public:
   void addPixel(Coord3D pixel);
   void addPin(uint8_t pin);
   void addPixelsPost();
+  void driverInit(const std::vector<SortedPin> &sortedPins);
+  void driverShow();
 
   #ifdef STARBASE_USERMOD_LIVE
     uint8_t liveFixtureID = UINT8_MAX;
@@ -159,10 +173,11 @@ public:
       I2SClocklessLedDriver driver;
     #endif
     uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
-  #endif
-  #ifdef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+  #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
     I2SClocklessVirtualLedDriver driver;
     uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
+  #elif STARLIGHT_HUB75_DRIVER
+    WhateverHubDriver driver;
   #endif
 };
 

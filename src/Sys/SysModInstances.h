@@ -110,10 +110,10 @@ public:
   SysModInstances() :SysModule("Instances") {
   };
 
-  void setup() {
+  void setup() override {
     SysModule::setup();
 
-    Variable parentVar = ui->initSysMod(Variable(), name, 3000);
+    const Variable parentVar = ui->initSysMod(Variable(), name, 3000);
 
     Variable tableVar = ui->initTable(parentVar, "instances", nullptr, true);
     
@@ -232,7 +232,7 @@ public:
       Variable insVariable = mdl->initVar(tableVar, columnVarID, variable.var["type"], false, [this](Variable insVariable, uint8_t rowNr, uint8_t eventType) {
         //extract the variable from insVariable.id()
         char pid[32]; strlcpy(pid, insVariable.id() + 3, sizeof(pid)); //+3 : remove ins
-        char * id = strtok(pid, "_"); if (id != NULL ) {strlcpy(pid, id, sizeof(pid)); id = strtok(NULL, "_");} //split pid and id
+        char * id = strtok(pid, "_"); if (id != nullptr ) {strlcpy(pid, id, sizeof(pid)); id = strtok(nullptr, "_");} //split pid and id
         Variable variable = Variable(mdl->findVar(pid, id)); 
         switch (eventType) { //varEvent
         case onSetValue:
@@ -274,7 +274,7 @@ public:
         // insVar["fun"] = var["fun"]; //copy the onUI
       }
 
-    });
+    }); //findVars
 
     if (sizeof(UDPWLEDMessage) != 44) {
       ppf("dev Size of UDP message is not 44: %d\n", sizeof(UDPWLEDMessage));
@@ -291,7 +291,7 @@ public:
     ppf("UDP message sizes WLED:%d Star:%d WLED-Sync:%d\n", sizeof(UDPWLEDMessage), sizeof(UDPStarMessage), sizeof(UDPWLEDSyncMessage));
   }
 
-  void onOffChanged() {
+  void onOffChanged() override {
     if (mdls->isConnected && isEnabled) {
       udpConnected = notifierUdp.begin(notifierUDPPort); //sync
       udp2Connected = instanceUDP.begin(instanceUDPPort); //instances
@@ -307,7 +307,7 @@ public:
     }
   }
 
-  void loop20ms() { //20 ms instead of loop() tripples the loops/sec!
+  void loop20ms() override { //20 ms instead of loop() tripples the loops/sec!
 
     handleNotifications();
 
@@ -319,7 +319,7 @@ public:
 
   }
 
-  void loop10s() {
+  void loop10s() override {
     sendSysInfoUDP();  //temporary every second
   }
 
@@ -331,10 +331,10 @@ public:
     char * token = strtok(copy, "-"); //before minus
 
     //check if group
-    if (token != NULL) {
+    if (token != nullptr) {
       // ppf("groupOfName 1:%s 2:%s 3:%s 4:%s 5:%s\n",name, strnstr(name, "-", 32), name, strtok(name, "-"), name?name:"X"); 
-      token = strtok(NULL, "-"); //after -
-      if (token != NULL) {
+      token = strtok(nullptr, "-"); //after -
+      if (token != nullptr) {
         // ppf("groupOfName g:%s i:%s\n", copy, token); 
         if (group) strlcpy(group, copy, sizeof(copy)); //group has same size!
         return true;
@@ -778,9 +778,9 @@ public:
                   char pid[32];
                   strlcpy(pid, pair.key().c_str(), sizeof(pid));
                   char * id = strtok(pid, ".");
-                  if (id != NULL ) {
+                  if (id != nullptr ) {
                     strlcpy(pid, id, sizeof(pid)); //copy the id part
-                    id = strtok(NULL, "."); //the rest after .
+                    id = strtok(nullptr, "."); //the rest after .
                   }
 
                   Variable(mdl->findVar(pid, id)).setValueJV(pair.value());

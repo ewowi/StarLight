@@ -45,7 +45,7 @@ SysModWeb::SysModWeb() :SysModule("Web") {
 
 void SysModWeb::setup() {
   SysModule::setup();
-  Variable parentVar = ui->initSysMod(Variable(), name, 3101);
+  const Variable parentVar = ui->initSysMod(Variable(), name, 3101);
 
   Variable tableVar = ui->initTable(parentVar, "clients", nullptr, true, [](EventArguments) { switch (eventType) {
     case onLoop1s:
@@ -657,9 +657,9 @@ bool SysModWeb::captivePortal(WebRequest *request)
 }
 
 JsonDocument * SysModWeb::getResponseDoc() {
-  // ppf("response wsevent core %d %s\n", xPortGetCoreID(), pcTaskGetTaskName(NULL));
+  // ppf("response wsevent core %d %s\n", xPortGetCoreID(), pcTaskGetTaskName(nullptr));
 
-  return strncmp(pcTaskGetTaskName(NULL), "loopTask", 9) == 0?responseDocLoopTask:responseDocAsyncTCP;
+  return strncmp(pcTaskGetTaskName(nullptr), "loopTask", 9) == 0?responseDocLoopTask:responseDocAsyncTCP;
 }
 
 JsonObject SysModWeb::getResponseObject() {
@@ -669,7 +669,7 @@ JsonObject SysModWeb::getResponseObject() {
 void SysModWeb::sendResponseObject(WebClient * client) {
   JsonObject responseObject = getResponseObject();
   if (responseObject.size()) {
-    // if (strncmp(pcTaskGetTaskName(NULL), "loopTask", 9) != 0) {
+    // if (strncmp(pcTaskGetTaskName(nullptr), "loopTask", 9) != 0) {
     //   ppf("send ");
     //   char sep[3] = "";
     //   for (JsonPair pair: responseObject) {

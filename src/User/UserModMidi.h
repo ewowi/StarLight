@@ -11,6 +11,8 @@
 
 // #include <usbMidiHost.ino>
 
+#include "SysModules.h"
+
 class UserModMidi:public SysModule {
 
 public:
@@ -18,7 +20,7 @@ public:
   UserModMidi() :SysModule("Midi") {
   };
 
-  void setup() {
+  void setup() override {
     SysModule::setup();
 
     // UsbMidi_Setup();
@@ -26,7 +28,7 @@ public:
 
   }
 
-  void onOffChanged() {
+  void onOffChanged() override{
     if (mdls->isConnected && isEnabled) {
 
 
@@ -34,7 +36,7 @@ public:
     }
   }
 
-  void loop() {
+  void loop() override {
     // if (esp32_usb_midi.available()) {
     //     esp32_usb_midi.read();  // Read MIDI data
     // }

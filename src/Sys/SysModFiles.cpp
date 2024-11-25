@@ -28,7 +28,7 @@ SysModFiles::SysModFiles() :SysModule("Files") {
 
 void SysModFiles::setup() {
   SysModule::setup();
-  Variable parentVar = ui->initSysMod(Variable(), name, 2101);
+  const Variable parentVar = ui->initSysMod(Variable(), name, 2101);
 
   Variable tableVar = ui->initTable(parentVar, "files", nullptr, false, [this](EventArguments) { switch (eventType) {
     case onUI:

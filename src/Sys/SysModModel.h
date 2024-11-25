@@ -39,56 +39,56 @@ struct Coord3D {
     // return x != rhs.x || y != rhs.y || z != rhs.z;
     return !(*this==rhs);
   }
-  bool operator==(Coord3D rhs) {
+  bool operator==(const Coord3D rhs) const {
     return x == rhs.x && y == rhs.y && z == rhs.z;
   }
-  bool operator>=(Coord3D rhs) {
+  bool operator>=(const Coord3D rhs) const {
     return x >= rhs.x && y >= rhs.y && z >= rhs.z;
   }
-  bool operator<=(Coord3D rhs) {
+  bool operator<=(const Coord3D rhs) const {
     return x <= rhs.x && y <= rhs.y && z <= rhs.z;
   }
-  bool operator<(Coord3D rhs) {
+  bool operator<(const Coord3D rhs) const {
     return x < rhs.x && y < rhs.y && z < rhs.z;
   }
-  bool operator>=(int rhs) {
+  bool operator>=(const int rhs) const {
     return x >= rhs && y >= rhs && z >= rhs;
   }
 
   //assignments
-  Coord3D operator=(Coord3D rhs) {
+  Coord3D operator=(const Coord3D rhs) {
     // ppf("Coord3D assign %d,%d,%d\n", rhs.x, rhs.y, rhs.z);
     x = rhs.x;
     y = rhs.y;
     z = rhs.z;
     return *this;
   }
-  Coord3D operator+=(Coord3D rhs) {
+  Coord3D operator+=(const Coord3D rhs) {
     x += rhs.x;
     y += rhs.y;
     z += rhs.z;
     return *this;
   }
-  Coord3D operator-=(Coord3D rhs) {
+  Coord3D operator-=(const Coord3D rhs) {
     x -= rhs.x;
     y -= rhs.y;
     z -= rhs.z;
     return *this;
   }
-  Coord3D operator*=(Coord3D rhs) {
+  Coord3D operator*=(const Coord3D rhs) {
     x *= rhs.x;
     y *= rhs.y;
     z *= rhs.z;
     return *this;
   }
-  Coord3D operator/=(Coord3D rhs) {
+  Coord3D operator/=(const Coord3D rhs) {
     if (rhs.x) x /= rhs.x;
     if (rhs.y) y /= rhs.y;
     if (rhs.z) z /= rhs.z;
     return *this;
   }
   //Minus / delta (abs)
-  Coord3D operator-(Coord3D rhs) {
+  Coord3D operator-(const Coord3D rhs) const {
     Coord3D result;
     // result.x = x > rhs.x? x - rhs.x : rhs.x - x;
     // result.y = y > rhs.y? y - rhs.y : rhs.y - y;
@@ -98,28 +98,28 @@ struct Coord3D {
     result.z = z - rhs.z;
     return result;
   }
-  Coord3D operator+(Coord3D rhs) {
+  Coord3D operator+(const Coord3D rhs) const {
     return Coord3D{x + rhs.x, y + rhs.y, z + rhs.z};
   }
-  Coord3D operator*(Coord3D rhs) {
+  Coord3D operator*(const Coord3D rhs) const {
     return Coord3D{x * rhs.x, y * rhs.y, z * rhs.z};
   }
-  Coord3D operator/(Coord3D rhs) {
+  Coord3D operator/(const Coord3D rhs) const {
     return Coord3D{x / rhs.x, y / rhs.y, z / rhs.z};
   }
-  Coord3D operator%(Coord3D rhs) {
+  Coord3D operator%(const Coord3D rhs) const {
     return Coord3D{x % rhs.x, y % rhs.y, z % rhs.z};
   }
-  Coord3D minimum(Coord3D rhs) {
+  Coord3D minimum(const Coord3D rhs) const {
     return Coord3D{min(x, rhs.x), min(y, rhs.y), min(z, rhs.z)};
   }
-  Coord3D maximum(Coord3D rhs) {
+  Coord3D maximum(const Coord3D rhs) const {
     return Coord3D{max(x, rhs.x), max(y, rhs.y), max(z, rhs.z)};
   }
-  Coord3D operator*(uint8_t rhs) {
+  Coord3D operator*(const uint8_t rhs) const {
     return Coord3D{x * rhs, y * rhs, z * rhs};
   }
-  Coord3D operator/(uint8_t rhs) {
+  Coord3D operator/(const uint8_t rhs) const {
     return Coord3D{x / rhs, y / rhs, z / rhs};
   }
   //move the coordinate one step closer to the goal, if difference in coordinates (used in GenFix)
@@ -129,15 +129,15 @@ struct Coord3D {
     if (z != goal.z) z += (z<goal.z)?step:-step;
     return *this;
   }
-  unsigned distance(Coord3D rhs) {
+  unsigned distance(const Coord3D rhs) const {
     Coord3D delta = (*this-rhs);
     return sqrt((delta.x)*(delta.x) + (delta.y)*(delta.y) + (delta.z)*(delta.z));
   }
-  unsigned distanceSquared(Coord3D rhs) {
+  unsigned distanceSquared(const Coord3D rhs) const {
     Coord3D delta = (*this-rhs);
     return (delta.x)*(delta.x) + (delta.y)*(delta.y) + (delta.z)*(delta.z);
   }
-  bool isOutofBounds(Coord3D rhs) {
+  bool isOutofBounds(const Coord3D rhs) const {
     return x < 0 || y < 0 || z < 0 || x >= rhs.x || y >= rhs.y || z >= rhs.z;
   }
 };
@@ -209,31 +209,31 @@ class Variable {
   JsonObject var;
 
   Variable() {this->var = JsonObject();} //undefined variable
-  Variable(JsonObject var) {this->var = var;}
+  explicit Variable(JsonObject var) {this->var = var;}
 
   //core methods 
-  const char *pid() {return var["pid"];}
-  const char *id() {return var["id"];}
+  const char *pid() const {return var["pid"];}
+  const char *id() const {return var["id"];}
 
-  JsonVariant value() {return var["value"];}
-  JsonVariant value(uint8_t rowNr) {return var["value"][rowNr];}
+  JsonVariant value() const {return var["value"];}
+  JsonVariant value(uint8_t rowNr) const {return var["value"][rowNr];}
 
   String valueString(uint8_t rowNr = UINT8_MAX);
 
-  int order() {return var["o"];}
-  void order(int value) {var["o"] = value;}
+  int order() const {return var["o"];}
+  void order(int value) const {var["o"] = value;}
 
-  bool readOnly() {return var["ro"];}
+  bool readOnly() const {return var["ro"];}
   void readOnly(bool value) {var["ro"] = value;}
 
-  JsonArray children() {return var["n"];}
+  JsonArray children() const {return var["n"];}
 
-  void defaultOrder(int value) {if (order() > -1000) order(- value); } //set default order (in range >=1000). Don't use auto generated order as order can be changed in the ui (WIP)
+  void defaultOrder(int value) const {if (order() > -1000) order(- value); } //set default order (in range >=1000). Don't use auto generated order as order can be changed in the ui (WIP)
 
   //recursively remove all value[rowNr] from children of var
   void removeValuesForRow(uint8_t rowNr);
 
-  JsonArray valArray() {if (var["value"].is<JsonArray>()) return var["value"]; else return JsonArray(); }
+  JsonArray valArray() const {if (var["value"].is<JsonArray>()) return var["value"]; else return JsonArray(); }
 
   //if variable is a table, loop through its rows
   void rows(std::function<void(Variable, uint8_t)> fun = nullptr);
@@ -354,12 +354,12 @@ public:
   std::vector<VarEvent> varEvents;
 
   SysModModel();
-  void setup();
-  void loop20ms();
-  void loop1s();
+  void setup() override;
+  void loop20ms() override;
+  void loop1s() override;
 
   //adds a variable to the model
-  Variable initVar(Variable parent, const char * id, const char * type, bool readOnly = true, VarEvent varEvent = nullptr);
+  Variable initVar(Variable parent, const char * id, const char * type, bool readOnly = true, const VarEvent &varEvent = nullptr);
 
   //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
   void cleanUpModel(Variable parent = Variable(), bool oPos = true, bool ro = false);
@@ -388,9 +388,9 @@ public:
   }
 
   //returns the var defined by id (parent to recursively call findVar)
-  bool walkThroughModel(std::function<bool(Variable)> fun, JsonObject parent = JsonObject());
-  JsonObject findVar(const char * pid, const char * id, JsonObject parent = JsonObject());
-  void findVars(const char * id, bool value, FindFun fun, JsonArray parent = JsonArray());
+  JsonObject walkThroughModel(std::function<JsonObject(JsonObject, JsonObject)> fun, JsonObject parentVar = JsonObject());
+  JsonObject findVar(const char * pid, const char * id, JsonObject parentVar = JsonObject());
+  void findVars(const char * id, bool value, FindFun fun, JsonObject parentVar = JsonObject());
 
   uint8_t linearToLogarithm(uint8_t value, uint8_t minp = 0, uint8_t maxp = UINT8_MAX) {
     if (value == 0) return 0;

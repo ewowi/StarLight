@@ -11,36 +11,37 @@
 
 //Projections should not contain variables/bytes to keep mem as small as possible!!
 
+#include "../Sys/SysModUI.h"
 #include "LedModFixture.h"
 
 class NoneProjection: public Projection {
-  const char * name() {return "None";}
-  //uint8_t dim() {return _1D;} // every projection should work for all D
-  const char * tags() {return "💫";}
+  const char * name() override {return "None";}
+  //uint8_t dim() override {return _1D;} // every projection should work for all D
+  const char * tags() override {return "💫";}
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
   }
 }; //NoneProjection
 
 #ifdef STARLIGHT_LIVE_MAPPING
   class LiveMappingProjection: public Projection {
-    const char * name() {return "Live Fixture Mapping";}
-    //uint8_t dim() {return _1D;} // every projection should work for all D
-    const char * tags() {return "💫";}
+    const char * name() override {return "Live Fixture Mapping";}
+    //uint8_t dim() override {return _1D;} // every projection should work for all D
+    const char * tags() override {return "💫";}
 
-    void setup(LedsLayer &leds, Variable parentVar) {
+    void setup(LedsLayer &leds, Variable parentVar) override {
     }
   }; //LiveMappingProjection
 #endif
 
 class DefaultProjection: public Projection {
-  const char * name() {return "Default";}
-  const char * tags() {return "💫";}
+  const char * name() override {return "Default";}
+  const char * tags() override {return "💫";}
 
   public:
 
-  void addPixelsPre(LedsLayer &leds) {
-      ppf ("Default Projection %dD -> %dD Effect  Size: %d,%d,%d ->", leds.projectionDimension, leds.effectDimension, leds.size.x, leds.size.y, leds.size.z);
+  void addPixelsPre(LedsLayer &leds) override {
+      ppf ("Default Projection %dD -> %dD Effect  Size: %d,%d,%d ->\n", leds.projectionDimension, leds.effectDimension, leds.size.x, leds.size.y, leds.size.z);
     switch (leds.effectDimension) {
       case _1D: // effectDimension 1DxD
           leds.size.x = sqrt(sq(max(leds.size.x - leds.middle.x, leds.middle.x)) + 
@@ -89,7 +90,7 @@ class DefaultProjection: public Projection {
     }
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override {
     Coord3D mapped;
     switch (leds.effectDimension) {
       case _1D: // effectDimension 1DxD
@@ -136,12 +137,12 @@ class DefaultProjection: public Projection {
 }; //DefaultProjection
 
 class PinwheelProjection: public Projection {
-  const char * name() {return "Pinwheel";}
-  const char * tags() {return "💫";}
+  const char * name() override {return "Pinwheel";}
+  const char * tags() override {return "💫";}
 
   public:
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
     uint8_t *petals   = leds.projectionData.write<uint8_t>(60); // Initalize petal first for addPixel
     uint8_t *swirlVal = leds.projectionData.write<uint8_t>(30);
     bool3State    *reverse  = leds.projectionData.write<bool3State>(false);
@@ -185,7 +186,7 @@ class PinwheelProjection: public Projection {
     }});
   }
 
-  void addPixelsPre(LedsLayer &leds) {
+  void addPixelsPre(LedsLayer &leds) override {
     const int petals = leds.projectionData.read<uint8_t>();
     if (leds.projectionDimension > _1D && leds.effectDimension > _1D) {
       leds.size.y = sqrt(sq(max(leds.size.x - leds.middle.x, leds.middle.x)) + 
@@ -200,7 +201,7 @@ class PinwheelProjection: public Projection {
     }
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override {
     // Coord3D mapped;
     // factors of 360
     const int FACTORS[24] = {360, 180, 120, 90, 72, 60, 45, 40, 36, 30, 24, 20, 18, 15, 12, 10, 9, 8, 6, 5, 4, 3, 2};
@@ -238,12 +239,12 @@ class PinwheelProjection: public Projection {
 }; //PinwheelProjection
 
 class MultiplyProjection: public Projection {
-  const char * name() {return "Multiply";}
-  const char * tags() {return "💫";}
+  const char * name() override {return "Multiply";}
+  const char * tags() override {return "💫";}
 
   public:
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
     Coord3D *proMulti = leds.projectionData.write<Coord3D>({2,2,1});
     bool3State *mirror = leds.projectionData.write<bool3State>(false);
     ui->initCoord3D(parentVar, "proMulti", proMulti, 0, 10, false, [&leds](EventArguments) { switch (eventType) {
@@ -260,7 +261,7 @@ class MultiplyProjection: public Projection {
     }});
   }
 
-  void addPixelsPre(LedsLayer &leds) {
+  void addPixelsPre(LedsLayer &leds) override {
     Coord3D proMulti = leds.projectionData.read<Coord3D>();
     bool3State    mirror   = leds.projectionData.read<bool3State>();
     Coord3D *originalSize = leds.projectionData.readWrite<Coord3D>();
@@ -277,7 +278,7 @@ class MultiplyProjection: public Projection {
     dp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override {
     // UI Variables
     Coord3D proMulti = leds.projectionData.read<Coord3D>();
     bool3State    mirror   = leds.projectionData.read<bool3State>();
@@ -299,15 +300,15 @@ class MultiplyProjection: public Projection {
 }; //MultiplyProjection
 
 class TiltPanRollProjection: public Projection {
-  const char * name() {return "TiltPanRoll";}
-  const char * tags() {return "💫";}
+  const char * name() override {return "TiltPanRoll";}
+  const char * tags() override {return "💫";}
 
   public:
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
     //tbd: implement variable by reference for rowNrs
     #ifdef STARBASE_USERMOD_MPU6050
-      ui->initCheckBox(parentVar, "gyro", false, false, [&leds](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "gyro", (bool3State)false, false, [&leds](EventArguments) { switch (eventType) {
         case onChange:
           leds.proGyro = variable.getValue(rowNr);
           return true;
@@ -337,7 +338,7 @@ class TiltPanRollProjection: public Projection {
     }});
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override {
     // adjustSizeAndPixel(leds, pixel); // Uncomment to expand grid to fill corners
     DefaultProjection dp;
     dp.addPixel(leds, pixel);
@@ -354,7 +355,7 @@ class TiltPanRollProjection: public Projection {
     pixel.z += offset.z;
   }
 
-  void XYZ(LedsLayer &leds, Coord3D &pixel) {
+  void XYZ(LedsLayer &leds, Coord3D &pixel) override {
     #ifdef STARBASE_USERMOD_MPU6050
       if (leds.proGyro) {
         pixel = trigoTiltPanRoll.tilt(pixel, leds.size/2, mpu6050->gyro.x);
@@ -373,12 +374,12 @@ class TiltPanRollProjection: public Projection {
 }; //TiltPanRollProjection
 
 class DistanceFromPointProjection: public Projection {
-  const char * name() {return "Distance ⌛";}
-  const char * tags() {return "💫";}
+  const char * name() override {return "Distance ⌛";}
+  const char * tags() override {return "💫";}
 
   public:
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override {
     DefaultProjection dp;
     dp.addPixel(leds, pixel);
     if (leds.projectionDimension == _2D && leds.effectDimension == _2D) postProcessing(leds, pixel);
@@ -429,17 +430,17 @@ class DistanceFromPointProjection: public Projection {
 }; //DistanceFromPointProjection
 
 class Preset1Projection: public Projection {
-  const char * name() {return "Preset1";}
-  const char * tags() {return "💫";}
+  const char * name() override {return "Preset1";}
+  const char * tags() override {return "💫";}
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
     MultiplyProjection mp;
     mp.setup(leds, parentVar);
     TiltPanRollProjection tp;
     tp.setup(leds, parentVar);
   }
 
-  void addPixelsPre(LedsLayer &leds) {
+  void addPixelsPre(LedsLayer &leds) override {
     MultiplyProjection mp;
     mp.addPixelsPre(leds);
 
@@ -450,7 +451,7 @@ class Preset1Projection: public Projection {
     tp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override {
     MultiplyProjection mp;
     mp.addPixel(leds, pixel);
 
@@ -458,27 +459,27 @@ class Preset1Projection: public Projection {
     dp.addPixel(leds, pixel);
   }
 
-  void XYZ(LedsLayer &leds, Coord3D &pixel) {
+  void XYZ(LedsLayer &leds, Coord3D &pixel) override {
     TiltPanRollProjection tp;
     tp.XYZ(leds, pixel);
   }
 }; //Preset1Projection
 
 class RandomProjection: public Projection {
-  const char * name() {return "Random";}
-  const char * tags() {return "💫";}
+  const char * name() override {return "Random";}
+  const char * tags() override {return "💫";}
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
   }
 
-  void XYZ(LedsLayer &leds, Coord3D &pixel) {
-    pixel = {random(leds.size.x), random(leds.size.y), random(leds.size.z)};
+  void XYZ(LedsLayer &leds, Coord3D &pixel) override {
+    pixel = Coord3D({random(leds.size.x), random(leds.size.y), random(leds.size.z)})  ;
   }
 }; //RandomProjection
 
 class MirrorReverseTransposeProjection: public Projection {
-  const char * name() {return "Mirror Reverse Transpose";}
-  const char * tags() {return "💡";}
+  const char * name() override {return "Mirror Reverse Transpose";}
+  const char * tags() override {return "💡";}
 
   struct MRTData {
     union {
@@ -500,16 +501,16 @@ class MirrorReverseTransposeProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
       MRTData *data = leds.projectionData.readWrite<MRTData>();
-      ui->initCheckBox(parentVar, "Mirror X", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Mirror X", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->mirrorX = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
-      ui->initCheckBox(parentVar, "Mirror Y", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Mirror Y", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->mirrorY = variable.getValue(rowNr);
           leds.triggerMapping();
@@ -517,7 +518,7 @@ class MirrorReverseTransposeProjection: public Projection {
         default: return false;
       }});
       if (leds.projectionDimension == _3D) {
-      ui->initCheckBox(parentVar, "Mirror Z", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Mirror Z", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->mirrorZ = variable.getValue(rowNr);
           leds.triggerMapping();
@@ -525,14 +526,14 @@ class MirrorReverseTransposeProjection: public Projection {
         default: return false;
       }});
       }
-      ui->initCheckBox(parentVar, "Reverse X", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Reverse X", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->reverseX = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
-      ui->initCheckBox(parentVar, "Reverse Y", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Reverse Y", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->reverseY = variable.getValue(rowNr);
           leds.triggerMapping();
@@ -540,7 +541,7 @@ class MirrorReverseTransposeProjection: public Projection {
         default: return false;
       }});
       if (leds.projectionDimension == _3D) {
-      ui->initCheckBox(parentVar, "Reverse Z", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Reverse Z", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->reverseZ = variable.getValue(rowNr);
           leds.triggerMapping();
@@ -548,7 +549,7 @@ class MirrorReverseTransposeProjection: public Projection {
         default: return false;
       }});
       }
-      ui->initCheckBox(parentVar, "Transpose XY", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Transpose XY", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->transposeXY = variable.getValue(rowNr);
           leds.triggerMapping();
@@ -556,14 +557,14 @@ class MirrorReverseTransposeProjection: public Projection {
         default: return false;
       }});
       if (leds.projectionDimension == _3D) {
-      ui->initCheckBox(parentVar, "Transpose XZ", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Transpose XZ", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->transposeXZ = variable.getValue(rowNr);
           leds.triggerMapping();
           return true;
         default: return false;
       }});
-      ui->initCheckBox(parentVar, "Transpose YZ", false, false, [&leds, data](EventArguments) { switch (eventType) {
+      ui->initCheckBox(parentVar, "Transpose YZ", (bool3State)false, false, [&leds, data](EventArguments) { switch (eventType) {
         case onChange:
           data->transposeYZ = variable.getValue(rowNr);
           leds.triggerMapping();
@@ -573,7 +574,7 @@ class MirrorReverseTransposeProjection: public Projection {
       }
     }
 
-  void addPixelsPre(LedsLayer &leds) {
+  void addPixelsPre(LedsLayer &leds) override {
     // UI Variables
     MRTData *data = leds.projectionData.readWrite<MRTData>();
     ppf("MRT data: mX %d, mY %d, mZ %d, rX %d, rY %d, rZ %d, tXY %d, tXZ %d, tYZ %d\n", data->mirrorX, data->mirrorY, data->mirrorZ, data->reverseX, data->reverseY, data->reverseZ, data->transposeXY, data->transposeXZ, data->transposeYZ);
@@ -596,7 +597,7 @@ class MirrorReverseTransposeProjection: public Projection {
     dp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) { 
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override { 
     MRTData data = leds.projectionData.read<MRTData>();
 
     // Mirror
@@ -620,12 +621,12 @@ class MirrorReverseTransposeProjection: public Projection {
 }; //MirrorReverseTransposeProjection
 
 class MirrorProjection: public Projection {
-  const char * name() {return "Mirror";}
-  const char * tags() {return "💡";}
+  const char * name() override {return "Mirror";}
+  const char * tags() override {return "💡";}
 
   public:
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
     bool3State *mirrorX = leds.projectionData.write<bool3State>(false);
     bool3State *mirrorY = leds.projectionData.write<bool3State>(false);
     bool3State *mirrorZ = leds.projectionData.write<bool3State>(false);
@@ -653,7 +654,7 @@ class MirrorProjection: public Projection {
     }
   }
 
-  void addPixelsPre(LedsLayer &leds) {
+  void addPixelsPre(LedsLayer &leds) override {
     // UI Variables
     bool3State mirrorX = leds.projectionData.read<bool3State>();
     bool3State mirrorY = leds.projectionData.read<bool3State>();
@@ -669,7 +670,7 @@ class MirrorProjection: public Projection {
     dp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override {
     // UI Variables
     bool3State mirrorX = leds.projectionData.read<bool3State>();
     bool3State mirrorY = leds.projectionData.read<bool3State>();
@@ -687,12 +688,12 @@ class MirrorProjection: public Projection {
 }; //MirrorProjection
 
 // class ReverseProjection: public Projection {
-//   const char * name() {return "Reverse";}
-//   const char * tags() {return "💡";}
+//   const char * name() override {return "Reverse";}
+//   const char * tags() override {return "💡";}
 // 
 //   public:
 // 
-//   void setup(LedsLayer &leds, Variable parentVar) {
+//   void setup(LedsLayer &leds, Variable parentVar) override {
 //     bool3State *reverseX = leds.projectionData.write<bool3State>(false);
 //     bool3State *reverseY = leds.projectionData.write<bool3State>(false);
 //     bool3State *reverseZ = leds.projectionData.write<bool3State>(false);
@@ -721,7 +722,7 @@ class MirrorProjection: public Projection {
 //     }
 //   }
 // 
-//   void addPixel(LedsLayer &leds, Coord3D &pixel) { 
+//   void addPixel(LedsLayer &leds, Coord3D &pixel) override { 
 //     bool3State reverseX = leds.projectionData.read<bool3State>();
 //     bool3State reverseY = leds.projectionData.read<bool3State>();
 //     bool3State reverseZ = leds.projectionData.read<bool3State>();
@@ -737,12 +738,12 @@ class MirrorProjection: public Projection {
 // }; //ReverseProjection
 
 // class TransposeProjection: public Projection {
-//   const char * name() {return "Transpose";}
-//   const char * tags() {return "💡";}
+//   const char * name() override {return "Transpose";}
+//   const char * tags() override {return "💡";}
 // 
 //   public:
 // 
-//   void setup(LedsLayer &leds, Variable parentVar) {
+//   void setup(LedsLayer &leds, Variable parentVar) override {
 //     bool3State *transposeXY = leds.projectionData.write<bool3State>(false);
 //     bool3State *transposeXZ = leds.projectionData.write<bool3State>(false);
 //     bool3State *transposeYZ = leds.projectionData.write<bool3State>(false);
@@ -769,7 +770,7 @@ class MirrorProjection: public Projection {
 //     }
 //   }
 // 
-//   void addPixelsPre(LedsLayer &leds) {
+//   void addPixelsPre(LedsLayer &leds) override {
 //     // UI Variables
 //     bool3State transposeXY = leds.projectionData.read<bool3State>();
 //     bool3State transposeXZ = leds.projectionData.read<bool3State>();
@@ -783,7 +784,7 @@ class MirrorProjection: public Projection {
 //     dp.addPixelsPre(leds);
 //   }
 // 
-//   void addPixel(LedsLayer &leds, Coord3D &pixel) {
+//   void addPixel(LedsLayer &leds, Coord3D &pixel) override {
 //     // UI Variables
 //     bool3State transposeXY = leds.projectionData.read<bool3State>();
 //     bool3State transposeXZ = leds.projectionData.read<bool3State>();
@@ -800,12 +801,12 @@ class MirrorProjection: public Projection {
 // }; //TransposeProjection
 
 class GroupingSpacingProjection: public Projection {
-  const char * name() {return "Grouping & Spacing";}
-  const char * tags() {return "💡";}
+  const char * name() override {return "Grouping & Spacing";}
+  const char * tags() override {return "💡";}
 
   public:
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
     Coord3D *grouping = leds.projectionData.write<Coord3D>({2,2,2});
     Coord3D *spacing  = leds.projectionData.write<Coord3D>({0,0,0});
     ui->initCoord3D(parentVar, "grouping", grouping, 0, 100, false, [&leds](EventArguments) { switch (eventType) {
@@ -822,7 +823,7 @@ class GroupingSpacingProjection: public Projection {
     }});
   }
 
-  void addPixelsPre(LedsLayer &leds) {
+  void addPixelsPre(LedsLayer &leds) override {
     Coord3D grouping = leds.projectionData.read<Coord3D>().maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
     Coord3D spacing  = leds.projectionData.read<Coord3D>().maximum(Coord3D{0, 0, 0});
     Coord3D GS = grouping + spacing;
@@ -834,7 +835,7 @@ class GroupingSpacingProjection: public Projection {
     dp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override {
     Coord3D grouping = leds.projectionData.read<Coord3D>().maximum(Coord3D{1, 1, 1}); // {1, 1, 1} is the minimum value
     Coord3D spacing  = leds.projectionData.read<Coord3D>().maximum(Coord3D{0, 0, 0});
     Coord3D GS = grouping + spacing;
@@ -852,10 +853,10 @@ class GroupingSpacingProjection: public Projection {
 }; //GroupingSpacingProjection
 
 class ScrollingProjection: public Projection {
-  const char * name() {return "Scrolling";}
-  const char * tags() {return "💫";}
+  const char * name() override {return "Scrolling";}
+  const char * tags() override {return "💫";}
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
     MirrorProjection mp;
     mp.setup(leds, parentVar);
 
@@ -869,17 +870,17 @@ class ScrollingProjection: public Projection {
     if (leds.projectionDimension == _3D) ui->initSlider(parentVar, "zSpeed", zSpeed, 0, 255, false);
   }
 
-  void addPixelsPre(LedsLayer &leds) {
+  void addPixelsPre(LedsLayer &leds) override {
     MirrorProjection mp;
     mp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override {
     MirrorProjection mp;
     mp.addPixel(leds, pixel);
   }
 
-  void XYZ(LedsLayer &leds, Coord3D &pixel) {
+  void XYZ(LedsLayer &leds, Coord3D &pixel) override {
     bool3State mirrorX = leds.projectionData.read<bool3State>(); // Not used 
     bool3State mirrorY = leds.projectionData.read<bool3State>(); // Not used
     bool3State mirrorZ = leds.projectionData.read<bool3State>(); // Not used
@@ -897,12 +898,12 @@ class ScrollingProjection: public Projection {
 #ifdef STARBASE_USERMOD_MPU6050
 
 class AccelerationProjection: public Projection {
-  const char * name() {return "Acceleration";}
-  const char * tags() {return "💫🧭";}
+  const char * name() override {return "Acceleration";}
+  const char * tags() override {return "💫🧭";}
 
   public:
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
     bool3State *wrap = leds.projectionData.write<bool3State>(false);
     uint8_t *sensitivity = leds.projectionData.write<uint8_t>(0);
     uint8_t *deadzone = leds.projectionData.write<uint8_t>(10);
@@ -912,12 +913,12 @@ class AccelerationProjection: public Projection {
     ui->initSlider(parentVar, "deadzone", deadzone, 0, 100, false);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override {
     DefaultProjection dp;
     dp.addPixel(leds, pixel);
   }
 
-  void XYZ(LedsLayer &leds, Coord3D &pixel) {
+  void XYZ(LedsLayer &leds, Coord3D &pixel) override {
     bool3State wrap = leds.projectionData.read<bool3State>();
     float sensitivity = float(leds.projectionData.read<uint8_t>()) / 20.0 + 1; // 0 - 100 slider -> 1.0 - 6.0 multiplier 
     uint16_t deadzone = map(leds.projectionData.read<uint8_t>(), 0, 255, 0 , 1000); // 0 - 1000
@@ -945,10 +946,10 @@ class AccelerationProjection: public Projection {
 #endif
 
 class CheckerboardProjection: public Projection {
-  const char * name() {return "Checkerboard";}
-  const char * tags() {return "💫";}
+  const char * name() override {return "Checkerboard";}
+  const char * tags() override {return "💫";}
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
     Coord3D *size = leds.projectionData.write<Coord3D>({3,3,3});
     bool3State *invert = leds.projectionData.write<bool3State>(false);
     bool3State *group = leds.projectionData.write<bool3State>(false);
@@ -972,7 +973,7 @@ class CheckerboardProjection: public Projection {
     }});
   }
 
-  void addPixelsPre(LedsLayer &leds) {
+  void addPixelsPre(LedsLayer &leds) override {
     Coord3D size = leds.projectionData.read<Coord3D>();
     bool3State invert  = leds.projectionData.read<bool3State>();
     bool3State group   = leds.projectionData.read<bool3State>();
@@ -983,7 +984,7 @@ class CheckerboardProjection: public Projection {
     dp.addPixelsPre(leds);
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override {
     Coord3D size = leds.projectionData.read<Coord3D>().maximum(Coord3D{1, 1, 1});
     bool3State invert = leds.projectionData.read<bool3State>();
     bool3State group = leds.projectionData.read<bool3State>();
@@ -1004,8 +1005,8 @@ class CheckerboardProjection: public Projection {
 }; //CheckerboardProjection
 
 class RotateProjection: public Projection {
-  const char * name() {return "Rotate";}
-  const char * tags() {return "💫";}
+  const char * name() override {return "Rotate";}
+  const char * tags() override {return "💫";}
 
   struct RotateData { // 16 bytes
     union {
@@ -1029,7 +1030,7 @@ class RotateProjection: public Projection {
 
   public:
 
-  void setup(LedsLayer &leds, Variable parentVar) {
+  void setup(LedsLayer &leds, Variable parentVar) override {
     RotateData *data = leds.projectionData.readWrite<RotateData>();
 
     ui->initSelect(parentVar, "direction", (uint8_t)0, false, [data](EventArguments) { switch (eventType) {
@@ -1062,7 +1063,7 @@ class RotateProjection: public Projection {
     }});
   }
 
-  void addPixelsPre(LedsLayer &leds) {
+  void addPixelsPre(LedsLayer &leds) override {
     RotateData *data = leds.projectionData.readWrite<RotateData>();
     data->expand = mdl->getValue("projection", "Expand");
 
@@ -1078,7 +1079,7 @@ class RotateProjection: public Projection {
     data->midY = leds.size.y / 2;
   }
 
-  void addPixel(LedsLayer &leds, Coord3D &pixel) {
+  void addPixel(LedsLayer &leds, Coord3D &pixel) override {
     RotateData *data = leds.projectionData.readWrite<RotateData>();
 
     if (data->expand) {
@@ -1095,7 +1096,7 @@ class RotateProjection: public Projection {
     dp.addPixel(leds, pixel);
   }
 
-  void XYZ(LedsLayer &leds, Coord3D &pixel) {
+  void XYZ(LedsLayer &leds, Coord3D &pixel) override {
     RotateData *data = leds.projectionData.readWrite<RotateData>();
 
     constexpr int Fixed_Scale = 1 << 10;
@@ -1148,3 +1149,61 @@ class RotateProjection: public Projection {
     else if (pixel.y >= maxY) pixel.y = maxY - 1;
   }
 }; //RotateProjection
+
+//Idea and first implmentation (WLEDMM ARtNet) by @Troy
+class RippleYZ: public Projection {
+  const char * name() override {return "RippleYZ";}
+  const char * tags() override {return "💡💫";}
+
+  public:
+
+  void setup(LedsLayer &leds, Variable parentVar) override {
+    ui->initCheckBox(parentVar, "towardsY", leds.projectionData.write<bool3State>(true), false, [&leds](EventArguments) { switch (eventType) {
+      case onChange: {
+        uint8_t old = leds.projectionDimension;
+        leds.projectionDimension = leds.effectDimension; //trick to force all leds in layer touched
+          leds.fill_solid(CRGB::Black);
+          leds.projectionDimension = old;
+        return true; }
+      default: return false;
+    }});
+    ui->initCheckBox(parentVar, "towardsZ", leds.projectionData.write<bool3State>(true), false, [&leds](EventArguments) { switch (eventType) {
+      case onChange: {
+        uint8_t old = leds.projectionDimension;
+        leds.projectionDimension = leds.effectDimension; //trick to force all leds in layer touched
+          leds.fill_solid(CRGB::Black);
+          leds.projectionDimension = old;
+          return true; }
+      default: return false;
+    }});
+  }
+
+  void loop(LedsLayer &leds) override {
+    bool3State towardsY = leds.projectionData.read<bool3State>();
+    bool3State towardsZ = leds.projectionData.read<bool3State>();
+
+    //1D->2D: each X is rippled through the y-axis
+    if (towardsY) {
+      if (leds.effectDimension == _1D && leds.projectionDimension > _1D) {
+        for (int y=leds.size.y-1; y>=1; y--) {
+          for (int x=0; x<leds.size.x; x++) {
+            leds.setPixelColor({x, y, 0}, leds.getPixelColor({x,y-1,0}));
+          }
+        }
+      }
+    }
+
+    //2D->3D: each XY plane is rippled through the z-axis
+    if (towardsZ) { //not relevant for 2D fixtures
+      if (leds.effectDimension < _3D && leds.projectionDimension == _3D) {
+        for (int z=leds.size.z-1; z>=1; z--) {
+          for (int y=0; y<leds.size.y; y++) {
+            for (int x=0; x<leds.size.x; x++) {
+              leds.setPixelColor({x, y, z}, leds.getPixelColor({x,y,z-1}));
+            }
+          }
+        }
+      }
+    }
+  }
+}; //RippleYZ

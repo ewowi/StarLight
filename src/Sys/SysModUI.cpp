@@ -20,7 +20,7 @@ SysModUI::SysModUI() :SysModule("UI") {
 void SysModUI::setup() {
   SysModule::setup();
 
-  Variable parentVar = initSysMod(Variable(), name, 4101);
+  const Variable parentVar = initSysMod(Variable(), name, 4101);
 
   Variable tableVar = initTable(parentVar, "loops", nullptr, true, [](EventArguments) { switch (eventType) {
     case onUI:
@@ -32,7 +32,7 @@ void SysModUI::setup() {
   initText(tableVar, "variable", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
       for (size_t rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
-        variable.setValue(JsonString(loopFunctions[rowNr].var["id"], JsonString::Copied), rowNr);
+        variable.setValue(JsonString(loopFunctions[rowNr].variable.id(), JsonString::Copied), rowNr);
       return true;
     default: return false;
   }});
@@ -54,10 +54,10 @@ void SysModUI::setup() {
 void SysModUI::loop20ms() { //never more then 50 times a second!
 
   for (VarLoop &varLoop : loopFunctions) {
-    if (millis() - varLoop.lastMillis >= varLoop.var["interval"].as<int>()) {
+    if (millis() - varLoop.lastMillis >= varLoop.variable.var["interval"].as<int>()) {
       varLoop.lastMillis = millis();
 
-      varLoop.loopFun(varLoop.var, 1, onLoop); //rowNr..
+      varLoop.loopFun(varLoop.variable, 1, onLoop); //rowNr..
 
       varLoop.counter++;
       // ppf("%s %u %u %d %d\n", varLoop->Variable(var).id(), varLoop->lastMillis, millis(), varLoop->interval, varLoop->counter);
@@ -114,9 +114,9 @@ void SysModUI::processJson(JsonVariant json) {
             char pid[32];
             strlcpy(pid, varInArray, sizeof(pid));
             char * id = strtok(pid, ".");
-            if (id != NULL ) {
+            if (id != nullptr ) {
               strlcpy(pid, id, sizeof(pid)); //copy the id part
-              id = strtok(NULL, "."); //the rest after .
+              id = strtok(nullptr, "."); //the rest after .
             }
 
             JsonObject var = mdl->findVar(pid, id); //value is the id
@@ -143,18 +143,18 @@ void SysModUI::processJson(JsonVariant json) {
         strlcpy(pidid, key, sizeof(pidid));
         //check if we deal with multiple rows (from table type)
         char * rowNrC = strtok(pidid, "#");
-        if (rowNrC != NULL ) {
+        if (rowNrC != nullptr ) {
           strlcpy(pidid, rowNrC, sizeof(pidid)); //copy the pidid part
-          rowNrC = strtok(NULL, "#"); //the rest after #
+          rowNrC = strtok(nullptr, "#"); //the rest after #
         }
-        uint8_t rowNr = rowNrC?atoi(rowNrC):UINT8_MAX;
+        uint8_t rowNr = rowNrC?strtol(rowNrC, nullptr, 10):UINT8_MAX;
 
         char pid[64];
         strlcpy(pid, pidid, sizeof(pid));
         char * id = strtok(pid, ".");
-        if (id != NULL ) {
+        if (id != nullptr ) {
           strlcpy(pid, id, sizeof(pid)); //copy the id part
-          id = strtok(NULL, "."); //the rest after .
+          id = strtok(nullptr, "."); //the rest after .
         }
 
         if (pid && id) {

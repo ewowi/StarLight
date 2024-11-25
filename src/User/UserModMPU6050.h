@@ -32,9 +32,9 @@ public:
     isEnabled = false; //need to enable after fresh setup
   };
 
-  void setup() {
+  void setup() override {
     SysModule::setup();
-    Variable parentVar = ui->initUserMod(Variable(), name, 6305);
+    const Variable parentVar = ui->initUserMod(Variable(), name, 6305);
 
     ui->initCheckBox(parentVar, "ready", &motionTrackingReady, true, [](EventArguments) { switch (eventType) {
       case onUI:
@@ -66,7 +66,7 @@ public:
     mdl->setValue("Motion Tracking", "ready", motionTrackingReady);
   }
 
-  void loop20ms() { // loop(): 700/s, loop20ms: 3000/s, loop1s(): 5500/s, disabled: 6000/s
+  void loop20ms() override { // loop(): 700/s, loop20ms: 3000/s, loop1s(): 5500/s, disabled: 6000/s
     // mpu.getMotion6(&accell.x, &accell.y, &accell.z, &gyro.x, &gyro.y, &gyro.z);
     // // display tab-separated accel/gyro x/y/z values
     // ppf("mpu6050 %d,%d,%d %d,%d,%d\n", accell.x, accell.y, accell.z, gyro.x, gyro.y, gyro.z);

@@ -8,6 +8,7 @@
    @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
    @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 */
+#pragma once
 
 #include "LedLayer.h"
 #include <vector>
@@ -25,14 +26,14 @@ public:
 
   LedModEffects();
 
-  void setup();
+  void setup() override;
 
   //this loop is run as often as possible so coding should also be as efficient as possible (no findVar etc)
-  void loop();
+  void loop() override;
 
   void initEffect(LedsLayer &leds, uint8_t rowNr);
 
-  // void loop10s();
+  // void loop10s() override;
 
 private:
   unsigned long frameMillis = 0;

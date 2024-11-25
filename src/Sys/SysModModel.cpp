@@ -509,7 +509,7 @@ SysModModel::SysModModel() :SysModule("Model") {
 void SysModModel::setup() {
   SysModule::setup();
 
-  Variable parentVar = ui->initSysMod(Variable(), name, 4303);
+  const Variable parentVar = ui->initSysMod(Variable(), name, 4303);
   parentVar.var["s"] = true; //setup
 
   ui->initButton(parentVar, "saveModel", false, [this](EventArguments) { switch (eventType) {
@@ -524,7 +524,7 @@ void SysModModel::setup() {
 
   #ifdef STARBASE_DEVMODE
 
-  ui->initCheckBox(parentVar, "showObsolete", false, false, [this](EventArguments) { switch (eventType) {
+  ui->initCheckBox(parentVar, "showObsolete", (bool3State)false, false, [this](EventArguments) { switch (eventType) {
     case onUI:
       variable.setComment("Show in UI (refresh)");
       return true;
@@ -576,9 +576,9 @@ void SysModModel::loop20ms() {
 }
 
 void SysModModel::loop1s() {
-  mdl->walkThroughModel([](Variable variable) {
-    variable.triggerEvent(onLoop1s);
-    return false; //don't stop
+  mdl->walkThroughModel([](JsonObject parentVar, JsonObject var) {
+    Variable(var).triggerEvent(onLoop1s);
+    return JsonObject(); //don't stop
   });
 }
 
@@ -625,12 +625,12 @@ void SysModModel::cleanUpModel(Variable parent, bool oPos, bool ro) {
 
       //recursive call
       if (!variable.children().isNull())
-        cleanUpModel(var, oPos, ro);
+        cleanUpModel(variable, oPos, ro);
     } 
   }
 }
 
-Variable SysModModel::initVar(Variable parent, const char * id, const char * type, bool readOnly, VarEvent varEvent) {
+Variable SysModModel::initVar(Variable parent, const char * id, const char * type, bool readOnly, const VarEvent &varEvent) {
   const char * parentId = parent.var["id"];
   if (!parentId) parentId = "m"; //m=module
   JsonObject var = mdl->findVar(parentId, id);
@@ -689,11 +689,11 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
         var["fun"] = mdl->varEvents.size()-1;
       // }
       
-      if (varEvent(var, UINT8_MAX, onLoop)) { //test run if it supports loop
+      if (varEvent(variable, UINT8_MAX, onLoop)) { //test run if it supports loop
         //no need to check if already in...
         VarLoop loop;
         loop.loopFun = varEvent;
-        loop.var = var;
+        loop.variable = variable;
 
         ui->loopFunctions.push_back(loop);
         var["loopFun"] = ui->loopFunctions.size()-1;
@@ -707,32 +707,22 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
   return variable;
 }
 
-bool SysModModel::walkThroughModel(std::function<bool(Variable)> fun, JsonObject parent) {
-  JsonArray root;
-  if (parent.isNull())
-    root = model->as<JsonArray>();
-  else
-    root = parent["n"];
-
-  for (JsonObject var : root) {
+JsonObject SysModModel::walkThroughModel(std::function<JsonObject(JsonObject, JsonObject)> fun, JsonObject parentVar) {
+  for (JsonObject var : parentVar.isNull()?model->as<JsonArray>(): parentVar["n"]) {
     // ppf(" %s", var["id"].as<String>());
-    if (fun(Variable(var))) return true;
+    JsonObject foundVar = fun(parentVar, var);
+    if (!foundVar.isNull()) return foundVar;
 
     if (!var["n"].isNull()) {
-      if (walkThroughModel(fun, var)) return true;
+      foundVar = walkThroughModel(fun, var);
+      if (!foundVar.isNull()) return foundVar;
     }
   }
-  return false; //don't stop
+  return JsonObject(); //don't stop
 }
 
-JsonObject SysModModel::findVar(const char * pid, const char * id, JsonObject parent) {
-  JsonArray root;
-  if (parent.isNull())
-    root = model->as<JsonArray>();
-  else
-    root = parent["n"];
-
-  for (JsonObject var : root) {
+JsonObject SysModModel::findVar(const char * pid, const char * id, JsonObject parentVar) {
+  for (JsonObject var : parentVar.isNull()?model->as<JsonArray>():parentVar["n"]) {
     if (var["pid"] == pid && var["id"] == id) { //(!pid && var["pid"] == pid) && 
       // Serial.printf("findVar found %s.%s!!\n", pid, id);
       return var;
@@ -749,18 +739,13 @@ JsonObject SysModModel::findVar(const char * pid, const char * id, JsonObject pa
   return JsonObject();
 }
 
-void SysModModel::findVars(const char * property, bool value, FindFun fun, JsonArray parent) {
-  JsonArray root;
+void SysModModel::findVars(const char * property, bool value, FindFun fun, JsonObject parentVar) {
   // print ->print("findVar %s %s\n", id, parent.isNull()?"root":"n");
-  if (parent.isNull())
-    root = model->as<JsonArray>();
-  else
-    root = parent;
 
-  for (JsonObject var : root) {
+  for (JsonObject var : parentVar.isNull()?model->as<JsonArray>():parentVar["n"]) {
     if (var[property] == value)
       fun(Variable(var));
     if (!var["n"].isNull())
-      findVars(property, value, fun, var["n"]);
+      findVars(property, value, fun, var);
   }
 }

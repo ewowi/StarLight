@@ -1,11 +1,11 @@
-//octoSL.sc
+//E_octo.sc
 
 //import memset
 //save_reg
 define PI 3.1415926535
 define speed 1
 int nb_branches;
-uint8_t C_X ;
+uint8_t C_X;
 uint8_t C_Y;
 uint8_t mapp;
 uint8_t rMapRadius[NUM_LEDS];
@@ -32,7 +32,7 @@ void setup()
 
 void loop() {
 
-  nb_branches = slider1 / 25;
+  nb_branches = intensityControl / 25;
 
   // memset(leds, 0, width * height * 3);
   for (uint8_t x = 0; x < width; x++) {
@@ -40,11 +40,11 @@ void loop() {
       uint8_t angle = rMapAngle[x*height+y];
       uint8_t radius = rMapRadius[x*height+y];
 
-      // leds[y*panel_width+x] = hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches));
+      // leds[y*width+x] = hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches));
       // int h=sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches);
-      // leds[y*panel_width+x] = hsv(t + radius, 255, h);
+      // leds[y*width+x] = hsv(t + radius, 255, h);
 
-      sPC(y*panel_width+x, hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches)));
+      sPC(y*width+x, hsv(t + radius, 255, sin8(t*4+sin8(t * 4 - radius)+angle*nb_branches)));
     }
   }
   t=t+speed;
