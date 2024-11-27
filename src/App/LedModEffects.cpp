@@ -161,7 +161,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           strlcat(buf, effect->dim()==_1D?" ┊":effect->dim()==_2D?" ▦":" 🧊", sizeof(buf));
           strlcat(buf, " ", sizeof(buf));
           strlcat(buf, effect->tags(), sizeof(buf));
-          options.add(JsonString(buf, JsonString::Copied)); //copy!
+          options.add(JsonString(buf)); //copy!
         }
         return true; }
       case onChange:
@@ -232,7 +232,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           // strlcat(buf, projection->dim()==_1D?" ┊":projection->dim()==_2D?" ▦":" 🧊");
           strlcat(buf, " ", sizeof(buf));
           strlcat(buf, projection->tags(), sizeof(buf));
-          options.add(JsonString(buf, JsonString::Copied)); //copy!
+          options.add(JsonString(buf)); //copy!
         }
         return true; }
       case onChange:
@@ -364,7 +364,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           char message[32];
           print->fFormat(message, sizeof(message), "%d x %d x %d", leds->size.x, leds->size.y, leds->size.z);
           ppf("onSetValue ledsSize[%d] = %s\n", rowNr, message);
-          variable.setValue(JsonString(message, JsonString::Copied), rowNr); //rowNr
+          variable.setValue(JsonString(message), rowNr); //rowNr
           rowNr++;
         }
         return true; }

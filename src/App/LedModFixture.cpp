@@ -243,7 +243,7 @@
         // ui needs to load the file also initially
         char fileName[32] = "";
         if (files->seqNrToName(fileName, variable.value())) {
-          web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName, JsonString::Copied));
+          web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName));
         }
         return true; }
       case onChange: {
@@ -260,7 +260,7 @@
         // char fileName[32] = "";
         // if (files->seqNrToName(fileName, fixtureNr)) {
         //   //send to preview a message to get file fileName
-        //   web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName, JsonString::Copied));
+        //   web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName));
         // }
         return true; }
       default: return false; 
