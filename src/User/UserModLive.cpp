@@ -200,7 +200,7 @@ static float _time(float j) {
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
           const char *name = exec.name.c_str();
-          variable.setValue(JsonString(exec.name.c_str(), JsonString::Copied), rowNr++);
+          variable.setValue(JsonString(exec.name.c_str()), rowNr++);
         }
         return true;
       default: return false;
@@ -258,7 +258,7 @@ static float _time(float j) {
           exe_info exeInfo = scriptRuntime.getExecutableInfo(exec.name);
           char text[30];
           print->fFormat(text, sizeof(text), "%d+%d=%d B", exeInfo.binary_size, exeInfo.data_size, exeInfo.total_size);
-          variable.setValue(JsonString(text, JsonString::Copied), rowNr++);
+          variable.setValue(JsonString(text), rowNr++);
         }
         return true;
       default: return false;
@@ -359,7 +359,7 @@ static float _time(float j) {
   }
 
   void UserModLive::loop1s() {
-    for (JsonObject childVar: Variable(mdl->findVar("LiveScripts", "scripts")).children())
+    for (JsonObject childVar: Variable("LiveScripts", "scripts").children())
       Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
   }
 
@@ -382,10 +382,10 @@ static float _time(float j) {
   uint8_t UserModLive::compile(const char * fileName, const char * post) {
     ppf("live compile n:%s o:%s \n", fileName, this->fileName);
 
-    File f = files->open(fileName, "r");
+    File f = files->open(fileName, FILE_READ);
     if (!f)
     {
-      ppf("UserModLive setup script open %s for %s failed\n", fileName, "r");
+      ppf("UserModLive setup script open %s for %s failed\n", fileName, FILE_READ);
       return UINT8_MAX;
     }
     else {

@@ -208,8 +208,10 @@ class Variable {
 
   JsonObject var;
 
-  Variable() {this->var = JsonObject();} //undefined variable
-  explicit Variable(JsonObject var) {this->var = var;}
+  //constructors
+  Variable(); //undefined variable
+  Variable(JsonObject var);
+  Variable(const char *pid, const char *id);
 
   //core methods 
   const char *pid() const {return var["pid"];}
@@ -254,6 +256,7 @@ class Variable {
   //return the options from onUI (don't forget to clear responseObject)
   JsonArray getOptions();
   void clearOptions();
+  void getOption(char *option, uint8_t index);
 
   //find options text in a hierarchy of options
   void findOptionsText(uint8_t value, char * groupName, char * optionName);
@@ -283,7 +286,8 @@ class Variable {
           //   ppf("setValue changed %s.%s %s -> %s\n", pid(), id(), var["oldValue"].as<String>().c_str(), valueString().c_str());
           // else
           //   ppf("setValue changed %s %s\n", id(), var["value"].as<String>().c_str());
-          web->addResponse(var, "value", var["value"]);
+          JsonVariant value = var["value"];
+          web->addResponse(var, "value", value);
           changed = true;
         }
       }
@@ -309,7 +313,8 @@ class Variable {
           //   ppf("notSame %d %d\n", rowNr, valueArray.size());
           valueArray[rowNr] = value; //if valueArray[<rowNr] not exists it will be created
           // ppf("  assigned %d %d %s\n", rowNr, valueArray.size(), valueArray[rowNr].as<String>().c_str());
-          web->addResponse(var, "value", var["value"]); //send the whole array to UI as response is in format value:<value> !!
+          JsonVariant value = var["value"];
+          web->addResponse(var, "value", value); //send the whole array to UI as response is in format value:<value> !!
           changed = true;
         }
       }

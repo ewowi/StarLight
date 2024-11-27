@@ -36,7 +36,7 @@ public:
         variable.setComment("First channel");
         return true;
       case onChange:
-        for (JsonObject childVar: Variable(mdl->findVar("E131", "patches")).children())
+        for (JsonObject childVar: Variable("E131", "patches").children())
           Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
         return true;
       default: return false;

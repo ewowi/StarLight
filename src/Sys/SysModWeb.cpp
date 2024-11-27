@@ -65,7 +65,7 @@ void SysModWeb::setup() {
   ui->initText(tableVar, "ip", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
     case onSetValue: {
       uint8_t rowNr = 0; for (auto &client:ws.getClients())
-        variable.setValue(JsonString(client->remoteIP().toString().c_str(), JsonString::Copied), rowNr++);
+        variable.setValue(JsonString(client->remoteIP().toString().c_str()), rowNr++);
       return true; }
     default: return false;
   }});
@@ -157,7 +157,7 @@ void SysModWeb::loop20ms() {
     clientsChanged = false;
 
     // ppf("SysModWeb clientsChanged\n");
-    for (JsonObject childVar: Variable(mdl->findVar("Web", "clients")).children())
+    for (JsonObject childVar: Variable("Web", "clients").children())
       Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
   }
 
@@ -490,7 +490,7 @@ void SysModWeb::serveUpload(WebRequest *request, const String& fileName, size_t 
       finalname = '/' + finalname; // prepend slash if missing
     }
 
-    request->_tempFile = files->open(finalname.c_str(), "w");
+    request->_tempFile = files->open(finalname.c_str(), FILE_WRITE);
     // DEBUG_PRINT("Uploading ");
     // DEBUG_PRINTLN(finalname);
     // if (finalname.equals("/presets.json")) presetsModifiedTime = toki.second();
@@ -608,7 +608,7 @@ void SysModWeb::jsonHandler(WebRequest *request, JsonVariant json) {
     if (responseObject.size()) { //responseObject set by processJson e.g. onUI
 
       char resStr[200];
-      serializeJson(responseObject, resStr, 200);
+      serializeJson(responseObject, resStr, sizeof(resStr));
       ppf("processJsonUrl response %s\n", resStr);
       request->send(200, "application/json", resStr);
 
@@ -624,12 +624,12 @@ void SysModWeb::jsonHandler(WebRequest *request, JsonVariant json) {
 void SysModWeb::clientsToJson(JsonArray array, bool nameOnly, const char * filter) {
   for (auto &client:ws.getClients()) {
     if (nameOnly) {
-      array.add(JsonString(client->remoteIP().toString().c_str(), JsonString::Copied));
+      array.add(JsonString(client->remoteIP().toString().c_str()));
     } else {
       // ppf("Client %d %d ...%d\n", client->id(), client->queueIsFull(), client->remoteIP()[3]);
       JsonArray row = array.add<JsonArray>();
       row.add(client->id());
-      array.add(JsonString(client->remoteIP().toString().c_str(), JsonString::Copied));
+      array.add(JsonString(client->remoteIP().toString().c_str()));
       row.add(client->queueIsFull());
       row.add(client->status());
       row.add(client->queueLen());
@@ -659,6 +659,7 @@ bool SysModWeb::captivePortal(WebRequest *request)
 JsonDocument * SysModWeb::getResponseDoc() {
   // ppf("response wsevent core %d %s\n", xPortGetCoreID(), pcTaskGetTaskName(nullptr));
 
+  // return responseDocLoopTask;
   return strncmp(pcTaskGetTaskName(nullptr), "loopTask", 9) == 0?responseDocLoopTask:responseDocAsyncTCP;
 }
 
@@ -739,8 +740,8 @@ void SysModWeb::serializeInfo(JsonVariant root) {
     // docInfo["leds"]["fps"] = mdl->getValue("fps"); //tbd: should be realFps but is ro var
     // docInfo["wifi"]["rssi"] = WiFi.RSSI();// mdl->getValue("rssi"); (ro)
 
-    root["mac"] = JsonString(mdns->escapedMac.c_str(), JsonString::Copied);
-    root["ip"] = JsonString(net->localIP().toString().c_str(), JsonString::Copied);
+    root["mac"] = JsonString(mdns->escapedMac.c_str());
+    root["ip"] = JsonString(net->localIP().toString().c_str());
     // print->printJson("serveJson", root);
 }
 

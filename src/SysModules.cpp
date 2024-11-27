@@ -23,7 +23,7 @@ void SysModules::setup() {
   }
 
   //delete Modules values if nr of modules has changed (new values created using module defaults)
-  for (JsonObject childVar: Variable(mdl->findVar("Modules", "Modules")).children()) {
+  for (JsonObject childVar: Variable("Modules", "Modules").children()) {
     Variable childVariable = Variable(childVar);
     if (!childVariable.value().isNull() && childVariable.valArray().size() != modules.size()) {
       ppf("Modules clear (%s.%s %s) %d %d\n", childVariable.pid(), childVariable.id(), childVariable.valueString().c_str(), modules.size(), childVariable.valArray().size());
@@ -44,7 +44,7 @@ void SysModules::setup() {
   ui->initText(tableVar, "name", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
       for (size_t rowNr = 0; rowNr < modules.size(); rowNr++)
-        variable.setValue(JsonString(modules[rowNr]->name, JsonString::Copied), rowNr);
+        variable.setValue(JsonString(modules[rowNr]->name), rowNr);
       return true;
     default: return false;
   }});

@@ -224,7 +224,7 @@ public:
     if (variable.initValue(min, max, (int)values)) {
       uint8_t rowNrL = 0;
       for (VectorString value: *values) { //loop over vector
-        variable.setValue(JsonString(value.s, JsonString::Copied), rowNrL); //does onChange if needed, if var in table, update the table row
+        variable.setValue(JsonString(value.s), rowNrL); //does onChange if needed, if var in table, update the table row
         rowNrL++;
       }
     }

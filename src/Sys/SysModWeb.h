@@ -143,7 +143,7 @@ public:
 
     va_end(args);
 
-    addResponse(var, key, JsonString(value, JsonString::Copied));
+    addResponse(var, key, JsonString(value));
   }
 
   void clientsToJson(JsonArray array, bool nameOnly = false, const char * filter = nullptr);

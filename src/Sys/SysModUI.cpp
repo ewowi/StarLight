@@ -32,7 +32,7 @@ void SysModUI::setup() {
   initText(tableVar, "variable", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
     case onSetValue:
       for (size_t rowNr = 0; rowNr < loopFunctions.size(); rowNr++)
-        variable.setValue(JsonString(loopFunctions[rowNr].variable.id(), JsonString::Copied), rowNr);
+        variable.setValue(JsonString(loopFunctions[rowNr].variable.id()), rowNr);
       return true;
     default: return false;
   }});
@@ -86,7 +86,7 @@ void SysModUI::processJson(JsonVariant json) {
       else if (pair.key() == "view" || pair.key() == "canvasData" || pair.key() == "theme") { //save the chosen view in System (see index.js)
         JsonObject var = mdl->findVar("m", "System");
         ppf("processJson %s v:%s n: %d s:%s\n", pair.key().c_str(), pair.value().as<String>().c_str(), var.isNull(), Variable(var).id());
-        var[JsonString(key, JsonString::Copied)] = JsonString(value, JsonString::Copied); //this is needed as key can become a dangling pointer
+        var[JsonString(key)] = pair.value(); //this is needed as key can become a dangling pointer
         // json.remove(key); //key should stay as all clients use this to perform the changeHTML action
       }
       else if (pair.key() == "onAdd" || pair.key() == "onDelete") {

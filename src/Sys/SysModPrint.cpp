@@ -102,7 +102,7 @@ void SysModPrint::printf(const char * format, ...) {
         responseObject["Print.log"]["value"] = buffer;
       else
         responseObject["Print.log"]["value"] = responseObject["Print.log"]["value"].as<String>() + String(buffer);
-      // web->addResponse(variable.var, "value", JsonString(buffer, JsonString::Copied)); //setValue not necessary
+      // web->addResponse(variable.var, "value", JsonString(buffer)); //setValue not necessary
       // variable.setValueF("%s", buffer);
     }
     else if (output == 3) {
@@ -161,7 +161,7 @@ JsonString SysModPrint::fFormat(char * buf, size_t size, const char * format, ..
 
   // Serial.printf("fFormat %s (%d)\n", buf, size);
 
-  return JsonString(buf, JsonString::Copied);
+  return JsonString(buf);
 }
 
 void SysModPrint::printJDocInfo(const char * text, JsonDocument source) {

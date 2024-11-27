@@ -16,6 +16,18 @@
 #include "SysModUI.h"
 #include "SysModInstances.h"
 
+  Variable::Variable() {
+    var = JsonObject(); //undefined variable
+  }
+
+  Variable::Variable(JsonObject var) {
+    this->var = var;
+  }
+
+  Variable::Variable(const char *pid, const char *id) {
+    var = mdl->findVar(pid, id);
+  }
+
   String Variable::valueString(uint8_t rowNr) {
     if (rowNr == UINT8_MAX)
       return value().as<String>();
@@ -343,6 +355,16 @@
     web->getResponseObject()[pidid].remove("options");
   }
 
+  void Variable::getOption(char *option, uint8_t index) {
+    char pidid[64];
+    print->fFormat(pidid, sizeof(pidid), "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    bool optionsExisted = !web->getResponseObject()[pidid]["options"].isNull();
+    JsonArray options = getOptions();
+    strlcpy(option, options[index], 64);
+    if (!optionsExisted)
+      clearOptions(); //if created here then also remove 
+  }
+
   //find options text in a hierarchy of options
   void Variable::findOptionsText(uint8_t value, char * groupName, char * optionName) {
     uint8_t startValue = 0;
@@ -394,7 +416,7 @@
       }
     }
     else if (value.is<const char *>())
-      setValue(JsonString(value, JsonString::Copied), rowNr);
+      setValue(value, rowNr);
     else if (value.is<Coord3D>()) //otherwise it will be treated as JsonObject and toJson / fromJson will not be triggered!!!
       setValue(value.as<Coord3D>(), rowNr);
     else
@@ -411,7 +433,7 @@
 
     va_end(args);
 
-    setValue(JsonString(value, JsonString::Copied));
+    setValue(JsonString(value));
   }
 
   JsonVariant Variable::getValue(uint8_t rowNr) {
@@ -560,7 +582,7 @@ void SysModModel::loop20ms() {
 
     cleanUpModel(Variable(), false, true);//remove if var["o"] is negative (not cleanedUp) and remove ro values
 
-    StarJson starJson("/model.json", "w"); //open fileName for deserialize
+    StarJson starJson("/model.json", FILE_WRITE); //open fileName for deserialize
     //comment exclusions out in case of generating model.json for github
     starJson.addExclusion("fun");
     starJson.addExclusion("dash");
@@ -576,7 +598,7 @@ void SysModModel::loop20ms() {
 }
 
 void SysModModel::loop1s() {
-  mdl->walkThroughModel([](JsonObject parentVar, JsonObject var) {
+  walkThroughModel([](JsonObject parentVar, JsonObject var) {
     Variable(var).triggerEvent(onLoop1s);
     return JsonObject(); //don't stop
   });
@@ -590,7 +612,7 @@ void SysModModel::cleanUpModel(Variable parent, bool oPos, bool ro) {
   else
     vars = Variable(parent).children();
 
-  bool showObsolete = mdl->getValue("Model", "showObsolete");
+  bool showObsolete = getValue("Model", "showObsolete");
   for (JsonArray::iterator varV=vars.begin(); varV!=vars.end(); ++varV) {
   // for (JsonVariant varV : vars) {
     if (varV->is<JsonObject>()) {
@@ -633,21 +655,21 @@ void SysModModel::cleanUpModel(Variable parent, bool oPos, bool ro) {
 Variable SysModModel::initVar(Variable parent, const char * id, const char * type, bool readOnly, const VarEvent &varEvent) {
   const char * parentId = parent.var["id"];
   if (!parentId) parentId = "m"; //m=module
-  JsonObject var = mdl->findVar(parentId, id);
+  JsonObject var = findVar(parentId, id);
   Variable variable = Variable(var);
 
   //create new var
   if (var.isNull()) {
     // ppf("initVar new %s: %s.%s\n", type, parentId, id); //parentId not null otherwise crash
     if (parent.var.isNull()) {
-      JsonArray vars = mdl->model->as<JsonArray>();
+      JsonArray vars = model->as<JsonArray>();
       var = vars.add<JsonObject>();
     } else {
       if (parent.var["n"].isNull()) parent.var["n"].to<JsonArray>(); //TO!!! if parent exist and no "n" array, create it
       var = parent.var["n"].add<JsonObject>();
       // serializeJson(model, Serial);Serial.println();
     }
-    var["id"] = JsonString(id, JsonString::Copied);
+    var["id"] = JsonString(id);
   }
   // else {
   //   ppf("initVar Var %s->%s already defined\n", modelParentId, id);
@@ -655,7 +677,7 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
 
   if (!var.isNull()) {
     if (var["type"].isNull() || var["type"] != type) {
-      var["type"] = JsonString(type, JsonString::Copied);
+      var["type"] = JsonString(type);
       // print->printJson("initVar set type", var);
     }
 
@@ -670,9 +692,9 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
       variable.order( -variable.order()); //leave the order as is
     else {
       if (!parent.var.isNull() && Variable(parent).order() >= 0) // if checks on the parent already done so vars added later, e.g. controls, will be autochecked
-        variable.order( mdl->varCounter++); //redefine order
+        variable.order( varCounter++); //redefine order
       else
-        variable.order( -mdl->varCounter++); //redefine order
+        variable.order( -varCounter++); //redefine order
     }
 
     //if varEvent, add it to the list
