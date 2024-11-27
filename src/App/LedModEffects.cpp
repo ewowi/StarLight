@@ -397,7 +397,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
           // ui->dashVarChanged = true;
           // //rebuild the table
-          for (JsonObject childVar: Variable(mdl->findVar("E131", "watches")).children())
+          for (JsonObject childVar: Variable("E131", "patches").children())
             Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
 
       // }
@@ -523,7 +523,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
       leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right
 
-      Variable variable = Variable(mdl->findVar("layers", "effect"));
+      Variable variable = Variable("layers", "effect");
       variable.preDetails();
       mdl->setValueRowNr = rowNr;
       leds.effect->setup(leds, variable); //if changed then run setup once (like call==0 in WLED) and set all defaults in effectData

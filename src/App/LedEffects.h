@@ -1182,16 +1182,13 @@ class OctopusEffect: public Effect {
 
       for (pos.x = 0; pos.x < leds.size.x; pos.x++) {
         for (pos.y = 0; pos.y < leds.size.y; pos.y++) {
-          // uint16_t indexV = leds.XYZ(pos);
           uint16_t indexV = leds.XYZUnprojected(pos);
           if (indexV < leds.size.x * leds.size.y) { //excluding UINT16_MAX from XY if out of bounds due to projection
             byte angle = rMap[indexV].angle;
             byte radius = rMap[indexV].radius;
-            //CRGB c = CHSV(*step / 2 - radius, 255, sin8(sin8((angle * 4 - radius) / 4 + *step) + radius - *step * 2 + angle * (SEGMENT.custom3/3+1)));
             uint16_t intensity = sin8(sin8((angle * 4 - radius) / 4 + *step/2) + radius - *step + angle * legs);
             intensity = map(intensity*intensity, 0, UINT16_MAX, 0, 255); // add a bit of non-linearity for cleaner display
-            CRGB color = ColorFromPalette(leds.palette, *step / 2 - radius, intensity);
-            leds[pos] = color;
+            leds[pos] = ColorFromPalette(leds.palette, *step / 2 - radius, intensity);
           }
         }
       }
@@ -2525,7 +2522,7 @@ class GEQEffect: public Effect {
     //   if (e131mod->isEnabled) {
     //     e131mod->patchChannel(3, "fadeOut", 255); // TODO: add constant for name
     //     e131mod->patchChannel(4, "ripple", 255);
-    //     for (JsonObject childVar: mdl->findVar("E131", "watches")["n"].as<JsonArray>()) {
+    //     for (JsonObject childVar: mdl->findVar("E131", "patches")["n"].as<JsonArray>()) {
     //       Variable(childVar).triggerEvent(onUI);
     //     }
     //   }
