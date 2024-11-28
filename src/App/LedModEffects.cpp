@@ -386,6 +386,93 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
     ui->initSlider(parentVar, "Blending", &fix->globalBlend);
 
+    currentVar = ui->initSelect(parentVar, "preset", (uint8_t)0);
+
+    currentVar.subscribe(onUI, [this](Variable variable, uint8_t rowNr, uint8_t eventType) {
+      ppf("publish preset.onUI %s.%s [%d]\n", variable.pid(), variable.id(), rowNr);
+      JsonArray options = variable.setOptions();
+      JsonDocument doc = JsonDocument();
+
+      files->readObjectFromFile("/presets.json", &doc);
+
+      JsonObject jo = doc.as<JsonObject>();
+      JsonArray ja = jo[name];
+
+      for (int i=0; i<16; i++) {
+        char buf[32] = "";
+        if (i >= ja.size() || ja[i].isNull() || ja[i]["name"].isNull()) {
+          print->fFormat(buf, sizeof(buf), "Empty %d", i);
+        } else {
+          // ppf("preset.onUI %d %s\n", i, ja[i]["name"].as<const char *>());
+          strlcpy(buf, ja[i]["name"].as<const char *>(), sizeof(buf));
+        }
+        // ppf("presets ui add %d %s\n", i, buf);
+        options.add(JsonString(buf)); //copy!
+      }
+
+      print->printJson("  options", options);
+
+    });
+
+    currentVar.subscribe(onChange, [this](Variable variable, uint8_t rowNr, uint8_t eventType) {
+
+      //on Change: save the old value, retrieve the new value and set all values
+      //load the complete presets.json, make the changes, save it (using save button...
+
+      uint8_t oldValue = variable.var["oldValue"];
+      uint8_t newValue = variable.var["value"];
+      ppf("publish preset.onchange %s.%s [%d] %d->%d %s\n", variable.pid(), variable.id(), rowNr, oldValue, newValue, variable.valueString().c_str());
+
+      JsonDocument doc = JsonDocument();
+      files->readObjectFromFile("/presets.json", &doc);
+
+        JsonObject jo = doc.as<JsonObject>();
+        if (jo.isNull()) jo = doc.to<JsonObject>(); //create
+
+        JsonArray ja = jo[name];
+        if (ja.isNull()) ja = jo[name].to<JsonArray>();
+
+        JsonVariant m = mdl->findVar("m", name); //find this module (effects)
+        // ja[oldValue] = m; //save the old preset
+
+        char result[64] = "";
+        char sep[3] = "";
+        if (m.is<JsonObject>() && !m["n"].isNull()) {
+          // print->printJson("walk for", m["n"]); ppf("\n");
+          ja[oldValue].to<JsonObject>();//empty
+          mdl->walkThroughModel([ja, oldValue, &result, &sep](JsonObject parentVar, JsonObject var) {
+            Variable variable = Variable(var);
+            if (!variable.readOnly() &&  strncmp(variable.id(), "preset", 32) != 0 ) { //exclude preset
+              ppf("save %s.%s: %s\n", variable.pid(), variable.id(), variable.valueString().c_str());
+              ja[oldValue][variable.pid()][variable.id()] = var["value"];
+            }
+            return JsonObject(); //don't stop
+          }, m); //walk using m["n"]
+        }
+
+        //loop over all object elements
+        char buf[32];
+        print->fFormat(buf, sizeof(buf), "Preset %d", oldValue);
+        ja[oldValue]["name"] = buf;
+
+        if (ja[newValue].is<JsonObject>())
+          for (JsonPair pidPair: ja[newValue].as<JsonObject>()) {
+            for (JsonPair idPair: pidPair.value().as<JsonObject>()) {
+              ppf("load %s.%s: %s\n", pidPair.key().c_str(), idPair.key().c_str(), idPair.value().as<String>().c_str());
+              // if (pidPair.key() != "name")
+              //   mdl->setValue(pidPair.key().c_str(), idPair.key().c_str(), idPair.value());
+            }
+          }
+
+        files->writeObjectToFile("/presets.json", &doc);
+
+      // } //if file open
+
+      variable.publish(onUI); //reload ui for new list of values
+    });
+
+    ui->initVCR(parentVar, "vcr");
+  
     #ifdef STARBASE_USERMOD_E131
       // if (e131mod->isEnabled) {
           e131mod->patchChannel(0, "Fixture", "brightness", 255); //should be 256??
@@ -460,7 +547,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           //   leds->fadeToBlackBy(50);
 
           //loop over mapped pixels and set pixelsToBlend to true
-          if (!fix->layers.empty()) { //if more then one effect
+          if (fix->layers.size() > 1) { //if more then one effect
             for (const std::vector<uint16_t>& mappingTableIndex: leds->mappingTableIndexes) {
               for (const uint16_t indexP: mappingTableIndex)
                 fix->pixelsToBlend[indexP] = true;

@@ -116,20 +116,30 @@ bool LedsLayer::inBounds(const Coord3D &pos) const {
   return pos >= 0 && pos < size;
 }
 
+int LedsLayer::XYZUnprojected(int x, int y, int z) const {
+  return x + y * size.x + z * size.x * size.y;
+}
+
 int LedsLayer::XYZUnprojected(const Coord3D &pixel) const {
   return pixel.x + pixel.y * size.x + pixel.z * size.x * size.y;
 }
 
 int LedsLayer::XYZ(int x, int y, int z) {
-  return XYZ({x, y, z});
+  return XYZ(Coord3D(x,y,z));
+  // if (projection) {
+  //   projectionData.begin();
+  //   (projection->*XYZCached)(*this, Coord3D(x, y, z));
+  // }
+
+  // return XYZUnprojected(x, y, z);
 }
 
 int LedsLayer::XYZ(Coord3D pixel) {
 
   //using cached virtual class methods! (so no need for if projectionNr optimizations!)
   if (projection) {
-    projectionData.begin();
-    (projection->*XYZCached)(*this, pixel);
+    projectionData.begin(); //not const
+    (projection->*XYZCached)(*this, pixel); //not const
   }
 
   return XYZUnprojected(pixel);

@@ -940,6 +940,20 @@ class LinesEffect: public Effect {
   }
 
   void loop(LedsLayer &leds) override {
+    //12288 tests:
+    //return 1025 fps
+    // for (int y = 0; y < leds.size.y; y++) {
+    //   for (int x = 0; x < leds.size.x; x++) {
+    //     // leds.setPixelColor(x + y * leds.size.x, CRGB::Orange); //360fps (95)
+    //     // leds.setPixelColor(leds.XY(x, y), CRGB::Orange); //106fps / 60 fps
+    //     leds.setPixelColor(leds.XYZ(x, y, 0), CRGB::Orange); //362fps / 99 fps
+    //     uint8_t pixelHue8 = inoise8(x * 125, y * 125, sys->now / (16 - 8)); // 25 // 22 fps
+    //   }
+    // }
+    // return;
+
+
+
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
     uint8_t bpm = leds.effectData.read<uint8_t>();
     // bool3State vertical = leds.effectData.read<bool3State>();
@@ -1665,8 +1679,8 @@ class GameOfLifeEffect: public Effect {
     // Redraw Loop
     if (*generation <= 1 || blurDead) { // Readd overlay support when implemented
       for (int x = 0; x < leds.size.x; x++) for (int y = 0; y < leds.size.y; y++) for (int z = 0; z < leds.size.z; z++){
-        uint16_t cIndex = leds.XYZUnprojected({x,y,z}); // Current cell index (bit grid lookup)
-        uint16_t cLoc   = leds.XYZ({x,y,z});            // Current cell location (led index)
+        uint16_t cIndex = leds.XYZUnprojected(x,y,z); // Current cell index (bit grid lookup)
+        uint16_t cLoc   = leds.XYZ(x,y,z);            // Current cell location (led index)
         if (!leds.isMapped(cIndex)) continue;
         bool alive = getBitValue(cells, cIndex);
         bool recolor = (alive && *generation == 1 && cellColors[cIndex] == 0 && !random(16)); // Palette change or Initial Color

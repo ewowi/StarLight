@@ -167,6 +167,10 @@ public:
     return initVarAndValue<const char *>(parent, id, "url", value, 0, 0, readOnly, varEvent);
   }
 
+  Variable initVCR(Variable parent, const char * id, bool readOnly = false, const VarEvent &varEvent = nullptr) {
+    return initVarAndValue<bool>(parent, id, "vcr", false, 0, 0, readOnly, varEvent);
+  }
+
   //initVarAndValue using basic value
   template <typename Type>
   Variable initVarAndValue(Variable parent, const char * id, const char * type, Type value, int min = 0, int max = 255, bool readOnly = true, const VarEvent &varEvent = nullptr) {

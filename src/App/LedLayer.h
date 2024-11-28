@@ -235,10 +235,11 @@ public:
   bool inBounds(int x, int y, int z = 0) const;
   bool inBounds(const Coord3D & pos) const;
 
+  int XYZUnprojected(int x, int y, int z) const;
   int XYZUnprojected(const Coord3D &pixel) const;
 
-  int XYZ(int x, int y, int z);
-  int XYZ(Coord3D pixel); //not const as pixel can be changed, not & because called with {x,y,z} ...
+  int XYZ(int x, int y, int z); // function not const as it calls projection which changes things
+  int XYZ(Coord3D pixel); //pixel not const as pixel can be changed by projection, not & is it can change the pixel locally for projections ... (because called with {x,y,z} ..._
 
   LedsLayer() {
     ppf("LedsLayer constructor (PhysMap:%d)\n", sizeof(PhysMap));
@@ -386,13 +387,13 @@ public:
       for (uint16_t row = 0; row < height; row++) {
           CRGB carryover = CRGB::Black;
           for (uint16_t i = 0; i < width; i++) {
-              CRGB cur = getPixelColor(XY(i,row));
+              CRGB cur = getPixelColor(XYZ(i,row, 0));
               CRGB part = cur;
               part.nscale8( seep);
               cur.nscale8( keep);
               cur += carryover;
-              if( i) addPixelColor(XY(i-1,row), part);
-              setPixelColor(XY(i,row), cur);
+              if( i) addPixelColor(XYZ(i-1,row, 0), part);
+              setPixelColor(XYZ(i,row, 0), cur);
               carryover = part;
           }
       }
@@ -407,13 +408,13 @@ public:
       for (uint16_t col = 0; col < width; ++col) {
           CRGB carryover = CRGB::Black;
           for (uint16_t i = 0; i < height; ++i) {
-              CRGB cur = getPixelColor(XY(col,i));
+              CRGB cur = getPixelColor(XYZ(col,i, 0));
               CRGB part = cur;
               part.nscale8( seep);
               cur.nscale8( keep);
               cur += carryover;
-              if( i) addPixelColor(XY(col,i-1), part);
-              setPixelColor(XY(col,i), cur);
+              if( i) addPixelColor(XYZ(col,i-1, 0), part);
+              setPixelColor(XYZ(col,i, 0), cur);
               carryover = part;
           }
       }
@@ -440,7 +441,7 @@ public:
 
     // single pixel (line length == 0)
     if (dx+dy == 0) {
-      setPixelColor(XY(x0, y0), color);
+      setPixelColor(XYZ(x0, y0, 0), color);
       return;
     }
 
@@ -466,10 +467,10 @@ public:
         if (steep) std::swap(x,y);  // temporarily swap if steep
         // pixel coverage is determined by fractional part of y co-ordinate
         // WLEDMM added out-of-bounds check: "unsigned(x) < cols" catches negative numbers _and_ too large values
-        setPixelColor(XY(x, y), blend(color, getPixelColor(XY(x, y)), keep));
+        setPixelColor(XYZ(x, y, 0), blend(color, getPixelColor(XYZ(x, y, 0)), keep));
         int xx = x+int(steep);
         int yy = y+int(!steep);
-        setPixelColor(XY(xx, yy), blend(color, getPixelColor(XY(xx, yy)), seep));
+        setPixelColor(XYZ(xx, yy, 0), blend(color, getPixelColor(XYZ(xx, yy, 0)), seep));
       
         intersectY += gradient;
         if (steep) std::swap(x,y);  // restore if steep
@@ -479,7 +480,7 @@ public:
       int err = (dx>dy ? dx : -dy)/2;   // error direction
       for (;;) {
         // if (x0 >= cols || y0 >= rows) break; // WLEDMM we hit the edge - should never happen
-        setPixelColor(XY(x0, y0), color);
+        setPixelColor(XYZ(x0, y0, 0), color);
         if (x0==x1 && y0==y1) break;
         int e2 = err;
         if (e2 >-dx) { err -= dy; x0 += sx; }

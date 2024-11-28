@@ -33,6 +33,15 @@ struct Coord3D {
   //   this->z = y;
   // }
 
+  Coord3D() {
+  }
+
+  Coord3D(int x, int y, int z) {
+    this->x = x;
+    this->y = y;
+    this->z = z;
+  }
+
   //comparisons
   bool operator!=(Coord3D rhs) {
     // ppf("Coord3D compare%d %d %d %d %d %d\n", x, y, z, rhs.x, rhs.y, rhs.z);
@@ -202,6 +211,16 @@ enum eventTypes
   f_count
 };
 
+class Variable; //forward
+
+typedef std::function<void(Variable)> FindFun;
+
+#define EventArguments Variable variable, uint8_t rowNr, uint8_t eventType
+// #define EventArguments2 Variable variable, uint8_t rowNr
+
+// https://stackoverflow.com/questions/59111610/how-do-you-declare-a-lambda-function-using-typedef-and-then-use-it-by-passing-to
+typedef std::function<uint8_t(EventArguments)> VarEvent;
+typedef std::function<void(EventArguments)> VarFunction; // void: no return
 
 class Variable {
   public:
@@ -216,6 +235,7 @@ class Variable {
   //core methods 
   const char *pid() const {return var["pid"];}
   const char *id() const {return var["id"];}
+  const char *type() const {return var["type"];}
 
   JsonVariant value() const {return var["value"];}
   JsonVariant value(uint8_t rowNr) const {return var["value"][rowNr];}
@@ -334,14 +354,18 @@ class Variable {
   //gives a variable an initital value returns true if setValue must be called 
   bool initValue(int min = 0, int max = 255, int pointer = 0);
 
+  void subscribe(uint8_t eventType, const VarFunction &varFunction = nullptr);
+  bool publish(uint8_t eventType, uint8_t rowNr = UINT8_MAX);
+
 }; //class Variable
 
-typedef std::function<void(Variable)> FindFun;
+//For Publish and Subscribe events
+struct VarEventPS {
+  Variable variable; //8 bytes: cannot be a pointer as Variable is volatile, the var inside variable is not volatile
+  uint8_t eventType; //1 byte but rounded to 4 bytes (room for more variables, e.g. rowNr?)
+  VarFunction varFunction; //function: 16 bytes
+}; //total 28 bytes
 
-#define EventArguments Variable variable, uint8_t rowNr, uint8_t eventType
-
-// https://stackoverflow.com/questions/59111610/how-do-you-declare-a-lambda-function-using-typedef-and-then-use-it-by-passing-to
-typedef std::function<uint8_t(EventArguments)> VarEvent;
 
 class SysModModel: public SysModule {
 
@@ -357,6 +381,7 @@ public:
   int varCounter = 1; //start with 1 so it can be negative, see var["o"]
 
   std::vector<VarEvent> varEvents;
+  std::vector<VarEventPS> varEventsPS;
 
   SysModModel();
   void setup() override;

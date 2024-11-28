@@ -247,10 +247,13 @@
     bool result = false;
 
     //call varEvent if exists
-    if (!var["fun"].isNull()) {//isNull needed here!
+    if (!var["fun"].isNull()) { //isNull needed here!
       size_t funNr = var["fun"];
       if (funNr < mdl->varEvents.size()) {
+        // ppf("voor v1 call %s.%s[%d] %d %d %d\n", pid(), id(), rowNr, funNr, eventType, mdl->varEvents.size());
         result = mdl->varEvents[funNr](*this, rowNr, eventType);
+
+        //all ppf here:
         if (result && !readOnly()) { //send rowNr = 0 if no rowNr
           //only print vars with a value and not onSetValue as that changes a lot due to instances clients etc (tbd)
           //don't print if onSetValue or oldValue is null
@@ -269,9 +272,12 @@
           }
         } //varEvent exists
       }
-      else    
+      else if (funNr == UINT8_MAX)
+        result = publish(eventType, rowNr);
+      else
         ppf("dev triggerEvent function nr %s.%s outside bounds %d >= %d\n", pid(), id(), funNr, mdl->varEvents.size());
     } //varEvent exists
+
 
     //delete pointers after calling var.onDelete as var.onDelete might need the values
     if (eventType == onAdd || eventType == onDelete) {
@@ -486,7 +492,7 @@
     //sets the default values, by varEvent if exists, otherwise manually (by returning true)
     if (doSetValue) {
       bool onSetValueExists = false;
-      if (!var["fun"].isNull()) {
+      if (!var["fun"].isNull()) { // && var["fun"] != UINT8_MAX
         onSetValueExists = triggerEvent(onSetValue, mdl->setValueRowNr);
       }
       if (!onSetValueExists) { //setValue provided (if not null)
@@ -564,6 +570,16 @@ void SysModModel::setup() {
     //   return true;
     default: return false;
   }});
+
+  Variable currentVar;
+  currentVar = ui->initText(parentVar, "events", nullptr, 16, true);
+  currentVar.subscribe(onLoop1s, [this](EventArguments) {
+    variable.setValueF("%d x %d = %d", varEvents.size(), sizeof(VarEvent), varEvents.size() * sizeof(VarEvent));
+  });
+  currentVar = ui->initText(parentVar, "events PS", nullptr, 16, true);
+  currentVar.subscribe(onLoop1s, [this](EventArguments) {
+    variable.setValueF("%d x %d = %d (%d + %d + %d)", varEventsPS.size(), sizeof(VarEventPS), varEventsPS.size() * sizeof(VarEventPS), sizeof(Variable), sizeof(VarFunction), sizeof(uint8_t));
+  });
 
   #endif //STARBASE_DEVMODE
 }
@@ -707,8 +723,8 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
       // if (itr!=ucFunctions.end()) //found
       //   var["varEvent"] = distance(ucFunctions.begin(), itr); //assign found function
       // else { //not found
-        mdl->varEvents.push_back(varEvent); //add new function
-        var["fun"] = mdl->varEvents.size()-1;
+        varEvents.push_back(varEvent); //add new function
+        var["fun"] = varEvents.size()-1;
       // }
       
       if (varEvent(variable, UINT8_MAX, onLoop)) { //test run if it supports loop
@@ -728,6 +744,26 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
 
   return variable;
 }
+
+void Variable::subscribe(uint8_t eventType, const VarFunction &varFunction) {
+  ppf("subscribe %d %s.%s\n", eventType, pid(), id());
+  mdl->varEventsPS.push_back({*this, eventType, varFunction}); //add new function
+  var["fun"] = UINT8_MAX; //to trigger response from ui
+}
+
+bool Variable::publish(uint8_t eventType, uint8_t rowNr) {
+  bool found = false;
+  for (VarEventPS &varEventPS: mdl->varEventsPS) {
+    if (eventType == varEventPS.eventType && strncmp(pid(), varEventPS.variable.pid(), 32) == 0 && strncmp(id(), varEventPS.variable.id(), 32) == 0) {
+      if (strcmp(id(), "effect") == 0 && eventType!= onLoop1s)
+        ppf("publish %s.%s[%d] %d=%d %s.%s\n", pid(), id(), rowNr, eventType, varEventPS.eventType , varEventPS.variable.pid(), varEventPS.variable.id());
+      varEventPS.varFunction(*this, rowNr, eventType);
+      found = true;
+    }
+  }
+  return found;
+}
+
 
 JsonObject SysModModel::walkThroughModel(std::function<JsonObject(JsonObject, JsonObject)> fun, JsonObject parentVar) {
   for (JsonObject var : parentVar.isNull()?model->as<JsonArray>(): parentVar["n"]) {

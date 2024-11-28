@@ -250,7 +250,10 @@ public:
           return true;
         case onUI:
           // call onUI of the base variable for the new variable
-          mdl->varEvents[variable.var["fun"]](insVariable, rowNr, onUI);
+          if (variable.var["fun"].as<uint8_t>() != UINT8_MAX)
+            mdl->varEvents[variable.var["fun"]](insVariable, rowNr, onUI);
+          else
+            insVariable.publish(onUI, rowNr); //is insVariable subscribed ???
           return true;
         case onChange: {
           //do not set this initially!!!
