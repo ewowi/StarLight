@@ -84,6 +84,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       effects.push_back(new LaserGEQEffect);
       effects.push_back(new NoiseMeterEffect);
       effects.push_back(new PaintbrushEffect);
+      effects.push_back(new FireworksEffect);
       effects.push_back(new VUMeterEffect);
       effects.push_back(new WaverlyEffect);
     #endif
@@ -156,12 +157,12 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         variable.setComment("Effect to show");
         JsonArray options = variable.setOptions();
         for (Effect *effect:effects) {
-          char buf[32] = "";
-          strlcat(buf, effect->name(), sizeof(buf));
-          strlcat(buf, effect->dim()==_1D?" ┊":effect->dim()==_2D?" ▦":" 🧊", sizeof(buf));
-          strlcat(buf, " ", sizeof(buf));
-          strlcat(buf, effect->tags(), sizeof(buf));
-          options.add(JsonString(buf)); //copy!
+          StarString buf;
+          buf += effect->name();
+          buf += effect->dim()==_1D?" ┊":effect->dim()==_2D?" ▦":" 🧊";
+          buf += " ";
+          buf += effect->tags();
+          options.add(buf.getString()); //copy!
         }
         return true; }
       case onChange:
@@ -361,10 +362,10 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         // for (std::vector<LedsLayer *>::iterator leds=fix->layers.begin(); leds!=fix->layers.end(); ++leds) {
         uint8_t rowNr = 0;
         for (LedsLayer *leds:fix->layers) {
-          char message[32];
-          print->fFormat(message, sizeof(message), "%d x %d x %d", leds->size.x, leds->size.y, leds->size.z);
-          ppf("onSetValue ledsSize[%d] = %s\n", rowNr, message);
-          variable.setValue(JsonString(message), rowNr); //rowNr
+          StarString message;
+          message.format("%d x %d x %d", leds->size.x, leds->size.y, leds->size.z);
+          ppf("onSetValue ledsSize[%d] = %s\n", rowNr, message.getString());
+          variable.setValue(JsonString(message.getString()), rowNr); //rowNr
           rowNr++;
         }
         return true; }
@@ -399,15 +400,14 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       JsonArray ja = jo[name];
 
       for (int i=0; i<16; i++) {
-        char buf[32] = "";
+        StarString buf;
         if (i >= ja.size() || ja[i].isNull() || ja[i]["name"].isNull()) {
-          print->fFormat(buf, sizeof(buf), "Empty %d", i);
+          buf.format("Empty %d", i);
         } else {
           // ppf("preset.onUI %d %s\n", i, ja[i]["name"].as<const char *>());
-          strlcpy(buf, ja[i]["name"].as<const char *>(), sizeof(buf));
+          buf = ja[i]["name"].as<const char *>();
         }
-        // ppf("presets ui add %d %s\n", i, buf);
-        options.add(JsonString(buf)); //copy!
+        options.add(buf.getString()); //copy!
       }
 
       print->printJson("  options", options);
@@ -435,32 +435,56 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         JsonVariant m = mdl->findVar("m", name); //find this module (effects)
         // ja[oldValue] = m; //save the old preset
 
-        char result[64] = "";
-        char sep[3] = "";
+        StarString result;
+
         if (m.is<JsonObject>() && !m["n"].isNull()) {
           // print->printJson("walk for", m["n"]); ppf("\n");
           ja[oldValue].to<JsonObject>();//empty
-          mdl->walkThroughModel([ja, oldValue, &result, &sep](JsonObject parentVar, JsonObject var) {
+          mdl->walkThroughModel([ja, oldValue, &result](JsonObject parentVar, JsonObject var) {
             Variable variable = Variable(var);
             if (!variable.readOnly() &&  strncmp(variable.id(), "preset", 32) != 0 ) { //exclude preset
               ppf("save %s.%s: %s\n", variable.pid(), variable.id(), variable.valueString().c_str());
               ja[oldValue][variable.pid()][variable.id()] = var["value"];
+
+              //
+              if (var["type"] == "text") {
+                result += variable.valueString().c_str(); //concat
+                result.catSep(", ");
+              } else if (var["type"] == "select") {
+                char option[32];
+                if (variable.valIsArray())
+                  variable.getOption(option, var["value"][0]); //only one for now
+                else
+                  variable.getOption(option, var["value"]);
+                ppf("add option %s.%s[0] %s\n", variable.pid(), variable.id(), option);
+                result += option; //concat
+                result.catSep(", ");
+              }
             }
             return JsonObject(); //don't stop
           }, m); //walk using m["n"]
         }
 
-        //loop over all object elements
-        char buf[32];
-        print->fFormat(buf, sizeof(buf), "Preset %d", oldValue);
-        ja[oldValue]["name"] = buf;
+        if (result.length() == 0) {
+          result.format("Preset %d", oldValue);
+        }
+        ja[oldValue]["name"] = result.getString();
 
         if (ja[newValue].is<JsonObject>())
           for (JsonPair pidPair: ja[newValue].as<JsonObject>()) {
             for (JsonPair idPair: pidPair.value().as<JsonObject>()) {
               ppf("load %s.%s: %s\n", pidPair.key().c_str(), idPair.key().c_str(), idPair.value().as<String>().c_str());
-              // if (pidPair.key() != "name")
-              //   mdl->setValue(pidPair.key().c_str(), idPair.key().c_str(), idPair.value());
+              if (pidPair.key() != "name") {
+                JsonVariant jv = idPair.value();
+                if (jv.is<JsonArray>()) {
+                  uint8_t rowNr = 0;
+                  for (JsonVariant element: jv.as<JsonArray>()) {
+                    mdl->setValue(pidPair.key().c_str(), idPair.key().c_str(), element, rowNr++);
+                  }
+                }
+                else
+                  mdl->setValue(pidPair.key().c_str(), idPair.key().c_str(), jv);
+              }
             }
           }
 
@@ -531,16 +555,15 @@ inline uint16_t getRGBWsize(uint16_t nleds){
             leds->projectionData.begin();
             (leds->projection->*leds->loopCached)(*leds);
           }
-
           mdl->getValueRowNr = UINT8_MAX;
 
           if (fix->showTicker && rowNr == fix->layers.size() -1) { //last effect, add sysinfo
-            char text[20];
+            StarString text;
             if (leds->size.x > 48)
-              print->fFormat(text, sizeof(text), "%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
+              text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
             else
-              print->fFormat(text, sizeof(text), "%.3d %s", fix->realFps, fix->tickerTape);
-            leds->drawText(text, 0, 0, 1);
+              text.format("%.3d %s", fix->realFps, fix->tickerTape);
+            leds->drawText(text.getString(), 0, 0, 1);
           }
 
           // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)

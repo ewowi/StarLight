@@ -327,6 +327,8 @@ public:
 
   // maps the virtual led to the physical led(s) and assign a color to it
   void setPixelColor(int indexV, const CRGB& color);
+  void setPixelColor(int x, int y, const CRGB& color) {setPixelColor(XYZ(x, y, 0), color);}
+  void setPixelColor(int x, int y, int z, const CRGB& color) {setPixelColor(XYZ(x, y, z), color);}
   void setPixelColor(const Coord3D &pixel, const CRGB& color) {setPixelColor(XYZ(pixel), color);}
 
   // temp methods until all effects have been converted to Palette / 2 byte mapping mode
@@ -337,9 +339,13 @@ public:
   void blendPixelColor(const Coord3D &pixel, const CRGB& color, const uint8_t blendAmount) {blendPixelColor(XYZ(pixel), color, blendAmount);}
 
   CRGB getPixelColor(int indexV) const;
+  CRGB getPixelColor(int x, int y) {return getPixelColor(XYZ(x, y, 0));} //not const because of XYZ ...
+  CRGB getPixelColor(int x, int y, int z) {return getPixelColor(XYZ(x, y, z));}
   CRGB getPixelColor(const Coord3D &pixel) {return getPixelColor(XYZ(pixel));}
 
-  void addPixelColor(const int indexV, const CRGB &color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
+  void addPixelColor(int indexV, const CRGB &color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
+  void addPixelColor(int x, int y, const CRGB &color) {setPixelColor(XYZ(x, y, 0), getPixelColor(XYZ(x, y, 0)) + color);}
+  void addPixelColor(int x, int y, int z, const CRGB &color) {setPixelColor(XYZ(x, y, z), getPixelColor(XYZ(x, y, z)) + color);}
   void addPixelColor(const Coord3D &pixel, const CRGB &color) {setPixelColor(pixel, getPixelColor(pixel) + color);}
 
   void fadeToBlackBy(uint8_t fadeBy = 255);
@@ -347,7 +353,7 @@ public:
   void fill_rainbow(uint8_t initialhue, uint8_t deltahue);
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
-  bool isMapped(const int indexV) const {
+  bool isMapped(int indexV) const {
     return indexV < mappingTableSizeUsed && (mappingTable[indexV].mapType == m_onePixel || mappingTable[indexV].mapType == m_morePixels);
   }
 

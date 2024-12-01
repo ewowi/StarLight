@@ -255,6 +255,7 @@ class Variable {
   //recursively remove all value[rowNr] from children of var
   void removeValuesForRow(uint8_t rowNr);
 
+  bool valIsArray() const {return var["value"].is<JsonArray>();}
   JsonArray valArray() const {if (var["value"].is<JsonArray>()) return var["value"]; else return JsonArray(); }
 
   //if variable is a table, loop through its rows

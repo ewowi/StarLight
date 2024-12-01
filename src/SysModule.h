@@ -36,6 +36,56 @@ struct VectorString {
   char s[32];
 };
 
+class StarString {
+  char s[32] = "";
+  char sep[3] = "";
+
+  public: 
+
+  //assign
+  StarString& operator=(const char *rhs) {
+    strlcpy(s, rhs, sizeof(s));
+    return *this;
+  }
+
+  //concat
+  StarString& operator+(const char *rhs) {
+    strlcat(s, rhs, sizeof(s));
+    return *this;
+  }
+
+  //concat
+  StarString& operator+=(const char *rhs) {
+    strlcat(s, sep, sizeof(s));
+    strlcat(s, rhs, sizeof(s));
+    // strlcpy(sep, ", ", sizeof(s));
+    return *this;
+  }
+
+  void catSep(const char* s) {
+    strlcpy(sep, s, sizeof(sep));
+  }
+
+  size_t length() {
+    return strnlen(s, sizeof(s));
+  }
+
+  char *format(const char * format, ...) {
+    va_list args;
+    va_start(args, format);
+
+    size_t len = vsnprintf(s, sizeof(s), format, args);
+
+    va_end(args);
+    return s;
+  }
+
+  char *getString() {
+    return s;
+  }
+
+};
+
 class SysModule {
 
 public:

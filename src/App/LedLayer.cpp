@@ -451,9 +451,9 @@ void LedsLayer::fill_rainbow(const uint8_t initialhue, const uint8_t deltahue) {
 
       ppf("addPixelsPost leds[%d] V:%d x %d x %d (v:%d - p:%d pm:%d of %d c:%d)\n", rowNr, size.x, size.y, size.z, nrOfLogical, nrOfPhysical, nrOfPhysicalM, mappingTableIndexesSizeUsed, nrOfColor);
 
-      char buf[32];
-      print->fFormat(buf, sizeof(buf), "%d x %d x %d", size.x, size.y, size.z);
-      mdl->setValue("layers", "size", JsonString(buf), rowNr);
+      StarString buf;
+      buf.format("%d x %d x %d", size.x, size.y, size.z);
+      mdl->setValue("layers", "size", JsonString(buf.getString()), rowNr);
 
       ppf("addPixelsPost leds[%d].size = so:%d + m:(%d of %d) * %d + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTableSizeUsed, mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164
 
