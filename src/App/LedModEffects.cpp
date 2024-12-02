@@ -398,15 +398,16 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       for (int i=0; i<16; i++) {
         StarString buf;
         if (i >= presets.size() || presets[i].isNull() || presets[i]["name"].isNull()) {
-          buf.format("%2d: Empty", i);
+          buf.format("%02d: Empty", i);
         } else {
-          // ppf("preset.onUI %d %s\n", i, presets[i]["name"].as<const char *>());
-          buf.format("%2d: %s", i, presets[i]["name"].as<const char *>());
+          // buf.format("%02d: %s", i, presets[i]["name"].as<const char *>()); //this causes crashes in asyncwebserver !!!
+          buf = presets[i]["name"].as<const char *>();
+          ppf("preset.onUI %02d %s (%d)\n", i, buf.getString(), buf.length());
         }
         options.add(buf.getString()); //copy!
       }
 
-      print->printJson("  options", options);
+      // print->printJson("  options", options);
 
     });
 
