@@ -1495,7 +1495,7 @@ class Noise2DEffect: public Effect {
       for (int x = 0; x < leds.size.x; x++) {
         uint8_t pixelHue8 = inoise8(x * scale, y * scale, sys->now / (16 - speed));
         // leds.setPixelColor(x, y, ColorFromPalette(leds.palette, pixelHue8));
-        leds.setPixelColorPal(x, y, pixelHue8);
+        leds.setPixelColorPal(leds.XY(x, y), pixelHue8);
       }
     }
   }

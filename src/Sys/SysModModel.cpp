@@ -522,6 +522,7 @@
 
 SysModModel::SysModModel() :SysModule("Model") {
   model = new JsonDocument(&allocator);
+  presets = new JsonDocument(&allocator);
 
   JsonArray root = model->to<JsonArray>(); //create
 
@@ -532,6 +533,9 @@ SysModModel::SysModModel() :SysModule("Model") {
   } else {
     root = model->to<JsonArray>(); //re create the model as it is corrupted by readFromFile
   }
+
+  files->readObjectFromFile("/presets.json", presets); //do not create if not exists
+
 }
 
 void SysModModel::setup() {
@@ -608,6 +612,10 @@ void SysModModel::loop20ms() {
     starJson.writeJsonDocToFile(model);
 
     // print->printJson("Write model", *model); //this shows the model before exclusion
+
+    if (!presets->isNull())
+      files->writeObjectToFile("/presets.json", presets);
+
 
     doWriteModel = false;
   }

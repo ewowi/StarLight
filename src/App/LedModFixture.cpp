@@ -502,60 +502,6 @@
       }
     }
 
-    //reinit the effect after an effect change causing a mapping change
-    uint8_t rowNr = 0;
-    for (LedsLayer *leds: layers) {
-      if (eff->doInitEffectRowNr == rowNr) {
-        eff->doInitEffectRowNr = UINT8_MAX;
-        eff->initEffect(*leds, rowNr);
-      }
-      rowNr++;
-    }
-
-    //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
-
-    //connect allocated Pins to gpio
-
-    if (doAllocPins) {
-
-      std::vector<SortedPin> sortedPins;
-      unsigned pinNr = 0;
-
-      for (PinObject &pinObject: pinsM->pinObjects) {
-
-        if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in addPin)
-          //dirty trick to decode nrOfLedsPerPin
-          char details[32];
-          strlcpy(details, pinObject.details, sizeof(details)); //copy as strtok messes with the string
-          char * after = strtok((char *)details, "-");
-          if (after != nullptr ) {
-            char *before = after;
-            after = strtok(nullptr, "-");
-
-            SortedPin sortedPin{};
-            sortedPin.startLed = strtol(before, nullptr, 10);
-            sortedPin.nrOfLeds = strtol(after, nullptr, 10) - strtol(before, nullptr, 10) + 1;
-            sortedPin.pin = pinNr;
-            sortedPins.push_back(sortedPin);
-
-            ppf("addLeds new %d: %d-%d\n", pinNr, sortedPin.startLed, sortedPin.nrOfLeds-1);
-          }
-        }
-        pinNr++;
-      }
-
-      // if pins defined
-      if (!sortedPins.empty()) {
-
-        //sort the vector by the starLed
-        std::sort(sortedPins.begin(), sortedPins.end(), [](const SortedPin &a, const SortedPin &b) {return a.startLed < b.startLed;});
-
-        driverInit(sortedPins);
-
-      } //pins defined
-
-      doAllocPins = false;
-    } //doAllocPins
   } //mapInitAlloc
 
 #define headerBytesFixture 16 // so 680 pixels will fit in a PACKAGE_SIZE package ?
@@ -761,9 +707,65 @@ void LedModFixture::addPixelsPost() {
     ppf("addPixelsPost(%d) fixture.size = so:%d + l:(%d * %d) B %d ms\n", pass, sizeof(this), STARLIGHT_MAXLEDS, sizeof(CRGB), millis() - start); //56
   }
 
-  if (pass == 2)
+  if (pass == 2) {
     mappingStatus = 0; //not mapping
-}
+
+    //reinit the effect after an effect change causing a mapping change
+    uint8_t rowNr = 0;
+    for (LedsLayer *leds: layers) {
+      if (eff->doInitEffectRowNr == rowNr) {
+        eff->doInitEffectRowNr = UINT8_MAX;
+        eff->initEffect(*leds, rowNr);
+      }
+      rowNr++;
+    }
+
+    //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
+
+    //connect allocated Pins to gpio
+
+    if (doAllocPins) {
+
+      std::vector<SortedPin> sortedPins;
+      unsigned pinNr = 0;
+
+      for (PinObject &pinObject: pinsM->pinObjects) {
+
+        if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in addPin)
+          //dirty trick to decode nrOfLedsPerPin
+          char details[32];
+          strlcpy(details, pinObject.details, sizeof(details)); //copy as strtok messes with the string
+          char * after = strtok((char *)details, "-");
+          if (after != nullptr ) {
+            char *before = after;
+            after = strtok(nullptr, "-");
+
+            SortedPin sortedPin{};
+            sortedPin.startLed = strtol(before, nullptr, 10);
+            sortedPin.nrOfLeds = strtol(after, nullptr, 10) - strtol(before, nullptr, 10) + 1;
+            sortedPin.pin = pinNr;
+            sortedPins.push_back(sortedPin);
+
+            ppf("addLeds new %d: %d-%d\n", pinNr, sortedPin.startLed, sortedPin.nrOfLeds-1);
+          }
+        }
+        pinNr++;
+      }
+
+      // if pins defined
+      if (!sortedPins.empty()) {
+
+        //sort the vector by the starLed
+        std::sort(sortedPins.begin(), sortedPins.end(), [](const SortedPin &a, const SortedPin &b) {return a.startLed < b.startLed;});
+
+        driverInit(sortedPins);
+
+      } //pins defined
+
+      doAllocPins = false;
+    } //doAllocPins
+  }
+} //addPixelsPost
 
 #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
   void LedModFixture::driverInit(const std::vector<SortedPin> &sortedPins) {

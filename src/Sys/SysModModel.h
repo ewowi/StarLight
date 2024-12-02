@@ -374,6 +374,7 @@ public:
 
   RAM_Allocator allocator;
   JsonDocument *model = nullptr;
+  JsonDocument *presets = nullptr;
 
   bool doWriteModel = false;
 

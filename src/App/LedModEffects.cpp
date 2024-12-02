@@ -392,20 +392,16 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     currentVar.subscribe(onUI, [this](Variable variable, uint8_t rowNr, uint8_t eventType) {
       ppf("publish preset.onUI %s.%s [%d]\n", variable.pid(), variable.id(), rowNr);
       JsonArray options = variable.setOptions();
-      JsonDocument doc = JsonDocument();
 
-      files->readObjectFromFile("/presets.json", &doc);
-
-      JsonObject jo = doc.as<JsonObject>();
-      JsonArray ja = jo[name];
+      JsonArray presets = mdl->presets->as<JsonObject>()[name]; //presets of this module
 
       for (int i=0; i<16; i++) {
         StarString buf;
-        if (i >= ja.size() || ja[i].isNull() || ja[i]["name"].isNull()) {
-          buf.format("Empty %d", i);
+        if (i >= presets.size() || presets[i].isNull() || presets[i]["name"].isNull()) {
+          buf.format("%2d: Empty", i);
         } else {
-          // ppf("preset.onUI %d %s\n", i, ja[i]["name"].as<const char *>());
-          buf = ja[i]["name"].as<const char *>();
+          // ppf("preset.onUI %d %s\n", i, presets[i]["name"].as<const char *>());
+          buf.format("%2d: %s", i, presets[i]["name"].as<const char *>());
         }
         options.add(buf.getString()); //copy!
       }
@@ -423,28 +419,25 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       uint8_t newValue = variable.var["value"];
       ppf("publish preset.onchange %s.%s [%d] %d->%d %s\n", variable.pid(), variable.id(), rowNr, oldValue, newValue, variable.valueString().c_str());
 
-      JsonDocument doc = JsonDocument();
-      files->readObjectFromFile("/presets.json", &doc);
+        JsonObject allPresets = mdl->presets->as<JsonObject>();
+        if (allPresets.isNull()) allPresets = mdl->presets->to<JsonObject>(); //create
 
-        JsonObject jo = doc.as<JsonObject>();
-        if (jo.isNull()) jo = doc.to<JsonObject>(); //create
-
-        JsonArray ja = jo[name];
-        if (ja.isNull()) ja = jo[name].to<JsonArray>();
+        JsonArray presets = allPresets[name];
+        if (presets.isNull()) presets = allPresets[name].to<JsonArray>();
 
         JsonVariant m = mdl->findVar("m", name); //find this module (effects)
-        // ja[oldValue] = m; //save the old preset
+        // presets[oldValue] = m; //save the old preset
 
         StarString result;
 
         if (m.is<JsonObject>() && !m["n"].isNull()) {
           // print->printJson("walk for", m["n"]); ppf("\n");
-          ja[oldValue].to<JsonObject>();//empty
-          mdl->walkThroughModel([ja, oldValue, &result](JsonObject parentVar, JsonObject var) {
+          presets[oldValue].to<JsonObject>();//empty
+          mdl->walkThroughModel([presets, oldValue, &result](JsonObject parentVar, JsonObject var) {
             Variable variable = Variable(var);
             if (!variable.readOnly() &&  strncmp(variable.id(), "preset", 32) != 0 ) { //exclude preset
               ppf("save %s.%s: %s\n", variable.pid(), variable.id(), variable.valueString().c_str());
-              ja[oldValue][variable.pid()][variable.id()] = var["value"];
+              presets[oldValue][variable.pid()][variable.id()] = var["value"];
 
               //
               if (var["type"] == "text") {
@@ -468,10 +461,10 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         if (result.length() == 0) {
           result.format("Preset %d", oldValue);
         }
-        ja[oldValue]["name"] = result.getString();
+        presets[oldValue]["name"] = result.getString();
 
-        if (ja[newValue].is<JsonObject>())
-          for (JsonPair pidPair: ja[newValue].as<JsonObject>()) {
+        if (presets[newValue].is<JsonObject>())
+          for (JsonPair pidPair: presets[newValue].as<JsonObject>()) {
             for (JsonPair idPair: pidPair.value().as<JsonObject>()) {
               ppf("load %s.%s: %s\n", pidPair.key().c_str(), idPair.key().c_str(), idPair.value().as<String>().c_str());
               if (pidPair.key() != "name") {
@@ -488,14 +481,12 @@ inline uint16_t getRGBWsize(uint16_t nleds){
             }
           }
 
-        files->writeObjectToFile("/presets.json", &doc);
-
       // } //if file open
 
       variable.publish(onUI); //reload ui for new list of values
     });
 
-    ui->initVCR(parentVar, "vcr");
+    // ui->initVCR(parentVar, "vcr");
   
     #ifdef STARBASE_USERMOD_E131
       // if (e131mod->isEnabled) {
@@ -531,7 +522,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
       //reset pixelsToBlend if multiple leds effects
       // ppf(" %d-%d", fix->pixelsToBlend.size(), fix->nrOfLeds);
-      if (!fix->layers.empty()) //if more then one effect
+      if (fix->layers.size() > 1) //if more then one effect
         for (uint16_t indexP=0; indexP < fix->pixelsToBlend.size(); indexP++)
           fix->pixelsToBlend[indexP] = false;
 
