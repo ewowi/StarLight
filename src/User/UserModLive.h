@@ -34,12 +34,12 @@ public:
   // void addExternalFun(string name, std::function<void(int)> fun);
   // void addExternalFun(string name, std::function<void(int, int)> fun);
 
-  //testing class functions instead of static
-  void showM();
+  //static because called by Parser
+  static void sync();
+  static void preKill();
+  static void postKill();
 
-  void loop() override;
-
-  void loop20ms() override;
+  void syncWithSync();
 
   void loop1s() override;
 

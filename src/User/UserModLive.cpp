@@ -20,80 +20,34 @@
 #include "../Sys/SysModSystem.h"
 #include "../Sys/SysModFiles.h"
 
+//Leds specifiv
 #include "../App/LedModFixture.h" //for fix->driver (temp)
+//End Leds specific
+
 // #define __RUN_CORE 0
 
 #include "ESPLiveScript.h" //note: contains declarations AND definitions, therefore can only be included once!
 
-long time1;
-long time4;
-static float _min = 9999;
-static float _max = 0;
-static uint32_t _nb_stat = 0;
-static float _totfps;
-static float fps = 0; //integer?
-static unsigned long frameCounter = 0;
-static uint8_t loopState = 0; //waiting on Live Script
+  static long previousCycleCount;
+  static uint16_t fps;
+  static unsigned long frameCounter; //temp, can be removed if syncing tested
+  static bool waitingOnLiveScript = true;
+  static bool syncActive = false;
+
 Parser parser = Parser();
 
-//external function implementation (tbd: move into class)
-
-//tbd: move this to LedModFixture as show is Leds related...
-static void show()
-{
-  frameCounter++;
-    
-  // SKIPPED: check nargs (must be 3 because arg[0] is self)
-  long time2 = ESP.getCycleCount();
-
-  // driver.showPixels(WAIT); // LEDS specific
-
-  //show is done in LedModEffects!
-
-  long time3 = ESP.getCycleCount();
-  float k = (float)(time2 - time1) / 240000000;
-  fps = 1 / k; //StarBase: class variable so it can be shown in UI!!!
-  float k2 = (float)(time3 - time2) / 240000000;
-  float fps2 = 1 / k2;
-  float k3 = (float)(time2 - time4) / 240000000;
-  float fps3 = 1 / k3;
-  _nb_stat++;
-  if (_min > fps && fps > 10 && _nb_stat > 10)
-    _min = fps;
-  if (_max < fps && fps < 5000 && _nb_stat > 10)
-    _max = fps;
-  if (_nb_stat > 10)
-    _totfps += fps;
-  if (_nb_stat%10000 == 0) //every 10 sec. (temp)
-    //Serial.printf("current show fps:%.2f\tglobal fps:%.2f\tfps animation:%.2f\taverage:%.2f\tmin:%.2f\tmax:%.2f\r\n", fps2, fps3, fps, _totfps / (_nb_stat - 10), _min, _max);
-    ppf("current show fps:%.2f\tglobal fps:%.2f\tfps animation:%.2f  average:%.2f min:%.2f max:%.2f\r\n",fps2, fps3,  fps, _totfps / (_nb_stat - 10), _min, _max);
-  time1 = ESP.getCycleCount();
-  time4 = time2;
-
-  // SKIPPED: check that both v1 and v2 are int numbers
-  // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
-  delay(1); //to feed the watchdog (also if loopState == 0)
-  while (loopState != 0) { //not waiting on Live Script
-    delay(1); //to feed the watchdog
-    // set to 0 by main loop
-  }
-  //do Live Script cycle
-  loopState = 1; //Live Script produced a frame, main loop will deal with it
-  // ppf("loopState %d\n", loopState);
-}
-
-static void preKill()
+ void UserModLive::preKill()
 {
   ppf("ELS preKill\n");
   // LEDS specific
   //tbd: move this to LedModFixture...
   #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
     fix->driver.__enableDriver=false;
-    while(fix->driver.isDisplaying){};
+    while (fix->driver.isDisplaying){};
     //delay(20);
   #endif
 }
-static void postKill()
+ void UserModLive::postKill()
 {
   ppf("ELS postKill\n");
   // LEDS specific
@@ -103,24 +57,16 @@ static void postKill()
   #endif
 }
 
-static void resetShowStats()
-{
-    float min = 999;
-    float max = 0;
-    _nb_stat = 0;
-    _totfps = 0;
-}
-
 static float _hypot(float x,float y) {return hypot(x,y);}
 static float _atan2(float x,float y) { return atan2(x,y);}
 static float _sin(float j) {return sin(j);}
 static float _cos(float j) {return cos(j);}
 static float _triangle(float j) {return 1.0 - fabs(fmod(2 * j, 2.0) - 1.0);}
 static float _time(float j) {
-      float myVal = sys->now;
-      myVal = myVal / 65535 / j;           // PixelBlaze uses 1000/65535 = .015259. 
-      myVal = fmod(myVal, 1.0);               // ewowi: with 0.015 as input, you get fmod(millis/1000,1.0), which has a period of 1 second, sounds right
-      return myVal;
+  float myVal = sys->now;
+  myVal = myVal / 65535 / j;           // PixelBlaze uses 1000/65535 = .015259. 
+  myVal = fmod(myVal, 1.0);               // ewowi: with 0.015 as input, you get fmod(millis/1000,1.0), which has a period of 1 second, sounds right
+  return myVal;
 }
 
   void UserModLive::setup() {
@@ -161,7 +107,7 @@ static float _time(float j) {
             addExternalFun("void", "digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
             addExternalFun("void", "delay", "(int a1)", (void *)&delay);
 
-            exeID = compile(fileName, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
+            exeID = compile(fileName, "void main(){setup();while(2>1){loop();sync();}}");
           }
 
           if (exeID != UINT8_MAX)
@@ -178,13 +124,15 @@ static float _time(float j) {
       default: return false; 
     }}); //script
 
-    ui->initText(parentVar, "fps1", nullptr, 10, true, [this](EventArguments) { switch (eventType) {
+    ui->initText(parentVar, "fpsCycles", nullptr, 10, true, [this](EventArguments) { switch (eventType) {
       case onLoop1s:
-        variable.setValueF("%.0f /s", fps, 0); //0 is to force format overload used
+        variable.setValueF("%d /s", fps, 0); //0 is to force format overload used
         return true;
       default: return false; 
     }});
-    ui->initText(parentVar, "fps2", nullptr, 10, true, [this](EventArguments) { switch (eventType) {
+
+    //temp
+    ui->initText(parentVar, "fpsFrame", nullptr, 10, true, [this](EventArguments) { switch (eventType) {
       case onLoop1s:
         variable.setValueF("%d /s", frameCounter, 0); //0 is to force format overload used
         frameCounter = 0;
@@ -275,7 +223,7 @@ static float _time(float j) {
     }});
 
     runningPrograms.setPrekill(preKill, postKill); //for clockless driver...
-    runningPrograms.setFunctionToSync(show);
+    runningPrograms.setFunctionToSync(sync);
 
   } //setup
 
@@ -284,9 +232,6 @@ static float _time(float j) {
     scScript = "";
 
     //Live Scripts defaults
-    addExternalFun("void", "show", "()", (void *)&show); //comment if setup/loop model works
-    // addExternalFun("void", "showM", "()", (void *)&UserModLive::showM); // warning: converting from 'void (UserModLive::*)()' to 'void*' [-Wpmf-conversions]
-    addExternalFun("void", "resetStat", "()", (void *)&resetShowStats);
 
     addExternalFun("float", "atan2", "(float a1, float a2)",(void*)_atan2);
     addExternalFun("float", "hypot", "(float a1, float a2)",(void*)_hypot);
@@ -319,28 +264,59 @@ static float _time(float j) {
   // }
 
   //testing class functions instead of static
-  void UserModLive::showM() {
-    long time2 = ESP.getCycleCount();
-    // driver.showPixels(WAIT);
-    frameCounter++;
+  void UserModLive::sync() {
+    frameCounter++; //temp
+      
+    fps = ESP.getCpuFreqMHz() * 1000000 / (ESP.getCycleCount() - previousCycleCount); //StarBase: class variable so it can be shown in UI!!!
+    previousCycleCount = ESP.getCycleCount();
 
-    float k = (float)(time2 - time1) / 240000000; //always 240MHz?
-    fps = 1 / k;
-    time1 = ESP.getCycleCount();
+      // Show fps (fps2): is driver.showpixels() this allows to check that there is no issue with the driver
+      // The global (fps3): is the result of having driver.showPixel and animation sequentially
+      // Fps animation (fps): fps for the calculation of one frame
+      // The global fps equals theorically (fpsshow x fpsanimation) / (fpsshow + fpsanimation)
+      // So if what you display is the seen fps( animation & driver.showPixel) you should see the global FPS.
+      // fps is shown as fps1 in the ui, frameCounter is shown as fps2 in the ui. 
+
+
+    // SKIPPED: check that both v1 and v2 are int numbers
+    // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
+    delay(1); //to feed the watchdog (also if loopState == 0)
+    while (!waitingOnLiveScript) {
+      delay(1); //to feed the watchdog
+      // set to 0 by main loop
+    }
+    //do Live Script cycle
+    waitingOnLiveScript = false; //Live Script produced a frame, main loop will deal with it
+    // ppf("loopState %d\n", loopState);
   }
 
-  void UserModLive::loop() {
-    if (loopState == 2) {// show has been called (in other loop)
-      loopState = 0; //waiting on Live Script
-      // ppf("loopState %d\n", loopState);
-    }
-    else if (loopState == 1) {
-      loopState = 2; //other loop can call show (or preview)
+  void UserModLive::syncWithSync() {
+
+    if (syncActive && !waitingOnLiveScript) {// show has been called (in other loop)
+      waitingOnLiveScript = true; //waiting on Live Script
+      while (waitingOnLiveScript) {
+        delay(1); // so live can continue
+      }
       // ppf("loopState %d\n", loopState);
     }
   }
 
-  void UserModLive::loop20ms() {
+  void UserModLive::loop1s() {
+    for (JsonObject childVar: Variable("LiveScripts", "scripts").children())
+      Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
+
+    //check if sync is active (to do: only if background process? check hpwit)
+    bool scriptsRunning = false;
+    for (Executable &exec: scriptRuntime._scExecutables) {
+      if (exec.isRunning())
+        scriptsRunning = true;
+    }
+    syncActive = scriptsRunning;
+    if (!syncActive) waitingOnLiveScript = true; //reset to default
+
+  }
+
+  // void UserModLive::loop20ms() {
     //workaround temporary disabled (replace by run?)
     // if (strnstr(web->lastFileUpdated, ".sc", sizeof(web->lastFileUpdated)) != nullptr) {
     //   if (strnstr(web->lastFileUpdated, "del:/", sizeof(web->lastFileUpdated)) != nullptr) {
@@ -356,12 +332,7 @@ static float _time(float j) {
     //   }
     //   strlcpy(web->lastFileUpdated, "", sizeof(web->lastFileUpdated));
     // }
-  }
-
-  void UserModLive::loop1s() {
-    for (JsonObject childVar: Variable("LiveScripts", "scripts").children())
-      Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
-  }
+  // }
 
   void UserModLive::executeTask(uint8_t exeID, const char * function, int val)
   {
@@ -446,6 +417,12 @@ static float _time(float j) {
     } else {
       scriptRuntime.killAndFreeRunningProgram();
     }
+
+    if (waitingOnLiveScript) {
+      waitingOnLiveScript = false;
+      ppf("waitingOnLiveScript killAndDelete %d\n", waitingOnLiveScript);
+    }
+
     // fix->liveFixtureID = nullptr; //to be sure! todo: nullify exec pointers fix->liveFixtureID and leds.liveEffectID
   }
 

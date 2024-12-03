@@ -576,11 +576,11 @@ void SysModModel::setup() {
   }});
 
   Variable currentVar;
-  currentVar = ui->initText(parentVar, "events", nullptr, 16, true);
+  currentVar = ui->initText(parentVar, "eventsVar", nullptr, 16, true);
   currentVar.subscribe(onLoop1s, [this](EventArguments) {
     variable.setValueF("%d x %d = %d", varEvents.size(), sizeof(VarEvent), varEvents.size() * sizeof(VarEvent));
   });
-  currentVar = ui->initText(parentVar, "events PS", nullptr, 16, true);
+  currentVar = ui->initText(parentVar, "eventsPS", nullptr, 16, true);
   currentVar.subscribe(onLoop1s, [this](EventArguments) {
     variable.setValueF("%d x %d = %d (%d + %d + %d)", varEventsPS.size(), sizeof(VarEventPS), varEventsPS.size() * sizeof(VarEventPS), sizeof(Variable), sizeof(VarFunction), sizeof(uint8_t));
   });

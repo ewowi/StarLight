@@ -3354,7 +3354,7 @@ class LiveEffect: public Effect {
 
                 liveM->scScript += "define NUM_LEDS " + std::to_string(fix->nrOfLeds) + "\n"; //NUM_LEDS is used in arrays -> must be define e.g. uint8_t rMapRadius[NUM_LEDS];
 
-                leds.liveEffectID = liveM->compile(fileName, "void main(){resetStat();setup();while(2>1){loop();sync();}}");
+                leds.liveEffectID = liveM->compile(fileName, "void main(){setup();while(2>1){loop();sync();}}");
               }
 
               if (leds.liveEffectID != UINT8_MAX)
@@ -3383,6 +3383,8 @@ class LiveEffect: public Effect {
   }
 
   void loop(LedsLayer &leds) override {
+
+    liveM->syncWithSync(); //waits until next frame is calculated
   }
 };
 

@@ -97,6 +97,8 @@ public:
   unsigned long tenSecondMillis = millis() - random(10000); //random within a second
   // void (SysModule::*loopCached)() = &SysModule::loop; //use virtual cached function for speed??? tested, no difference ...
 
+  unsigned long cpuTime = 0;
+
   explicit SysModule(const char * name) {
     this->name = name;
     success = true;
