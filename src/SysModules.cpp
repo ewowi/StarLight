@@ -79,15 +79,21 @@ void SysModules::setup() {
     default: return false;
   }});
 
-  Variable currentVar = ui->initNumber(tableVar, "cpuTime", (uint16_t)0, 0, UINT16_MAX, true);
+  Variable currentVar = ui->initText(tableVar, "cpuTime", nullptr, 32, true);
 
   currentVar.subscribe(onSetValue, [this](Variable variable, uint8_t rowNr, uint8_t eventType) {
       for (size_t rowNr = 0; rowNr < modules.size(); rowNr++) {
-        if (modules[rowNr]->cpuTime)
-          variable.setValue(ESP.getCpuFreqMHz() * 1000000 / modules[rowNr]->cpuTime, rowNr);
+        StarString buf;
+        uint16_t lps = modules[rowNr]->cpuTime?ESP.getCpuFreqMHz() * 1000000 / modules[rowNr]->cpuTime:0; //lps
+        if (lps > 2000)
+          variable.setValue("~0", rowNr);
+        else if (lps) {
+          buf.format("%d ms %d lps", 1000 / lps, lps);
+          variable.setValue(JsonString(buf.getString()), rowNr);
+        }
         else 
-          variable.setValue(0, rowNr);
-        // modules[rowNr]->cpuTime = 0;
+          variable.setValue("0", rowNr);
+
       }
   });
 

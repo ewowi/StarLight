@@ -347,6 +347,8 @@
       FastLED.setMaxPowerInMilliWatts(10000); // 5v, 2000mA
     #endif
 
+    addPresets(parentVar.var);
+
   }
 
   void LedModFixture::loop() {

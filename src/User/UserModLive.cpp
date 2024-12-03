@@ -142,6 +142,12 @@ static float _time(float j) {
 
     Variable tableVar = ui->initTable(parentVar, "scripts", nullptr, true);
 
+    //set the values every second
+    tableVar.subscribe(onLoop1s, [](Variable variable, uint8_t rowNr, uint8_t eventType) {
+      for (JsonObject childVar: variable.children())
+        Variable(childVar).triggerEvent(onSetValue);
+    }); 
+
     ui->initText(tableVar, "name", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         variable.var["value"].to<JsonArray>(); web->addResponse(variable.var, "value", variable.value()); // empty the value
@@ -263,11 +269,10 @@ static float _time(float j) {
   //   ppf("external %s(int arg1, int arg2);\n", name.c_str()); //add to string
   // }
 
-  //testing class functions instead of static
   void UserModLive::sync() {
     frameCounter++; //temp
       
-    fps = ESP.getCpuFreqMHz() * 1000000 / (ESP.getCycleCount() - previousCycleCount); //StarBase: class variable so it can be shown in UI!!!
+    fps = ESP.getCpuFreqMHz() * 1000000 / (ESP.getCycleCount() - previousCycleCount);
     previousCycleCount = ESP.getCycleCount();
 
       // Show fps (fps2): is driver.showpixels() this allows to check that there is no issue with the driver
@@ -277,34 +282,21 @@ static float _time(float j) {
       // So if what you display is the seen fps( animation & driver.showPixel) you should see the global FPS.
       // fps is shown as fps1 in the ui, frameCounter is shown as fps2 in the ui. 
 
-
-    // SKIPPED: check that both v1 and v2 are int numbers
-    // RETURN_VALUE(VALUE_FROM_INT(0), rindex);
     delay(1); //to feed the watchdog (also if loopState == 0)
-    while (!waitingOnLiveScript) {
-      delay(1); //to feed the watchdog
-      // set to 0 by main loop
-    }
+    while (!waitingOnLiveScript) delay(1); //to feed the watchdog
     //do Live Script cycle
     waitingOnLiveScript = false; //Live Script produced a frame, main loop will deal with it
-    // ppf("loopState %d\n", loopState);
   }
 
   void UserModLive::syncWithSync() {
 
     if (syncActive && !waitingOnLiveScript) {// show has been called (in other loop)
       waitingOnLiveScript = true; //waiting on Live Script
-      while (waitingOnLiveScript) {
-        delay(1); // so live can continue
-      }
-      // ppf("loopState %d\n", loopState);
+      while (waitingOnLiveScript) delay(1); // so live can continue
     }
   }
 
   void UserModLive::loop1s() {
-    for (JsonObject childVar: Variable("LiveScripts", "scripts").children())
-      Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
-
     //check if sync is active (to do: only if background process? check hpwit)
     bool scriptsRunning = false;
     for (Executable &exec: scriptRuntime._scExecutables) {

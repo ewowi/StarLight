@@ -1065,10 +1065,13 @@ class DNAEffect: public Effect {
     for (int i = 0; i < cols; i++) {
             //256 is a complete phase
       // half a phase is dna is 128
-      uint8_t phase = cols * i / 8; 
+      uint8_t phase;// = cols * i / 8; 
       //32: 4 * i
       //16: 8 * i
-      phase = i * 127 / (cols-1) * phases / 64;
+      phase = i * phases / cols;
+
+      // phase = i * 2 / (cols+1) * phases;
+
 
       int posY1 = beatsin8(speed, 0, rows-1, 0, phase    );
       int posY2 = beatsin8(speed, 0, rows-1, 0, phase + 128);

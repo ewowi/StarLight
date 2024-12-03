@@ -97,7 +97,7 @@
         {
           if (rowNr != UINT8_MAX) {
             if (childVariable.order() < 0) { //if not updated
-              valArray[rowNr] = (char*)0; // set element in valArray to 0
+              valArray[rowNr] = (char*)0; // set element in valArray to 0 (is content deleted from memory?)
 
               ppf("varPostDetails %s.%s[%d] <- null\n", id(), childVariable.id(), rowNr);
               // setValue(var, -99, rowNr); //set value -99

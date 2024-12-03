@@ -117,4 +117,6 @@ public:
   virtual void connectedChanged() {onOffChanged();}
   virtual void enabledChanged() {onOffChanged();}
   virtual void onOffChanged() {}
+
+  void addPresets(JsonObject parentVar);
 };

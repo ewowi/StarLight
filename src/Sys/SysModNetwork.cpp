@@ -201,6 +201,8 @@ void SysModNetwork::setup() {
     default: return false;
   }});
 
+  addPresets(parentVar.var);
+
 }
 
 void SysModNetwork::loop1s() {
