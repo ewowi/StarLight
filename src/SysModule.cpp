@@ -98,10 +98,9 @@ void SysModule::addPresets(JsonObject parentVar) {
     if (presets.isNull()) presets = allPresets[name].to<JsonArray>();
 
     JsonObject m = mdl->findVar("m", name); //find this module (effects)
-    // m = parentVariable.var;
 
-    print->printJson("m", m); ppf("\n");
-    print->printJson("pv", parentVariable.var); ppf("\n");
+    // print->printJson("m", m); ppf("\n");
+    // print->printJson("pv", parentVariable.var); ppf("\n");
 
     StarString result;
 
@@ -114,7 +113,6 @@ void SysModule::addPresets(JsonObject parentVar) {
           ppf("save %s.%s: %s\n", variable.pid(), variable.id(), variable.valueString().c_str());
           presets[value][variable.pid()][variable.id()] = var["value"];
 
-          //
           if (var["type"] == "text") {
             result += variable.valueString().c_str(); //concat
             result.catSep(", ");
