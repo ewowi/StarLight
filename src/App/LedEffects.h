@@ -1054,17 +1054,33 @@ class DNAEffect: public Effect {
     uint8_t blur = leds.effectData.read<uint8_t>();
     uint8_t phases = leds.effectData.read<uint8_t>();
 
+    const int cols = leds.size.x;
+    const int rows = leds.size.y;
+
     leds.fadeToBlackBy(64);
 
-    for (int i = 0; i < leds.size.x; i++) {
-      //256 is a complete phase
+    // WLEDMM optimized to prevent holes at height > 32
+    int lastY1 = -1;
+    int lastY2 = -1;
+    for (int i = 0; i < cols; i++) {
+            //256 is a complete phase
       // half a phase is dna is 128
-      uint8_t phase = leds.size.x * i / 8; 
+      uint8_t phase = cols * i / 8; 
       //32: 4 * i
       //16: 8 * i
-      phase = i * 127 / (leds.size.x-1) * phases / 64;
-      leds.setPixelColor(i, beatsin8(speed, 0, leds.size.y-1, 0, phase    ), ColorFromPalette(leds.palette, i*5+ sys->now /17, beatsin8(5, 55, 255, 0, i*10)));
-      leds.setPixelColor(i, beatsin8(speed, 0, leds.size.y-1, 0, phase+128), ColorFromPalette(leds.palette, i*5+128+ sys->now /17, beatsin8(5, 55, 255, 0, i*10+128)));
+      phase = i * 127 / (cols-1) * phases / 64;
+
+      int posY1 = beatsin8(speed, 0, rows-1, 0, phase    );
+      int posY2 = beatsin8(speed, 0, rows-1, 0, phase + 128);
+      if ((i==0) || ((abs(lastY1 - posY1) < 2) && (abs(lastY2 - posY2) < 2))) {   // use original code when no holes
+        leds.setPixelColor(i, posY1, ColorFromPalette(leds.palette, i*5+sys->now/17, beatsin8(5, 55, 255, 0, i*10)));
+        leds.setPixelColor(i, posY2, ColorFromPalette(leds.palette, i*5+128+sys->now/17, beatsin8(5, 55, 255, 0, i*10+128)));
+      } else {                                                                    // draw line to prevent holes
+        leds.drawLine(i-1, lastY1, i, posY1, ColorFromPalette(leds.palette, i*5+sys->now/17, beatsin8(5, 55, 255, 0, i*10)));
+        leds.drawLine(i-1, lastY2, i, posY2, ColorFromPalette(leds.palette, i*5+128+sys->now/17, beatsin8(5, 55, 255, 0, i*10+128)));
+      }
+      lastY1 = posY1;
+      lastY2 = posY2;
     }
     leds.blur2d(blur);
   }

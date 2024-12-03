@@ -549,7 +549,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           }
           mdl->getValueRowNr = UINT8_MAX;
 
-          if (fix->showTicker && rowNr == fix->layers.size() -1) { //last effect, add sysinfo
+          if (fix->showTicker && rowNr == fix->layers.size() - 1) { //last effect, add sysinfo
             StarString text;
             if (leds->size.x > 48)
               text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
