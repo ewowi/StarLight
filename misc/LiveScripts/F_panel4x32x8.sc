@@ -13,7 +13,7 @@ void main() {
 
       for (int x=panelWidth-1; x>=0; x--) { //first coluumn on the right
         for (int y=0; y<panelHeight; y++) {
-          int y2 = y; if (x%2 == 0) {y2 = panelHeight - 1 - y;} //serpentine
+          int y2 = (x%2)? y: panelHeight - 1 - y; //serpentine
           addPixel(panelX * panelWidth + x, panelY * panelHeight + y2, 0);
         }
       }

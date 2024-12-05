@@ -7,11 +7,10 @@ define depth 48
 define panelWidth 16
 define panelHeight 16
 
-int pins[6]; //for virtual driver, max 6 pins supported atm
+int pins[6] = {9,10,12,8,18,17}; //for esp32-S3 //for virtual driver, max 6 pins supported atm
 
 void main()
 {
-  pins[0] = 9; pins[1] = 10; pins[2] = 12; pins[3] = 8; pins[4] = 18; pins[5] = 17;
   setLedSize(2); //smaller leds (default 5)
 
   for (int z=0; z<depth;z++) {

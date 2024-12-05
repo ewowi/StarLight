@@ -7,12 +7,10 @@ define OUTPUT            0x03
 define LOW               0x0
 define HIGH              0x1
 
-uint8_t blinkPin; //tbd: assigment here
+uint8_t blinkPin = 2; //tbd make blinkPin an ui control
 
 void setup()
 {
-  blinkPin = 2;  //tbd make blinkPin an ui control
-
   //pinsM->allocatePin(2, "Blink", "On board led"); //class methods and strings supported?
   pinMode(blinkPin, OUTPUT); //tbd: part of allocatePin?
 }
