@@ -21,15 +21,15 @@ void SysModule::addPresets(JsonObject parentVar) {
     ppf("publish preset.onUI %s.%s [%d]\n", variable.pid(), variable.id(), rowNr);
     JsonArray options = variable.setOptions();
 
-    JsonArray presets = mdl->presets->as<JsonObject>()[name]; //presets of this module
+    JsonArray modulePresets = mdl->presets->as<JsonObject>()[name];
 
-    for (int i=0; i<16; i++) {
+    for (int i=0; i<modulePresets.size(); i++) {
       StarString buf;
-      if (i >= presets.size() || presets[i].isNull() || presets[i]["name"].isNull()) {
+      if (modulePresets[i].isNull() || modulePresets[i]["name"].isNull()) {
         buf.format("%02d: Empty", i);
       } else {
-        // buf.format("%02d: %s", i, presets[i]["name"].as<const char *>()); //this causes crashes in asyncwebserver !!!
-        buf = presets[i]["name"].as<const char *>();
+        // buf.format("%02d: %s", i, modulePresets[i]["name"].as<const char *>()); //this causes crashes in asyncwebserver !!!
+        buf = modulePresets[i]["name"].as<const char *>();
         ppf("preset.onUI %02d %s (%d)\n", i, buf.getString(), buf.length());
       }
       options.add(buf.getString()); //copy!
@@ -44,33 +44,29 @@ void SysModule::addPresets(JsonObject parentVar) {
     //on Change: save the old value, retrieve the new value and set all values
     //load the complete presets.json, make the changes, save it (using save button...
 
-    uint8_t value = variable.var["value"];
-    ppf("publish preset.onchange %s.%s [%d] %d %s\n", variable.pid(), variable.id(), rowNr, value, variable.valueString().c_str());
+    uint8_t presetValue = variable.var["value"];
+    ppf("publish preset.onchange %s.%s [%d] %d %s\n", variable.pid(), variable.id(), rowNr, presetValue, variable.valueString().c_str());
 
     JsonObject allPresets = mdl->presets->as<JsonObject>();
 
     if (!allPresets.isNull()) {
 
-      JsonArray presets = allPresets[name];
-      if (!presets.isNull()) {
+      JsonArray modulePresets = allPresets[name];
+      if (!modulePresets.isNull()) {
 
-        // JsonVariant m = mdl->findVar("m", name); //find this module (effects)
-
-        if (presets[value].is<JsonObject>()) { //always?
-          for (JsonPair pidPair: presets[value].as<JsonObject>()) {
-            for (JsonPair idPair: pidPair.value().as<JsonObject>()) {
-              ppf("load %s.%s: %s\n", pidPair.key().c_str(), idPair.key().c_str(), idPair.value().as<String>().c_str());
-              if (pidPair.key() != "name") {
-                JsonVariant jv = idPair.value();
-                if (jv.is<JsonArray>()) {
-                  uint8_t rowNr = 0;
-                  for (JsonVariant element: jv.as<JsonArray>()) {
-                    mdl->setValue(pidPair.key().c_str(), idPair.key().c_str(), element, rowNr++);
-                  }
+        for (JsonPair pidPair: modulePresets[presetValue].as<JsonObject>()) {
+          for (JsonPair idPair: pidPair.value().as<JsonObject>()) {
+            ppf("load %s.%s: %s\n", pidPair.key().c_str(), idPair.key().c_str(), idPair.value().as<String>().c_str());
+            if (pidPair.key() != "name") {
+              JsonVariant jv = idPair.value();
+              if (jv.is<JsonArray>()) {
+                uint8_t rowNr = 0;
+                for (JsonVariant element: jv.as<JsonArray>()) {
+                  mdl->setValue(pidPair.key().c_str(), idPair.key().c_str(), element, rowNr++);
                 }
-                else
-                  mdl->setValue(pidPair.key().c_str(), idPair.key().c_str(), jv);
               }
+              else
+                mdl->setValue(pidPair.key().c_str(), idPair.key().c_str(), jv);
             }
           }
         }
@@ -81,6 +77,10 @@ void SysModule::addPresets(JsonObject parentVar) {
 
   currentVar = ui->initButton(parentVariable, "assignPreset", false);
 
+  currentVar.subscribe(onUI, [this](Variable variable, uint8_t rowNr, uint8_t eventType) {
+    variable.setLabel("✅");
+  });
+
   currentVar.subscribe(onChange, [this, &parentVariable](Variable variable, uint8_t rowNr, uint8_t eventType) {
     ppf("assignPreset.onUI \n");
     //save this to the first free slot
@@ -89,29 +89,47 @@ void SysModule::addPresets(JsonObject parentVar) {
 
     Variable presetVariable = Variable(name, "preset");
 
-    uint8_t value = presetVariable.var["value"];
+    uint8_t presetValue = presetVariable.var["value"];
 
     JsonObject allPresets = mdl->presets->as<JsonObject>();
     if (allPresets.isNull()) allPresets = mdl->presets->to<JsonObject>(); //create
 
-    JsonArray presets = allPresets[name];
-    if (presets.isNull()) presets = allPresets[name].to<JsonArray>();
+    JsonArray modulePresets = allPresets[name];
+    if (modulePresets.isNull()) modulePresets = allPresets[name].to<JsonArray>();
 
     JsonObject m = mdl->findVar("m", name); //find this module (effects)
 
     // print->printJson("m", m); ppf("\n");
     // print->printJson("pv", parentVariable.var); ppf("\n");
 
+    uint8_t presetIndex = 0;
+    if (modulePresets[presetValue].isNull()) { //if slot is 0 use it
+      presetIndex = presetValue;
+    } else {
+      //find the first empty slot, starting from current position, if none, add 
+      //loop over slots
+      for (auto modulePreset: modulePresets) {
+        if (presetIndex >= presetValue) {
+          //if slot empty use it.
+          if (modulePreset.isNull()) {
+            break;
+          }
+        }
+        presetIndex++;
+      }
+    }
+    //post: presetIndex contains empty slot or is new entry
+
     StarString result;
 
     if (!m["n"].isNull()) {
       // print->printJson("walk for", m["n"]); ppf("\n");
-      presets[value].to<JsonObject>();//empty
-      mdl->walkThroughModel([presets, value, &result](JsonObject parentVar, JsonObject var) {
+      modulePresets[presetIndex].to<JsonObject>();//empty
+      mdl->walkThroughModel([modulePresets, presetIndex, &result](JsonObject parentVar, JsonObject var) {
         Variable variable = Variable(var);
         if (!variable.readOnly() &&  strncmp(variable.id(), "preset", 32) != 0 ) { //exclude preset
           ppf("save %s.%s: %s\n", variable.pid(), variable.id(), variable.valueString().c_str());
-          presets[value][variable.pid()][variable.id()] = var["value"];
+          modulePresets[presetIndex][variable.pid()][variable.id()] = var["value"];
 
           if (var["type"] == "text") {
             result += variable.valueString().c_str(); //concat
@@ -131,17 +149,22 @@ void SysModule::addPresets(JsonObject parentVar) {
       }, m); //walk using m["n"]
     }
 
-    if (result.length() == 0) {
-      result.format("Preset %d", value);
-    }
-    presets[value]["name"] = result.getString();
+    if (result.length() == 0) result.format("Preset %d", presetIndex); //if no text found then default text
+
+    modulePresets[presetIndex]["name"] = result.getString(); //store the text
 
     presetVariable.publish(onUI); //reload ui for new list of values
+
+    if (presetIndex != presetValue) presetVariable.setValue(presetIndex); //set the new value, if changed
 
   });
 
   currentVar = ui->initButton(parentVariable, "clearPreset", false); //clear preset
 
+  currentVar.subscribe(onUI, [this](Variable variable, uint8_t rowNr, uint8_t eventType) {
+    variable.setLabel("❌");
+  });
+  
   currentVar.subscribe(onChange, [this](Variable variable, uint8_t rowNr, uint8_t eventType) {
     ppf("delete.onUI \n");
     //free this slot
@@ -149,26 +172,37 @@ void SysModule::addPresets(JsonObject parentVar) {
 
     Variable presetVariable = Variable(name, "preset");
 
-    uint8_t value = presetVariable.var["value"];
+    uint8_t presetValue = presetVariable.var["value"];
 
     JsonObject allPresets = mdl->presets->as<JsonObject>();
 
     if (!allPresets.isNull()) {
 
-      JsonArray presets = allPresets[name];
-      if (!presets.isNull()) {
+      JsonArray modulePresets = allPresets[name];
+      if (!modulePresets.isNull()) {
 
-        if (value < presets.size()) {
+        if (presetValue < modulePresets.size()) {
 
-          presets[value] = (char*)0; // set element in valArray to 0 (is content deleted from memory?)
+          modulePresets[presetValue] = (char*)0; // set element in valArray to 0 (is content deleted from memory?)
 
-          presetVariable.publish(onUI); //reload ui for new list of values
+          // presetVariable.publish(onUI); //reload ui for new list of values
         }
+
+        uint8_t presetIndex = presetValue;
+        //cleanup
+        while (modulePresets.size() && modulePresets[modulePresets.size()-1].isNull()) {
+          modulePresets.remove(modulePresets.size()-1);
+          presetIndex = modulePresets.size() - 1;
+        }
+
+        presetVariable.publish(onUI); //reload ui for new list of values
+
+        if (presetIndex != presetValue) presetVariable.setValue(presetIndex); //set the new value, if changed
       }
     }
 
   });
 
-  ui->initVCR(parentVariable, "vcr", false);
+  // ui->initVCR(parentVariable, "vcr", false); //for next release
 
 }
