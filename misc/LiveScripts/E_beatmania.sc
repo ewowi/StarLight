@@ -31,7 +31,9 @@ void loop() {
   uint8_t colr12 = colr1+colr2;
   uint8_t bri12 = bri1+bri2;
   for (uint8_t y = 0; y < height; y++) {
-    if (locn12 < length) {sCFP(y*width+locn12,colr12,bri12);}
+    
+    if (locn12 < length) sCFP(y*width+locn12,colr12,bri12);
+
     sCFP(y*width+locn1,colr2,bri1);
     sCFP(y*width+locn2%(length-1),colr1,bri2);
   }

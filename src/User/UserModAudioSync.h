@@ -47,13 +47,13 @@ public:
       }
       else {
         switch(sync.receivedFormat) {
-          case -1: strncpy(msg, "Not connected", sizeof(msg));
+          case -1: strlcpy(msg, "Not connected", sizeof(msg));
             break;
           case 1: print->fFormat(msg, sizeof(msg), "V1 from %s", sync.sourceIP.toString().c_str());
             break;
           case 2: print->fFormat(msg, sizeof(msg), "V2 from %s", sync.sourceIP.toString().c_str());
             break;
-          default: strncpy(msg, "Unknown", sizeof(msg));
+          default: strlcpy(msg, "Unknown", sizeof(msg));
             break;
         }
       }

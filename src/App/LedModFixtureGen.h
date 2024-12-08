@@ -50,7 +50,7 @@ public:
 
     va_end(args);
 
-    f = files->open("/temp.json", "w");
+    f = files->open("/temp.json", FILE_WRITE);
     if (!f)
       ppf("GenFix could not open temp file for writing\n");
 
@@ -63,7 +63,7 @@ public:
 
     ppf("closeHeader\n");
     f.close();
-    f = files->open("/temp.json", "r");
+    f = files->open("/temp.json", FILE_READ);
 
     File g;
 
@@ -71,7 +71,7 @@ public:
     print->fFormat(fileName, sizeof(fileName), "/%s.json", name);
 
     //create g by merging in f (better solution?)
-    g = files->open(fileName, "w");
+    g = files->open(fileName, FILE_WRITE);
 
     g.print("{");
     g.printf("\"name\":\"%s\"", name);
@@ -663,7 +663,7 @@ public:
         generateOnChange(variable.var, fileName);
 
         //set fixture in fixture module
-        Variable(mdl->findVar("Fixture", "fixture")).triggerEvent(onUI); //rebuild options
+        Variable("Fixture", "fixture").triggerEvent(onUI); //rebuild options
 
         uint8_t value = ui->selectOptionToValue("Fixture.fixture", fileName);
         if (value != UINT8_MAX)
@@ -1190,7 +1190,7 @@ public:
   //   strlcat(fileName, name, sizeof(fileName));
   //   strlcat(fileName, ".json", sizeof(fileName));
 
-  //   File f = files->open(fileName, "w");
+  //   File f = files->open(fileName, FILE_WRITE);
   //   if (!f)
   //     ppf("fixture Could not open file %s for writing\n", fileName);
 

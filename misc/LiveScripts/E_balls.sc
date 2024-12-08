@@ -80,12 +80,10 @@ struct ball {
 ball Balls[max_nb_balls];
 ball tmpball;
 
-uint32_t h;
+uint32_t h = 1;
 
 void setup()
 {
-   h = 1;
-
    for(int i=0;i<max_nb_balls;i++)
    {
       tmpball.vx = rand(300)/255+0.5;
@@ -104,16 +102,11 @@ void loop()
 {
 
    for(int i=0;i<width;i++)
-   {
       for(int j=0;j<height;j++)
-      {
          sPC(i+width*j, hsv(i+h+j,255,180));
-      }
-   }
+
    for (int i = 0; i < intensityControl/10; i++)
-   {
       Balls[i].updateBall();
-   }
 
    sync();
    h++;

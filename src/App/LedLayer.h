@@ -235,10 +235,11 @@ public:
   bool inBounds(int x, int y, int z = 0) const;
   bool inBounds(const Coord3D & pos) const;
 
+  int XYZUnprojected(int x, int y, int z) const;
   int XYZUnprojected(const Coord3D &pixel) const;
 
-  int XYZ(int x, int y, int z);
-  int XYZ(Coord3D pixel); //not const as pixel can be changed, not & because called with {x,y,z} ...
+  int XYZ(int x, int y, int z); // function not const as it calls projection which changes things
+  int XYZ(Coord3D pixel); //pixel not const as pixel can be changed by projection, not & is it can change the pixel locally for projections ... (because called with {x,y,z} ..._
 
   LedsLayer() {
     ppf("LedsLayer constructor (PhysMap:%d)\n", sizeof(PhysMap));
@@ -326,6 +327,8 @@ public:
 
   // maps the virtual led to the physical led(s) and assign a color to it
   void setPixelColor(int indexV, const CRGB& color);
+  void setPixelColor(int x, int y, const CRGB& color) {setPixelColor(XYZ(x, y, 0), color);}
+  void setPixelColor(int x, int y, int z, const CRGB& color) {setPixelColor(XYZ(x, y, z), color);}
   void setPixelColor(const Coord3D &pixel, const CRGB& color) {setPixelColor(XYZ(pixel), color);}
 
   // temp methods until all effects have been converted to Palette / 2 byte mapping mode
@@ -336,9 +339,13 @@ public:
   void blendPixelColor(const Coord3D &pixel, const CRGB& color, const uint8_t blendAmount) {blendPixelColor(XYZ(pixel), color, blendAmount);}
 
   CRGB getPixelColor(int indexV) const;
+  CRGB getPixelColor(int x, int y) {return getPixelColor(XYZ(x, y, 0));} //not const because of XYZ ...
+  CRGB getPixelColor(int x, int y, int z) {return getPixelColor(XYZ(x, y, z));}
   CRGB getPixelColor(const Coord3D &pixel) {return getPixelColor(XYZ(pixel));}
 
-  void addPixelColor(const int indexV, const CRGB &color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
+  void addPixelColor(int indexV, const CRGB &color) {setPixelColor(indexV, getPixelColor(indexV) + color);}
+  void addPixelColor(int x, int y, const CRGB &color) {setPixelColor(XYZ(x, y, 0), getPixelColor(XYZ(x, y, 0)) + color);}
+  void addPixelColor(int x, int y, int z, const CRGB &color) {setPixelColor(XYZ(x, y, z), getPixelColor(XYZ(x, y, z)) + color);}
   void addPixelColor(const Coord3D &pixel, const CRGB &color) {setPixelColor(pixel, getPixelColor(pixel) + color);}
 
   void fadeToBlackBy(uint8_t fadeBy = 255);
@@ -346,7 +353,7 @@ public:
   void fill_rainbow(uint8_t initialhue, uint8_t deltahue);
 
   //checks if a virtual pixel is mapped to a physical pixel (use with XY() or XYZ() to get the indexV)
-  bool isMapped(const int indexV) const {
+  bool isMapped(int indexV) const {
     return indexV < mappingTableSizeUsed && (mappingTable[indexV].mapType == m_onePixel || mappingTable[indexV].mapType == m_morePixels);
   }
 
@@ -386,13 +393,13 @@ public:
       for (uint16_t row = 0; row < height; row++) {
           CRGB carryover = CRGB::Black;
           for (uint16_t i = 0; i < width; i++) {
-              CRGB cur = getPixelColor(XY(i,row));
+              CRGB cur = getPixelColor(i, row, 0);
               CRGB part = cur;
               part.nscale8( seep);
               cur.nscale8( keep);
               cur += carryover;
-              if( i) addPixelColor(XY(i-1,row), part);
-              setPixelColor(XY(i,row), cur);
+              if( i) addPixelColor(i-1, row, 0, part);
+              setPixelColor(i, row, 0, cur);
               carryover = part;
           }
       }
@@ -407,18 +414,121 @@ public:
       for (uint16_t col = 0; col < width; ++col) {
           CRGB carryover = CRGB::Black;
           for (uint16_t i = 0; i < height; ++i) {
-              CRGB cur = getPixelColor(XY(col,i));
+              CRGB cur = getPixelColor(col, i, 0);
               CRGB part = cur;
               part.nscale8( seep);
               cur.nscale8( keep);
               cur += carryover;
-              if( i) addPixelColor(XY(col,i-1), part);
-              setPixelColor(XY(col,i), cur);
+              if( i) addPixelColor(col, i-1, 0, part);
+              setPixelColor(col, i, 0, cur);
               carryover = part;
           }
       }
   }
 
+  //to do: merge with drawLine to support 2D and 3D
+  void drawLine3D(int x1, int y1, int z1, int x2, int y2, int z2, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX)
+  {
+        // WLEDMM shorten line according to depth
+    if (depth < UINT8_MAX) {
+      if (depth == 0) return;         // nothing to paint
+      if (depth<2) {x2 = x1; y2=y1; z2=z1;} // single pixel
+      else {                          // shorten line
+        x1 *=2; y1 *=2; z1 *=2; // we do everything "*2" for better rounding
+        int dx1 = ((int(2*x2) - int(x1)) * int(depth)) / 255;  // X distance, scaled down by depth 
+        int dy1 = ((int(2*y2) - int(y1)) * int(depth)) / 255;  // Y distance, scaled down by depth
+        int dz1 = ((int(2*z2) - int(z1)) * int(depth)) / 255;  // Y distance, scaled down by depth
+        x1 = (x1 + dx1 +1) / 2;
+        y1 = (y1 + dy1 +1) / 2;
+        z1 = (z1 + dz1 +1) / 2;
+        x1 /=2; y1 /=2; z1 /=2;
+      }
+    }
+
+    //to do implement soft
+
+    //Bresenham
+    setPixelColor(x1, y1, z1, color);
+    int dx = abs(x2 - x1);
+    int dy = abs(y2 - y1);
+    int dz = abs(z2 - z1);
+    int xs;
+    int ys;
+    int zs;
+    if (x2 > x1)
+      xs = 1;
+    else
+      xs = -1;
+    if (y2 > y1)
+      ys = 1;
+    else
+      ys = -1;
+    if (z2 > z1)
+      zs = 1;
+    else
+      zs = -1;
+  
+    // Driving axis is X-axis"
+    if (dx >= dy && dx >= dz) {
+      int p1 = 2 * dy - dx;
+      int p2 = 2 * dz - dx;
+      while (x1 != x2) {
+        x1 += xs;
+        if (p1 >= 0) {
+          y1 += ys;
+          p1 -= 2 * dx;
+        }
+        if (p2 >= 0) {
+          z1 += zs;
+          p2 -= 2 * dx;
+        }
+        p1 += 2 * dy;
+        p2 += 2 * dz;
+        setPixelColor(x1, y1, z1, color);
+      }
+  
+      // Driving axis is Y-axis"
+    }
+    else if (dy >= dx && dy >= dz) {
+      int p1 = 2 * dx - dy;
+      int p2 = 2 * dz - dy;
+      while (y1 != y2) {
+        y1 += ys;
+        if (p1 >= 0) {
+          x1 += xs;
+          p1 -= 2 * dy;
+        }
+        if (p2 >= 0) {
+          z1 += zs;
+          p2 -= 2 * dy;
+        }
+        p1 += 2 * dx;
+        p2 += 2 * dz;
+        setPixelColor(x1, y1, z1, color);
+      }
+  
+      // Driving axis is Z-axis"
+    }
+    else {
+      int p1 = 2 * dy - dz;
+      int p2 = 2 * dx - dz;
+      while (z1 != z2) {
+        z1 += zs;
+        if (p1 >= 0) {
+          y1 += ys;
+          p1 -= 2 * dz;
+        }
+        if (p2 >= 0) {
+          x1 += xs;
+          p2 -= 2 * dz;
+        }
+        p1 += 2 * dy;
+        p2 += 2 * dx;
+        setPixelColor(x1, y1, z1, color);
+      }
+    }
+  }
+ 
   void drawLine(int x0, int y0, int x1, int y1, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX) {
 
     // WLEDMM shorten line according to depth
@@ -440,7 +550,7 @@ public:
 
     // single pixel (line length == 0)
     if (dx+dy == 0) {
-      setPixelColor(XY(x0, y0), color);
+      setPixelColor(x0, y0, 0, color);
       return;
     }
 
@@ -466,10 +576,10 @@ public:
         if (steep) std::swap(x,y);  // temporarily swap if steep
         // pixel coverage is determined by fractional part of y co-ordinate
         // WLEDMM added out-of-bounds check: "unsigned(x) < cols" catches negative numbers _and_ too large values
-        setPixelColor(XY(x, y), blend(color, getPixelColor(XY(x, y)), keep));
+        setPixelColor(x, y, 0, blend(color, getPixelColor(x, y, 0), keep));
         int xx = x+int(steep);
         int yy = y+int(!steep);
-        setPixelColor(XY(xx, yy), blend(color, getPixelColor(XY(xx, yy)), seep));
+        setPixelColor(xx, yy, 0, blend(color, getPixelColor(xx, yy, 0), seep));
       
         intersectY += gradient;
         if (steep) std::swap(x,y);  // restore if steep
@@ -479,7 +589,7 @@ public:
       int err = (dx>dy ? dx : -dy)/2;   // error direction
       for (;;) {
         // if (x0 >= cols || y0 >= rows) break; // WLEDMM we hit the edge - should never happen
-        setPixelColor(XY(x0, y0), color);
+        setPixelColor(x0, y0, 0, color);
         if (x0==x1 && y0==y1) break;
         int e2 = err;
         if (e2 >-dx) { err -= dy; x0 += sx; }

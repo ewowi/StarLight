@@ -87,7 +87,7 @@
 
     Variable currentVar = ui->initCheckBox(parentVar, "on", true, false, [](EventArguments) { switch (eventType) {
       case onChange:
-        Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+        Variable("Fixture", "brightness").triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
         return true;
       default: return false;
     }});
@@ -243,10 +243,15 @@
         // ui needs to load the file also initially
         char fileName[32] = "";
         if (files->seqNrToName(fileName, variable.value())) {
-          web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName, JsonString::Copied));
+          web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName));
         }
         return true; }
       case onChange: {
+
+        // return true; //do this if the fixture crashes at boot, then change fixture to working fixture, recompile, reboot (WIP)
+        // WARNING - possible crash: (code 5) Reset (software or hardware) due to interrupt watchdog. Core#0 (code 8) watchdog; Core#1 (code 8) watchdog.
+        //to do save mode button...
+
         doAllocPins = true;
         if (web->ws.getClients().length())
           doSendFixtureDefinition = true;
@@ -260,7 +265,7 @@
         // char fileName[32] = "";
         // if (files->seqNrToName(fileName, fixtureNr)) {
         //   //send to preview a message to get file fileName
-        //   web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName, JsonString::Copied));
+        //   web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName));
         // }
         return true; }
       default: return false; 
@@ -346,6 +351,8 @@
     #else
       FastLED.setMaxPowerInMilliWatts(10000); // 5v, 2000mA
     #endif
+
+    addPresets(parentVar.var);
 
   }
 
@@ -502,60 +509,6 @@
       }
     }
 
-    //reinit the effect after an effect change causing a mapping change
-    uint8_t rowNr = 0;
-    for (LedsLayer *leds: layers) {
-      if (eff->doInitEffectRowNr == rowNr) {
-        eff->doInitEffectRowNr = UINT8_MAX;
-        eff->initEffect(*leds, rowNr);
-      }
-      rowNr++;
-    }
-
-    //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
-
-    //connect allocated Pins to gpio
-
-    if (doAllocPins) {
-
-      std::vector<SortedPin> sortedPins;
-      unsigned pinNr = 0;
-
-      for (PinObject &pinObject: pinsM->pinObjects) {
-
-        if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in addPin)
-          //dirty trick to decode nrOfLedsPerPin
-          char details[32];
-          strlcpy(details, pinObject.details, sizeof(details)); //copy as strtok messes with the string
-          char * after = strtok((char *)details, "-");
-          if (after != nullptr ) {
-            char *before = after;
-            after = strtok(nullptr, "-");
-
-            SortedPin sortedPin{};
-            sortedPin.startLed = strtol(before, nullptr, 10);
-            sortedPin.nrOfLeds = strtol(after, nullptr, 10) - strtol(before, nullptr, 10) + 1;
-            sortedPin.pin = pinNr;
-            sortedPins.push_back(sortedPin);
-
-            ppf("addLeds new %d: %d-%d\n", pinNr, sortedPin.startLed, sortedPin.nrOfLeds-1);
-          }
-        }
-        pinNr++;
-      }
-
-      // if pins defined
-      if (!sortedPins.empty()) {
-
-        //sort the vector by the starLed
-        std::sort(sortedPins.begin(), sortedPins.end(), [](const SortedPin &a, const SortedPin &b) {return a.startLed < b.startLed;});
-
-        driverInit(sortedPins);
-
-      } //pins defined
-
-      doAllocPins = false;
-    } //doAllocPins
   } //mapInitAlloc
 
 #define headerBytesFixture 16 // so 680 pixels will fit in a PACKAGE_SIZE package ?
@@ -616,7 +569,7 @@ void LedModFixture::addPixelsPre() {
 }
 
 void LedModFixture::addPixel(Coord3D pixel) {
-  // ppf("led %d,%d,%d start %d,%d,%d end %d,%d,%d\n",x,y,z, start.x, start.y, start.z, end.x, end.y, end.z);
+  // ppf("led{%d} %d,%d,%d\n", pass, pixel.x,pixel.y,pixel.z); //start.x, start.y, start.z, end.x, end.y, end.z start %d,%d,%d end %d,%d,%d
   if (pass == 1) {
     // ppf(".");
     fixSize = fixSize.maximum(pixel);
@@ -674,8 +627,8 @@ void LedModFixture::addPixel(Coord3D pixel) {
 }
 
 void LedModFixture::addPin(uint8_t pin) {
+  // ppf("addPin{%d} %d\n", pass, pin);
   if (pass == 1) {
-    // ppf("addPin calc\n");
   } else if (nrOfLeds <= STARLIGHT_MAXLEDS) {
     if (doAllocPins) {
       ppf("addPin %d (%d %d)\n", pin, indexP, nrOfLeds);
@@ -761,9 +714,65 @@ void LedModFixture::addPixelsPost() {
     ppf("addPixelsPost(%d) fixture.size = so:%d + l:(%d * %d) B %d ms\n", pass, sizeof(this), STARLIGHT_MAXLEDS, sizeof(CRGB), millis() - start); //56
   }
 
-  if (pass == 2)
+  if (pass == 2) {
     mappingStatus = 0; //not mapping
-}
+
+    //reinit the effect after an effect change causing a mapping change
+    uint8_t rowNr = 0;
+    for (LedsLayer *leds: layers) {
+      if (eff->doInitEffectRowNr == rowNr) {
+        eff->doInitEffectRowNr = UINT8_MAX;
+        eff->initEffect(*leds, rowNr);
+      }
+      rowNr++;
+    }
+
+    //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
+
+    //connect allocated Pins to gpio
+
+    if (doAllocPins) {
+
+      std::vector<SortedPin> sortedPins;
+      unsigned pinNr = 0;
+
+      for (PinObject &pinObject: pinsM->pinObjects) {
+
+        if (pinsM->isOwner(pinNr, "Leds")) { //if pin owned by leds, (assigned in addPin)
+          //dirty trick to decode nrOfLedsPerPin
+          char details[32];
+          strlcpy(details, pinObject.details, sizeof(details)); //copy as strtok messes with the string
+          char * after = strtok((char *)details, "-");
+          if (after != nullptr ) {
+            char *before = after;
+            after = strtok(nullptr, "-");
+
+            SortedPin sortedPin{};
+            sortedPin.startLed = strtol(before, nullptr, 10);
+            sortedPin.nrOfLeds = strtol(after, nullptr, 10) - strtol(before, nullptr, 10) + 1;
+            sortedPin.pin = pinNr;
+            sortedPins.push_back(sortedPin);
+
+            ppf("addLeds new %d: %d-%d\n", pinNr, sortedPin.startLed, sortedPin.nrOfLeds-1);
+          }
+        }
+        pinNr++;
+      }
+
+      // if pins defined
+      if (!sortedPins.empty()) {
+
+        //sort the vector by the starLed
+        std::sort(sortedPins.begin(), sortedPins.end(), [](const SortedPin &a, const SortedPin &b) {return a.startLed < b.startLed;});
+
+        driverInit(sortedPins);
+
+      } //pins defined
+
+      doAllocPins = false;
+    } //doAllocPins
+  }
+} //addPixelsPost
 
 #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
   void LedModFixture::driverInit(const std::vector<SortedPin> &sortedPins) {
@@ -781,13 +790,13 @@ void LedModFixture::addPixelsPost() {
     }
 
     //fill the rest of the pins with the pins already used
-    //prefrably NUMSTRIPS is a variable...
+    //preferably NUMSTRIPS is a variable...
     for (uint8_t i = nb_pins; i < NUMSTRIPS; i++) {
       pins[i] = pins[i%nb_pins];
       lengths[i] = 0;
     }
     ppf("pins[");
-    for (int i=0; i<NUMSTRIPS; i++) {
+    for (int i=0; i<nb_pins; i++) {
       ppf(", %d", pins[i]);
     }
     ppf("]\n");
@@ -804,7 +813,7 @@ void LedModFixture::addPixelsPost() {
         driver.setGamma(gammaRed/255.0, gammaGreen/255.0, gammaBlue/255.0);
         //void initled(uint8_t *leds, int *Pinsq, int *sizes, int num_strips, colorarrangment cArr)
       #endif
-      Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+      Variable("Fixture", "brightness").triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
       // driver.setBrightness(setMaxPowerBrightnessFactor / 256); //not brighter then the set limit (WIP)
     }
   }
@@ -861,7 +870,7 @@ void LedModFixture::addPixelsPost() {
     // if (driver.driverInit) driver.showPixels(WAIT);  //avoid very bright pixels during reboot (WIP)
     driver.setBrightness(10); //avoid very bright pixels during reboot (WIP)
 
-    Variable(mdl->findVar("Fixture", "brightness")).triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
+    Variable("Fixture", "brightness").triggerEvent(onChange, UINT8_MAX, true); //set brightness (init is true so bri value not send via udp)
 
   }
   void LedModFixture::driverShow() {

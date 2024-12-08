@@ -84,6 +84,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       effects.push_back(new LaserGEQEffect);
       effects.push_back(new NoiseMeterEffect);
       effects.push_back(new PaintbrushEffect);
+      effects.push_back(new FireworksEffect);
       effects.push_back(new VUMeterEffect);
       effects.push_back(new WaverlyEffect);
     #endif
@@ -156,15 +157,19 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         variable.setComment("Effect to show");
         JsonArray options = variable.setOptions();
         for (Effect *effect:effects) {
-          char buf[32] = "";
-          strlcat(buf, effect->name(), sizeof(buf));
-          strlcat(buf, effect->dim()==_1D?" ┊":effect->dim()==_2D?" ▦":" 🧊", sizeof(buf));
-          strlcat(buf, " ", sizeof(buf));
-          strlcat(buf, effect->tags(), sizeof(buf));
-          options.add(JsonString(buf, JsonString::Copied)); //copy!
+          StarString buf;
+          buf += effect->name();
+          buf += effect->dim()==_1D?" ┊":effect->dim()==_2D?" ▦":" 🧊";
+          buf += " ";
+          buf += effect->tags();
+          options.add(buf.getString()); //copy!
         }
         return true; }
       case onChange:
+
+        // return true; //do this if the effect crashes at boot, then change effect to working effect, recompile, reboot (WIP)
+        //to do save mode button...
+
 
         if (rowNr == UINT8_MAX) rowNr = 0; // in case effect without a rowNr
 
@@ -232,7 +237,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           // strlcat(buf, projection->dim()==_1D?" ┊":projection->dim()==_2D?" ▦":" 🧊");
           strlcat(buf, " ", sizeof(buf));
           strlcat(buf, projection->tags(), sizeof(buf));
-          options.add(JsonString(buf, JsonString::Copied)); //copy!
+          options.add(JsonString(buf)); //copy!
         }
         return true; }
       case onChange:
@@ -361,10 +366,10 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         // for (std::vector<LedsLayer *>::iterator leds=fix->layers.begin(); leds!=fix->layers.end(); ++leds) {
         uint8_t rowNr = 0;
         for (LedsLayer *leds:fix->layers) {
-          char message[32];
-          print->fFormat(message, sizeof(message), "%d x %d x %d", leds->size.x, leds->size.y, leds->size.z);
-          ppf("onSetValue ledsSize[%d] = %s\n", rowNr, message);
-          variable.setValue(JsonString(message, JsonString::Copied), rowNr); //rowNr
+          StarString message;
+          message.format("%d x %d x %d", leds->size.x, leds->size.y, leds->size.z);
+          ppf("onSetValue ledsSize[%d] = %s\n", rowNr, message.getString());
+          variable.setValue(JsonString(message.getString()), rowNr); //rowNr
           rowNr++;
         }
         return true; }
@@ -386,6 +391,8 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
     ui->initSlider(parentVar, "Blending", &fix->globalBlend);
 
+    addPresets(parentVar.var);
+
     #ifdef STARBASE_USERMOD_E131
       // if (e131mod->isEnabled) {
           e131mod->patchChannel(0, "Fixture", "brightness", 255); //should be 256??
@@ -397,7 +404,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
           // ui->dashVarChanged = true;
           // //rebuild the table
-          for (JsonObject childVar: Variable(mdl->findVar("E131", "watches")).children())
+          for (JsonObject childVar: Variable("E131", "patches").children())
             Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
 
       // }
@@ -420,7 +427,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
       //reset pixelsToBlend if multiple leds effects
       // ppf(" %d-%d", fix->pixelsToBlend.size(), fix->nrOfLeds);
-      if (!fix->layers.empty()) //if more then one effect
+      if (fix->layers.size() > 1) //if more then one effect
         for (uint16_t indexP=0; indexP < fix->pixelsToBlend.size(); indexP++)
           fix->pixelsToBlend[indexP] = false;
 
@@ -444,23 +451,22 @@ inline uint16_t getRGBWsize(uint16_t nleds){
             leds->projectionData.begin();
             (leds->projection->*leds->loopCached)(*leds);
           }
-
           mdl->getValueRowNr = UINT8_MAX;
 
-          if (fix->showTicker && rowNr == fix->layers.size() -1) { //last effect, add sysinfo
-            char text[20];
+          if (fix->showTicker && rowNr == fix->layers.size() - 1) { //last effect, add sysinfo
+            StarString text;
             if (leds->size.x > 48)
-              print->fFormat(text, sizeof(text), "%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
+              text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
             else
-              print->fFormat(text, sizeof(text), "%.3d %s", fix->realFps, fix->tickerTape);
-            leds->drawText(text, 0, 0, 1);
+              text.format("%.3d %s", fix->realFps, fix->tickerTape);
+            leds->drawText(text.getString(), 0, 0, 1);
           }
 
           // if (leds->projectionNr == p_TiltPanRoll || leds->projectionNr == p_Preset1)
           //   leds->fadeToBlackBy(50);
 
           //loop over mapped pixels and set pixelsToBlend to true
-          if (!fix->layers.empty()) { //if more then one effect
+          if (fix->layers.size() > 1) { //if more then one effect
             for (const std::vector<uint16_t>& mappingTableIndex: leds->mappingTableIndexes) {
               for (const uint16_t indexP: mappingTableIndex)
                 fix->pixelsToBlend[indexP] = true;
@@ -523,7 +529,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
       leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right
 
-      Variable variable = Variable(mdl->findVar("layers", "effect"));
+      Variable variable = Variable("layers", "effect");
       variable.preDetails();
       mdl->setValueRowNr = rowNr;
       leds.effect->setup(leds, variable); //if changed then run setup once (like call==0 in WLED) and set all defaults in effectData
