@@ -47,7 +47,7 @@ void SysModPins::setup() {
     case onSetValue:
       variable.var.remove("value");
       for (uint8_t rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++)
-        variable.setValue(JsonString(getNthAllocatedPinObject(rowNr).owner, JsonString::Copied), rowNr);
+        variable.setValue(JsonString(getNthAllocatedPinObject(rowNr).owner), rowNr);
       return true;
     default: return false;
   }});
@@ -57,7 +57,7 @@ void SysModPins::setup() {
       variable.var.remove("value");
       for (uint8_t rowNr = 0; rowNr < getNrOfAllocatedPins(); rowNr++) {
         // ppf("details[%d] d:%s\n", rowNr, getNthAllocatedPinObject(rowNr).details);
-        variable.setValue(JsonString(getNthAllocatedPinObject(rowNr).details, JsonString::Copied), rowNr);
+        variable.setValue(JsonString(getNthAllocatedPinObject(rowNr).details), rowNr);
       }
       return true;
     default: return false;
@@ -124,7 +124,7 @@ void SysModPins::loop20ms() {
   if (pinsChanged) {
     pinsChanged = false;
 
-    for (JsonObject childVar: Variable(mdl->findVar("Pins", "pins")).children())
+    for (JsonObject childVar: Variable("Pins", "pins").children())
       Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)
   }
 }

@@ -951,7 +951,7 @@
         "fun": 74
       },
       {
-        "id": "fps1",
+        "id": "fpsCycles",
         "type": "text",
         "pid": "LiveScripts",
         "ro": true,
@@ -961,7 +961,7 @@
         "value": "0 /s"
       },
       {
-        "id": "fps2",
+        "id": "fpsFrame",
         "type": "text",
         "pid": "LiveScripts",
         "ro": true,

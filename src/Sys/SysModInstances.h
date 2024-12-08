@@ -120,7 +120,7 @@ public:
     ui->initText(tableVar, "name", nullptr, 32, false, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          variable.setValue(JsonString(instances[rowNrL].name, JsonString::Copied), rowNrL);
+          variable.setValue(JsonString(instances[rowNrL].name), rowNrL);
         return true;
       // comment this out for the time being as causes corrupted instance names
       // case onChange:
@@ -135,7 +135,7 @@ public:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++) {
           char urlString[32] = "http://";
           strlcat(urlString, instances[rowNrL].ip.toString().c_str(), sizeof(urlString));
-          variable.setValue(JsonString(urlString, JsonString::Copied), rowNrL);
+          variable.setValue(JsonString(urlString), rowNrL);
         }
         return true;
       default: return false;
@@ -152,7 +152,7 @@ public:
     ui->initText(tableVar, "IP", nullptr, 16, true, [this](EventArguments) { switch (eventType) {
       case onSetValue:
         for (size_t rowNrL = 0; rowNrL < instances.size() && (rowNr == UINT8_MAX || rowNrL == rowNr); rowNrL++)
-          variable.setValue(JsonString(instances[rowNrL].ip.toString().c_str(), JsonString::Copied), rowNrL);
+          variable.setValue(JsonString(instances[rowNrL].ip.toString().c_str()), rowNrL);
         return true;
       default: return false;
     }});
@@ -233,7 +233,7 @@ public:
         //extract the variable from insVariable.id()
         char pid[32]; strlcpy(pid, insVariable.id() + 3, sizeof(pid)); //+3 : remove ins
         char * id = strtok(pid, "_"); if (id != nullptr ) {strlcpy(pid, id, sizeof(pid)); id = strtok(nullptr, "_");} //split pid and id
-        Variable variable = Variable(mdl->findVar(pid, id)); 
+        Variable variable = Variable(pid, id); 
         switch (eventType) { //varEvent
         case onSetValue:
           //should not trigger onChange
@@ -241,8 +241,8 @@ public:
             // ppf("initVar dash %s[%d]\n", variable.id(), rowNrL);
             //do what setValue is doing except calling onChange
             // insVar["value"][rowNrL] = instances[rowNrL].jsonData[variable.id()]; //only int values...
-
-            web->addResponse(insVariable.var, "value", instances[rowNrL].jsonData[variable.id()], rowNrL); // error: passing 'const Variable' as 'this' argument discards qualifiers
+            JsonVariant value = instances[rowNrL].jsonData[variable.id()];
+            web->addResponse(insVariable.var, "value", value, rowNrL); // error: passing 'const Variable' as 'this' argument discards qualifiers
 
             // mdl->setValue(insVariable.var, instances[rowNrL].jsonData[variable.id()], rowNr);
           //send to ws?
@@ -250,7 +250,10 @@ public:
           return true;
         case onUI:
           // call onUI of the base variable for the new variable
-          mdl->varEvents[variable.var["fun"]](insVariable, rowNr, onUI);
+          if (variable.var["fun"].as<uint8_t>() != UINT8_MAX)
+            mdl->varEvents[variable.var["fun"]](insVariable, rowNr, onUI);
+          else
+            insVariable.publish(onUI, rowNr); //is insVariable subscribed ???
           return true;
         case onChange: {
           //do not set this initially!!!
@@ -436,7 +439,7 @@ public:
           // Serial.println();
 
           ppf("instances handleNotifications %d\n", notifierUdp.remoteIP()[3]);
-          for (JsonObject childVar: Variable(mdl->findVar("Instances", "instances")).children())
+          for (JsonObject childVar: Variable("Instances", "instances").children())
             Variable(childVar).triggerEvent(onSetValue); //set the value (WIP) ); //rowNr //instance - instances.begin()
 
           web->recvUDPCounter++;
@@ -508,7 +511,7 @@ public:
                   if (!message["id"].isNull() && !message["value"].isNull()) {
                     ppf("handleNotifications i:%d json message %.*s l:%d\n", instanceUDP.remoteIP()[3], packetSize, buffer, packetSize);
 
-                    Variable(mdl->findVar(message["pid"].as<const char *>(), message["id"].as<const char *>())).setValueJV(message["value"]);
+                    Variable(message["pid"].as<const char *>(), message["id"].as<const char *>()).setValueJV(message["value"]);
                   }
                 }
               }
@@ -537,13 +540,13 @@ public:
     }
     if (erased) {
       ppf("instances remove inactive instances\n");
-      for (JsonObject childVar: Variable(mdl->findVar("Instances", "instances")).children())
+      for (JsonObject childVar: Variable("Instances", "instances").children())
         Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)); //no rowNr so all rows updated
 
       //tbd: pubsub mechanism
       //LEDs specific
-      Variable(mdl->findVar("DDP", "instance")).triggerEvent(onUI); //rebuild options
-      // Variable(mdl->findVar("Artnet", "artInst")).triggerEvent(onUI); //rebuild options
+      Variable("DDP", "instance").triggerEvent(onUI); //rebuild options
+      // Variable("Artnet", "artInst").triggerEvent(onUI); //rebuild options
     }
   }
 
@@ -783,7 +786,7 @@ public:
                     id = strtok(nullptr, "."); //the rest after .
                   }
 
-                  Variable(mdl->findVar(pid, id)).setValueJV(pair.value());
+                  Variable(pid, id).setValueJV(pair.value());
                 }
                 instance.jsonData = newData; // deepcopy: https://github.com/bblanchon/ArduinoJson/issues/1023
                 // ppf("updateInstance json ip:%d", instance.ip[3]);
@@ -810,7 +813,7 @@ public:
 
           // ppf("updateInstance updRow\n");
 
-          for (JsonObject childVar: Variable(mdl->findVar("Instances", "instances")).children())
+          for (JsonObject childVar: Variable("Instances", "instances").children())
             Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)); //rowNr instance - instances.begin()
 
           //tbd: now done for all rows, should be done only for updated rows!
@@ -825,14 +828,14 @@ public:
 
       //tbd: pubsub mechanism
       //LEDs specific
-      Variable(mdl->findVar("DDP", "instance")).triggerEvent(onUI); //rebuild options
-      // Variable(mdl->findVar(Artnet", "artInst")).triggerEvent(onUI); //rebuild options
+      Variable("DDP", "instance").triggerEvent(onUI); //rebuild options
+      // Variable(Artnet", "artInst").triggerEvent(onUI); //rebuild options
 
       // ui->processOnUI("instances");
       //run though it sorted to find the right rowNr
       // for (std::vector<InstanceInfo>::iterator instance=instances.begin(); instance!=instances.end(); ++instance) {
       //   if (instance->ip == messageIP) {
-          for (JsonObject childVar: Variable(mdl->findVar("Instances", "instances")).children()) {
+          for (JsonObject childVar: Variable("Instances", "instances").children()) {
             Variable(childVar).triggerEvent(onSetValue); //set the value (WIP)); //no rowNr, update all
           }
       //   }

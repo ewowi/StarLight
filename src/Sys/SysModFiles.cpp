@@ -63,7 +63,7 @@ void SysModFiles::setup() {
   //     for (size_t rowNr = 0; rowNr < fileList.size(); rowNr++) {
   //       char urlString[32] = "file/";
   //       strlcat(urlString, fileList[rowNr].name, sizeof(urlString));
-  //       variable.setValue(JsonString(urlString, JsonString::Copied), rowNr);
+  //       variable.setValue(JsonString(urlString), rowNr);
   //     }
   //     return true;
   //   default: return false;
@@ -118,8 +118,8 @@ void SysModFiles::loop20ms() {
 
     uint8_t rowNrL = 0;
     for (VectorString name: fileNames) {
-      mdl->setValue("files", "name", JsonString(name.s, JsonString::Copied), rowNrL);
-      mdl->setValue("files", "edit", JsonString(name.s, JsonString::Copied), rowNrL);
+      mdl->setValue("files", "name", JsonString(name.s), rowNrL);
+      mdl->setValue("files", "edit", JsonString(name.s), rowNrL);
       rowNrL++;
     }
     rowNrL = 0; for (uint16_t size: fileSizes) mdl->setValue("files", "size", size, rowNrL++);
@@ -158,15 +158,15 @@ void SysModFiles::dirToJson(JsonArray array, bool nameOnly, const char * filter)
 
     if (filter == nullptr || strnstr(file.name(), filter, 32) != nullptr) {
       if (nameOnly) {
-        array.add(JsonString(file.name(), JsonString::Copied));
+        array.add(JsonString(file.name()));
       }
       else {
         JsonArray row = array.add<JsonArray>();
-        row.add(JsonString(file.name(), JsonString::Copied));
+        row.add(JsonString(file.name()));
         row.add(file.size());
         char urlString[32] = "file/";
         strlcat(urlString, file.name(), sizeof(urlString));
-        row.add(JsonString(urlString, JsonString::Copied));
+        row.add(JsonString(urlString));
       }
       // ppf("FILE: %s %d\n", file.name(), file.size());
     }
@@ -233,7 +233,7 @@ bool SysModFiles::nameToSeqNr(const char * fileName, size_t *seqNr, const char *
 
 bool SysModFiles::readObjectFromFile(const char* path, JsonDocument* dest) {
   // if (doCloseFile) closeFile();
-  File f = open(path, "r");
+  File f = open(path, FILE_READ);
   if (!f) {
     ppf("File %s open not successful\n", path);
     return false;
@@ -253,20 +253,18 @@ bool SysModFiles::readObjectFromFile(const char* path, JsonDocument* dest) {
   }
 }
 
-//candidate for deletion as taken over by StarJson
-// bool SysModFiles::writeObjectToFile(const char* path, JsonDocument* dest) {
-//   File f = open(path, "w");
-//   if (f) {
-//     print->println("  success");
-//     serializeJson(*dest, f);
-//     f.close();
-//     filesChanged = true;
-//     return true;
-//   } else {
-//     print->println("  fail");
-//     return false;
-//   }
-// }
+bool SysModFiles::writeObjectToFile(const char* path, JsonDocument* dest) {
+  File f = open(path, FILE_WRITE);
+  if (f) {
+    serializeJson(*dest, f);
+    f.close();
+    filesChanged = true;
+    return true;
+  } else {
+    ppf("File %s open not successful\n", path);
+    return false;
+  }
+}
 
 void SysModFiles::removeFiles(const char * filter, bool reverse) {
   File root = LittleFS.open("/");

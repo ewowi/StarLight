@@ -50,8 +50,7 @@ public:
 
   //write json into file
   //name is copied from WLED but better to call it readJsonFrom file
-  //candidate for deletion as taken over by StarJson
-  // bool writeObjectToFile(const char* path, JsonDocument* dest);
+  bool writeObjectToFile(const char* path, JsonDocument* dest);
 
   //remove files meeting filter condition, if no filter, all, if reverse then all but filter
   void removeFiles(const char * filter = nullptr, bool reverse = false);

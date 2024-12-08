@@ -22,7 +22,7 @@ class StarJson {
 
   public:
 
-  explicit StarJson(const char * path, const char * mode = "r");
+  explicit StarJson(const char * path, const char * mode = FILE_READ);
 
   ~StarJson();
 

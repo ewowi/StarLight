@@ -33,6 +33,15 @@ struct Coord3D {
   //   this->z = y;
   // }
 
+  Coord3D() {
+  }
+
+  Coord3D(int x, int y, int z) {
+    this->x = x;
+    this->y = y;
+    this->z = z;
+  }
+
   //comparisons
   bool operator!=(Coord3D rhs) {
     // ppf("Coord3D compare%d %d %d %d %d %d\n", x, y, z, rhs.x, rhs.y, rhs.z);
@@ -202,18 +211,31 @@ enum eventTypes
   f_count
 };
 
+class Variable; //forward
+
+typedef std::function<void(Variable)> FindFun;
+
+#define EventArguments Variable variable, uint8_t rowNr, uint8_t eventType
+// #define EventArguments2 Variable variable, uint8_t rowNr
+
+// https://stackoverflow.com/questions/59111610/how-do-you-declare-a-lambda-function-using-typedef-and-then-use-it-by-passing-to
+typedef std::function<uint8_t(EventArguments)> VarEvent;
+typedef std::function<void(EventArguments)> VarFunction; // void: no return
 
 class Variable {
   public:
 
   JsonObject var;
 
-  Variable() {this->var = JsonObject();} //undefined variable
-  explicit Variable(JsonObject var) {this->var = var;}
+  //constructors
+  Variable(); //undefined variable
+  Variable(JsonObject var);
+  Variable(const char *pid, const char *id);
 
   //core methods 
   const char *pid() const {return var["pid"];}
   const char *id() const {return var["id"];}
+  const char *type() const {return var["type"];}
 
   JsonVariant value() const {return var["value"];}
   JsonVariant value(uint8_t rowNr) const {return var["value"][rowNr];}
@@ -233,6 +255,7 @@ class Variable {
   //recursively remove all value[rowNr] from children of var
   void removeValuesForRow(uint8_t rowNr);
 
+  bool valIsArray() const {return var["value"].is<JsonArray>();}
   JsonArray valArray() const {if (var["value"].is<JsonArray>()) return var["value"]; else return JsonArray(); }
 
   //if variable is a table, loop through its rows
@@ -254,6 +277,7 @@ class Variable {
   //return the options from onUI (don't forget to clear responseObject)
   JsonArray getOptions();
   void clearOptions();
+  void getOption(char *option, uint8_t index);
 
   //find options text in a hierarchy of options
   void findOptionsText(uint8_t value, char * groupName, char * optionName);
@@ -283,7 +307,8 @@ class Variable {
           //   ppf("setValue changed %s.%s %s -> %s\n", pid(), id(), var["oldValue"].as<String>().c_str(), valueString().c_str());
           // else
           //   ppf("setValue changed %s %s\n", id(), var["value"].as<String>().c_str());
-          web->addResponse(var, "value", var["value"]);
+          JsonVariant value = var["value"];
+          web->addResponse(var, "value", value);
           changed = true;
         }
       }
@@ -309,7 +334,8 @@ class Variable {
           //   ppf("notSame %d %d\n", rowNr, valueArray.size());
           valueArray[rowNr] = value; //if valueArray[<rowNr] not exists it will be created
           // ppf("  assigned %d %d %s\n", rowNr, valueArray.size(), valueArray[rowNr].as<String>().c_str());
-          web->addResponse(var, "value", var["value"]); //send the whole array to UI as response is in format value:<value> !!
+          JsonVariant value = var["value"];
+          web->addResponse(var, "value", value); //send the whole array to UI as response is in format value:<value> !!
           changed = true;
         }
       }
@@ -329,14 +355,18 @@ class Variable {
   //gives a variable an initital value returns true if setValue must be called 
   bool initValue(int min = 0, int max = 255, int pointer = 0);
 
+  void subscribe(uint8_t eventType, const VarFunction &varFunction = nullptr);
+  bool publish(uint8_t eventType, uint8_t rowNr = UINT8_MAX);
+
 }; //class Variable
 
-typedef std::function<void(Variable)> FindFun;
+//For Publish and Subscribe events
+struct VarEventPS {
+  Variable variable; //8 bytes: cannot be a pointer as Variable is volatile, the var inside variable is not volatile
+  uint8_t eventType; //1 byte but rounded to 4 bytes (room for more variables, e.g. rowNr?)
+  VarFunction varFunction; //function: 16 bytes
+}; //total 28 bytes
 
-#define EventArguments Variable variable, uint8_t rowNr, uint8_t eventType
-
-// https://stackoverflow.com/questions/59111610/how-do-you-declare-a-lambda-function-using-typedef-and-then-use-it-by-passing-to
-typedef std::function<uint8_t(EventArguments)> VarEvent;
 
 class SysModModel: public SysModule {
 
@@ -344,6 +374,7 @@ public:
 
   RAM_Allocator allocator;
   JsonDocument *model = nullptr;
+  JsonDocument *presets = nullptr;
 
   bool doWriteModel = false;
 
@@ -352,6 +383,7 @@ public:
   int varCounter = 1; //start with 1 so it can be negative, see var["o"]
 
   std::vector<VarEvent> varEvents;
+  std::vector<VarEventPS> varEventsPS;
 
   SysModModel();
   void setup() override;

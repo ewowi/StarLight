@@ -16,6 +16,18 @@
 #include "SysModUI.h"
 #include "SysModInstances.h"
 
+  Variable::Variable() {
+    var = JsonObject(); //undefined variable
+  }
+
+  Variable::Variable(JsonObject var) {
+    this->var = var;
+  }
+
+  Variable::Variable(const char *pid, const char *id) {
+    var = mdl->findVar(pid, id);
+  }
+
   String Variable::valueString(uint8_t rowNr) {
     if (rowNr == UINT8_MAX)
       return value().as<String>();
@@ -85,7 +97,7 @@
         {
           if (rowNr != UINT8_MAX) {
             if (childVariable.order() < 0) { //if not updated
-              valArray[rowNr] = (char*)0; // set element in valArray to 0
+              valArray[rowNr] = (char*)0; // set element in valArray to 0 (is content deleted from memory?)
 
               ppf("varPostDetails %s.%s[%d] <- null\n", id(), childVariable.id(), rowNr);
               // setValue(var, -99, rowNr); //set value -99
@@ -235,10 +247,13 @@
     bool result = false;
 
     //call varEvent if exists
-    if (!var["fun"].isNull()) {//isNull needed here!
+    if (!var["fun"].isNull()) { //isNull needed here!
       size_t funNr = var["fun"];
       if (funNr < mdl->varEvents.size()) {
+        // ppf("voor v1 call %s.%s[%d] %d %d %d\n", pid(), id(), rowNr, funNr, eventType, mdl->varEvents.size());
         result = mdl->varEvents[funNr](*this, rowNr, eventType);
+
+        //all ppf here:
         if (result && !readOnly()) { //send rowNr = 0 if no rowNr
           //only print vars with a value and not onSetValue as that changes a lot due to instances clients etc (tbd)
           //don't print if onSetValue or oldValue is null
@@ -257,9 +272,12 @@
           }
         } //varEvent exists
       }
-      else    
+      else if (funNr == UINT8_MAX)
+        result = publish(eventType, rowNr);
+      else
         ppf("dev triggerEvent function nr %s.%s outside bounds %d >= %d\n", pid(), id(), funNr, mdl->varEvents.size());
     } //varEvent exists
+
 
     //delete pointers after calling var.onDelete as var.onDelete might need the values
     if (eventType == onAdd || eventType == onDelete) {
@@ -343,6 +361,16 @@
     web->getResponseObject()[pidid].remove("options");
   }
 
+  void Variable::getOption(char *option, uint8_t index) {
+    char pidid[64];
+    print->fFormat(pidid, sizeof(pidid), "%s.%s", var["pid"].as<const char *>(), var["id"].as<const char *>());
+    bool optionsExisted = !web->getResponseObject()[pidid]["options"].isNull();
+    JsonArray options = getOptions();
+    strlcpy(option, options[index], 64);
+    if (!optionsExisted)
+      clearOptions(); //if created here then also remove 
+  }
+
   //find options text in a hierarchy of options
   void Variable::findOptionsText(uint8_t value, char * groupName, char * optionName) {
     uint8_t startValue = 0;
@@ -394,7 +422,7 @@
       }
     }
     else if (value.is<const char *>())
-      setValue(JsonString(value, JsonString::Copied), rowNr);
+      setValue(value, rowNr);
     else if (value.is<Coord3D>()) //otherwise it will be treated as JsonObject and toJson / fromJson will not be triggered!!!
       setValue(value.as<Coord3D>(), rowNr);
     else
@@ -411,7 +439,7 @@
 
     va_end(args);
 
-    setValue(JsonString(value, JsonString::Copied));
+    setValue(JsonString(value));
   }
 
   JsonVariant Variable::getValue(uint8_t rowNr) {
@@ -464,7 +492,7 @@
     //sets the default values, by varEvent if exists, otherwise manually (by returning true)
     if (doSetValue) {
       bool onSetValueExists = false;
-      if (!var["fun"].isNull()) {
+      if (!var["fun"].isNull()) { // && var["fun"] != UINT8_MAX
         onSetValueExists = triggerEvent(onSetValue, mdl->setValueRowNr);
       }
       if (!onSetValueExists) { //setValue provided (if not null)
@@ -494,6 +522,7 @@
 
 SysModModel::SysModModel() :SysModule("Model") {
   model = new JsonDocument(&allocator);
+  presets = new JsonDocument(&allocator);
 
   JsonArray root = model->to<JsonArray>(); //create
 
@@ -504,6 +533,9 @@ SysModModel::SysModModel() :SysModule("Model") {
   } else {
     root = model->to<JsonArray>(); //re create the model as it is corrupted by readFromFile
   }
+
+  files->readObjectFromFile("/presets.json", presets); //do not create if not exists
+
 }
 
 void SysModModel::setup() {
@@ -543,6 +575,16 @@ void SysModModel::setup() {
     default: return false;
   }});
 
+  Variable currentVar;
+  currentVar = ui->initText(parentVar, "eventsVar", nullptr, 16, true);
+  currentVar.subscribe(onLoop1s, [this](EventArguments) {
+    variable.setValueF("%d x %d = %d", varEvents.size(), sizeof(VarEvent), varEvents.size() * sizeof(VarEvent));
+  });
+  currentVar = ui->initText(parentVar, "eventsPS", nullptr, 16, true);
+  currentVar.subscribe(onLoop1s, [this](EventArguments) {
+    variable.setValueF("%d x %d = %d (%d + %d + %d)", varEventsPS.size(), sizeof(VarEventPS), varEventsPS.size() * sizeof(VarEventPS), sizeof(Variable), sizeof(VarFunction), sizeof(uint8_t));
+  });
+
   #endif //STARBASE_DEVMODE
 }
 
@@ -560,7 +602,7 @@ void SysModModel::loop20ms() {
 
     cleanUpModel(Variable(), false, true);//remove if var["o"] is negative (not cleanedUp) and remove ro values
 
-    StarJson starJson("/model.json", "w"); //open fileName for deserialize
+    StarJson starJson("/model.json", FILE_WRITE); //open fileName for deserialize
     //comment exclusions out in case of generating model.json for github
     starJson.addExclusion("fun");
     starJson.addExclusion("dash");
@@ -571,12 +613,16 @@ void SysModModel::loop20ms() {
 
     // print->printJson("Write model", *model); //this shows the model before exclusion
 
+    if (!presets->isNull())
+      files->writeObjectToFile("/presets.json", presets);
+
+
     doWriteModel = false;
   }
 }
 
 void SysModModel::loop1s() {
-  mdl->walkThroughModel([](JsonObject parentVar, JsonObject var) {
+  walkThroughModel([](JsonObject parentVar, JsonObject var) {
     Variable(var).triggerEvent(onLoop1s);
     return JsonObject(); //don't stop
   });
@@ -590,7 +636,7 @@ void SysModModel::cleanUpModel(Variable parent, bool oPos, bool ro) {
   else
     vars = Variable(parent).children();
 
-  bool showObsolete = mdl->getValue("Model", "showObsolete");
+  bool showObsolete = getValue("Model", "showObsolete");
   for (JsonArray::iterator varV=vars.begin(); varV!=vars.end(); ++varV) {
   // for (JsonVariant varV : vars) {
     if (varV->is<JsonObject>()) {
@@ -633,21 +679,21 @@ void SysModModel::cleanUpModel(Variable parent, bool oPos, bool ro) {
 Variable SysModModel::initVar(Variable parent, const char * id, const char * type, bool readOnly, const VarEvent &varEvent) {
   const char * parentId = parent.var["id"];
   if (!parentId) parentId = "m"; //m=module
-  JsonObject var = mdl->findVar(parentId, id);
+  JsonObject var = findVar(parentId, id);
   Variable variable = Variable(var);
 
   //create new var
   if (var.isNull()) {
     // ppf("initVar new %s: %s.%s\n", type, parentId, id); //parentId not null otherwise crash
     if (parent.var.isNull()) {
-      JsonArray vars = mdl->model->as<JsonArray>();
+      JsonArray vars = model->as<JsonArray>();
       var = vars.add<JsonObject>();
     } else {
       if (parent.var["n"].isNull()) parent.var["n"].to<JsonArray>(); //TO!!! if parent exist and no "n" array, create it
       var = parent.var["n"].add<JsonObject>();
       // serializeJson(model, Serial);Serial.println();
     }
-    var["id"] = JsonString(id, JsonString::Copied);
+    var["id"] = JsonString(id);
   }
   // else {
   //   ppf("initVar Var %s->%s already defined\n", modelParentId, id);
@@ -655,7 +701,7 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
 
   if (!var.isNull()) {
     if (var["type"].isNull() || var["type"] != type) {
-      var["type"] = JsonString(type, JsonString::Copied);
+      var["type"] = JsonString(type);
       // print->printJson("initVar set type", var);
     }
 
@@ -670,9 +716,9 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
       variable.order( -variable.order()); //leave the order as is
     else {
       if (!parent.var.isNull() && Variable(parent).order() >= 0) // if checks on the parent already done so vars added later, e.g. controls, will be autochecked
-        variable.order( mdl->varCounter++); //redefine order
+        variable.order( varCounter++); //redefine order
       else
-        variable.order( -mdl->varCounter++); //redefine order
+        variable.order( -varCounter++); //redefine order
     }
 
     //if varEvent, add it to the list
@@ -685,8 +731,8 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
       // if (itr!=ucFunctions.end()) //found
       //   var["varEvent"] = distance(ucFunctions.begin(), itr); //assign found function
       // else { //not found
-        mdl->varEvents.push_back(varEvent); //add new function
-        var["fun"] = mdl->varEvents.size()-1;
+        varEvents.push_back(varEvent); //add new function
+        var["fun"] = varEvents.size()-1;
       // }
       
       if (varEvent(variable, UINT8_MAX, onLoop)) { //test run if it supports loop
@@ -706,6 +752,26 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
 
   return variable;
 }
+
+void Variable::subscribe(uint8_t eventType, const VarFunction &varFunction) {
+  ppf("subscribe %d %s.%s\n", eventType, pid(), id());
+  mdl->varEventsPS.push_back({*this, eventType, varFunction}); //add new function
+  var["fun"] = UINT8_MAX; //to trigger response from ui
+}
+
+bool Variable::publish(uint8_t eventType, uint8_t rowNr) {
+  bool found = false;
+  for (VarEventPS &varEventPS: mdl->varEventsPS) {
+    if (eventType == varEventPS.eventType && strncmp(pid(), varEventPS.variable.pid(), 32) == 0 && strncmp(id(), varEventPS.variable.id(), 32) == 0) {
+      if (strcmp(id(), "effect") == 0 && eventType!= onLoop1s)
+        ppf("publish %s.%s[%d] %d=%d %s.%s\n", pid(), id(), rowNr, eventType, varEventPS.eventType , varEventPS.variable.pid(), varEventPS.variable.id());
+      varEventPS.varFunction(*this, rowNr, eventType);
+      found = true;
+    }
+  }
+  return found;
+}
+
 
 JsonObject SysModModel::walkThroughModel(std::function<JsonObject(JsonObject, JsonObject)> fun, JsonObject parentVar) {
   for (JsonObject var : parentVar.isNull()?model->as<JsonArray>(): parentVar["n"]) {

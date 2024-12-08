@@ -167,6 +167,10 @@ public:
     return initVarAndValue<const char *>(parent, id, "url", value, 0, 0, readOnly, varEvent);
   }
 
+  Variable initVCR(Variable parent, const char * id, bool readOnly = false, const VarEvent &varEvent = nullptr) {
+    return initVarAndValue<bool>(parent, id, "vcr", false, 0, 0, readOnly, varEvent);
+  }
+
   //initVarAndValue using basic value
   template <typename Type>
   Variable initVarAndValue(Variable parent, const char * id, const char * type, Type value, int min = 0, int max = 255, bool readOnly = true, const VarEvent &varEvent = nullptr) {
@@ -224,7 +228,7 @@ public:
     if (variable.initValue(min, max, (int)values)) {
       uint8_t rowNrL = 0;
       for (VectorString value: *values) { //loop over vector
-        variable.setValue(JsonString(value.s, JsonString::Copied), rowNrL); //does onChange if needed, if var in table, update the table row
+        variable.setValue(JsonString(value.s), rowNrL); //does onChange if needed, if var in table, update the table row
         rowNrL++;
       }
     }
