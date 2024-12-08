@@ -9,7 +9,7 @@ uint32_t __deltamillis[1];
 
 uint32_t __baseTime[1];
 
-float cR; //= -0.94299; expecting external, __ASM__  or variable type  at line:39 position:10 10 
+float cR = -0.94299;
 float cI = 0.3162;
 
 float cX;
@@ -60,7 +60,6 @@ void render2D(int x1, int y1)
 
 void setup()
 {
-   cR = -0.94299; //workaround see above
 }
 
 void loop()

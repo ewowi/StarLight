@@ -2812,7 +2812,7 @@ class LaserGEQEffect: public Effect {
 // @license GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
 class PaintbrushEffect: public Effect {
   const char * name() override {return "Paintbrush";}
-  uint8_t dim() override {return _2D;}
+  uint8_t dim() override {return _3D;} //also 2D (change dim to multiple options?)
   const char * tags() override {return "♫💡";}
 
   void setup(LedsLayer &leds, Variable parentVar) override {
@@ -2845,6 +2845,7 @@ class PaintbrushEffect: public Effect {
 
     const uint16_t cols = leds.size.x;
     const uint16_t rows = leds.size.y;
+    const uint16_t depth = leds.size.z;
 
     // byte numLines = map8(nrOfLines,1,64);
     
@@ -2860,8 +2861,17 @@ class PaintbrushEffect: public Effect {
       byte x2 = beatsin8(oscillatorOffset*2 + audioSync->fftResults[0]/16, 0, (cols-1), audioSync->fftResults[bin], *aux1Chaos);
       byte y1 = beatsin8(oscillatorOffset*3 + audioSync->fftResults[0]/16, 0, (rows-1), audioSync->fftResults[bin], *aux1Chaos);
       byte y2 = beatsin8(oscillatorOffset*4 + audioSync->fftResults[0]/16, 0, (rows-1), audioSync->fftResults[bin], *aux1Chaos);
+      byte z1;
+      byte z2;
+      int length;
+      if (leds.projectionDimension == _3D) {
+        z1 = beatsin8(oscillatorOffset*3 + audioSync->fftResults[0]/16, 0, (depth-1), audioSync->fftResults[bin], *aux1Chaos);
+        z2 = beatsin8(oscillatorOffset*4 + audioSync->fftResults[0]/16, 0, (depth-1), audioSync->fftResults[bin], *aux1Chaos);
 
-      int length = sqrt((x2-x1) * (x2-x1) + (y2-y1) * (y2-y1));
+        length = sqrt((x2-x1) * (x2-x1) + (y2-y1) * (y2-y1) + (z2-z1) * (z2-z1));
+      } else 
+        length = sqrt((x2-x1) * (x2-x1) + (y2-y1) * (y2-y1));
+
       length = map8(audioSync->fftResults[bin],0,length);
 
       if (length > max(1, (int)minLength)) {
@@ -2870,7 +2880,10 @@ class PaintbrushEffect: public Effect {
           color = ColorFromPalette(leds.palette, i * 255 / numLines + ((*aux0Hue)&0xFF), 255);
         else
           color = ColorFromPalette(leds.palette, map(i, 0, numLines, 0, 255), 255);
-        leds.drawLine(x1, y1, x2, y2, color, soft, length);
+        if (leds.projectionDimension == _3D)
+          leds.drawLine3D(x1, y1, z1, x2, y2, z2, color, soft, length); // no soft implemented in 3D yet
+        else
+          leds.drawLine(x1, y1, x2, y2, color, soft, length);
       }
     }
   }
@@ -3137,7 +3150,7 @@ class RipplesEffect: public Effect {
     uint8_t interval = leds.effectData.read<uint8_t>();
 
     float ripple_interval = 1.3f * ((255.0f - interval)/128.0f) * sqrtf(leds.size.y);
-    uint32_t time_interval = sys->now/(100 - speed)/((256.0f-128.0f)/20.0f);
+    float time_interval = sys->now/(100.0 - speed)/((256.0f-128.0f)/20.0f);
 
     leds.fill_solid(CRGB::Black);
 
@@ -3169,12 +3182,12 @@ class SphereMoveEffect: public Effect {
 
     leds.fill_solid(CRGB::Black);
 
-    uint32_t time_interval = sys->now/(100 - speed)/((256.0f-128.0f)/20.0f);
+    float time_interval = sys->now/(100 - speed)/((256.0f-128.0f)/20.0f);
 
     Coord3D origin;
-    origin.x = leds.size.x / 2.0 * ( 1 + sinf(time_interval));
-    origin.y = leds.size.y / 2.0 * ( 1 + cosf(time_interval));
-    origin.z = leds.size.z / 2.0 * ( 1 + cosf(time_interval));
+    origin.x = leds.size.x / 2.0 * ( 1.0 + sinf(time_interval));
+    origin.y = leds.size.y / 2.0 * ( 1.0 + cosf(time_interval));
+    origin.z = leds.size.z / 2.0 * ( 1.0 + cosf(time_interval));
 
     float diameter = 2.0f+sinf(time_interval/3.0f);
 
@@ -3182,9 +3195,9 @@ class SphereMoveEffect: public Effect {
     for (pos.x=0; pos.x<leds.size.x; pos.x++) {
         for (pos.y=0; pos.y<leds.size.y; pos.y++) {
             for (pos.z=0; pos.z<leds.size.z; pos.z++) {
-                uint16_t d = distance(pos.x, pos.y, pos.z, origin.x, origin.y, origin.z);
+                float d = distance(pos.x, pos.y, pos.z, origin.x, origin.y, origin.z);
 
-                if (d>diameter && d<diameter+1) {
+                if (d>diameter && d<diameter + 1.0) {
                   leds[pos] = CHSV( sys->now/50 + random8(64), 200, 255);// ColorFromPalette(leds.palette,call, bri);
                 }
             }

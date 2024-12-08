@@ -1,13 +1,11 @@
 //F_Cube202020.sc
 
-define width 16
-define height 16
-define depth 48
+define width 20
+define height 20
+define depth 6
 
-define panelWidth 16
-define panelHeight 16
-
-int pins[6] = {9,10,12,8,18,17}; //for esp32-S3 //for virtual driver, max 6 pins supported atm
+int pins[6] = {32,33,25,26,27,14}; //STARLIGHT_CLOCKLESS_LED_DRIVER on esp32-wrover (PSRAM)
+//int pins[6] = {9,10,12,8,18,17}; //for esp32-S3
 
 void main()
 {
@@ -15,13 +13,10 @@ void main()
 
   for (int z=0; z<depth;z++) {
 
-    for (int x=0; x<panelWidth;x++) {
-      for (int y=panelHeight - 1; y>=0; y--) {
-        int y2 = y; if (x%2 == 0) {y2 = panelHeight - 1 - y;} //serpentine
-        addPixel(x, y2, z);
-      }
-    }
+    for (int x=0; x<width;x++)
+      for (int y=0; y<height;y++)
+        addPixel(x, y, z);
 
-    addPin(pins[z/8]); //every 8 panels one pin on the esp32
+    addPin(pins[z]); //every 8 panels one pin on the esp32
   }
 }

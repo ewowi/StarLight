@@ -40,5 +40,5 @@ void loop() {
       sPC(y*width+x, hsv(2*t - radius*mapp, 255, intensity));
     }
   }
-  t=t+speed;
+  t += speed;
 }

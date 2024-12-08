@@ -247,6 +247,11 @@
         }
         return true; }
       case onChange: {
+
+        // return true; //do this if the fixture crashes at boot, then change fixture to working fixture, recompile, reboot (WIP)
+        // WARNING - possible crash: (code 5) Reset (software or hardware) due to interrupt watchdog. Core#0 (code 8) watchdog; Core#1 (code 8) watchdog.
+        //to do save mode button...
+
         doAllocPins = true;
         if (web->ws.getClients().length())
           doSendFixtureDefinition = true;
@@ -564,7 +569,7 @@ void LedModFixture::addPixelsPre() {
 }
 
 void LedModFixture::addPixel(Coord3D pixel) {
-  // ppf("led %d,%d,%d start %d,%d,%d end %d,%d,%d\n",x,y,z, start.x, start.y, start.z, end.x, end.y, end.z);
+  // ppf("led{%d} %d,%d,%d\n", pass, pixel.x,pixel.y,pixel.z); //start.x, start.y, start.z, end.x, end.y, end.z start %d,%d,%d end %d,%d,%d
   if (pass == 1) {
     // ppf(".");
     fixSize = fixSize.maximum(pixel);
@@ -622,8 +627,8 @@ void LedModFixture::addPixel(Coord3D pixel) {
 }
 
 void LedModFixture::addPin(uint8_t pin) {
+  // ppf("addPin{%d} %d\n", pass, pin);
   if (pass == 1) {
-    // ppf("addPin calc\n");
   } else if (nrOfLeds <= STARLIGHT_MAXLEDS) {
     if (doAllocPins) {
       ppf("addPin %d (%d %d)\n", pin, indexP, nrOfLeds);
@@ -785,13 +790,13 @@ void LedModFixture::addPixelsPost() {
     }
 
     //fill the rest of the pins with the pins already used
-    //prefrably NUMSTRIPS is a variable...
+    //preferably NUMSTRIPS is a variable...
     for (uint8_t i = nb_pins; i < NUMSTRIPS; i++) {
       pins[i] = pins[i%nb_pins];
       lengths[i] = 0;
     }
     ppf("pins[");
-    for (int i=0; i<NUMSTRIPS; i++) {
+    for (int i=0; i<nb_pins; i++) {
       ppf(", %d", pins[i]);
     }
     ppf("]\n");

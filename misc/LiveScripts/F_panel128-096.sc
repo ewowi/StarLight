@@ -36,18 +36,12 @@ void main() {
 
   for (int panelY = 0; panelY < verticalPanels; panelY++) {
 
-    for (int panelX = horizontalPanels-1; panelX >=0; panelX--) {
-
-      for (int x=0; x<panelWidth;x++) {
-        for (int y=panelHeight - 1; y>=0; y--) {
-          int y2 = (x%2)? y: panelHeight - 1 - y; //serpentine
-          addPixel(panelX * panelWidth + x, panelY * panelHeight + y2, 0);
-        }
-      }
-
-    }
+    for (int panelX = horizontalPanels-1; panelX >=0; panelX--)
+      for (int x=0; x<panelWidth;x++)
+        for (int y=panelHeight - 1; y>=0; y--)
+          addPixel(panelX * panelWidth + x, panelY * panelHeight + (x%2)? y: panelHeight - 1 - y, 0); //serpentine
 
     addPin(pins[panelY]);
-
   }
+  
 }

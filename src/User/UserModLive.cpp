@@ -132,7 +132,7 @@ static float _time(float j) {
     }});
 
     //temp
-    ui->initText(parentVar, "fpsFrame", nullptr, 10, true, [this](EventArguments) { switch (eventType) {
+    ui->initText(parentVar, "fpsSync", nullptr, 10, true, [this](EventArguments) { switch (eventType) {
       case onLoop1s:
         variable.setValueF("%d /s", frameCounter, 0); //0 is to force format overload used
         frameCounter = 0;
@@ -210,9 +210,25 @@ static float _time(float j) {
         rowNr = 0;
         for (Executable &exec: scriptRuntime._scExecutables) {
           exe_info exeInfo = scriptRuntime.getExecutableInfo(exec.name);
-          char text[30];
-          print->fFormat(text, sizeof(text), "%d+%d=%d B", exeInfo.binary_size, exeInfo.data_size, exeInfo.total_size);
-          variable.setValue(JsonString(text), rowNr++);
+          StarString text;
+          text.format("%d+%d=%d B", exeInfo.binary_size, exeInfo.data_size, exeInfo.total_size);
+          variable.setValue(JsonString(text.getString()), rowNr++);
+        }
+        return true;
+      default: return false;
+    }});
+
+    ui->initText(tableVar, "error", nullptr, 32, true, [this](EventArguments) { switch (eventType) {
+      case onSetValue:
+        variable.var["value"].to<JsonArray>(); web->addResponse(variable.var, "value", variable.value()); // empty the value
+        rowNr = 0;
+        for (Executable &exec: scriptRuntime._scExecutables) {
+          if (exec.error.error) {
+            StarString text;
+            const char *error_message = exec.error.error_message.c_str();
+            text.format("%d-%d %s (%d)", exec.error.line, exec.error.pos, error_message?error_message:"dev", exec.error.error);
+            variable.setValue(JsonString(text.getString()), rowNr++);
+          }
         }
         return true;
       default: return false;
