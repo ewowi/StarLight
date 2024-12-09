@@ -167,9 +167,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true; }
       case onChange:
 
-        // return true; //do this if the effect crashes at boot, then change effect to working effect, recompile, reboot (WIP)
-        //to do save mode button...
-
+        if (mdls->saveMode) return true; //do not process effect in saveMode do this if the effect crashes at boot, then change effect to working effect and reboot
 
         if (rowNr == UINT8_MAX) rowNr = 0; // in case effect without a rowNr
 

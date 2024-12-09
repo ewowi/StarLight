@@ -248,9 +248,7 @@
         return true; }
       case onChange: {
 
-        // return true; //do this if the fixture crashes at boot, then change fixture to working fixture, recompile, reboot (WIP)
-        // WARNING - possible crash: (code 5) Reset (software or hardware) due to interrupt watchdog. Core#0 (code 8) watchdog; Core#1 (code 8) watchdog.
-        //to do save mode button...
+        if (mdls->saveMode) return true; //do not process fixture in saveMode do this if the fixture crashes at boot, then change fixture to working fixture and reboot
 
         doAllocPins = true;
         if (web->ws.getClients().length())
@@ -849,7 +847,7 @@ void LedModFixture::addPixelsPost() {
       lengths[i] = 0;
     }
     ppf("pins[");
-    for (int i=0; i<NBIS2SERIALPINS; i++) {
+    for (int i=0; i<nb_pins; i++) {
       ppf(", %d", pins[i]);
     }
     ppf("]\n");

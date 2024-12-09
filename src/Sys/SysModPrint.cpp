@@ -113,7 +113,8 @@ void SysModPrint::printf(const char * format, ...) {
     toSerial = true;
 
   if (toSerial) {
-    Serial.print(strncmp(pcTaskGetTaskName(nullptr), "loopTask", 9) == 0?"":"α"); //looptask λ/ asyncTCP task α
+    if (mdls->saveMode) Serial.print("🚑");
+    Serial.print(strncmp(pcTaskGetTaskName(nullptr), "loopTask", 8) == 0?"":"α"); //looptask λ/ asyncTCP task α
     Serial.print(buffer);
   }
 
