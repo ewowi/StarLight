@@ -394,7 +394,7 @@ public:
   Variable initVar(Variable parent, const char * id, const char * type, bool readOnly = true, const VarEvent &varEvent = nullptr);
 
   //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
-  void cleanUpModel(Variable parent = Variable(), bool oPos = true, bool ro = false);
+  void cleanUpModel(bool oPos = true, bool ro = false);
 
   //sets the value of var with id
   template <typename Type>

@@ -23,10 +23,8 @@ void SysModules::setup() {
   #ifdef STARBASE_BOOT_BUTTON_PIN
     pinsM->allocatePin(STARBASE_BOOT_BUTTON_PIN, "Buttons", "Boot");
 
-    if (digitalRead(STARBASE_BOOT_BUTTON_PIN) == 0) {
-      saveMode = !isConnected;
-      ppf("saveMode %s\n", saveMode?"on":"off");
-    }
+    sys->saveMode = digitalRead(STARBASE_BOOT_BUTTON_PIN) == 0;
+    mdl->setValue("System", "saveMode", sys->saveMode);
 
   #endif
 
@@ -148,10 +146,6 @@ void SysModules::loop() {
   }
 
   #ifdef STARBASE_BOOT_BUTTON_PIN
-    if (digitalRead(STARBASE_BOOT_BUTTON_PIN) == 0 && saveMode) {
-      saveMode = false;
-      ppf("saveMode %s\n", saveMode?"on":"off");
-    }
 
     if (digitalRead(STARBASE_BOOT_BUTTON_PIN) == 0) { //pressed
       if (buttonPressedTime == 0) //if not pressed before
@@ -161,8 +155,11 @@ void SysModules::loop() {
 
     if (buttonPressedTime && (sys->now - buttonPressedTime) > 600) {
       //longpress
-      ppf("longpress boot\n");
+      // ppf("longpress boot -> saveMode on\n");
       buttonPressedTime = 0;
+      sys->saveMode = !sys->saveMode;
+      ppf("longpress saveMode %s\n", sys->saveMode?"on":"off");
+      mdl->setValue("System", "saveMode", sys->saveMode);
     }
   #endif
 

@@ -248,7 +248,7 @@
         return true; }
       case onChange: {
 
-        if (mdls->saveMode) return true; //do not process fixture in saveMode do this if the fixture crashes at boot, then change fixture to working fixture and reboot
+        if (sys->saveMode) return true; //do not process fixture in saveMode do this if the fixture crashes at boot, then change fixture to working fixture and reboot
 
         doAllocPins = true;
         if (web->ws.getClients().length())

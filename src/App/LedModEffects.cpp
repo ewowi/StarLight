@@ -167,7 +167,10 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true; }
       case onChange:
 
-        if (mdls->saveMode) return true; //do not process effect in saveMode do this if the effect crashes at boot, then change effect to working effect and reboot
+
+        if (sys->saveMode) return true; //do not process effect in saveMode do this if the effect crashes at boot, then change effect to working effect and reboot
+
+        print->printJson("layers.effect.onChange", variable.var);
 
         if (rowNr == UINT8_MAX) rowNr = 0; // in case effect without a rowNr
 

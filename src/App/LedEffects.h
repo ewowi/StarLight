@@ -3319,6 +3319,8 @@ class LiveEffect: public Effect {
 
         return true; }
       case onChange: {
+
+        ppf("effect.script[%d].onChange %s\n", rowNr, variable.valueString().c_str());
         //set script
         uint8_t fileNr = variable.value(rowNr);
 
@@ -3396,7 +3398,7 @@ class LiveEffect: public Effect {
     ui->initSlider(parentVar, "Custom 1", &custom1Control);
     ui->initSlider(parentVar, "Custom 2", &custom2Control);
     ui->initSlider(parentVar, "Custom 3", &custom3Control);
-  }
+  } //setup
 
   void loop(LedsLayer &leds) override {
 

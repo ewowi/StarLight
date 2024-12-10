@@ -88,7 +88,7 @@ static float _time(float j) {
         //set script
         uint8_t fileNr = variable.value();
 
-        ppf("%s script.onChange f:%d\n", name, fileNr);
+        ppf("%s.script.onChange f:%d\n", name, fileNr);
 
         char fileName[32] = "";
 
@@ -117,7 +117,7 @@ static float _time(float j) {
         }
         else {
           // kill();
-          ppf("script.onChange set to None\n");
+          ppf("LiveScripts.script.onChange set to None\n");
         }
 
         return true; }
