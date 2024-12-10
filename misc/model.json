@@ -725,7 +725,7 @@
         "fun": 41
       },
       {
-        "id": "saveMode",
+        "id": "safeMode",
         "type": "checkbox",
         "pid": "System",
         "ro": false,

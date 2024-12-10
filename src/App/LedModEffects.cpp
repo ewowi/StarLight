@@ -168,7 +168,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       case onChange:
 
 
-        if (sys->saveMode) return true; //do not process effect in saveMode do this if the effect crashes at boot, then change effect to working effect and reboot
+        if (sys->safeMode) return true; //do not process effect in safeMode do this if the effect crashes at boot, then change effect to working effect and reboot
 
         print->printJson("layers.effect.onChange", variable.var);
 

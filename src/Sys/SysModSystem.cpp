@@ -187,7 +187,7 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  ui->initCheckBox(parentVar, "saveMode", &saveMode);
+  ui->initCheckBox(parentVar, "safeMode", &safeMode);
 
   //calculate version in format YYMMDDHH
   //https://forum.arduino.cc/t/can-you-format-__date__/200818/10
