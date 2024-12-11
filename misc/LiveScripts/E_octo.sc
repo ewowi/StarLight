@@ -39,5 +39,5 @@ void loop() {
       sPC(y*width+x, hsv(2*t - radius*mapp, 255, intensity));
     }
   }
-  t += speedControl / 8;
+  t = now * speedControl / 32 / 25; //speedControl 0..8, 40 changes per second
 }
