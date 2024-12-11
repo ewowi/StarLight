@@ -1,7 +1,6 @@
 //E_octo.sc
 
 define PI 3.1415926535
-define speed 1
 int nb_branches;
 uint8_t C_X;
 uint8_t C_Y;
@@ -40,5 +39,5 @@ void loop() {
       sPC(y*width+x, hsv(2*t - radius*mapp, 255, intensity));
     }
   }
-  t += speed;
+  t += speedControl / 8;
 }

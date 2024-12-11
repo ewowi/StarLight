@@ -258,9 +258,11 @@ inline uint16_t getRGBWsize(uint16_t nleds){
             else
               leds->projection = projections[proValue];
 
-            ppf("initProjection leds[%d] effect:%s a:%d\n", rowNr, leds->effect->name(), leds->projectionData.bytesAllocated);
+            ppf("initProjection leds[%d] projection:%s a:%d\n", rowNr, leds->projection->name(), leds->projectionData.bytesAllocated);
 
             leds->projectionData.clear(); //delete effectData memory so it can be rebuild
+
+            leds->projectionData.read<uint8_t>(); //allocate minimum amount for projectionData (chunk of 32 bytes) to avoid control defaults to be removed
 
             variable.preDetails(); //set all positive var N orders to negative
             mdl->setValueRowNr = rowNr;
@@ -528,7 +530,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
       leds.effectData.clear(); //delete effectData memory so it can be rebuild
 
-      leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right
+      leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right to avoid control defaults to be removed
 
       Variable variable = Variable("layers", "effect");
       variable.preDetails();
