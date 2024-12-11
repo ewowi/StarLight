@@ -9,7 +9,7 @@ int pins[6] = {32,33,25,26,27,14}; //STARLIGHT_CLOCKLESS_LED_DRIVER on esp32-wro
 
 void main()
 {
-  setLedSize(2); //smaller leds (default 5)
+  ledSize = 2; //smaller leds (default 5)
 
   for (int z=0; z<depth;z++) {
 

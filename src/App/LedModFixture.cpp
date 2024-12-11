@@ -27,9 +27,6 @@
 
 #ifdef STARBASE_USERMOD_LIVE
   #include "User/UserModLive.h"
-  static void _setFactor(uint8_t a1) {fix->factor = a1;}
-  static void _setLedSize(uint8_t a1) {fix->ledSize = a1;}
-  static void _setShape(uint8_t a1) {fix->shape = a1;}
   static void _addPixelsPre() {fix->addPixelsPre();}
   static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {fix->addPixel({a1, a2, a3});}
   static void _addPin(uint8_t a1) {fix->addPin(a1);}
@@ -396,9 +393,9 @@
     char fileName[32] = "";
 
     if (files->seqNrToName(fileName, fixtureNr, "F_")) { // get the fix->json
-      factor = 1; //back to default
+      ledFactor = 1; //back to default
       ledSize = 4; //back to default
-      shape = 0; //back to default
+      ledShape = 0; //back to default
 
     #ifdef STARBASE_USERMOD_LIVE
       if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
@@ -418,14 +415,21 @@
 
           liveM->addDefaultExternals();
 
-          liveM->addExternalFun("void", "setFactor", "(uint8_t a1)", (void *)_setFactor);
-          liveM->addExternalFun("void", "setLedSize", "(uint8_t a1)", (void *)_setLedSize);
-          liveM->addExternalFun("void", "setShape", "(uint8_t a1)", (void *)_setShape);
           liveM->addExternalFun("void", "addPixelsPre", "()", (void *)_addPixelsPre);
           liveM->addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
           liveM->addExternalFun("void", "addPin", "(uint8_t a1)", (void *)_addPin);
           liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
+
           liveM->addExternalVal("uint16_t", "mapResult", &mapResult); //for STARLIGHT_LIVE_MAPPING but script with this can also run when live mapping is disabled
+          liveM->addExternalVal("uint8_t", "ledFactor", &fix->ledFactor);
+          liveM->addExternalVal("uint8_t", "ledSize", &fix->ledSize);
+          liveM->addExternalVal("uint8_t", "ledShape", &fix->ledShape);
+
+          //for virtual driver (but keep enabled to avoid compile errors when used in non virtual context
+          liveM->addExternalVal("uint8_t", "clockPin", &fix->clockPin);
+          liveM->addExternalVal("uint8_t", "latchPin", &fix->latchPin);
+          liveM->addExternalVal("uint8_t", "clockFreq", &fix->clockFreq);
+          liveM->addExternalVal("uint8_t", "dmaBuffer", &fix->dmaBuffer);
 
           liveFixtureID = liveM->compile(fileName, "void c(){addPixelsPre();main();addPixelsPost();}");
         }
@@ -455,9 +459,9 @@
 
           if (pass == 1) { // mappings
             //what to deserialize
-            starJson.lookFor("factor", &factor);
+            starJson.lookFor("factor", &ledFactor);
             starJson.lookFor("ledSize", &ledSize);
-            starJson.lookFor("shape", &shape);
+            starJson.lookFor("shape", &ledShape);
             starJson.lookFor("pin", &currPin);
           }
 
@@ -512,7 +516,7 @@
 #define headerBytesFixture 16 // so 680 pixels will fit in a PACKAGE_SIZE package ?
 
 void LedModFixture::addPixelsPre() {
-  ppf("addPixelsPre(%d) f:%d s:%d s:%d\n", pass, factor, ledSize, shape);
+  ppf("addPixelsPre(%d) f:%d s:%d s:%d\n", pass, ledFactor, ledSize, ledShape);
 
   if (pass == 1) {
     fixSize = {0, 0, 0}; //start counting
@@ -558,8 +562,8 @@ void LedModFixture::addPixelsPre() {
         buffer[7] = nrOfLeds/256;
         buffer[8] = nrOfLeds%256;
         buffer[9] = ledSize;
-        buffer[10] = shape;
-        buffer[11] = factor;
+        buffer[10] = ledShape;
+        buffer[11] = ledFactor;
         previewBufferIndex = headerBytesFixture;
       }
     }
@@ -597,15 +601,15 @@ void LedModFixture::addPixel(Coord3D pixel) {
           }
 
           if (fixSize.x > 1) {
-            if (fixSize.x * factor > 255) buffer[previewBufferIndex++] = pixel.x/256;
+            if (fixSize.x * ledFactor > 255) buffer[previewBufferIndex++] = pixel.x/256;
             buffer[previewBufferIndex++] = pixel.x%256;
           }
           if (fixSize.y > 1) {
-            if (fixSize.y * factor > 255) buffer[previewBufferIndex++] = pixel.y/256;
+            if (fixSize.y * ledFactor > 255) buffer[previewBufferIndex++] = pixel.y/256;
             buffer[previewBufferIndex++] = pixel.y%256;
           }
           if (fixSize.z > 1) {
-            if (fixSize.z * factor > 255) buffer[previewBufferIndex++] = pixel.z/256;
+            if (fixSize.z * ledFactor > 255) buffer[previewBufferIndex++] = pixel.z/256;
             buffer[previewBufferIndex++] = pixel.z%256;
           }
         }
@@ -666,7 +670,7 @@ void LedModFixture::addPixelsPost() {
   ppf("addPixelsPost(%d) indexP:%d b:%d dsfd:%d %d ms\n", pass, indexP, bytesPerPixel, doSendFixtureDefinition, millis() - start);
   //after processing each led
   if (pass == 1) {
-    fixSize = fixSize / factor + Coord3D{1,1,1};
+    fixSize = fixSize / ledFactor + Coord3D{1,1,1};
     ppf("addPixelsPost(%d) size s:%d,%d,%d #:%d %d ms\n", pass, fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
   } else if (nrOfLeds <= STARLIGHT_MAXLEDS) {
 
@@ -853,11 +857,14 @@ void LedModFixture::addPixelsPost() {
     ppf("]\n");
 
     for (int i=0; i< STARLIGHT_MAXLEDS; i++) ledsP[i] = CRGB::Black; //avoid very bright pixels during reboot (WIP)
+
+    pinsM->allocatePin(clockPin, "Leds", "Clock");
+    pinsM->allocatePin(latchPin, "Leds", "Latch");
     
     #if CONFIG_IDF_TARGET_ESP32S3
-      driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN, clock_1000KHZ);
+      driver.initled(ledsP, pins, clockPin, latchPin, clockFreq==10?clock_1000KHZ:clockFreq==11?clock_1111KHZ:clockFreq==12?clock_1123KHZ:clock_800KHZ);
     #else
-      driver.initled(ledsP, pins, STARLIGHT_ICVLD_CLOCK_PIN, STARLIGHT_ICVLD_LATCH_PIN);
+      driver.initled(ledsP, pins, clockPin, latchPin);
     #endif
     // driver.enableShowPixelsOnCore(1);
     #if STARLIGHT_LIVE_MAPPING

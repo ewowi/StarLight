@@ -362,9 +362,9 @@ void LedsLayer::fill_rainbow(const uint8_t initialhue, const uint8_t deltahue) {
   void LedsLayer::addPixel(Coord3D pixel, const uint8_t rowNr) {
     if (projection && doMap) { //only real projections: add pixel in leds mappingTable
       // ppf("addPixel %d %d", pixel, fix->factor);
-      if (pixel >= start * fix->factor && pixel <= end * fix->factor ) { //if pixel between start and end pos
+      if (pixel >= start * fix->ledFactor && pixel <= end * fix->ledFactor ) { //if pixel between start and end pos
 
-        pixel = pixel / fix->factor - start; //pixel relative to start (also rounded to a 1x1 grid space in case of factor 10)
+        pixel = pixel / fix->ledFactor - start; //pixel relative to start (also rounded to a 1x1 grid space in case of factor 10)
 
         // Setup changes leds.size, mapped
         mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context

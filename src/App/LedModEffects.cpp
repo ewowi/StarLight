@@ -457,9 +457,16 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
           if (fix->showTicker && rowNr == fix->layers.size() - 1) { //last effect, add sysinfo
             StarString text;
-            if (leds->size.x > 48)
-              text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
-            else
+            if (leds->size.x > 48) {
+              #ifdef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+                if (strlen(fix->tickerTape))
+                  text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
+                else
+                  text.format("%d @ %.3d %.1fmHz %dDB", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->clockFreq / 10.0, __NB_DMA_BUFFER);
+              #else
+                text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
+              #endif
+            } else
               text.format("%.3d %s", fix->realFps, fix->tickerTape);
             leds->drawText(text.getString(), 0, 0, 1);
           }
@@ -507,11 +514,11 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
         if (newCoord) {
           token = strtok(nullptr, ",");
-          if (token != nullptr) newCoord->x = strtol(token, nullptr, 10) / fix->factor; else newCoord->x = 0; //should never happen
+          if (token != nullptr) newCoord->x = strtol(token, nullptr, 10) / fix->ledFactor; else newCoord->x = 0; //should never happen
           token = strtok(nullptr, ",");
-          if (token != nullptr) newCoord->y = strtol(token, nullptr, 10) / fix->factor; else newCoord->y = 0;
+          if (token != nullptr) newCoord->y = strtol(token, nullptr, 10) / fix->ledFactor; else newCoord->y = 0;
           token = strtok(nullptr, ",");
-          if (token != nullptr) newCoord->z = strtol(token, nullptr, 10) / fix->factor; else newCoord->z = 0;
+          if (token != nullptr) newCoord->z = strtol(token, nullptr, 10) / fix->ledFactor; else newCoord->z = 0;
 
           mdl->setValue("layers", isStart?"start":isEnd?"end":"middle", *newCoord, 0); //assuming row 0 for the moment
 

@@ -6,7 +6,7 @@ define panelWidth 16
 define panelHeight 16
 
 //for virtual driver, max 6 pins supported atm
-//int pins[6] = {14,12,13,25,33,32}; //for esp32
+//int pins[6] = {14,12,13,25,33,32}; //for esp32 (wrover)
 int pins[6] = {9,10,12,8,18,17}; //for esp32-S3
 
 //STARLIGHT_LIVE_MAPPING
@@ -33,6 +33,12 @@ void mapLed(uint16_t pos) {
 }
 
 void main() {
+
+  //virtual driver settings
+  clockPin = 3; //3 for S3, 26 for ESP32 (wrover)
+  latchPin = 46; //46 for S3, 27 for ESP32 (wrover)
+  clockFreq = 10; //clockFreq==10?clock_1000KHZ:clockFreq==11?clock_1111KHZ:clockFreq==12?clock_1123KHZ:clock_800KHZ
+  dmaBuffer = 30; //not implemented yet  
 
   for (int panelY = 0; panelY < verticalPanels; panelY++) {
 

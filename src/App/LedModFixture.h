@@ -53,16 +53,9 @@
   #endif
 
   #define TAG "StarLight" // for S3 (todo also for non s3...)
-  #define OVERCLOCK_1MHZ // for S3 (OVERCLOCK_1_1MHZ)
 
   #include "I2SClocklessVirtualLedDriver.h"
 
-  #ifndef STARLIGHT_ICVLD_CLOCK_PIN
-    #define STARLIGHT_ICVLD_CLOCK_PIN 26
-  #endif
-  #ifndef STARLIGHT_ICVLD_LATCH_PIN
-    #define STARLIGHT_ICVLD_LATCH_PIN 27
-  #endif
 #elif STARLIGHT_HUB75_DRIVER
   #include "WhateverHubDriver.h"
 #endif
@@ -112,9 +105,16 @@ public:
 
   Coord3D fixSize = {8,8,1};
   uint16_t nrOfLeds = 64; //amount of physical leds
-  uint8_t factor = 1;
+  uint8_t ledFactor = 1;
   uint8_t ledSize = 4; //mm
-  uint8_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
+  uint8_t ledShape = 0; //0 = sphere, 1 = TetrahedronGeometry
+
+  //for virtual driver (but keep enabled to avoid compile errors when used in non virtual context
+  uint8_t clockPin = 3; //3 for S3, 26 for ESP32 (wrover)
+  uint8_t latchPin = 46; //46 for S3, 27 for ESP32 (wrover)
+  uint8_t clockFreq = 10; //clockFreq==10?clock_1000KHZ:clockFreq==11?clock_1111KHZ:clockFreq==12?clock_1123KHZ:clock_800KHZ
+                // 1.0mHz is default and runs well. higher is causing flickering at least at ewowi big screen
+  uint8_t dmaBuffer = 30; //not used yet
 
   unsigned long lastMappingMillis = 0;
   uint8_t viewRotation = 0;

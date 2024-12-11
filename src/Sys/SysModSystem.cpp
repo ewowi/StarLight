@@ -112,7 +112,7 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  print->fFormat(chipInfo, sizeof(chipInfo), "%s %s (%d.%d.%d) c#:%d %d mHz f:%d KB %d mHz %d", ESP.getChipModel(), ESP.getSdkVersion(), ESP_ARDUINO_VERSION_MAJOR, ESP_ARDUINO_VERSION_MINOR, ESP_ARDUINO_VERSION_PATCH, ESP.getChipCores(), ESP.getCpuFreqMHz(), ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed()/1000000, ESP.getFlashChipMode());
+  print->fFormat(chipInfo, sizeof(chipInfo), "%s %s (%d.%d.%d) c#:%d %d MHz f:%d KB %d MHz %d", ESP.getChipModel(), ESP.getSdkVersion(), ESP_ARDUINO_VERSION_MAJOR, ESP_ARDUINO_VERSION_MINOR, ESP_ARDUINO_VERSION_PATCH, ESP.getChipCores(), ESP.getCpuFreqMHz(), ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed()/1000000, ESP.getFlashChipMode());
   ui->initText(parentVar, "chip", chipInfo, sizeof(chipInfo), true);
 
   ui->initProgress(parentVar, "heap", 0, 0, ESP.getHeapSize()/1000, true, [](EventArguments) { switch (eventType) {
