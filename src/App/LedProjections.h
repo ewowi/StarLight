@@ -844,7 +844,7 @@ class GroupingSpacingProjection: public Projection {
     if (modPixel.x < grouping.x && modPixel.y < grouping.y && modPixel.z < grouping.z) 
       pixel /= GS;
     else {
-      pixel.x = UINT16_MAX; return;
+      pixel.x = UINT16_MAX; return; //do not show this pixel
     }
 
     DefaultProjection dp;
@@ -990,14 +990,14 @@ class CheckerboardProjection: public Projection {
     bool3State group = leds.projectionData.read<bool3State>();
 
     Coord3D check = pixel / size;
-    if ((check.x + check.y + check.z) % 2 == 0) {
-      if (invert) pixel.x = UINT16_MAX; return;
-    }
-    else {
-      if (!invert) pixel.x = UINT16_MAX; return;
-    }
 
     if (group) pixel /= size;
+
+    if ((check.x + check.y + check.z) % 2 == 0) {
+      if (invert) pixel.x = UINT16_MAX; return; //do not show this pixel
+    } else {
+      if (!invert) pixel.x = UINT16_MAX; return; //do not show this pixel
+    }
 
     DefaultProjection dp; 
     dp.addPixel(leds, pixel);

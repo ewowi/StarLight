@@ -96,7 +96,7 @@
         if (!valArray.isNull())
         {
           if (rowNr != UINT8_MAX) {
-            if (childVariable.order() < 0) { //if not updated
+            if (childVariable.order() <= 0) { //if not updated, or order == 0 (which should not happen so better delete also)
               valArray[rowNr] = (char*)0; // set element in valArray to 0 (is content deleted from memory?)
 
               ppf("varPostDetails %s.%s[%d] <- null\n", id(), childVariable.id(), rowNr);
