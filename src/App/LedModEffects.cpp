@@ -262,7 +262,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
             leds->projectionData.clear(); //delete effectData memory so it can be rebuild
 
-            leds->projectionData.read<uint8_t>(); //allocate minimum amount for projectionData (chunk of 32 bytes) to avoid control defaults to be removed
+            leds->projectionData.read<uint8_t>(); leds->projectionData.begin(); //allocate minimum amount for projectionData (chunk of 32 bytes) to avoid control defaults to be removed
 
             variable.preDetails(); //set all positive var N orders to negative
             mdl->setValueRowNr = rowNr;
