@@ -950,9 +950,9 @@ class CheckerboardProjection: public Projection {
   const char * tags() override {return "💫";}
 
   void setup(LedsLayer &leds, Variable parentVar) override {
-    Coord3D *size = leds.projectionData.write<Coord3D>({3,3,3});
+    Coord3D    *size   = leds.projectionData.write<Coord3D>({3,3,3});
     bool3State *invert = leds.projectionData.write<bool3State>(false);
-    bool3State *group = leds.projectionData.write<bool3State>(false);
+    bool3State *group  = leds.projectionData.write<bool3State>(false);
     ui->initCoord3D(parentVar, "squareSize", size, 0, 100, false, [&leds](EventArguments) { switch (eventType) {
       case onChange:
         leds.triggerMapping();
@@ -974,9 +974,9 @@ class CheckerboardProjection: public Projection {
   }
 
   void addPixelsPre(LedsLayer &leds) override {
-    Coord3D size = leds.projectionData.read<Coord3D>();
-    bool3State invert  = leds.projectionData.read<bool3State>();
-    bool3State group   = leds.projectionData.read<bool3State>();
+    Coord3D    size   = leds.projectionData.read<Coord3D>().maximum(Coord3D{1, 1, 1});
+    bool3State invert = leds.projectionData.read<bool3State>();
+    bool3State group  = leds.projectionData.read<bool3State>();
 
     if (group) { leds.middle /= size; leds.size = (leds.size + (size - Coord3D{1,1,1})) / size; }
 
@@ -985,21 +985,22 @@ class CheckerboardProjection: public Projection {
   }
 
   void addPixel(LedsLayer &leds, Coord3D &pixel) override {
-    Coord3D size = leds.projectionData.read<Coord3D>().maximum(Coord3D{1, 1, 1});
+    Coord3D    size   = leds.projectionData.read<Coord3D>().maximum(Coord3D{1, 1, 1});
     bool3State invert = leds.projectionData.read<bool3State>();
-    bool3State group = leds.projectionData.read<bool3State>();
+    bool3State group  = leds.projectionData.read<bool3State>();
 
     Coord3D check = pixel / size;
-    if ((check.x + check.y + check.z) % 2 == 0) {
-      if (invert) pixel.x = UINT16_MAX; return;
-    }
-    else {
-      if (!invert) pixel.x = UINT16_MAX; return;
-    }
 
     if (group) pixel /= size;
 
-    DefaultProjection dp; 
+    if ((check.x + check.y + check.z) % 2 == 0) {
+      if (invert)  { pixel.x = UINT16_MAX; return; }//do not show this pixel
+    } 
+    else {
+      if (!invert) { pixel.x = UINT16_MAX; return; } //do not show this pixel
+    }
+
+    DefaultProjection dp;
     dp.addPixel(leds, pixel);
   }
 }; //CheckerboardProjection
