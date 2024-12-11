@@ -462,7 +462,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
                 if (strlen(fix->tickerTape))
                   text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
                 else
-                  text.format("%d @ %.3d %.1fmHz %dDB", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->clockFreq / 10.0, __NB_DMA_BUFFER);
+                  text.format("%d @ %.3d %.1fMHz %dDB", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->clockFreq / 10.0, __NB_DMA_BUFFER);
               #else
                 text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
               #endif

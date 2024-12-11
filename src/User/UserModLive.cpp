@@ -42,8 +42,8 @@ Parser parser = Parser();
   // LEDS specific
   //tbd: move this to LedModFixture...
   #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-    fix->driver.__enableDriver=false;
-    while (fix->driver.isDisplaying){};
+    driver.__enableDriver=false;
+    while (driver.isDisplaying){};
     //delay(20);
   #endif
 }
@@ -53,7 +53,7 @@ Parser parser = Parser();
   // LEDS specific
   #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
     // delay(10);
-    fix->driver.__enableDriver=true;
+    driver.__enableDriver=true;
   #endif
 }
 
@@ -362,12 +362,10 @@ static float _time(float j) {
     ppf("live compile n:%s o:%s \n", fileName, this->fileName);
 
     File f = files->open(fileName, FILE_READ);
-    if (!f)
-    {
+    if (!f) {
       ppf("UserModLive setup script open %s for %s failed\n", fileName, FILE_READ);
       return UINT8_MAX;
-    }
-    else {
+    } else {
 
       unsigned preScriptNrOfLines = 0;
 
@@ -379,6 +377,7 @@ static float _time(float j) {
       ppf("preScript of %s has %d lines\n", fileName, preScriptNrOfLines+1); //+1 to subtract the line from parser error line reported
 
       scScript += string(f.readString().c_str()); // add sc file
+      f.close();
 
       if (post) scScript += post;
 
@@ -399,24 +398,20 @@ static float _time(float j) {
       Executable executable = parser.parseScript(&scScript);
       executable.name = string(fileName);
 
-      if (executable.exeExist)
-      {
-        ppf("parsing %s done\n", fileName);
-        ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+      ppf("parsing %s done\n", fileName);
+      ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
-        scriptRuntime.addExe(executable);
+      scriptRuntime.addExe(executable);
+
+      if (executable.exeExist) {
         ppf("exe created %d\n", scriptRuntime._scExecutables.size());
-
         return scriptRuntime._scExecutables.size() - 1;
-        // ppf("setup done\n");
-        // strlcpy(this->fileName, fileName, sizeof(this->fileName));
-      }
-      else{
+      } else {
+        ppf("exe failed %d\n", scriptRuntime._scExecutables.size());
         return UINT8_MAX;
       }
-      f.close();
-    }
-  }
+    } //file open
+  } //compile
 
   void UserModLive::killAndDelete(const char *name) {
     if (name != nullptr) { 

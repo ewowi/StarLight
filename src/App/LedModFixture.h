@@ -113,7 +113,7 @@ public:
   uint8_t clockPin = 3; //3 for S3, 26 for ESP32 (wrover)
   uint8_t latchPin = 46; //46 for S3, 27 for ESP32 (wrover)
   uint8_t clockFreq = 10; //clockFreq==10?clock_1000KHZ:clockFreq==11?clock_1111KHZ:clockFreq==12?clock_1123KHZ:clock_800KHZ
-                // 1.0mHz is default and runs well. higher is causing flickering at least at ewowi big screen
+                // 1.0MHz is default and runs well (0.8MHz is normal non overclocking). higher then 1.0 is causing flickering at least at ewowi big screen
   uint8_t dmaBuffer = 30; //not used yet
 
   unsigned long lastMappingMillis = 0;
@@ -166,19 +166,22 @@ public:
     uint8_t liveFixtureID = UINT8_MAX;
   #endif
 
+  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+    uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
+  #endif
+
+};
+
   #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
     #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
-      I2SClocklessLedDriveresp32S3 driver;
+      static I2SClocklessLedDriveresp32S3 driver;
     #else
-      I2SClocklessLedDriver driver;
+      static I2SClocklessLedDriver driver;
     #endif
-    uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
   #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-    I2SClocklessVirtualLedDriver driver;
-    uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
+    static I2SClocklessVirtualLedDriver driver;
   #elif STARLIGHT_HUB75_DRIVER
-    WhateverHubDriver driver;
+    static WhateverHubDriver driver;
   #endif
-};
 
 extern LedModFixture *fix;
