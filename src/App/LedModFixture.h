@@ -22,8 +22,10 @@
   #define NUM_LEDS_PER_STRIP 256 //could this be removed from driver lib as makes not so much sense
   #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
     #include "I2SClockLessLedDriveresp32s3.h"
+    static I2SClocklessLedDriveresp32S3 driver;
   #else
     #include "I2SClocklessLedDriver.h"
+    static I2SClocklessLedDriver driver;
   #endif
 #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
   //used in I2SClocklessVirtualLedDriver.h,
@@ -55,9 +57,11 @@
   #define TAG "StarLight" // for S3 (todo also for non s3...)
 
   #include "I2SClocklessVirtualLedDriver.h"
+  static I2SClocklessVirtualLedDriver driver;
 
 #elif STARLIGHT_HUB75_DRIVER
   #include "WhateverHubDriver.h"
+  static WhateverHubDriver driver;
 #endif
 
 struct SortedPin {
@@ -171,17 +175,5 @@ public:
   #endif
 
 };
-
-  #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-    #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
-      static I2SClocklessLedDriveresp32S3 driver;
-    #else
-      static I2SClocklessLedDriver driver;
-    #endif
-  #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-    static I2SClocklessVirtualLedDriver driver;
-  #elif STARLIGHT_HUB75_DRIVER
-    static WhateverHubDriver driver;
-  #endif
 
 extern LedModFixture *fix;
