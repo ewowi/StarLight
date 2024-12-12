@@ -109,9 +109,14 @@ public:
 
   Coord3D fixSize = {8,8,1};
   uint16_t nrOfLeds = 64; //amount of physical leds
+
+  //Fixture definition
   uint8_t ledFactor = 1;
   uint8_t ledSize = 4; //mm
   uint8_t ledShape = 0; //0 = sphere, 1 = TetrahedronGeometry
+
+  //clockless driver (check FastLED support...)
+  uint8_t colorOrder = 3; //GRB is default for WS2812 (not for FastLED yet: see pio.ini)
 
   //for virtual driver (but keep enabled to avoid compile errors when used in non virtual context
   uint8_t clockPin = 3; //3 for S3, 26 for ESP32 (wrover)
@@ -120,6 +125,8 @@ public:
                 // 1.0MHz is default and runs well (0.8MHz is normal non overclocking). higher then 1.0 is causing flickering at least at ewowi big screen
   uint8_t dmaBuffer = 30; //not used yet
 
+  //End Fixture definition
+  
   unsigned long lastMappingMillis = 0;
   uint8_t viewRotation = 0;
   uint8_t bri = 10;

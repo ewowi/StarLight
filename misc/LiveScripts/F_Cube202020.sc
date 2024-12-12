@@ -10,6 +10,7 @@ int pins[6] = {32,33,25,26,27,14}; //STARLIGHT_CLOCKLESS_LED_DRIVER on esp32-wro
 void main()
 {
   ledSize = 2; //smaller leds (default 5)
+  colorOrder = 1; //RGB (not for FastLED yet: see pio.ini)
 
   for (int z=0; z<depth;z++) {
 

@@ -49,6 +49,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     effects.push_back(new DNAEffect);
     effects.push_back(new DripEffect);
     effects.push_back(new FireEffect);
+    effects.push_back(new FireworksEffect);
     effects.push_back(new FlowEffect);
     effects.push_back(new FrizzlesEffect);
     effects.push_back(new GameOfLifeEffect); //2D & 3D
@@ -84,7 +85,6 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       effects.push_back(new LaserGEQEffect);
       effects.push_back(new NoiseMeterEffect);
       effects.push_back(new PaintbrushEffect);
-      effects.push_back(new FireworksEffect);
       effects.push_back(new VUMeterEffect);
       effects.push_back(new WaverlyEffect);
     #endif

@@ -34,6 +34,8 @@ void mapLed(uint16_t pos) {
 
 void main() {
 
+  colorOrder = 3; //GRB (not for FastLED yet: see pio.ini)
+
   //virtual driver settings
   clockPin = 3; //3 for S3, 26 for ESP32 (wrover)
   latchPin = 46; //46 for S3, 27 for ESP32 (wrover)

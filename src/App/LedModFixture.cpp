@@ -421,6 +421,7 @@
           liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
 
           liveM->addExternalVal("uint16_t", "mapResult", &mapResult); //for STARLIGHT_LIVE_MAPPING but script with this can also run when live mapping is disabled
+          liveM->addExternalVal("uint8_t", "colorOrder", &fix->colorOrder);
           liveM->addExternalVal("uint8_t", "ledFactor", &fix->ledFactor);
           liveM->addExternalVal("uint8_t", "ledSize", &fix->ledSize);
           liveM->addExternalVal("uint8_t", "ledShape", &fix->ledShape);
@@ -808,7 +809,7 @@ void LedModFixture::addPixelsPost() {
         driver.initled((uint8_t*) ledsP, pins, nb_pins, lengths[0]); //s3 doesn't support lengths so we pick the first
         //void initled( uint8_t * leds, int * pins, int numstrip, int NUM_LED_PER_STRIP)
       #else
-        driver.initled((uint8_t*) ledsP, pins, lengths, nb_pins, ORDER_GRB);
+        driver.initled((uint8_t*) ledsP, pins, lengths, nb_pins, (colorarrangment)colorOrder);
         #if STARLIGHT_LIVE_MAPPING
           driver.setMapLed(&mapLed);
         #endif
@@ -862,10 +863,20 @@ void LedModFixture::addPixelsPost() {
     pinsM->allocatePin(latchPin, "Leds", "Latch");
     
     #if CONFIG_IDF_TARGET_ESP32S3
-      driver.initled(ledsP, pins, clockPin, latchPin, clockFreq==10?clock_1000KHZ:clockFreq==11?clock_1111KHZ:clockFreq==12?clock_1123KHZ:clock_800KHZ);
+      if (driver.driverInit) {
+        driver._clockspeed = clockFreq==10?clock_1000KHZ:clockFreq==11?clock_1111KHZ:clockFreq==12?clock_1123KHZ:clock_800KHZ;
+        driver.setPins(pins, clockPin, latchPin);
+      } else
+        driver.initled(ledsP, pins, clockPin, latchPin, clockFreq==10?clock_1000KHZ:clockFreq==11?clock_1111KHZ:clockFreq==12?clock_1123KHZ:clock_800KHZ);
     #else
-      driver.initled(ledsP, pins, clockPin, latchPin);
+      if (driver.driverInit) {
+        driver.setPins(pins, clockPin, latchPin);
+      } else
+        driver.initled(ledsP, pins, clockPin, latchPin);
     #endif
+
+    // driver.setColorOrderPerStrip(0, (colorarrangment)colorOrder); //to be implemented...
+
     // driver.enableShowPixelsOnCore(1);
     #if STARLIGHT_LIVE_MAPPING
       driver.setMapLed(&mapLed);

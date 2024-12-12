@@ -426,6 +426,9 @@ public:
       }
   }
 
+  void drawLine3D(Coord3D a, Coord3D b, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX) {
+    drawLine3D(a.x, a.y, a.z, b.x, b.y, b.z, color, soft, depth);
+  }
   //to do: merge with drawLine to support 2D and 3D
   void drawLine3D(int x1, int y1, int z1, int x2, int y2, int z2, CRGB color, bool soft = false, uint8_t depth = UINT8_MAX)
   {
