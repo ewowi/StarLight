@@ -937,7 +937,7 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
       //remove all old options first
 
       //remove options
-      for (var i = selectNode.length-1; i > 0; i--) {
+      for (var i = selectNode.length-1; i >= 0; i--) {
         selectNode.options[i] = null;
       }
       // remove the optgroups and their children if still exists
