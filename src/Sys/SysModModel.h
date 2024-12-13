@@ -264,8 +264,9 @@ class Variable {
   //extra methods
 
   void preDetails();
-
   void postDetails(uint8_t rowNr);
+  void preDetails2();
+  void postDetails2(uint8_t rowNr);
 
   //checks if var has fun of type eventType implemented by calling it and checking result (for onUI on RO var, also onSetValue is called)
   //onChange: sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
@@ -385,6 +386,8 @@ public:
   std::vector<VarEvent> varEvents;
   std::vector<VarEventPS> varEventsPS;
 
+  uint8_t resetPresetThreshold = 1; //can be lowered by preset.onchange and highered by processJson, if > 1 (not lowered but highered) then reset is allowed
+
   SysModModel();
   void setup() override;
   void loop20ms() override;
@@ -394,7 +397,7 @@ public:
   Variable initVar(Variable parent, const char * id, const char * type, bool readOnly = true, const VarEvent &varEvent = nullptr);
 
   //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
-  void cleanUpModel(Variable parent = Variable(), bool oPos = true, bool ro = false);
+  void cleanUpModel(bool oPos = true, bool ro = false);
 
   //sets the value of var with id
   template <typename Type>
@@ -422,6 +425,7 @@ public:
   //returns the var defined by id (parent to recursively call findVar)
   JsonObject walkThroughModel(std::function<JsonObject(JsonObject, JsonObject)> fun, JsonObject parentVar = JsonObject());
   JsonObject findVar(const char * pid, const char * id, JsonObject parentVar = JsonObject());
+  JsonObject findModule(const char * pid, const char * id);
   void findVars(const char * id, bool value, FindFun fun, JsonObject parentVar = JsonObject());
 
   uint8_t linearToLogarithm(uint8_t value, uint8_t minp = 0, uint8_t maxp = UINT8_MAX) {

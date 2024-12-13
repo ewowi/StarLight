@@ -19,6 +19,7 @@ class SysModSystem:public SysModule {
 public:
   char build[64] = "";
   char chipInfo[64] = "";
+  bool3State safeMode = false;
 
   Toki toki = Toki(); //Minimal millisecond accurate timekeeping.
   uint32_t

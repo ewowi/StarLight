@@ -16,6 +16,7 @@ class SysModules {
 public:
   bool newConnection = false;
   bool isConnected = false;
+  uint32_t buttonPressedTime = 0;
 
   SysModules();
 

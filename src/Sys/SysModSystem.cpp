@@ -112,8 +112,8 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
-  print->fFormat(chipInfo, sizeof(chipInfo), "%s %s (%d.%d.%d) c#:%d %d mHz f:%d KB %d mHz %d", ESP.getChipModel(), ESP.getSdkVersion(), ESP_ARDUINO_VERSION_MAJOR, ESP_ARDUINO_VERSION_MINOR, ESP_ARDUINO_VERSION_PATCH, ESP.getChipCores(), ESP.getCpuFreqMHz(), ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed()/1000000, ESP.getFlashChipMode());
-  ui->initText(parentVar, "chip", chipInfo, 16, true);
+  print->fFormat(chipInfo, sizeof(chipInfo), "%s %s (%d.%d.%d) c#:%d %d MHz f:%d KB %d MHz %d", ESP.getChipModel(), ESP.getSdkVersion(), ESP_ARDUINO_VERSION_MAJOR, ESP_ARDUINO_VERSION_MINOR, ESP_ARDUINO_VERSION_PATCH, ESP.getChipCores(), ESP.getCpuFreqMHz(), ESP.getFlashChipSize()/1024, ESP.getFlashChipSpeed()/1000000, ESP.getFlashChipMode());
+  ui->initText(parentVar, "chip", chipInfo, sizeof(chipInfo), true);
 
   ui->initProgress(parentVar, "heap", 0, 0, ESP.getHeapSize()/1000, true, [](EventArguments) { switch (eventType) {
     case onChange:
@@ -187,6 +187,8 @@ void SysModSystem::setup() {
     default: return false;
   }});
 
+  ui->initCheckBox(parentVar, "safeMode", &safeMode);
+
   //calculate version in format YYMMDDHH
   //https://forum.arduino.cc/t/can-you-format-__date__/200818/10
   // int month, day, year, hour, minute, second;
@@ -204,7 +206,7 @@ void SysModSystem::setup() {
   strlcat(build, "_", sizeof(build));
   strlcat(build, _INIT(TOSTRING(PIOENV)), sizeof(build));
 
-  ui->initText(parentVar, "build", build, 32, true);
+  ui->initText(parentVar, "build", build, sizeof(build), true);
   // ui->initText(parentVar, "date", __DATE__, 16, true);
   // ui->initText(parentVar, "time", __TIME__, 16, true);
 

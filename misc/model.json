@@ -1,227 +1,753 @@
 [
   {
+    "id": "Fixture",
+    "type": "appmod",
+    "pid": "m",
+    "ro": true,
+    "max": 255,
+    "n": [
+      {
+        "id": "on",
+        "type": "checkbox",
+        "pid": "Fixture",
+        "ro": false,
+        "value": 1,
+        "o": 2,
+        "fun": 0,
+        "dash": true
+      },
+      {
+        "id": "brightness",
+        "type": "range",
+        "pid": "Fixture",
+        "ro": false,
+        "max": 255,
+        "value": 10,
+        "log": true,
+        "o": 3,
+        "fun": 1,
+        "p": 1073563169,
+        "dash": true
+      },
+      {
+        "id": "preview",
+        "type": "canvas",
+        "pid": "Fixture",
+        "ro": false,
+        "loopFun": 0,
+        "n": [
+          {
+            "id": "rotation",
+            "type": "select",
+            "pid": "preview",
+            "ro": false,
+            "value": 0,
+            "o": 5,
+            "fun": 3,
+            "p": 1073563168
+          },
+          {
+            "id": "PixelBytes",
+            "type": "select",
+            "pid": "preview",
+            "ro": false,
+            "value": 1,
+            "o": 6,
+            "fun": 4,
+            "p": 1073563170
+          }
+        ],
+        "interval": 190,
+        "o": 4,
+        "fun": 2
+      },
+      {
+        "id": "fixture",
+        "type": "select",
+        "pid": "Fixture",
+        "ro": false,
+        "value": 2,
+        "n": [
+          {
+            "id": "size",
+            "type": "coord3D",
+            "pid": "fixture",
+            "ro": true,
+            "max": 8192,
+            "o": 8,
+            "fun": 6,
+            "p": 1073563144
+          },
+          {
+            "id": "count",
+            "type": "number",
+            "pid": "fixture",
+            "ro": true,
+            "o": 9,
+            "fun": 7,
+            "p": 1073563156
+          }
+        ],
+        "o": 7,
+        "fun": 5,
+        "p": 1073563174
+      },
+      {
+        "id": "gammaRed",
+        "type": "range",
+        "pid": "Fixture",
+        "ro": false,
+        "max": 255,
+        "value": 25,
+        "o": 10,
+        "fun": 8,
+        "p": 1073563171
+      },
+      {
+        "id": "gammaGreen",
+        "type": "range",
+        "pid": "Fixture",
+        "ro": false,
+        "max": 255,
+        "value": 15,
+        "o": 11,
+        "fun": 9,
+        "p": 1073563172
+      },
+      {
+        "id": "gammaBlue",
+        "type": "range",
+        "pid": "Fixture",
+        "ro": false,
+        "max": 255,
+        "value": 32,
+        "o": 12,
+        "fun": 10,
+        "p": 1073563173
+      },
+      {
+        "id": "fps",
+        "type": "number",
+        "pid": "Fixture",
+        "ro": false,
+        "min": 1,
+        "max": 999,
+        "value": 2000,
+        "o": 13,
+        "fun": 11,
+        "p": 1073563204
+      },
+      {
+        "id": "realFps",
+        "type": "number",
+        "pid": "Fixture",
+        "ro": true,
+        "o": 14,
+        "fun": 12,
+        "p": 1073563206
+      },
+      {
+        "id": "tickerTape",
+        "type": "checkbox",
+        "pid": "Fixture",
+        "ro": false,
+        "value": true,
+        "o": 15,
+        "p": 1073563208
+      },
+      {
+        "id": "showDriver",
+        "type": "checkbox",
+        "pid": "Fixture",
+        "ro": false,
+        "value": false,
+        "o": 16,
+        "fun": 13,
+        "p": 1073563229
+      },
+      {
+        "id": "preset",
+        "type": "select",
+        "pid": "Fixture",
+        "ro": false,
+        "value": 3,
+        "o": 17,
+        "fun": 255
+      },
+      {
+        "id": "assignPreset",
+        "type": "button",
+        "pid": "Fixture",
+        "ro": false,
+        "o": 18,
+        "fun": 255
+      },
+      {
+        "id": "clearPreset",
+        "type": "button",
+        "pid": "Fixture",
+        "ro": false,
+        "o": 19,
+        "fun": 255
+      }
+    ],
+    "o": 2100
+  },
+  {
+    "id": "Effects",
+    "type": "appmod",
+    "pid": "m",
+    "ro": true,
+    "max": 255,
+    "n": [
+      {
+        "id": "layers",
+        "type": "table",
+        "pid": "Effects",
+        "ro": false,
+        "n": [
+          {
+            "id": "effect",
+            "type": "select",
+            "pid": "layers",
+            "ro": false,
+            "value": [
+              45
+            ],
+            "n": [
+              {
+                "id": "palette",
+                "type": "select",
+                "pid": "effect",
+                "ro": false,
+                "o": 170,
+                "fun": 120,
+                "value": [
+                  4
+                ]
+              },
+              {
+                "id": "script",
+                "type": "select",
+                "pid": "effect",
+                "ro": false,
+                "o": 171,
+                "fun": 121,
+                "value": [
+                  1
+                ]
+              },
+              {
+                "id": "speed",
+                "type": "range",
+                "pid": "effect",
+                "ro": false,
+                "o": 172,
+                "p": [
+                  1073470318
+                ],
+                "max": 255,
+                "value": [
+                  128
+                ]
+              },
+              {
+                "id": "intensity",
+                "type": "range",
+                "pid": "effect",
+                "ro": false,
+                "o": 173,
+                "p": [
+                  1073470317
+                ],
+                "max": 255,
+                "value": [
+                  128
+                ]
+              },
+              {
+                "id": "Custom 1",
+                "type": "range",
+                "pid": "effect",
+                "ro": false,
+                "o": 174,
+                "p": [
+                  1073470316
+                ],
+                "max": 255,
+                "value": [
+                  128
+                ]
+              },
+              {
+                "id": "Custom 2",
+                "type": "range",
+                "pid": "effect",
+                "ro": false,
+                "o": 175,
+                "p": [
+                  1073470315
+                ],
+                "max": 255,
+                "value": [
+                  128
+                ]
+              },
+              {
+                "id": "Custom 3",
+                "type": "range",
+                "pid": "effect",
+                "ro": false,
+                "o": 176,
+                "p": [
+                  1073470314
+                ],
+                "max": 255,
+                "value": [
+                  128
+                ]
+              }
+            ],
+            "o": 22,
+            "fun": 15,
+            "dash": true
+          },
+          {
+            "id": "projection",
+            "type": "select",
+            "pid": "layers",
+            "ro": false,
+            "value": 1,
+            "o": 23,
+            "fun": 16,
+            "dash": true
+          },
+          {
+            "id": "start",
+            "type": "coord3D",
+            "pid": "layers",
+            "ro": false,
+            "max": 8192,
+            "value": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              }
+            ],
+            "o": 24,
+            "fun": 17
+          },
+          {
+            "id": "middle",
+            "type": "coord3D",
+            "pid": "layers",
+            "ro": false,
+            "max": 8192,
+            "value": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              }
+            ],
+            "o": 25,
+            "fun": 18
+          },
+          {
+            "id": "end",
+            "type": "coord3D",
+            "pid": "layers",
+            "ro": false,
+            "max": 8192,
+            "value": [
+              {
+                "x": 0,
+                "y": 0,
+                "z": 0
+              }
+            ],
+            "o": 26,
+            "fun": 19
+          },
+          {
+            "id": "size",
+            "type": "text",
+            "pid": "layers",
+            "ro": true,
+            "max": 32,
+            "o": 27,
+            "fun": 20
+          }
+        ],
+        "o": 21,
+        "fun": 14
+      },
+      {
+        "id": "Blending",
+        "type": "range",
+        "pid": "Effects",
+        "ro": false,
+        "max": 255,
+        "value": 128,
+        "o": 28,
+        "p": 1073563203
+      },
+      {
+        "id": "preset",
+        "type": "select",
+        "pid": "Effects",
+        "ro": false,
+        "value": 1,
+        "o": 29,
+        "fun": 255
+      },
+      {
+        "id": "assignPreset",
+        "type": "button",
+        "pid": "Effects",
+        "ro": false,
+        "o": 30,
+        "fun": 255
+      },
+      {
+        "id": "clearPreset",
+        "type": "button",
+        "pid": "Effects",
+        "ro": false,
+        "o": 31,
+        "fun": 255
+      }
+    ],
+    "o": 2201
+  },
+  {
+    "id": "FixtureGenerator",
+    "type": "appmod",
+    "pid": "m",
+    "ro": true,
+    "max": 255,
+    "s": true,
+    "n": [
+      {
+        "id": "fixture",
+        "type": "select",
+        "pid": "FixtureGenerator",
+        "ro": false,
+        "value": 0,
+        "o": 33,
+        "fun": 21,
+        "n": [
+          {
+            "id": "generate",
+            "type": "button",
+            "pid": "fixture",
+            "ro": false,
+            "o": 34,
+            "fun": 22
+          },
+          {
+            "id": "elements",
+            "type": "table",
+            "pid": "fixture",
+            "ro": false,
+            "o": 35,
+            "fun": 23,
+            "n": [
+              {
+                "id": "firstLed",
+                "type": "coord3D",
+                "pid": "elements",
+                "ro": false,
+                "o": 36,
+                "fun": 24,
+                "max": 8192,
+                "value": {
+                  "x": 0,
+                  "y": 0,
+                  "z": 0
+                }
+              },
+              {
+                "id": "#Leds",
+                "type": "number",
+                "pid": "elements",
+                "ro": false,
+                "o": 37,
+                "min": 1,
+                "max": 8192,
+                "value": 64
+              },
+              {
+                "id": "radius",
+                "type": "number",
+                "pid": "elements",
+                "ro": false,
+                "o": 38,
+                "min": 1,
+                "max": 1000,
+                "value": 100
+              },
+              {
+                "id": "IP",
+                "type": "number",
+                "pid": "elements",
+                "ro": false,
+                "o": 39,
+                "fun": 25,
+                "min": 1,
+                "max": 256,
+                "value": 0
+              },
+              {
+                "id": "pin",
+                "type": "pin",
+                "pid": "elements",
+                "ro": false,
+                "o": 40,
+                "fun": 26,
+                "max": 40,
+                "value": 2
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "o": 7302
+  },
+  {
     "id": "Files",
     "type": "sysmod",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "n": [
       {
         "id": "files",
         "type": "table",
+        "pid": "Files",
         "ro": false,
         "n": [
           {
             "id": "name",
             "type": "text",
+            "pid": "files",
             "ro": true,
             "max": 32,
-            "pid": "files",
-            "o": 9,
-            "fun": 5,
-            "p": 1073449632
+            "o": 43,
+            "p": 1073449628
           },
           {
             "id": "size",
             "type": "number",
-            "ro": true,
             "pid": "files",
-            "o": 10,
-            "fun": 6,
-            "p": 1073449644
+            "ro": true,
+            "o": 44,
+            "p": 1073449640
           },
           {
             "id": "time",
             "type": "number",
-            "ro": true,
             "pid": "files",
-            "o": 11,
-            "fun": 7,
-            "p": 1073449656
+            "ro": true,
+            "o": 45,
+            "p": 1073449652
           },
           {
             "id": "edit",
             "type": "fileEdit",
-            "ro": true,
             "pid": "files",
-            "o": 12,
-            "fun": 8,
-            "p": 1073449632
+            "ro": true,
+            "o": 46,
+            "p": 1073449628
           }
         ],
-        "pid": "Files",
-        "o": 37,
-        "fun": 26
+        "o": 42,
+        "fun": 27
       },
       {
         "id": "upload",
         "type": "fileUpload",
-        "ro": false,
         "pid": "Files",
-        "o": 42,
-        "fun": 31
+        "ro": false,
+        "max": 32,
+        "value": 65525,
+        "o": 47
       },
       {
         "id": "totalSize",
         "type": "progress",
+        "pid": "Files",
         "ro": true,
         "max": 262144,
-        "pid": "Files",
-        "o": 43,
-        "fun": 32
+        "o": 48,
+        "fun": 28
       }
     ],
-    "pid": "m",
     "o": 3101
   },
   {
     "id": "System",
     "type": "sysmod",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "s": true,
     "n": [
       {
-        "id": "upTime",
+        "id": "name",
         "type": "text",
+        "pid": "System",
+        "ro": false,
+        "max": 24,
+        "value": "StarLight",
+        "o": 50,
+        "fun": 29
+      },
+      {
+        "id": "uptime",
+        "type": "text",
+        "pid": "System",
         "ro": true,
         "max": 16,
-        "pid": "System",
-        "o": 46,
-        "fun": 34
+        "o": 51,
+        "fun": 30
       },
       {
         "id": "now",
         "type": "number",
+        "pid": "System",
         "ro": true,
         "max": -1,
-        "pid": "System",
-        "o": 47,
-        "fun": 35
+        "o": 52,
+        "fun": 31
       },
       {
         "id": "timeBase",
         "type": "number",
+        "pid": "System",
         "ro": true,
         "max": -1,
-        "pid": "System",
-        "o": 48,
-        "fun": 36
+        "o": 53,
+        "fun": 32
       },
       {
         "id": "reboot",
         "type": "button",
-        "ro": false,
         "pid": "System",
-        "o": 49,
-        "fun": 37
+        "ro": false,
+        "o": 54,
+        "fun": 33
       },
       {
         "id": "loops",
         "type": "text",
+        "pid": "System",
         "ro": true,
         "max": 16,
-        "pid": "System",
-        "o": 50
+        "o": 55,
+        "fun": 34
       },
       {
         "id": "chip",
         "type": "text",
-        "ro": true,
-        "max": 16,
         "pid": "System",
-        "o": 51
+        "ro": true,
+        "max": 64,
+        "o": 56
       },
       {
         "id": "heap",
         "type": "progress",
-        "ro": true,
-        "max": 302,
         "pid": "System",
-        "o": 52,
-        "fun": 38
+        "ro": true,
+        "max": 301,
+        "o": 57,
+        "fun": 35
       },
       {
         "id": "mainStack",
         "type": "progress",
+        "pid": "System",
         "ro": true,
         "max": 8192,
-        "pid": "System",
-        "o": 53,
-        "fun": 39
+        "o": 58,
+        "fun": 36
       },
       {
-        "id": "tcpStack",
+        "id": "TCPStack",
         "type": "progress",
+        "pid": "System",
         "ro": true,
         "max": 16384,
-        "pid": "System",
-        "o": 54,
-        "fun": 40
+        "o": 59,
+        "fun": 37
       },
       {
         "id": "reset 0",
         "type": "select",
-        "ro": true,
         "pid": "System",
-        "o": 55,
-        "fun": 41
+        "ro": true,
+        "o": 60,
+        "fun": 38
       },
       {
         "id": "reset 1",
         "type": "select",
-        "ro": false,
         "pid": "System",
-        "o": 56,
-        "fun": 42
+        "ro": true,
+        "o": 61,
+        "fun": 39
       },
       {
-        "id": "restartReason",
+        "id": "restart",
         "type": "select",
-        "ro": true,
         "pid": "System",
-        "o": 57,
-        "fun": 43
+        "ro": true,
+        "o": 62,
+        "fun": 40
       },
       {
         "id": "build",
         "type": "text",
-        "ro": true,
-        "max": 32,
         "pid": "System",
-        "o": 58
+        "ro": true,
+        "max": 64,
+        "o": 64
       },
       {
         "id": "update",
         "type": "fileUpload",
-        "ro": false,
         "pid": "System",
-        "o": 59,
-        "fun": 44
+        "ro": false,
+        "o": 65,
+        "fun": 41
       },
       {
-        "id": "name",
-        "type": "text",
-        "ro": false,
-        "max": 24,
-        "value": "StarLightOli",
+        "id": "safeMode",
+        "type": "checkbox",
         "pid": "System",
-        "o": 45,
-        "fun": 33
+        "ro": false,
+        "o": 63,
+        "p": 1073533952,
+        "value": 0
       }
     ],
     "view": "vAll",
-    "pid": "m",
     "o": 3000
   },
   {
     "id": "Pins",
     "type": "sysmod",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "n": [
       {
         "id": "pins",
         "type": "table",
+        "pid": "Pins",
         "ro": true,
         "n": [
           {
@@ -230,8 +756,8 @@
             "pid": "pins",
             "ro": true,
             "max": 40,
-            "o": 62,
-            "fun": 46
+            "o": 68,
+            "fun": 43
           },
           {
             "id": "owner",
@@ -239,8 +765,8 @@
             "pid": "pins",
             "ro": true,
             "max": 32,
-            "o": 63,
-            "fun": 47
+            "o": 69,
+            "fun": 44
           },
           {
             "id": "details",
@@ -248,72 +774,72 @@
             "pid": "pins",
             "ro": true,
             "max": 256,
-            "o": 64,
-            "fun": 48
+            "o": 70,
+            "fun": 45
           }
         ],
-        "pid": "Pins",
-        "o": 61,
-        "fun": 45
+        "o": 67,
+        "fun": 42
       },
       {
         "id": "board",
         "type": "canvas",
-        "ro": true,
-        "interval": 100,
-        "loopFun": 1,
         "pid": "Pins",
-        "o": 65,
-        "fun": 49
+        "ro": true,
+        "loopFun": 1,
+        "interval": 100,
+        "o": 71,
+        "fun": 46
       },
       {
         "id": "pin19",
         "type": "checkbox",
+        "pid": "Pins",
         "ro": false,
         "value": 1,
-        "pid": "Pins",
-        "o": 66,
-        "fun": 50
+        "o": 72,
+        "fun": 47
       }
     ],
-    "pid": "m",
     "o": 3202
   },
   {
     "id": "Print",
     "type": "sysmod",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "n": [
       {
         "id": "output",
         "type": "select",
+        "pid": "Print",
         "ro": false,
         "value": 1,
-        "pid": "Print",
-        "o": 68,
-        "fun": 51
+        "o": 74,
+        "fun": 48
       },
       {
         "id": "log",
         "type": "textarea",
-        "ro": false,
         "pid": "Print",
-        "o": 69
+        "ro": false,
+        "o": 75
       }
     ],
-    "pid": "m",
     "o": 3302
   },
   {
     "id": "Web",
     "type": "sysmod",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "n": [
       {
         "id": "clients",
         "type": "table",
+        "pid": "Web",
         "ro": true,
         "n": [
           {
@@ -322,8 +848,8 @@
             "pid": "clients",
             "ro": true,
             "max": 999,
-            "o": 72,
-            "fun": 53
+            "o": 78,
+            "fun": 50
           },
           {
             "id": "ip",
@@ -331,24 +857,24 @@
             "pid": "clients",
             "ro": true,
             "max": 16,
-            "o": 73,
-            "fun": 54
+            "o": 79,
+            "fun": 51
           },
           {
             "id": "full",
             "type": "checkbox",
             "pid": "clients",
             "ro": true,
-            "o": 45,
-            "fun": 33
+            "o": 80,
+            "fun": 52
           },
           {
             "id": "status",
             "type": "select",
             "pid": "clients",
             "ro": true,
-            "o": 46,
-            "fun": 34
+            "o": 81,
+            "fun": 53
           },
           {
             "id": "length",
@@ -356,163 +882,74 @@
             "pid": "clients",
             "ro": true,
             "max": 64,
-            "o": 76,
-            "fun": 57
+            "o": 82,
+            "fun": 54
           }
         ],
-        "pid": "Web",
-        "o": 71,
-        "fun": 52
+        "o": 77,
+        "fun": 49
       },
       {
         "id": "maxQueue",
         "type": "number",
+        "pid": "Web",
         "ro": true,
         "max": 64,
-        "pid": "Web",
-        "o": 77
+        "o": 83
       },
       {
         "id": "WSSend",
         "type": "text",
+        "pid": "Web",
         "ro": true,
         "max": 16,
-        "pid": "Web",
-        "o": 78,
-        "fun": 58
+        "o": 84,
+        "fun": 55
       },
       {
         "id": "WSRecv",
         "type": "text",
+        "pid": "Web",
         "ro": true,
         "max": 16,
-        "pid": "Web",
-        "o": 79,
-        "fun": 59
+        "o": 85,
+        "fun": 56
       },
       {
         "id": "UDPSend",
         "type": "text",
+        "pid": "Web",
         "ro": true,
         "max": 16,
-        "pid": "Web",
-        "o": 80,
-        "fun": 60
+        "o": 86,
+        "fun": 57
       },
       {
         "id": "UDPRecv",
         "type": "text",
+        "pid": "Web",
         "ro": true,
         "max": 16,
-        "pid": "Web",
-        "o": 81,
-        "fun": 61
+        "o": 87,
+        "fun": 58
       }
     ],
-    "pid": "m",
     "o": 4101
   },
   {
     "id": "Network",
     "type": "sysmod",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "s": true,
     "n": [
       {
-        "id": "ethernet",
-        "type": "checkbox",
-        "ro": false,
-        "value": 1,
-        "n": [
-          {
-            "id": "config",
-            "type": "select",
-            "pid": "ethernet",
-            "ro": false,
-            "value": 0,
-            "n": [
-              {
-                "id": "address",
-                "type": "number",
-                "pid": "config",
-                "ro": false,
-                "max": 255,
-                "value": 0,
-                "o": 85,
-                "fun": 64
-              },
-              {
-                "id": "power",
-                "type": "pin",
-                "pid": "config",
-                "ro": false,
-                "max": 40,
-                "value": 14,
-                "o": 86,
-                "fun": 65
-              },
-              {
-                "id": "mdc",
-                "type": "pin",
-                "pid": "config",
-                "ro": false,
-                "max": 40,
-                "value": 23,
-                "o": 87,
-                "fun": 66
-              },
-              {
-                "id": "mdio",
-                "type": "pin",
-                "pid": "config",
-                "ro": false,
-                "max": 40,
-                "value": 18,
-                "o": 88,
-                "fun": 67
-              },
-              {
-                "id": "type",
-                "type": "select",
-                "pid": "config",
-                "ro": false,
-                "value": 0,
-                "o": 89,
-                "fun": 68
-              },
-              {
-                "id": "clockMode",
-                "type": "select",
-                "pid": "config",
-                "ro": false,
-                "value": 3,
-                "o": 90,
-                "fun": 69
-              }
-            ],
-            "o": 84,
-            "fun": 63
-          },
-          {
-            "id": "status",
-            "type": "text",
-            "pid": "ethernet",
-            "ro": true,
-            "max": 32,
-            "o": 91,
-            "fun": 70
-          }
-        ],
-        "pid": "Network",
-        "o": 83,
-        "fun": 62
-      },
-      {
         "id": "wiFi",
         "type": "checkbox",
+        "pid": "Network",
         "ro": false,
-        "value": true,
+        "value": 1,
         "n": [
           {
             "id": "ssid",
@@ -521,8 +958,8 @@
             "ro": false,
             "max": 31,
             "value": "ewtr",
-            "o": 93,
-            "fun": 72
+            "o": 90,
+            "fun": 60
           },
           {
             "id": "password",
@@ -531,8 +968,8 @@
             "ro": false,
             "max": 63,
             "value": "zonledmod",
-            "o": 94,
-            "fun": 73
+            "o": 91,
+            "fun": 61
           },
           {
             "id": "rssi",
@@ -540,8 +977,8 @@
             "pid": "wiFi",
             "ro": true,
             "max": 32,
-            "o": 95,
-            "fun": 74
+            "o": 92,
+            "fun": 62
           },
           {
             "id": "status",
@@ -549,17 +986,46 @@
             "pid": "wiFi",
             "ro": true,
             "max": 32,
-            "o": 96,
-            "fun": 75
+            "o": 93,
+            "fun": 63
           }
         ],
+        "o": 89,
+        "fun": 59
+      },
+      {
+        "id": "ethernet",
+        "type": "checkbox",
         "pid": "Network",
-        "o": 92,
-        "fun": 71
+        "ro": false,
+        "value": 0,
+        "n": [
+          {
+            "id": "config",
+            "type": "select",
+            "pid": "ethernet",
+            "ro": false,
+            "value": 1,
+            "o": 95,
+            "fun": 65
+          },
+          {
+            "id": "status",
+            "type": "text",
+            "pid": "ethernet",
+            "ro": true,
+            "max": 32,
+            "o": 96,
+            "fun": 66
+          }
+        ],
+        "o": 94,
+        "fun": 64
       },
       {
         "id": "AP",
         "type": "checkbox",
+        "pid": "Network",
         "ro": false,
         "value": 0,
         "n": [
@@ -570,50 +1036,160 @@
             "ro": true,
             "max": 32,
             "o": 98,
-            "fun": 77
+            "fun": 68
           }
         ],
-        "pid": "Network",
         "o": 97,
-        "fun": 76
+        "fun": 67
+      },
+      {
+        "id": "preset",
+        "type": "select",
+        "pid": "Network",
+        "ro": false,
+        "value": 0,
+        "o": 99,
+        "fun": 255
+      },
+      {
+        "id": "assignPreset",
+        "type": "button",
+        "pid": "Network",
+        "ro": false,
+        "o": 100,
+        "fun": 255
+      },
+      {
+        "id": "clearPreset",
+        "type": "button",
+        "pid": "Network",
+        "ro": false,
+        "o": 101,
+        "fun": 255
       }
     ],
-    "pid": "m",
     "o": 4502
+  },
+  {
+    "id": "DDP",
+    "type": "usermod",
+    "pid": "m",
+    "ro": true,
+    "max": 255,
+    "n": [
+      {
+        "id": "instance",
+        "type": "ip",
+        "pid": "DDP",
+        "ro": false,
+        "max": 255,
+        "o": 103,
+        "fun": 69
+      }
+    ],
+    "o": 7000
+  },
+  {
+    "id": "ArtNet",
+    "type": "usermod",
+    "pid": "m",
+    "ro": true,
+    "max": 255,
+    "n": [
+      {
+        "id": "targetIP",
+        "type": "number",
+        "pid": "ArtNet",
+        "ro": false,
+        "max": 255,
+        "value": 11,
+        "o": 105,
+        "fun": 70
+      },
+      {
+        "id": "outputs",
+        "type": "table",
+        "pid": "ArtNet",
+        "ro": false,
+        "n": [
+          {
+            "id": "start",
+            "type": "number",
+            "pid": "outputs",
+            "ro": false,
+            "value": [
+              0,
+              7,
+              14,
+              21,
+              28,
+              35,
+              42,
+              49
+            ],
+            "o": 107,
+            "fun": 71,
+            "p": 1073564720
+          },
+          {
+            "id": "size",
+            "type": "number",
+            "pid": "outputs",
+            "ro": false,
+            "value": [
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024,
+              1024
+            ],
+            "o": 108,
+            "fun": 72,
+            "p": 1073564708
+          }
+        ],
+        "o": 106
+      }
+    ],
+    "o": 7100
   },
   {
     "id": "E131",
     "type": "usermod",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "n": [
       {
         "id": "universe",
         "type": "number",
+        "pid": "E131",
         "ro": false,
         "max": 7,
         "value": 1,
-        "pid": "E131",
-        "o": 107,
-        "fun": 83,
-        "p": 1073463688
+        "o": 110,
+        "p": 1073564996
       },
       {
         "id": "channel",
         "type": "number",
+        "pid": "E131",
         "ro": false,
         "min": 1,
         "max": 512,
         "value": 1,
-        "pid": "E131",
-        "o": 108,
-        "fun": 84,
-        "p": 1073463686,
+        "o": 111,
+        "fun": 73,
+        "p": 1073564994,
         "dash": true
       },
       {
         "id": "patches",
         "type": "table",
+        "pid": "E131",
         "ro": true,
         "n": [
           {
@@ -623,8 +1199,8 @@
             "ro": true,
             "min": 1,
             "max": 512,
-            "o": 110,
-            "fun": 86
+            "o": 113,
+            "fun": 75
           },
           {
             "id": "variable",
@@ -632,16 +1208,16 @@
             "pid": "patches",
             "ro": true,
             "max": 32,
-            "o": 111,
-            "fun": 87
+            "o": 114,
+            "fun": 76
           },
           {
             "id": "max",
             "type": "number",
             "pid": "patches",
             "ro": true,
-            "o": 76,
-            "fun": 61
+            "o": 115,
+            "fun": 77
           },
           {
             "id": "value",
@@ -649,58 +1225,57 @@
             "pid": "patches",
             "ro": true,
             "max": 255,
-            "o": 113,
-            "fun": 89
+            "o": 116,
+            "fun": 78
           }
         ],
-        "pid": "E131",
-        "o": 109,
-        "fun": 85
+        "o": 112,
+        "fun": 74
       }
     ],
-    "pid": "m",
     "o": 7201
   },
   {
     "id": "Motion Tracking",
     "type": "usermod",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "n": [
       {
         "id": "ready",
         "type": "checkbox",
-        "ro": true,
         "pid": "Motion Tracking",
-        "o": 115,
-        "fun": 90,
-        "p": 1073464472
+        "ro": true,
+        "o": 118,
+        "fun": 79,
+        "p": 1073565776
       },
       {
         "id": "gyro",
         "type": "coord3D",
-        "ro": true,
         "pid": "Motion Tracking",
-        "o": 116,
-        "fun": 91,
-        "p": 1073464476
+        "ro": true,
+        "o": 119,
+        "fun": 80,
+        "p": 1073565780
       },
       {
         "id": "accell",
         "type": "coord3D",
-        "ro": true,
         "pid": "Motion Tracking",
-        "o": 117,
-        "fun": 92,
-        "p": 1073464488
+        "ro": true,
+        "o": 120,
+        "fun": 81,
+        "p": 1073565792
       }
     ],
-    "pid": "m",
     "o": 7305
   },
   {
     "id": "Model",
     "type": "sysmod",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "s": true,
@@ -708,42 +1283,51 @@
       {
         "id": "saveModel",
         "type": "button",
-        "ro": false,
         "pid": "Model",
-        "o": 119,
-        "fun": 93
-      },
-      {
-        "id": "showObsolete",
-        "type": "checkbox",
         "ro": false,
-        "value": false,
-        "pid": "Model",
-        "o": 120,
-        "fun": 94,
-        "p": 1073451680
+        "o": 122,
+        "fun": 82
       },
       {
         "id": "deleteObsolete",
         "type": "button",
-        "ro": false,
         "pid": "Model",
-        "o": 121,
-        "fun": 95
+        "ro": false,
+        "o": 124,
+        "fun": 84
+      },
+      {
+        "id": "eventsVar",
+        "type": "text",
+        "pid": "Model",
+        "ro": true,
+        "max": 16,
+        "o": 125,
+        "fun": 255
+      },
+      {
+        "id": "eventsPS",
+        "type": "text",
+        "pid": "Model",
+        "ro": true,
+        "max": 16,
+        "o": 126,
+        "fun": 255
       }
     ],
-    "pid": "m",
     "o": 5303
   },
   {
     "id": "UI",
     "type": "sysmod",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "n": [
       {
         "id": "loops",
         "type": "table",
+        "pid": "UI",
         "ro": true,
         "n": [
           {
@@ -752,8 +1336,8 @@
             "pid": "loops",
             "ro": true,
             "max": 32,
-            "o": 124,
-            "fun": 97
+            "o": 129,
+            "fun": 86
           },
           {
             "id": "#loops",
@@ -761,27 +1345,46 @@
             "pid": "loops",
             "ro": true,
             "max": 999,
-            "o": 125,
-            "fun": 98
+            "o": 130,
+            "fun": 87
           }
         ],
-        "pid": "UI",
-        "o": 123,
-        "fun": 96
+        "o": 128,
+        "fun": 85
       }
     ],
-    "pid": "m",
     "o": 5101
+  },
+  {
+    "id": "Audio Sync",
+    "type": "usermod",
+    "pid": "m",
+    "ro": true,
+    "max": 255,
+    "n": [
+      {
+        "id": "status",
+        "type": "text",
+        "pid": "Audio Sync",
+        "ro": true,
+        "max": 16,
+        "o": 132,
+        "fun": 88
+      }
+    ],
+    "o": 7300
   },
   {
     "id": "Instances",
     "type": "sysmod",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "n": [
       {
         "id": "instances",
         "type": "table",
+        "pid": "Instances",
         "ro": true,
         "n": [
           {
@@ -790,24 +1393,24 @@
             "pid": "instances",
             "ro": false,
             "max": 32,
-            "o": 130,
-            "fun": 101
+            "o": 135,
+            "fun": 89
           },
           {
             "id": "show",
             "type": "url",
             "pid": "instances",
             "ro": true,
-            "o": 93,
-            "fun": 74
+            "o": 136,
+            "fun": 90
           },
           {
             "id": "link",
             "type": "number",
             "pid": "instances",
             "ro": true,
-            "o": 94,
-            "fun": 75
+            "o": 137,
+            "fun": 91
           },
           {
             "id": "IP",
@@ -815,8 +1418,8 @@
             "pid": "instances",
             "ro": true,
             "max": 16,
-            "o": 133,
-            "fun": 104
+            "o": 138,
+            "fun": 92
           },
           {
             "id": "type",
@@ -824,8 +1427,8 @@
             "pid": "instances",
             "ro": true,
             "max": 16,
-            "o": 134,
-            "fun": 105
+            "o": 139,
+            "fun": 93
           },
           {
             "id": "version",
@@ -833,8 +1436,8 @@
             "pid": "instances",
             "ro": true,
             "max": -1,
-            "o": 135,
-            "fun": 106
+            "o": 140,
+            "fun": 94
           },
           {
             "id": "uptime",
@@ -842,8 +1445,8 @@
             "pid": "instances",
             "ro": true,
             "max": -1,
-            "o": 136,
-            "fun": 107
+            "o": 141,
+            "fun": 95
           },
           {
             "id": "now",
@@ -851,8 +1454,8 @@
             "pid": "instances",
             "ro": true,
             "max": -1,
-            "o": 137,
-            "fun": 108
+            "o": 142,
+            "fun": 96
           },
           {
             "id": "timestamp",
@@ -860,8 +1463,8 @@
             "pid": "instances",
             "ro": true,
             "max": -1,
-            "o": 138,
-            "fun": 109
+            "o": 143,
+            "fun": 97
           },
           {
             "id": "time",
@@ -869,8 +1472,8 @@
             "pid": "instances",
             "ro": true,
             "max": -1,
-            "o": 139,
-            "fun": 110
+            "o": 144,
+            "fun": 98
           },
           {
             "id": "ms",
@@ -878,65 +1481,62 @@
             "pid": "instances",
             "ro": true,
             "max": -1,
-            "o": 140,
-            "fun": 111
+            "o": 145,
+            "fun": 99
           },
           {
-            "id": "on",
+            "id": "insFixture_on",
             "type": "checkbox",
             "pid": "instances",
             "ro": false,
-            "o": 104,
-            "fun": 85
+            "o": 146,
+            "fun": 100
           },
           {
-            "id": "brightness",
+            "id": "insFixture_brightness",
             "type": "range",
             "pid": "instances",
             "ro": false,
             "max": 255,
             "log": true,
-            "o": 143,
-            "fun": 114
+            "o": 147,
+            "fun": 101
           },
           {
-            "id": "channel",
+            "id": "inslayers_effect",
+            "type": "select",
+            "pid": "instances",
+            "ro": false,
+            "o": 148,
+            "fun": 102
+          },
+          {
+            "id": "inslayers_projection",
+            "type": "select",
+            "pid": "instances",
+            "ro": false,
+            "o": 149,
+            "fun": 103
+          },
+          {
+            "id": "insE131_channel",
             "type": "number",
             "pid": "instances",
             "ro": false,
             "min": 1,
             "max": 512,
-            "o": 141,
-            "fun": 112
-          },
-          {
-            "id": "effect",
-            "type": "select",
-            "ro": false,
-            "pid": "instances",
-            "o": 144,
-            "fun": 115
-          },
-          {
-            "id": "projection",
-            "type": "select",
-            "ro": false,
-            "pid": "instances",
-            "o": 145,
-            "fun": 116
+            "o": 150,
+            "fun": 104
           }
         ],
-        "pid": "Instances",
-        "o": 129,
-        "fun": 100
+        "o": 134
       }
     ],
-    "pid": "m",
     "o": 4000
   },
   {
     "id": "LiveScripts",
-    "type": "User",
+    "type": "usermod",
     "pid": "m",
     "ro": true,
     "max": 255,
@@ -947,8 +1547,8 @@
         "pid": "LiveScripts",
         "ro": false,
         "value": 255,
-        "o": 101,
-        "fun": 74
+        "o": 152,
+        "fun": 105
       },
       {
         "id": "fpsCycles",
@@ -956,19 +1556,8 @@
         "pid": "LiveScripts",
         "ro": true,
         "max": 10,
-        "o": 102,
-        "fun": 75,
-        "value": "0 /s"
-      },
-      {
-        "id": "fpsFrame",
-        "type": "text",
-        "pid": "LiveScripts",
-        "ro": true,
-        "max": 10,
-        "o": 103,
-        "fun": 76,
-        "value": "0 /s"
+        "o": 153,
+        "fun": 106
       },
       {
         "id": "scripts",
@@ -982,45 +1571,40 @@
             "pid": "scripts",
             "ro": true,
             "max": 32,
-            "o": 105,
-            "fun": 77,
-            "value": []
+            "o": 156,
+            "fun": 108
           },
           {
             "id": "running",
             "type": "checkbox",
             "pid": "scripts",
             "ro": true,
-            "o": 106,
-            "fun": 78,
-            "value": []
+            "o": 157,
+            "fun": 109
           },
           {
             "id": "halted",
             "type": "checkbox",
             "pid": "scripts",
             "ro": true,
-            "o": 107,
-            "fun": 79,
-            "value": []
+            "o": 158,
+            "fun": 110
           },
           {
             "id": "exe",
             "type": "checkbox",
             "pid": "scripts",
             "ro": true,
-            "o": 108,
-            "fun": 80,
-            "value": []
+            "o": 159,
+            "fun": 111
           },
           {
             "id": "handle",
             "type": "number",
             "pid": "scripts",
             "ro": true,
-            "o": 109,
-            "fun": 81,
-            "value": []
+            "o": 160,
+            "fun": 112
           },
           {
             "id": "size",
@@ -1028,20 +1612,38 @@
             "pid": "scripts",
             "ro": true,
             "max": 32,
-            "o": 110,
-            "fun": 82,
-            "value": []
+            "o": 161,
+            "fun": 113
           },
           {
             "id": "Kill",
             "type": "button",
             "pid": "scripts",
             "ro": false,
-            "o": 111,
-            "fun": 83
+            "o": 163,
+            "fun": 115
+          },
+          {
+            "id": "error",
+            "type": "text",
+            "pid": "scripts",
+            "ro": true,
+            "max": 32,
+            "o": 162,
+            "fun": 114
           }
         ],
-        "o": 104
+        "o": 155,
+        "fun": 255
+      },
+      {
+        "id": "fpsSync",
+        "type": "text",
+        "pid": "LiveScripts",
+        "ro": true,
+        "max": 10,
+        "o": 154,
+        "fun": 107
       }
     ],
     "o": 7310
@@ -1049,12 +1651,14 @@
   {
     "id": "Modules",
     "type": "sysmod",
+    "pid": "m",
     "ro": true,
     "max": 255,
     "n": [
       {
         "id": "Modules",
         "type": "table",
+        "pid": "Modules",
         "ro": true,
         "n": [
           {
@@ -1063,16 +1667,16 @@
             "pid": "Modules",
             "ro": true,
             "max": 32,
-            "o": 152,
-            "fun": 119
+            "o": 166,
+            "fun": 117
           },
           {
             "id": "success",
             "type": "checkbox",
             "pid": "Modules",
             "ro": true,
-            "o": 113,
-            "fun": 90
+            "o": 167,
+            "fun": 118
           },
           {
             "id": "enabled",
@@ -1098,526 +1702,25 @@
               true,
               true,
               true,
-              false
+              true
             ],
-            "o": 154,
-            "fun": 121
-          }
-        ],
-        "pid": "Modules",
-        "o": 151,
-        "fun": 118
-      }
-    ],
-    "pid": "m",
-    "o": 5203
-  },
-  {
-    "id": "Fixture",
-    "type": "appmod",
-    "ro": true,
-    "max": 255,
-    "n": [
-      {
-        "id": "on",
-        "type": "checkbox",
-        "ro": false,
-        "value": 1,
-        "pid": "Fixture",
-        "o": 2,
-        "fun": 0,
-        "dash": true
-      },
-      {
-        "id": "brightness",
-        "type": "range",
-        "ro": false,
-        "max": 255,
-        "value": 10,
-        "log": true,
-        "pid": "Fixture",
-        "o": 3,
-        "fun": 1,
-        "p": 1073462993,
-        "dash": true
-      },
-      {
-        "id": "preview",
-        "type": "canvas",
-        "ro": false,
-        "interval": 160,
-        "loopFun": 0,
-        "n": [
-          {
-            "id": "rotation",
-            "type": "select",
-            "ro": false,
-            "value": 0,
-            "pid": "preview",
-            "o": 5,
-            "fun": 3,
-            "p": 1073462992
+            "o": 168,
+            "fun": 119
           },
           {
-            "id": "1-byte RGB",
-            "type": "checkbox",
-            "ro": false,
-            "value": true,
-            "pid": "preview",
-            "o": 6,
-            "fun": 4,
-            "p": 1073462994
-          }
-        ],
-        "pid": "Fixture",
-        "o": 4,
-        "fun": 2
-      },
-      {
-        "id": "fixture",
-        "type": "select",
-        "ro": false,
-        "value": 1,
-        "n": [
-          {
-            "id": "size",
-            "type": "coord3D",
-            "ro": true,
-            "max": 8192,
-            "pid": "fixture",
-            "o": 8,
-            "fun": 6,
-            "p": 1073555848
-          },
-          {
-            "id": "count",
-            "type": "number",
-            "ro": true,
-            "pid": "fixture",
-            "o": 9,
-            "fun": 7,
-            "p": 1073555844
-          }
-        ],
-        "pid": "Fixture",
-        "o": 7,
-        "fun": 5,
-        "p": 1073555846
-      },
-      {
-        "id": "fps",
-        "type": "number",
-        "ro": false,
-        "min": 1,
-        "max": 999,
-        "value": 2000,
-        "pid": "Fixture",
-        "o": 10,
-        "fun": 8,
-        "p": 1073531218
-      },
-      {
-        "id": "realFps",
-        "type": "text",
-        "ro": true,
-        "max": 10,
-        "pid": "Fixture",
-        "o": 11,
-        "fun": 9
-      },
-      {
-        "id": "showDriver",
-        "type": "checkbox",
-        "ro": false,
-        "value": false,
-        "pid": "Fixture",
-        "o": 12,
-        "fun": 10,
-        "p": 1073555888
-      }
-    ],
-    "pid": "m",
-    "o": 2100
-  },
-  {
-    "id": "Effects",
-    "type": "appmod",
-    "ro": true,
-    "max": 255,
-    "n": [
-      {
-        "id": "layers",
-        "type": "table",
-        "ro": false,
-        "n": [
-          {
-            "id": "effect",
-            "type": "select",
-            "ro": false,
-            "value": [
-              27
-            ],
-            "n": [
-              {
-                "id": "palette",
-                "type": "select",
-                "ro": false,
-                "value": [
-                  4
-                ],
-                "o": 16,
-                "pid": "effect",
-                "fun": 13
-              },
-              {
-                "id": "x frequency",
-                "type": "range",
-                "ro": false,
-                "max": 255,
-                "value": [
-                  64
-                ],
-                "o": 17,
-                "pid": "effect",
-                "p": [
-                  1073466624
-                ]
-              },
-              {
-                "id": "fade rate",
-                "type": "range",
-                "ro": false,
-                "max": 255,
-                "value": [
-                  128
-                ],
-                "o": 18,
-                "pid": "effect",
-                "p": [
-                  1073466625
-                ]
-              },
-              {
-                "id": "speed",
-                "type": "range",
-                "ro": false,
-                "max": 255,
-                "value": [
-                  128
-                ],
-                "o": 19,
-                "pid": "effect",
-                "p": [
-                  1073466626
-                ]
-              },
-              {
-                "id": "smooth",
-                "type": "checkbox",
-                "ro": false,
-                "value": [
-                  false
-                ],
-                "o": 20,
-                "pid": "effect",
-                "p": [
-                  1073466627
-                ]
-              }
-            ],
-            "pid": "layers",
-            "o": 15,
-            "fun": 12,
-            "dash": true
-          },
-          {
-            "id": "projection",
-            "type": "select",
-            "ro": false,
-            "value": [
-              1
-            ],
-            "pid": "layers",
-            "o": 21,
-            "fun": 14,
-            "dash": true
-          },
-          {
-            "id": "start",
-            "type": "coord3D",
-            "ro": false,
-            "max": 8192,
-            "pid": "layers",
-            "o": 22,
-            "fun": 15,
-            "value": [
-              {
-                "x": 0,
-                "y": 0,
-                "z": 0
-              }
-            ]
-          },
-          {
-            "id": "middle",
-            "type": "coord3D",
-            "ro": false,
-            "max": 8192,
-            "pid": "layers",
-            "o": 23,
-            "fun": 16,
-            "value": [
-              {
-                "x": 0,
-                "y": 0,
-                "z": 0
-              }
-            ]
-          },
-          {
-            "id": "end",
-            "type": "coord3D",
-            "ro": false,
-            "max": 8192,
-            "pid": "layers",
-            "o": 24,
-            "fun": 17,
-            "value": [
-              {
-                "x": 65535,
-                "y": 65535,
-                "z": 65535
-              }
-            ]
-          },
-          {
-            "id": "size",
+            "id": "cpuTime",
             "type": "text",
+            "pid": "Modules",
             "ro": true,
             "max": 32,
-            "pid": "layers",
-            "o": 25,
-            "fun": 18
+            "o": 169,
+            "fun": 255
           }
         ],
-        "pid": "Effects",
-        "o": 14,
-        "fun": 11
-      },
-      {
-        "id": "Blending",
-        "type": "range",
-        "ro": false,
-        "max": 255,
-        "value": 128,
-        "pid": "Effects",
-        "o": 26,
-        "p": 1073555886
+        "o": 165,
+        "fun": 116
       }
     ],
-    "pid": "m",
-    "o": 2201
-  },
-  {
-    "id": "FixtureGenerator",
-    "type": "appmod",
-    "ro": true,
-    "max": 255,
-    "s": true,
-    "n": [
-      {
-        "id": "fixture",
-        "type": "select",
-        "ro": false,
-        "value": 0,
-        "pid": "FixtureGenerator",
-        "o": 28,
-        "fun": 19,
-        "n": [
-          {
-            "id": "generate",
-            "type": "button",
-            "pid": "fixture",
-            "ro": false,
-            "o": 29,
-            "fun": 20
-          },
-          {
-            "id": "elements",
-            "type": "table",
-            "pid": "fixture",
-            "ro": false,
-            "o": 30,
-            "fun": 21,
-            "n": [
-              {
-                "id": "firstLed",
-                "type": "coord3D",
-                "pid": "elements",
-                "ro": false,
-                "o": 31,
-                "fun": 22,
-                "max": 8192,
-                "value": {
-                  "x": 0,
-                  "y": 0,
-                  "z": 0
-                }
-              },
-              {
-                "id": "#Leds",
-                "type": "number",
-                "pid": "elements",
-                "ro": false,
-                "o": 32,
-                "fun": 23,
-                "min": 1,
-                "max": 8192,
-                "value": 64
-              },
-              {
-                "id": "radius",
-                "type": "number",
-                "pid": "elements",
-                "ro": false,
-                "o": 33,
-                "min": 1,
-                "max": 1000,
-                "value": 100
-              },
-              {
-                "id": "IP",
-                "type": "number",
-                "pid": "elements",
-                "ro": false,
-                "o": 34,
-                "fun": 24,
-                "min": 1,
-                "max": 256,
-                "value": 0
-              },
-              {
-                "id": "pin",
-                "type": "pin",
-                "pid": "elements",
-                "ro": false,
-                "o": 35,
-                "fun": 25,
-                "max": 40,
-                "value": 2
-              }
-            ]
-          }
-        ]
-      }
-    ],
-    "pid": "m",
-    "o": 7302
-  },
-  {
-    "id": "DDP",
-    "type": "usermod",
-    "ro": true,
-    "max": 255,
-    "n": [
-      {
-        "id": "instance",
-        "type": "ip",
-        "ro": false,
-        "max": 255,
-        "pid": "DDP",
-        "o": 100,
-        "fun": 78
-      }
-    ],
-    "pid": "m",
-    "o": 7000
-  },
-  {
-    "id": "ArtNet",
-    "type": "usermod",
-    "ro": true,
-    "max": 255,
-    "n": [
-      {
-        "id": "targetIP",
-        "type": "number",
-        "ro": false,
-        "max": 255,
-        "value": 11,
-        "pid": "ArtNet",
-        "o": 102,
-        "fun": 79
-      },
-      {
-        "id": "outputs",
-        "type": "table",
-        "ro": false,
-        "n": [
-          {
-            "id": "start",
-            "type": "number",
-            "ro": false,
-            "value": [
-              0,
-              7,
-              14,
-              21,
-              28,
-              35,
-              42,
-              49
-            ],
-            "pid": "outputs",
-            "o": 104,
-            "fun": 81,
-            "p": 1073463404
-          },
-          {
-            "id": "size",
-            "type": "number",
-            "ro": false,
-            "value": [
-              1024,
-              1024,
-              1024,
-              1024,
-              1024,
-              1024,
-              1024,
-              1024
-            ],
-            "pid": "outputs",
-            "o": 105,
-            "fun": 82,
-            "p": 1073463392
-          }
-        ],
-        "pid": "ArtNet",
-        "o": 103,
-        "fun": 80
-      }
-    ],
-    "pid": "m",
-    "o": 7100
-  },
-  {
-    "id": "Audio Sync",
-    "type": "usermod",
-    "ro": true,
-    "max": 255,
-    "n": [
-      {
-        "id": "status",
-        "type": "text",
-        "ro": true,
-        "max": 16,
-        "pid": "Audio Sync",
-        "o": 127,
-        "fun": 99
-      }
-    ],
-    "pid": "m",
-    "o": 7300
+    "o": 5203
   }
 ]

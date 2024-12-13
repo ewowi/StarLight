@@ -14,10 +14,20 @@
 #include "Sys/SysModUI.h"
 #include "Sys/SysModWeb.h"
 #include "Sys/SysModModel.h"
+#include "Sys/SysModPins.h"
+#include "Sys/SysModSystem.h"
 
 SysModules::SysModules() = default;
 
 void SysModules::setup() {
+  #ifdef STARBASE_BOOT_BUTTON_PIN
+    pinsM->allocatePin(STARBASE_BOOT_BUTTON_PIN, "Buttons", "Boot");
+
+    sys->safeMode = digitalRead(STARBASE_BOOT_BUTTON_PIN) == 0;
+    mdl->setValue("System", "safeMode", sys->safeMode);
+
+  #endif
+
   for (SysModule *module:modules) {
     module->setup();
   }
@@ -134,6 +144,25 @@ void SysModules::loop() {
       module->cpuTime = (ESP.getCycleCount() - cycles);
     }
   }
+
+  #ifdef STARBASE_BOOT_BUTTON_PIN
+
+    if (digitalRead(STARBASE_BOOT_BUTTON_PIN) == 0) { //pressed
+      if (buttonPressedTime == 0) //if not pressed before
+        buttonPressedTime = sys->now; //set start of press
+    } else //not pressed
+      buttonPressedTime = 0;
+
+    if (buttonPressedTime && (sys->now - buttonPressedTime) > 600) {
+      //longpress
+      // ppf("longpress boot -> safeMode on\n");
+      buttonPressedTime = 0;
+      sys->safeMode = !sys->safeMode;
+      ppf("longpress safeMode %s\n", sys->safeMode?"on":"off");
+      mdl->setValue("System", "safeMode", sys->safeMode);
+    }
+  #endif
+
   if (newConnection) {
     newConnection = false;
     isConnected = true;
