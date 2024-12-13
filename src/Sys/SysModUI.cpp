@@ -166,6 +166,7 @@ void SysModUI::processJson(JsonVariant json) {
 
           if (!var.isNull())
           {
+            mdl->resetPresetThreshold++;
             //a button never sets the value
             if (var["type"] == "button") { //button always
               Variable(var).triggerEvent(onChange, rowNr);
@@ -177,6 +178,7 @@ void SysModUI::processJson(JsonVariant json) {
               // json.remove(key); //key / var["id"] processed we don't need the key in the response
               // print->printJson("setValueJV", web->getResponseObject());
             }
+            mdl->resetPresetThreshold--;
           }
           else
             ppf("dev Object %s[%d] not found\n", pidid, rowNr);

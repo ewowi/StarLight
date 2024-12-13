@@ -116,7 +116,6 @@
               children().remove(childVarIt);
             }
             web->getResponseObject()["details"]["rowNr"] = rowNr;
-
           }
           else
             print->printJson("dev array but not rowNr", var);
@@ -139,6 +138,13 @@
     ppf("\n");
 
     //post update details
+  }
+
+  void Variable::preDetails2() {
+    var["n"].to<JsonArray>(); //clean array, old array removed?
+  }
+  void Variable::postDetails2(uint8_t rowNr) {
+    web->getResponseObject()["details"]["rowNr"] = rowNr;
     web->getResponseObject()["details"]["var"] = var;
   }
 
@@ -242,6 +248,16 @@
           // ppf("dev pointer of type %s is 0\n", var["type"].as<String>().c_str());
           print->printJson("dev pointer is 0", var);
       } //pointer
+
+      //reset presets if not using presets controls and if updated by UI, except if updated by ui via presets
+      if (var["id"] != "preset" && var["id"] != "assignPreset" && var["id"] != "clearPreset" && mdl->resetPresetThreshold > 1) {
+        JsonObject moduleVar = mdl->findModule(pid(), id());
+        JsonObject presetVar = mdl->findVar(moduleVar["id"], "preset");
+        if (!presetVar.isNull()) {
+          ppf("reset Preset %s.%s\n", pid(), id());
+          Variable(presetVar).setValue(0, rowNr);
+        }
+      }
     }
 
     bool result = false;
@@ -795,6 +811,20 @@ JsonObject SysModModel::findVar(const char * pid, const char * id, JsonObject pa
   // if (parent.isNull())
   //   Serial.printf("dev findVar not found %s.%s!!\n", pid?pid:"x", id?id:"y");
   return JsonObject();
+}
+
+JsonObject SysModModel::findModule(const char * pid, const char * id) {
+  // if (model->isNull()) return JsonObject();
+
+  for (JsonObject moduleVar : model->as<JsonArray>()) {
+    bool pididFound = false;
+    walkThroughModel([&pididFound, pid, id](JsonObject parentVar, JsonObject var) {
+      pididFound = var["pid"] == pid && var["id"] == id;
+      return pididFound?var:JsonObject(); //stop if found
+    }, moduleVar);
+    if (pididFound) return moduleVar;
+  }
+
 }
 
 void SysModModel::findVars(const char * property, bool value, FindFun fun, JsonObject parentVar) {

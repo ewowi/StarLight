@@ -257,16 +257,16 @@ inline uint16_t getRGBWsize(uint16_t nleds){
             else
               leds->projection = projections[proValue];
 
-            ppf("initProjection leds[%d] projection:%s a:%d\n", rowNr, leds->projection->name(), leds->projectionData.bytesAllocated);
+            ppf("initProjection leds[%d] projection:%s a:%d\n", rowNr, leds->projection?leds->projection->name():"None", leds->projectionData.bytesAllocated);
 
             leds->projectionData.clear(); //delete effectData memory so it can be rebuild
-
             leds->projectionData.read<uint8_t>(); leds->projectionData.begin(); //allocate minimum amount for projectionData (chunk of 32 bytes) to avoid control defaults to be removed
 
-            variable.preDetails(); //set all positive var N orders to negative
+            variable.preDetails2(); //set all positive var N orders to negative
             mdl->setValueRowNr = rowNr;
             if (leds->projection) leds->projection->setup(*leds, variable); //not if None projection
-            variable.postDetails(rowNr);
+            variable.postDetails2(rowNr);
+
             mdl->setValueRowNr = UINT8_MAX;
 
             leds->projectionData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
@@ -535,14 +535,13 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       ppf("initEffect leds[%d] effect:%s a:%d (%d,%d,%d)\n", rowNr, leds.effect->name(), leds.effectData.bytesAllocated, leds.size.x, leds.size.y, leds.size.z);
 
       leds.effectData.clear(); //delete effectData memory so it can be rebuild
-
       leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right to avoid control defaults to be removed
 
       Variable variable = Variable("layers", "effect");
-      variable.preDetails();
+      variable.preDetails2();
       mdl->setValueRowNr = rowNr;
       leds.effect->setup(leds, variable); //if changed then run setup once (like call==0 in WLED) and set all defaults in effectData
-      variable.postDetails(rowNr);
+      variable.postDetails2(rowNr);
       mdl->setValueRowNr = UINT8_MAX;
 
       leds.effectData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...

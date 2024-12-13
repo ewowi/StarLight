@@ -23,6 +23,7 @@ void SysModule::addPresets(JsonObject parentVar) {
 
     JsonArray modulePresets = mdl->presets->as<JsonObject>()[name];
 
+    options.add("None");
     for (int i=0; i<modulePresets.size(); i++) {
       StarString buf;
       if (modulePresets[i].isNull() || modulePresets[i]["name"].isNull()) {
@@ -47,12 +48,16 @@ void SysModule::addPresets(JsonObject parentVar) {
     uint8_t presetValue = variable.var["value"];
     ppf("publish preset.onchange %s.%s [%d] %d %s\n", variable.pid(), variable.id(), rowNr, presetValue, variable.valueString().c_str());
 
+    if (presetValue == 0) return; else presetValue--;
+
     JsonObject allPresets = mdl->presets->as<JsonObject>();
 
     if (!allPresets.isNull()) {
 
       JsonArray modulePresets = allPresets[name];
-      if (!modulePresets.isNull()) {
+      if (!modulePresets.isNull() && presetValue < modulePresets.size()) {
+
+        mdl->resetPresetThreshold--;
 
         for (JsonPair pidPair: modulePresets[presetValue].as<JsonObject>()) {
           for (JsonPair idPair: pidPair.value().as<JsonObject>()) {
@@ -70,6 +75,9 @@ void SysModule::addPresets(JsonObject parentVar) {
             }
           }
         }
+
+        mdl->resetPresetThreshold++;
+
       }
     }
 
@@ -82,7 +90,7 @@ void SysModule::addPresets(JsonObject parentVar) {
   });
 
   currentVar.subscribe(onChange, [this, &parentVariable](Variable variable, uint8_t rowNr, uint8_t eventType) {
-    ppf("assignPreset.onUI \n");
+    ppf("assignPreset.onChange\n");
     //save this to the first free slot
     //give that a name
     //select that one
@@ -90,6 +98,8 @@ void SysModule::addPresets(JsonObject parentVar) {
     Variable presetVariable = Variable(name, "preset");
 
     uint8_t presetValue = presetVariable.var["value"];
+
+    presetValue--; // will be UINT8_MAX if preset None
 
     JsonObject allPresets = mdl->presets->as<JsonObject>();
     if (allPresets.isNull()) allPresets = mdl->presets->to<JsonObject>(); //create
@@ -103,7 +113,7 @@ void SysModule::addPresets(JsonObject parentVar) {
     // print->printJson("pv", parentVariable.var); ppf("\n");
 
     uint8_t presetIndex = 0;
-    if (modulePresets[presetValue].isNull()) { //if slot is 0 use it
+    if (presetValue < modulePresets.size() && modulePresets[presetValue].isNull()) { //if slot is null use it
       presetIndex = presetValue;
     } else {
       //find the first empty slot, starting from current position, if none, add 
@@ -155,7 +165,9 @@ void SysModule::addPresets(JsonObject parentVar) {
 
     presetVariable.publish(onUI); //reload ui for new list of values
 
-    if (presetIndex != presetValue) presetVariable.setValue(presetIndex); //set the new value, if changed
+    mdl->resetPresetThreshold--;
+    if (presetIndex != presetValue) presetVariable.setValue(presetIndex+1); //set the new value, if changed, add 1 for None
+    mdl->resetPresetThreshold++;
 
   });
 
@@ -166,13 +178,15 @@ void SysModule::addPresets(JsonObject parentVar) {
   });
   
   currentVar.subscribe(onChange, [this](Variable variable, uint8_t rowNr, uint8_t eventType) {
-    ppf("delete.onUI \n");
+    ppf("clearPreset.onChange\n");
     //free this slot
     //remove the name
 
     Variable presetVariable = Variable(name, "preset");
 
     uint8_t presetValue = presetVariable.var["value"];
+
+    if (presetValue == 0) return; else presetValue--; //makes no sense to clear None
 
     JsonObject allPresets = mdl->presets->as<JsonObject>();
 
@@ -197,7 +211,9 @@ void SysModule::addPresets(JsonObject parentVar) {
 
         presetVariable.publish(onUI); //reload ui for new list of values
 
-        if (presetIndex != presetValue) presetVariable.setValue(presetIndex); //set the new value, if changed
+        mdl->resetPresetThreshold--;
+        if (presetIndex != presetValue) presetVariable.setValue(presetIndex+1); //set the new value, if changed, add 1 for none
+        mdl->resetPresetThreshold++;
       }
     }
 

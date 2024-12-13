@@ -839,7 +839,7 @@ public:
       }
     }
 
-    fixtureVariable.postDetails(UINT8_MAX);
+    fixtureVariable.postDetails2(UINT8_MAX);
     mdl->setValueRowNr = UINT8_MAX;
   }
 
