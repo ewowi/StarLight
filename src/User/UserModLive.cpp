@@ -42,8 +42,8 @@ Parser parser = Parser();
   // LEDS specific
   //tbd: move this to LedModFixture...
   #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-    fix->driver.__enableDriver=false;
-    while (fix->driver.isDisplaying){};
+    driver.__enableDriver=false;
+    while (driver.isDisplaying){};
     //delay(20);
   #endif
 }
@@ -53,7 +53,7 @@ Parser parser = Parser();
   // LEDS specific
   #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
     // delay(10);
-    fix->driver.__enableDriver=true;
+    driver.__enableDriver=true;
   #endif
 }
 

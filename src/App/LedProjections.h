@@ -41,7 +41,7 @@ class DefaultProjection: public Projection {
   public:
 
   void addPixelsPre(LedsLayer &leds) override {
-      ppf ("Default Projection %dD -> %dD Effect  Size: %d,%d,%d ->\n", leds.projectionDimension, leds.effectDimension, leds.size.x, leds.size.y, leds.size.z);
+      ppf ("Default Projection %dD -> %dD Size: %d,%d,%d ->\n", leds.projectionDimension, leds.effectDimension, leds.size.x, leds.size.y, leds.size.z);
     switch (leds.effectDimension) {
       case _1D: // effectDimension 1DxD
           leds.size.x = sqrt(sq(max(leds.size.x - leds.middle.x, leds.middle.x)) + 
@@ -844,7 +844,7 @@ class GroupingSpacingProjection: public Projection {
     if (modPixel.x < grouping.x && modPixel.y < grouping.y && modPixel.z < grouping.z) 
       pixel /= GS;
     else {
-      pixel.x = UINT16_MAX; return;
+      pixel.x = UINT16_MAX; return; //do not show this pixel
     }
 
     DefaultProjection dp;

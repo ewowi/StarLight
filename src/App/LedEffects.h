@@ -1164,7 +1164,7 @@ class OctopusEffect: public Effect {
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar); //palette
     bool3State *setup = leds.effectData.write<bool3State>(true);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128), 1, 255);
+    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(16), 1, 32);
     ui->initSlider(parentVar, "offsetX", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {*setup = true; return true;}
       default: return false;
@@ -1215,7 +1215,7 @@ class OctopusEffect: public Effect {
       }
 
       
-      *step = sys->now * speed / 32 / 25; //sys.now/25 = 40 per second. speed / 32: 1-4 range ? (1-8 ??)
+      *step = sys->now * speed / 25; //sys.now/25 = 40 per second. speed / 32: 1-4 range ? (1-8 ??)
       if (radialWave)
         *step = 3 * (*step) / 4; // 7/6 = 1.16 for RadialWave mode
       else
@@ -3319,8 +3319,11 @@ class LiveEffect: public Effect {
 
         return true; }
       case onChange: {
+
         //set script
         uint8_t fileNr = variable.value(rowNr);
+
+        ppf("effect.script[%d].onChange %s (f:%d)\n", rowNr, variable.valueString().c_str(), fileNr);
 
         gLeds = &leds; //set the leds class for the Live Scripts Module
         if (fileNr > 0 && fileNr != UINT8_MAX) { //not None and live setup done (before )
@@ -3368,6 +3371,8 @@ class LiveEffect: public Effect {
                 liveM->addExternalVal("uint16_t", "height", &leds.size.y);
                 liveM->addExternalVal("uint16_t", "depth", &leds.size.z);
 
+                liveM->addExternalVal("uint32_t", "now", &sys->now);
+
                 liveM->scScript += "define NUM_LEDS " + std::to_string(fix->nrOfLeds) + "\n"; //NUM_LEDS is used in arrays -> must be define e.g. uint8_t rMapRadius[NUM_LEDS];
 
                 leds.liveEffectID = liveM->compile(fileName, "void main(){setup();while(2>1){loop();sync();}}");
@@ -3383,7 +3388,6 @@ class LiveEffect: public Effect {
         else {
           // liveM->kill();
           leds.fadeToBlackBy(255);
-          ppf("effect.script.onChange set to None:%d\n", fileNr);
         }
 
         return true; }
@@ -3396,7 +3400,7 @@ class LiveEffect: public Effect {
     ui->initSlider(parentVar, "Custom 1", &custom1Control);
     ui->initSlider(parentVar, "Custom 2", &custom2Control);
     ui->initSlider(parentVar, "Custom 3", &custom3Control);
-  }
+  } //setup
 
   void loop(LedsLayer &leds) override {
 

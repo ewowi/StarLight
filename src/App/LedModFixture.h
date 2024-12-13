@@ -22,8 +22,10 @@
   #define NUM_LEDS_PER_STRIP 256 //could this be removed from driver lib as makes not so much sense
   #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
     #include "I2SClockLessLedDriveresp32s3.h"
+    static I2SClocklessLedDriveresp32S3 driver;
   #else
     #include "I2SClocklessLedDriver.h"
+    static I2SClocklessLedDriver driver;
   #endif
 #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
   //used in I2SClocklessVirtualLedDriver.h,
@@ -53,18 +55,13 @@
   #endif
 
   #define TAG "StarLight" // for S3 (todo also for non s3...)
-  #define OVERCLOCK_1MHZ // for S3 (OVERCLOCK_1_1MHZ)
 
   #include "I2SClocklessVirtualLedDriver.h"
+  static I2SClocklessVirtualLedDriver driver;
 
-  #ifndef STARLIGHT_ICVLD_CLOCK_PIN
-    #define STARLIGHT_ICVLD_CLOCK_PIN 26
-  #endif
-  #ifndef STARLIGHT_ICVLD_LATCH_PIN
-    #define STARLIGHT_ICVLD_LATCH_PIN 27
-  #endif
 #elif STARLIGHT_HUB75_DRIVER
   #include "WhateverHubDriver.h"
+  static WhateverHubDriver driver;
 #endif
 
 struct SortedPin {
@@ -112,10 +109,24 @@ public:
 
   Coord3D fixSize = {8,8,1};
   uint16_t nrOfLeds = 64; //amount of physical leds
-  uint8_t factor = 1;
-  uint8_t ledSize = 4; //mm
-  uint8_t shape = 0; //0 = sphere, 1 = TetrahedronGeometry
 
+  //Fixture definition
+  uint8_t ledFactor = 1;
+  uint8_t ledSize = 4; //mm
+  uint8_t ledShape = 0; //0 = sphere, 1 = TetrahedronGeometry
+
+  //clockless driver (check FastLED support...)
+  uint8_t colorOrder = 3; //GRB is default for WS2812 (not for FastLED yet: see pio.ini)
+
+  //for virtual driver (but keep enabled to avoid compile errors when used in non virtual context
+  uint8_t clockPin = 3; //3 for S3, 26 for ESP32 (wrover)
+  uint8_t latchPin = 46; //46 for S3, 27 for ESP32 (wrover)
+  uint8_t clockFreq = 10; //clockFreq==10?clock_1000KHZ:clockFreq==11?clock_1111KHZ:clockFreq==12?clock_1123KHZ:clock_800KHZ
+                // 1.0MHz is default and runs well (0.8MHz is normal non overclocking). higher then 1.0 is causing flickering at least at ewowi big screen
+  uint8_t dmaBuffer = 30; //not used yet
+
+  //End Fixture definition
+  
   unsigned long lastMappingMillis = 0;
   uint8_t viewRotation = 0;
   uint8_t bri = 10;
@@ -166,19 +177,10 @@ public:
     uint8_t liveFixtureID = UINT8_MAX;
   #endif
 
-  #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
-    #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
-      I2SClocklessLedDriveresp32S3 driver;
-    #else
-      I2SClocklessLedDriver driver;
-    #endif
+  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
     uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
-  #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-    I2SClocklessVirtualLedDriver driver;
-    uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
-  #elif STARLIGHT_HUB75_DRIVER
-    WhateverHubDriver driver;
   #endif
+
 };
 
 extern LedModFixture *fix;

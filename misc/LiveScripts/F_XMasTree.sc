@@ -5,8 +5,9 @@ define ledCount 100
 
 void main()
 {
-  setFactor(10); //Coordinates in mm
-  setLedSize(2); //smaller leds (default 5)
+  ledFactor = 10; //coordinates in mm
+  ledSize = 2; //smaller leds (default 5)
+
   for (int radius = 0; radius < 200; radius = radius + 10) {
     for (int i=0; i<radius; i++) {
       int x = radius + sin(i/radius * 2 * PI) * radius;

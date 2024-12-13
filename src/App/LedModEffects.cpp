@@ -49,6 +49,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     effects.push_back(new DNAEffect);
     effects.push_back(new DripEffect);
     effects.push_back(new FireEffect);
+    effects.push_back(new FireworksEffect);
     effects.push_back(new FlowEffect);
     effects.push_back(new FrizzlesEffect);
     effects.push_back(new GameOfLifeEffect); //2D & 3D
@@ -84,7 +85,6 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       effects.push_back(new LaserGEQEffect);
       effects.push_back(new NoiseMeterEffect);
       effects.push_back(new PaintbrushEffect);
-      effects.push_back(new FireworksEffect);
       effects.push_back(new VUMeterEffect);
       effects.push_back(new WaverlyEffect);
     #endif
@@ -167,9 +167,9 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         return true; }
       case onChange:
 
-        // return true; //do this if the effect crashes at boot, then change effect to working effect, recompile, reboot (WIP)
-        //to do save mode button...
+        if (sys->safeMode) return true; //do not process effect in safeMode do this if the effect crashes at boot, then change effect to working effect and reboot
 
+        print->printJson("layers.effect.onChange", variable.var);
 
         if (rowNr == UINT8_MAX) rowNr = 0; // in case effect without a rowNr
 
@@ -257,14 +257,16 @@ inline uint16_t getRGBWsize(uint16_t nleds){
             else
               leds->projection = projections[proValue];
 
-            ppf("initProjection leds[%d] effect:%s a:%d\n", rowNr, leds->effect->name(), leds->projectionData.bytesAllocated);
+            ppf("initProjection leds[%d] projection:%s a:%d\n", rowNr, leds->projection?leds->projection->name():"None", leds->projectionData.bytesAllocated);
 
             leds->projectionData.clear(); //delete effectData memory so it can be rebuild
+            leds->projectionData.read<uint8_t>(); leds->projectionData.begin(); //allocate minimum amount for projectionData (chunk of 32 bytes) to avoid control defaults to be removed
 
-            variable.preDetails(); //set all positive var N orders to negative
+            variable.preDetails2(); //set all positive var N orders to negative
             mdl->setValueRowNr = rowNr;
             if (leds->projection) leds->projection->setup(*leds, variable); //not if None projection
-            variable.postDetails(rowNr);
+            variable.postDetails2(rowNr);
+
             mdl->setValueRowNr = UINT8_MAX;
 
             leds->projectionData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
@@ -455,9 +457,16 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
           if (fix->showTicker && rowNr == fix->layers.size() - 1) { //last effect, add sysinfo
             StarString text;
-            if (leds->size.x > 48)
-              text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
-            else
+            if (leds->size.x > 48) {
+              #ifdef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+                if (strlen(fix->tickerTape))
+                  text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
+                else
+                  text.format("%d @ %.3d %.1fMHz %dDB", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->clockFreq / 10.0, __NB_DMA_BUFFER);
+              #else
+                text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
+              #endif
+            } else
               text.format("%.3d %s", fix->realFps, fix->tickerTape);
             leds->drawText(text.getString(), 0, 0, 1);
           }
@@ -505,11 +514,11 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
         if (newCoord) {
           token = strtok(nullptr, ",");
-          if (token != nullptr) newCoord->x = strtol(token, nullptr, 10) / fix->factor; else newCoord->x = 0; //should never happen
+          if (token != nullptr) newCoord->x = strtol(token, nullptr, 10) / fix->ledFactor; else newCoord->x = 0; //should never happen
           token = strtok(nullptr, ",");
-          if (token != nullptr) newCoord->y = strtol(token, nullptr, 10) / fix->factor; else newCoord->y = 0;
+          if (token != nullptr) newCoord->y = strtol(token, nullptr, 10) / fix->ledFactor; else newCoord->y = 0;
           token = strtok(nullptr, ",");
-          if (token != nullptr) newCoord->z = strtol(token, nullptr, 10) / fix->factor; else newCoord->z = 0;
+          if (token != nullptr) newCoord->z = strtol(token, nullptr, 10) / fix->ledFactor; else newCoord->z = 0;
 
           mdl->setValue("layers", isStart?"start":isEnd?"end":"middle", *newCoord, 0); //assuming row 0 for the moment
 
@@ -526,14 +535,13 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       ppf("initEffect leds[%d] effect:%s a:%d (%d,%d,%d)\n", rowNr, leds.effect->name(), leds.effectData.bytesAllocated, leds.size.x, leds.size.y, leds.size.z);
 
       leds.effectData.clear(); //delete effectData memory so it can be rebuild
-
-      leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right
+      leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right to avoid control defaults to be removed
 
       Variable variable = Variable("layers", "effect");
-      variable.preDetails();
+      variable.preDetails2();
       mdl->setValueRowNr = rowNr;
       leds.effect->setup(leds, variable); //if changed then run setup once (like call==0 in WLED) and set all defaults in effectData
-      variable.postDetails(rowNr);
+      variable.postDetails2(rowNr);
       mdl->setValueRowNr = UINT8_MAX;
 
       leds.effectData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
