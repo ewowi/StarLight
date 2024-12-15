@@ -166,7 +166,8 @@ function makeWS() {
       if (buffer[0] == 0) {
         let canvasNode = gId("Pins.board");
         // console.log(buffer, canvasNode);
-        previewBoard(canvasNode, buffer);
+        if (canvasNode)
+          previewBoard(canvasNode, buffer);
       }
       else 
         userFun(buffer);
@@ -193,7 +194,7 @@ function makeWS() {
             if (module.id == json.id)
               found = true;
           }
-          if (!found) {
+          if (!found && json.o) { //initModule done
             model.push((json)); //this is the model
             addModule(json);
           }
