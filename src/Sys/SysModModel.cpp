@@ -35,6 +35,10 @@
       return value()[rowNr].as<String>();
   }
 
+  JsonArray Variable::children() {
+    return var["n"];
+  }
+
   void Variable::removeValuesForRow(uint8_t rowNr) {
     for (JsonObject childVar: children()) {
       Variable childVariable = Variable(childVar);
@@ -71,9 +75,7 @@
 
   void Variable::preDetails() {
     for (JsonObject varChild: children()) { //for all controls
-      if (Variable(varChild).order() >= 0) { //post init
-        Variable(varChild).order( -Variable(varChild).order()); // set all negative
-      }
+      varChild.remove("o");
     }
     ppf("preDetails %s.%s post ", pid(), id());
     print->printVar(var);
@@ -89,20 +91,16 @@
     //check if post init added: parent is already >=0
     if (order() >= 0) {
       for (JsonArray::iterator childVarIt=children().begin(); childVarIt!=children().end(); ++childVarIt) { //use iterator to make .remove work!!!
-      // for (JsonObject &childVarIt: children) { //use iterator to make .remove work!!!
         JsonObject childVar = *childVarIt;
         Variable childVariable = Variable(childVar);
         JsonArray valArray = childVariable.valArray();
         if (!valArray.isNull())
         {
           if (rowNr != UINT8_MAX) {
-            if (childVariable.order() <= 0) { //if not updated, or order == 0 (which should not happen so better delete also)
+            if (childVar["o"].isNull()) { //if not updated, or order == 0 (which should not happen so better delete also)
               valArray[rowNr] = (char*)0; // set element in valArray to 0 (is content deleted from memory?)
 
               ppf("varPostDetails %s.%s[%d] <- null\n", id(), childVariable.id(), rowNr);
-              // setValue(var, -99, rowNr); //set value -99
-              childVariable.order(-childVariable.order());
-              //if some values in array are not -99
             }
 
             //if all values null, remove value
@@ -121,11 +119,8 @@
             print->printJson("dev array but not rowNr", var);
         }
         else {
-          if (childVariable.order() < 0) { //if not updated
-            // childVariable.value() = (char*)0;
+          if (childVar["o"].isNull()) { //if not updated
             ppf("varPostDetails %s.%s <- null\n", id(), childVariable.id());
-              // setValue(var, -99, rowNr); //set value -99
-            // childVariable.order(-childVariable.order());
             print->printJson("remove", childVar);
             children().remove(childVarIt);
           }
@@ -138,13 +133,6 @@
     ppf("\n");
 
     //post update details
-  }
-
-  void Variable::preDetails2() {
-    var["n"].to<JsonArray>(); //clean array, old array removed?
-  }
-  void Variable::postDetails2(uint8_t rowNr) {
-    web->getResponseObject()["details"]["rowNr"] = rowNr;
     web->getResponseObject()["details"]["var"] = var;
   }
 
@@ -574,19 +562,20 @@ void SysModModel::setup() {
 
   ui->initButton(parentVar, "deleteObsolete", false, [this](EventArguments) { switch (eventType) {
     case onUI:
-      variable.setComment("Delete obsolete variables 🚧");
+      variable.setComment("Delete unused variables");
       return true;
     case onChange:
-      walkThroughModel([](JsonObject parentVar, JsonObject var) {
+      walkThroughModel([this](JsonObject parentVar, JsonObject var) {
 
         Variable parentVariable = Variable(parentVar);
         Variable variable = Variable(var);
-        JsonArray vars = parentVariable.children();
+        JsonArray vars = parentVar.isNull()?model->as<JsonArray>() : parentVariable.children();
 
         //no cleanup of o in case of ro value removal
-        if (var["o"].isNull() || variable.order() < 0) { 
-          ppf("cleanUpModel remove var %s.%s (""o""<0)\n", variable.pid(), variable.id());          
-          vars.remove(var); //remove the obsolete var (no o or o is negative - not cleanedUp)
+        if (var["o"].isNull()) { //!variable.var.isNull() &&  || variable.order() <= 0
+          ppf("deleteObsolete remove var %s.%s (no order)\n", variable.pid()?variable.pid():"-", variable.id());          
+            // vars.remove(var); //remove the obsolete var (no o or )
+          for (JsonArray::iterator it=vars.begin(); it!=vars.end(); ++it) if ((*it)["id"] == var["id"]) vars.remove(it); //use iterator to make .remove work!!!
         }
         return JsonObject(); //don't stop
       });
@@ -609,17 +598,24 @@ void SysModModel::setup() {
 
 void SysModModel::loop20ms() {
 
-  if (!cleanUpModelDone) { //do after all setups, which make all orders of found vars negative ...
-    cleanUpModelDone = true;
-    cleanUpModel(); //entire model, if order > 0, do not remove ro values
-  }
-
   if (doWriteModel) {
     ppf("Writing model to /model.json... (serializeConfig)\n");
 
     // files->writeObjectToFile("/model.json", model);
 
-    cleanUpModel(false, true); //remove if var["o"] is negative (not cleanedUp) and remove ro values
+    walkThroughModel([](JsonObject parentVar, JsonObject var) {
+
+      Variable variable = Variable(var);
+
+      //remove ro values (ro vars cannot be deleted as SM uses these vars)
+      // remove if var is ro or table is instance table (exception here, values don't need to be saved)
+      if (parentVar["id"] == "instances" || variable.readOnly()) {// && !value().isNull())
+        // ppf("remove ro value %s.%s\n", variable.pid(), variable.id());          
+        var.remove("value");
+      }
+
+      return JsonObject(); //don't stop
+    });
 
     StarJson starJson("/model.json", FILE_WRITE); //open fileName for deserialize
     //comment exclusions out in case of generating model.json for github
@@ -645,43 +641,6 @@ void SysModModel::loop1s() {
     Variable(var).triggerEvent(onLoop1s);
     return JsonObject(); //don't stop
   });
-}
-
-void SysModModel::cleanUpModel(bool oPos, bool ro) {
-
-  walkThroughModel([this, oPos, ro](JsonObject parentVar, JsonObject var) {
-
-    Variable parentVariable = Variable(parentVar);
-    Variable variable = Variable(var);
-    JsonArray vars = parentVariable.children();
-
-    // no cleanup of o in case of ro value removal
-    if (!ro) {
-      if (oPos) {
-        if (var["o"].isNull() || (variable.order() >= 0)) { //not set negative in initVar parentVariable.order() >= 0 &&
-          ppf("obsolete found %s.%s\n", variable.pid(), variable.id());
-          // if (!showObsolete)
-          //   vars.remove(var); //remove the obsolete var (no o or )
-        }
-        variable.order( -variable.order()); //make it possitive
-      } else { //!oPos
-        if (var["o"].isNull() || variable.order() < 0) { 
-          ppf("cleanUpModel remove var %s.%s (""o""<0)\n", variable.pid(), variable.id());          
-          vars.remove(var); //remove the obsolete var (no o or o is negative - not cleanedUp)
-        }
-      }
-    }
-
-    //remove ro values (ro vars cannot be deleted as SM uses these vars)
-    // remove if var is ro or table is instance table (exception here, values don't need to be saved)
-    if (ro && (parentVar["id"] == "instances" || variable.readOnly())) {// && !value().isNull())
-      // ppf("remove ro value %s\n", variable.id());          
-      var.remove("value");
-    }
-
-    return JsonObject(); //don't stop
-  });
-
 }
 
 Variable SysModModel::initVar(Variable parent, const char * id, const char * type, bool readOnly, const VarEvent &varEvent) {
@@ -719,15 +678,9 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
 
     if (var["ro"].isNull() || variable.readOnly() != readOnly) variable.readOnly(readOnly);
 
-    //set order. make order negative to check if not obsolete, see cleanUpModel
-    if (variable.order() >= 1000) //predefined! (modules) - positive as saved in model.json
-      variable.order( -variable.order()); //leave the order as is
-    else {
-      if (!parent.var.isNull() && Variable(parent).order() >= 0) // if checks on the parent already done so vars added later, e.g. controls, will be autochecked
-        variable.order( varCounter++); //redefine order
-      else
-        variable.order( -varCounter++); //redefine order
-    }
+    //set order
+    if (variable.order() < 1000) //predefined! (modules) - positive as saved in model.json
+      variable.order( varCounter++); //redefine order
 
     //if varEvent, add it to the list
     if (varEvent) {
@@ -825,6 +778,7 @@ JsonObject SysModModel::findModule(const char * pid, const char * id) {
     if (pididFound) return moduleVar;
   }
 
+  return JsonObject();
 }
 
 void SysModModel::findVars(const char * property, bool value, FindFun fun, JsonObject parentVar) {

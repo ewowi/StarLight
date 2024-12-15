@@ -7,7 +7,7 @@
 // @license   GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007
 // @license   For non GPL-v3 usage, commercial licenses must be purchased. Contact moonmodules@icloud.com
 
-function appName() {
+function appName() { 
   return "StarLight";
 }
 

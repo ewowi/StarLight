@@ -772,6 +772,7 @@ void SysModWeb::serveJson(WebRequest *request) {
       serializeInfo(root);
     }
     else {
+      root["state"] = ""; root["info"] = ""; //init otherwise result is {}
       serializeState(root["state"]);
       serializeInfo(root["info"]);
     }

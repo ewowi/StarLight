@@ -274,7 +274,12 @@ function createHTML(json, parentNode = null, rowNr = UINT8_MAX) {
 
     //if root (type module) add the html to one of the mdlColumns
     if (parentNode == null) {
-      parentNode = gId("mdlColumn" + variable.o%nrOfMdlColumns);
+      if (variable.o)
+        parentNode = gId("mdlColumn" + variable.o%nrOfMdlColumns);
+      else {
+        console.log("Variable obsolete", variable);
+        return null; //do not create ui for variable
+      }
     }
     let parentNodeType = parentNode.nodeName.toLocaleLowerCase();
 
@@ -852,7 +857,9 @@ function changeHTML(variable, commandJson, rowNr = UINT8_MAX) {
 
   if (!node) {
     //we should find all nodes
-    let rowNodes = document.querySelectorAll(`${variable.type}[id^="${variable.pid + "." + variable.id}#"]`); //find nodes from variable.type class with id + #nr (^: starting with)
+    let rowNodes = document.querySelectorAll(`[id^="${variable.pid + "." + variable.id}#"]`); //find nodes from variable.type class with id + #nr (^: starting with)
+    if (variable.id == "xFrequency")
+      console.log(" rowNodes", rowNodes);
     for (let subNode of rowNodes) {
       let rowNr = parseInt(subNode.id.substring((variable.pid + "." + variable.id).length + 1));
       // console.log("changeHTML found row nodes !", variable.id, subNode.id, commandJson, rowNr);

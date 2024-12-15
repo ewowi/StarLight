@@ -98,7 +98,7 @@ void SysModNetwork::setup() {
         return true;
       }
       case onChange:
-        variable.preDetails2();
+        variable.preDetails();
         mdl->setValueRowNr = rowNr;
 
         if (variable.value() == 0) {//manual
@@ -160,7 +160,7 @@ void SysModNetwork::setup() {
           }});
         }
 
-        variable.postDetails2(rowNr);
+        variable.postDetails(rowNr);
         mdl->setValueRowNr = UINT8_MAX;
 
         ethActive = false;
