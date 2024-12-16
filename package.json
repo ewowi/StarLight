@@ -1,7 +1,7 @@
 {
-  "name": "StarBase",
-  "version": "0.0.0",
-  "description": "Tools for StarBase",
+  "name": "starlight",
+  "version": "0.6.0",
+  "description": "Tools for StarLight",
   "main": "tools/cdata.js",
   "directories": {
     "lib": "lib",
@@ -13,14 +13,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ewowi/StarBase.git"
+    "url": "git+https://github.com/MoonModules/StarLight.git"
   },
   "author": "MoonModules",
   "license": "GPL-3.0-only",
   "bugs": {
-    "url": "https://github.com/ewowi/StarBase/issues"
+    "url": "https://github.com/MoonModules/StarLight/issues"
   },
-  "homepage": "https://github.com/ewowi/StarBase#readme",
+  "homepage": "https://github.com/MoonModules/StarLight#readme",
   "dependencies": {
     "clean-css": "^4.2.3",
     "html-minifier-terser": "^5.1.1",
