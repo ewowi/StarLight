@@ -38,6 +38,8 @@ SysModSystem::SysModSystem() :SysModule("System") {};
 
 void SysModSystem::setup() {
   SysModule::setup();
+
+  ppf("Stack %d of %d B (async %d of %d B) %d\n", sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize(), sysTools_get_webserver_maxStackUsage(), CONFIG_ASYNC_TCP_STACK_SIZE, uxTaskGetStackHighWaterMark(xTaskGetCurrentTaskHandle()));
   
   const Variable parentVar = ui->initSysMod(Variable(), name, 2000);
   parentVar.var["s"] = true; //setup

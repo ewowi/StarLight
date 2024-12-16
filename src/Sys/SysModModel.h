@@ -237,8 +237,7 @@ class Variable {
   const char *id() const {return var["id"];}
   const char *type() const {return var["type"];}
 
-  JsonVariant value() const {return var["value"];}
-  JsonVariant value(uint8_t rowNr) const {return var["value"][rowNr];}
+  JsonVariant value(uint8_t rowNr = UINT8_MAX) const {return (rowNr==UINT8_MAX)?var["value"].as<JsonVariant>(): var["value"][rowNr].as<JsonVariant>();}
 
   String valueString(uint8_t rowNr = UINT8_MAX);
 
@@ -289,62 +288,41 @@ class Variable {
   void setValueJV(JsonVariant value, uint8_t rowNr = UINT8_MAX);
 
   template <typename Type>
-  void setValue(Type value, uint8_t rowNr = UINT8_MAX) {
-    bool changed = false;
+  void setValue(Type newValue, uint8_t rowNr = UINT8_MAX) {
 
-    if (rowNr == UINT8_MAX) { //normal situation
-      if (var["value"].isNull() || var["value"].as<Type>() != value) { //const char * will be JsonString so comparison works
-        if (!var["value"].isNull() && !readOnly()) var["oldValue"] = var["value"];
-        var["value"] = value;
-        //trick to remove null values
-        if (var["value"].isNull() || var["value"].as<uint16_t>() == UINT16_MAX) {
+    if (value(rowNr).as<Type>() != newValue) { //changed
+
+      if (!readOnly()) var["oldValue"] = value(); //save oldValue
+
+      //save newValue, cleanup null values
+      if (rowNr == UINT8_MAX) {
+        var["value"] = newValue;
+
+        if (value().isNull() || value().as<uint16_t>() == UINT16_MAX) {
+          ppf("setValue value removed %s.%s %s->%s\n", pid(), id(), valueString().c_str(), var["oldValue"].as<String>().c_str());
           var.remove("value");
-          // ppf("dev setValue value removed %s %s\n", id(), var["oldValue"].as<String>().c_str());
         }
-        else {
-          //only print if ! read only
-          // if (!readOnly())
-          //   ppf("setValue changed %s.%s %s -> %s\n", pid(), id(), var["oldValue"].as<String>().c_str(), valueString().c_str());
-          // else
-          //   ppf("setValue changed %s %s\n", id(), var["value"].as<String>().c_str());
-          JsonVariant value = var["value"];
-          web->addResponse(var, "value", value);
-          changed = true;
+
+      } else {
+        var["value"][rowNr] = newValue;
+
+        //cleanup Array
+        size_t size = value().size();
+        while (size > 0 && (value(size-1).isNull() || value(size-1).as<uint16_t>() == UINT16_MAX)) {
+          ppf("setValue value removed %s.%s[%d] %s->%s\n", pid(), id(), size - 1, valueString().c_str(), var["oldValue"].as<String>().c_str());
+          var["value"].remove(size-1);
+          size = value().size();
         }
-      }
-    }
-    else {
-      //if we deal with multiple rows, value should be an array, if not we create one
-
-      if (var["value"].isNull() || !var["value"].is<JsonArray>()) {
-        // ppf("setValue var %s[%d] value %s not array, creating\n", id(), rowNr, var["value"].as<String>().c_str());
-        var["value"].to<JsonArray>();
-      }
-
-      if (var["value"].is<JsonArray>()) {
-        JsonArray valueArray = valArray();
-        //set the right value in the array (if array did not contain values yet, all values before rownr are set to false)
-        changed = true; //rowNr >= size
-
-        if (rowNr < valueArray.size())
-          changed = valueArray[rowNr].isNull() || valueArray[rowNr].as<Type>() != value;
-
-        if (changed) {
-
-          // if (rowNr >= valueArray.size())
-          //   ppf("notSame %d %d\n", rowNr, valueArray.size());
-          valueArray[rowNr] = value; //if valueArray[<rowNr] not exists it will be created
-          // ppf("  assigned %d %d %s\n", rowNr, valueArray.size(), valueArray[rowNr].as<String>().c_str());
-          JsonVariant value = var["value"];
-          web->addResponse(var, "value", value); //send the whole array to UI as response is in format value:<value> !!
+        if (size == 0) {
+          ppf("setValue value array removed %s.%s[] %s->%s\n", pid(), id(), valueString().c_str(), var["oldValue"].as<String>().c_str());
+          var.remove("value");
         }
       }
-      else {
-        ppf("setValue %s.%s could not create value array\n", pid(), id());
-      }
+
+      web->addResponse(var, "value", value());
+      triggerEvent(onChange, rowNr);
     }
 
-    if (changed) triggerEvent(onChange, rowNr);
   }
 
   //Set value with argument list

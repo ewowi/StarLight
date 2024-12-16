@@ -73,8 +73,11 @@ UserModMDNS *mdns;
   UserModAudioSync *audioSync;
 #endif
 
+SET_LOOP_TASK_STACK_SIZE(16 * 1024); // 16KB
+
 //setup all modules
 void setup() {
+
   mdls = new SysModules();
   
   print = new SysModPrint();
