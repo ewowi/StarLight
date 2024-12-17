@@ -872,9 +872,11 @@ void LedModFixture::addPixelsPost() {
         driver.initled(ledsP, pins, clockPin, latchPin, lengths[0]/8, sortedPins.size(), clockFreq==10?clock_1000KHZ:clockFreq==11?clock_1111KHZ:clockFreq==12?clock_1123KHZ:clock_800KHZ);
     #else
       if (driver.driverInit) {
+        NUM_LEDS_PER_STRIP = lengths[0]/8; //each shift register feeds 8 panels
+        NBIS2SERIALPINS = sortedPins.size();
         driver.setPins(pins, clockPin, latchPin);
       } else
-        driver.initled(ledsP, pins, clockPin, latchPin);
+        driver.initled(ledsP, pins, clockPin, latchPin, lengths[0]/8, sortedPins.size());
     #endif
 
     // driver.setColorOrderPerStrip(0, (colorarrangment)colorOrder); //to be implemented...
