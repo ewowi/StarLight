@@ -96,7 +96,7 @@
         //bri set by StarMod during onChange
         uint8_t result = mdl->getValue("Fixture", "on").as<bool>()?mdl->linearToLogarithm(bri):0;
 
-        #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+        #if STARLIGHT_PHYSICAL_DRIVER || STARLIGHT_VIRTUAL_DRIVER
           driver.setBrightness(result * setMaxPowerBrightnessFactor / 256);
         #else
           FastLED.setBrightness(result);
@@ -277,7 +277,7 @@
       default: return false;
     }});
 
-    #if STARLIGHT_CLOCKLESS_LED_DRIVER | STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+    #if STARLIGHT_PHYSICAL_DRIVER | STARLIGHT_VIRTUAL_DRIVER
       ui->initSlider(parentVar, "gammaRed", &gammaRed, 0, 255, false, [this](EventArguments) { switch (eventType) {
         case onChange:
           driver.setGamma(gammaRed/255.0, gammaGreen/255.0, gammaBlue/255.0);
@@ -320,9 +320,9 @@
 
     ui->initCheckBox(parentVar, "showDriver", &showDriver, false, [this](EventArguments) { switch (eventType) {
       case onUI:
-        #if STARLIGHT_CLOCKLESS_LED_DRIVER
+        #if STARLIGHT_PHYSICAL_DRIVER
           variable.setLabel("I2S Driver Show");
-        #elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+        #elif STARLIGHT_VIRTUAL_DRIVER
           variable.setLabel("Virtual Driver Show");
         #else
           variable.setLabel("FastLED Show");
@@ -332,7 +332,7 @@
       default: return false; 
     }});
 
-    // #if STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+    // #if STARLIGHT_VIRTUAL_DRIVER
     //   ui->initNumber(parentVar, "dma", UINT16_MAX, 0, UINT16_MAX, true, [this](EventArguments) { switch (eventType) {
     //     case onLoop1s:
     //         variable.setValue(_proposed_dma_extension);
@@ -341,7 +341,7 @@
     //   }});
     // #endif
 
-    #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+    #if STARLIGHT_PHYSICAL_DRIVER || STARLIGHT_VIRTUAL_DRIVER
       fix->setMaxPowerBrightnessFactor = 90; //0..255
     #else
       FastLED.setMaxPowerInMilliWatts(10000); // 5v, 2000mA
@@ -777,7 +777,7 @@ void LedModFixture::addPixelsPost() {
   }
 } //addPixelsPost
 
-#ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+#ifdef STARLIGHT_PHYSICAL_DRIVER
   void LedModFixture::driverInit(const std::vector<SortedPin> &sortedPins) {
     int pins[16]; //max 16 pins
     int lengths[16];
@@ -830,27 +830,27 @@ void LedModFixture::addPixelsPost() {
         driver.showPixels(WAIT);
     #endif
   }
-#elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+#elif STARLIGHT_VIRTUAL_DRIVER
+  #define maxNrOfPins 8 // max 8 shift registers is 8 * 2048 is 16384 leds
   void LedModFixture::driverInit(const std::vector<SortedPin> &sortedPins) {
-    int pins[NBIS2SERIALPINS]; //each pin going to shift register
-    int lengths[NBIS2SERIALPINS]; //only for STARLIGHT_CLOCKLESS_LED_DRIVER
+    int pins[maxNrOfPins]; //each pin going to shift register
+    int lengths[maxNrOfPins];
     int nb_pins=0;
 
     for (const SortedPin &sortedPin : sortedPins) {
       ppf("sortpins s:%d #:%d p:%d\n", sortedPin.startLed, sortedPin.nrOfLeds, sortedPin.pin);
-      if (nb_pins < NBIS2SERIALPINS) {
+      if (nb_pins < maxNrOfPins) {
         pins[nb_pins] = sortedPin.pin;
         lengths[nb_pins] = sortedPin.nrOfLeds;
         nb_pins++;
       }
     }
 
-    //fill the rest of the pins with the pins already used
-    //prefrably NBIS2SERIALPINS is a variable...
-    for (uint8_t i = nb_pins; i < NBIS2SERIALPINS; i++) {
-      pins[i] = pins[i%nb_pins];
-      lengths[i] = 0;
-    }
+    // //fill the rest of the pins with the pins already used
+    // for (uint8_t i = nb_pins; i < maxNrOfPins; i++) {
+    //   pins[i] = pins[i%nb_pins];
+    //   lengths[i] = 0;
+    // }
     ppf("pins[");
     for (int i=0; i<nb_pins; i++) {
       ppf(", %d", pins[i]);
@@ -864,10 +864,12 @@ void LedModFixture::addPixelsPost() {
     
     #if CONFIG_IDF_TARGET_ESP32S3
       if (driver.driverInit) {
+        NUM_LEDS_PER_STRIP = lengths[0]/8; //each shift register feeds 8 panels
+        NBIS2SERIALPINS = sortedPins.size();
         driver._clockspeed = clockFreq==10?clock_1000KHZ:clockFreq==11?clock_1111KHZ:clockFreq==12?clock_1123KHZ:clock_800KHZ;
         driver.setPins(pins, clockPin, latchPin);
       } else
-        driver.initled(ledsP, pins, clockPin, latchPin, clockFreq==10?clock_1000KHZ:clockFreq==11?clock_1111KHZ:clockFreq==12?clock_1123KHZ:clock_800KHZ);
+        driver.initled(ledsP, pins, clockPin, latchPin, lengths[0]/8, sortedPins.size(), clockFreq==10?clock_1000KHZ:clockFreq==11?clock_1111KHZ:clockFreq==12?clock_1123KHZ:clock_800KHZ);
     #else
       if (driver.driverInit) {
         driver.setPins(pins, clockPin, latchPin);

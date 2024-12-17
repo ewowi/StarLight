@@ -17,7 +17,7 @@
 
 #include "FastLED.h"
 
-#ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+#ifdef STARLIGHT_PHYSICAL_DRIVER
   #define NUMSTRIPS 16 //can this be changed e.g. when we have 20 pins?
   #define NUM_LEDS_PER_STRIP 256 //could this be removed from driver lib as makes not so much sense
   #if CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2
@@ -27,24 +27,20 @@
     #include "I2SClocklessLedDriver.h"
     static I2SClocklessLedDriver driver;
   #endif
-#elif STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
-  //used in I2SClocklessVirtualLedDriver.h,
-  //see https://github.com/ewowi/I2SClocklessVirtualLedDriver read me
-  #define NUM_LEDS_PER_STRIP 256 // for I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY ...
+#elif STARLIGHT_VIRTUAL_DRIVER //see https://github.com/ewowi/I2SClocklessVirtualLedDriver read me
+  
+  // #define NUM_LEDS_PER_STRIP 256 // for I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY ...
 
   #define CORE_DEBUG_LEVEL 0 //surpress ESP_LOGE compile error, increase to 6 when debugging
   //catch errors from library, enable when debugging
-  #define ICVD_LOGD(tag, format, ...) ppf(format, ##__VA_ARGS__)
-  #define ICVD_LOGE(tag, format, ...) ppf(format, ##__VA_ARGS__)
-  #define ICVD_LOGV(tag, format, ...) ppf(format, ##__VA_ARGS__)
-  #define ICVD_LOGI(tag, format, ...) ppf(format, ##__VA_ARGS__)
+  // #define ICVD_LOGD(tag, format, ...) ppf(format, ##__VA_ARGS__)
+  // #define ICVD_LOGE(tag, format, ...) ppf(format, ##__VA_ARGS__)
+  // #define ICVD_LOGV(tag, format, ...) ppf(format, ##__VA_ARGS__)
+  // #define ICVD_LOGI(tag, format, ...) ppf(format, ##__VA_ARGS__)
 
   #define USE_FASTLED //so CRGB is supported e.g. in initLed
   // #define __BRIGHTNESS_BIT 5 //underscore ! default 8, set off for the moment as ui brightness stopped working, will look at it later. 
                                 //the max brightness will be 2^5=32 If you remember when I have discussed about the fact that the showPixels is not always occupied with gives time for other processes to run. Well the less time we 'spent' in buffer calcualtion the better.for instance if you do not use gamma calculation and you can cope with a brightness that is a power of 2:
-  #ifndef NBIS2SERIALPINS //no underscore !, defined in pio.ini
-    #define NBIS2SERIALPINS 6 //6 shift registers
-  #endif
   // #include "esp_heap_caps.h"
   #if STARBASE_USERMOD_LIVE & STARLIGHT_LIVE_MAPPING
     #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_MAPPING_SOFTWARE) //works no flickering anymore (due to __NB_DMA_BUFFER)!
@@ -94,7 +90,7 @@ public:
     }
     ppf("Fixture constructor ptb:%d", pixelsToBlend.size());
 
-    #ifdef STARLIGHT_CLOCKLESS_LED_DRIVER
+    #ifdef STARLIGHT_PHYSICAL_DRIVER
       //'hack' to make sure show is not called before init
       #if !(CONFIG_IDF_TARGET_ESP32S3 || CONFIG_IDF_TARGET_ESP32S2)
         driver.total_leds = 0;
@@ -177,7 +173,7 @@ public:
     uint8_t liveFixtureID = UINT8_MAX;
   #endif
 
-  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+  #if STARLIGHT_PHYSICAL_DRIVER || STARLIGHT_VIRTUAL_DRIVER
     uint8_t setMaxPowerBrightnessFactor = 90; //tbd: implement driver.setMaxPowerInMilliWatts
   #endif
 

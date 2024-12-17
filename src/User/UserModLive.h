@@ -19,9 +19,7 @@ public:
   char fileName[32] = ""; //running sc file
   std::string scScript; //externals etc generated (would prefer String for esp32...)
 
-  UserModLive() :SysModule("LiveScripts") {
-    isEnabled = false; //need to enable after fresh setup
-  };
+  UserModLive() :SysModule("LiveScripts") {};
 
   void setup() override;
 

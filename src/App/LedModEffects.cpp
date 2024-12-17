@@ -458,7 +458,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           if (fix->showTicker && rowNr == fix->layers.size() - 1) { //last effect, add sysinfo
             StarString text;
             if (leds->size.x > 48) {
-              #ifdef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+              #ifdef STARLIGHT_VIRTUAL_DRIVER
                 if (strlen(fix->tickerTape))
                   text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
                 else

@@ -5,9 +5,8 @@ define verticalPanels 3
 define panelWidth 16
 define panelHeight 16
 
-//for virtual driver, max 6 pins supported atm
-//int pins[6] = {14,12,13,25,33,32}; //for esp32 (wrover)
-int pins[6] = {9,10,12,8,18,17}; //for esp32-S3
+//int pins[2] = {14,12}; //for esp32 (wrover)
+int pins[2] = {9,10}; //for esp32-S3
 
 //STARLIGHT_LIVE_MAPPING
 void mapLed(uint16_t pos) {
@@ -44,16 +43,15 @@ void main() {
 
   for (int panelY = 0; panelY < verticalPanels; panelY++) {
 
-    for (int panelX = horizontalPanels-1; panelX >=0; panelX--)
+    for (int panelX = horizontalPanels-1; panelX >=0; panelX--) {
       for (int x=0; x<panelWidth;x++)
         for (int y=panelHeight - 1; y>=0; y--)
           addPixel(panelX * panelWidth + x, panelY * panelHeight + (x%2)? y: panelHeight - 1 - y, 0); //serpentine
 
-    addPin(pins[panelY]);
+      if ((panelY*horizontalPanels + panelX)%8 == 7)
+        addPin(pins[0]);
+    }
   }
+  addPin(pins[1]);
 
-  //temporary as nr of pins is fixed to 6:
-  addPin(pins[3]);
-  addPin(pins[4]);
-  addPin(pins[5]);
 }

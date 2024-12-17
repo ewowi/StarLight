@@ -4,7 +4,7 @@ define width 20
 define height 20
 define depth 6
 
-int pins[6] = {32,33,25,26,27,14}; //STARLIGHT_CLOCKLESS_LED_DRIVER on esp32-wrover (PSRAM)
+int pins[6] = {32,33,25,26,27,14}; //STARLIGHT_PHYSICAL_DRIVER on esp32-wrover (PSRAM)
 //int pins[6] = {9,10,12,8,18,17}; //for esp32-S3
 
 void main()
