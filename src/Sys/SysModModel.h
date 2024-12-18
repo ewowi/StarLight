@@ -290,9 +290,9 @@ class Variable {
   template <typename Type>
   void setValue(Type newValue, uint8_t rowNr = UINT8_MAX) {
 
-    if (value(rowNr).as<Type>() != newValue) { //changed
+    if (value(rowNr).isNull() || value(rowNr).as<Type>() != newValue) { //new or changed
 
-      if (!readOnly()) var["oldValue"] = value(); //save oldValue
+      if (!value().isNull() && !readOnly()) var["oldValue"] = value(); //save oldValue
 
       //save newValue, cleanup null values
       if (rowNr == UINT8_MAX) {

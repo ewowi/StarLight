@@ -119,7 +119,6 @@
               ppf("remove allnulls %s\n", childVariable.id());
               children().remove(childVarIt);
             }
-            web->getResponseObject()["details"]["rowNr"] = rowNr;
           }
           else
             print->printJson("dev array but not rowNr", var);
@@ -135,10 +134,12 @@
       }
     } //if new added
     ppf("postDetails %s.%s post ", pid(), id());
-    print->printVar(var);
+    print->printJson("  Var", var);
     ppf("\n");
 
     //post update details
+    if (rowNr != UINT8_MAX)
+      web->getResponseObject()["details"]["rowNr"] = rowNr;
     web->getResponseObject()["details"]["var"] = var;
   }
 

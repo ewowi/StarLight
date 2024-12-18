@@ -88,7 +88,7 @@ public:
       if (pixelsToBlend.size() < nrOfLeds)
         pixelsToBlend.push_back(false);
     }
-    ppf("Fixture constructor ptb:%d", pixelsToBlend.size());
+    ppf("Fixture constructor ptb:%d\n", pixelsToBlend.size());
 
     #ifdef STARLIGHT_PHYSICAL_DRIVER
       //'hack' to make sure show is not called before init
