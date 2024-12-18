@@ -2,9 +2,9 @@
 
 define width 20
 define height 20
-define depth 6
+define depth 8
 
-int pins[6] = {32,33,25,26,27,14}; //STARLIGHT_PHYSICAL_DRIVER on esp32-wrover (PSRAM)
+int pins[8] = {32,33,25,26,27,14, 12, 13}; //PHYSICAL_DRIVER on esp32-wrover (PSRAM)
 //int pins[6] = {9,10,12,8,18,17}; //for esp32-S3
 
 void main()
@@ -18,6 +18,6 @@ void main()
       for (int y=0; y<height;y++)
         addPixel(x, y, z);
 
-    addPin(pins[z]); //every 8 panels one pin on the esp32
+    addPin(pins[z]); //every curtain on one pin
   }
 }
