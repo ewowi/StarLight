@@ -1,7 +1,7 @@
 /*
    @title     StarLight
    @file      LedModFixtureGen.h
-   @date      20241105
+   @date      20241219
    @repo      https://github.com/MoonModules/StarLight
    @Authors   https://github.com/MoonModules/StarLight/commits/main
    @Copyright © 2024 Github StarLight Commit Authors
@@ -839,7 +839,7 @@ public:
       }
     }
 
-    fixtureVariable.postDetails2(UINT8_MAX);
+    fixtureVariable.postDetails(UINT8_MAX);
     mdl->setValueRowNr = UINT8_MAX;
   }
 

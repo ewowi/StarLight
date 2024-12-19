@@ -1,7 +1,7 @@
 /*
    @title     StarLight
    @file      LedLayer.cpp
-   @date      20241105
+   @date      20241219
    @repo      https://github.com/MoonModules/StarLight
    @Authors   https://github.com/MoonModules/StarLight/commits/main
    @Copyright © 2024 Github StarLight Commit Authors
@@ -159,6 +159,13 @@ void LedsLayer::setPixelColor(const int indexV, const CRGB& color) {
       }
       case m_onePixel: {
         uint16_t indexP = mappingTable[indexV].indexP;
+        //temp fix for cube202020 (some curtains are bgr)
+        // if (indexV > 2400) {
+        //   fix->ledsP[indexP].r = color.b;
+        //   fix->ledsP[indexP].g = color.g;
+        //   fix->ledsP[indexP].b = color.r;
+        // }
+        // else
         fix->ledsP[indexP] = fix->pixelsToBlend[indexP]?blend(color, fix->ledsP[indexP], fix->globalBlend):color;
         break; }
       case m_morePixels:

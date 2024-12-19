@@ -1,7 +1,7 @@
 /*
    @title     StarLight
    @file      LedModEffects.h
-   @date      20241105
+   @date      20241219
    @repo      https://github.com/MoonModules/StarLight
    @Authors   https://github.com/MoonModules/StarLight/commits/main
    @Copyright © 2024 Github StarLight Commit Authors
@@ -262,10 +262,10 @@ inline uint16_t getRGBWsize(uint16_t nleds){
             leds->projectionData.clear(); //delete effectData memory so it can be rebuild
             leds->projectionData.read<uint8_t>(); leds->projectionData.begin(); //allocate minimum amount for projectionData (chunk of 32 bytes) to avoid control defaults to be removed
 
-            variable.preDetails2(); //set all positive var N orders to negative
+            variable.preDetails(); //set all positive var N orders to negative
             mdl->setValueRowNr = rowNr;
             if (leds->projection) leds->projection->setup(*leds, variable); //not if None projection
-            variable.postDetails2(rowNr);
+            variable.postDetails(rowNr);
 
             mdl->setValueRowNr = UINT8_MAX;
 
@@ -458,7 +458,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           if (fix->showTicker && rowNr == fix->layers.size() - 1) { //last effect, add sysinfo
             StarString text;
             if (leds->size.x > 48) {
-              #ifdef STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+              #ifdef STARLIGHT_VIRTUAL_DRIVER
                 if (strlen(fix->tickerTape))
                   text.format("%d @ %.3d %s", fix->fixSize.x * fix->fixSize.y, fix->realFps, fix->tickerTape);
                 else
@@ -538,10 +538,10 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right to avoid control defaults to be removed
 
       Variable variable = Variable("layers", "effect");
-      variable.preDetails2();
+      variable.preDetails();
       mdl->setValueRowNr = rowNr;
       leds.effect->setup(leds, variable); //if changed then run setup once (like call==0 in WLED) and set all defaults in effectData
-      variable.postDetails2(rowNr);
+      variable.postDetails(rowNr);
       mdl->setValueRowNr = UINT8_MAX;
 
       leds.effectData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...

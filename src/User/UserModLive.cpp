@@ -41,7 +41,7 @@ Parser parser = Parser();
   ppf("ELS preKill\n");
   // LEDS specific
   //tbd: move this to LedModFixture...
-  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+  #if STARLIGHT_PHYSICAL_DRIVER || STARLIGHT_VIRTUAL_DRIVER
     driver.__enableDriver=false;
     while (driver.isDisplaying){};
     //delay(20);
@@ -51,7 +51,7 @@ Parser parser = Parser();
 {
   ppf("ELS postKill\n");
   // LEDS specific
-  #if STARLIGHT_CLOCKLESS_LED_DRIVER || STARLIGHT_CLOCKLESS_VIRTUAL_LED_DRIVER
+  #if STARLIGHT_PHYSICAL_DRIVER || STARLIGHT_VIRTUAL_DRIVER
     // delay(10);
     driver.__enableDriver=true;
   #endif

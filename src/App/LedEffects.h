@@ -1,7 +1,7 @@
 /*
    @title     StarLight
    @file      LedEffects.h
-   @date      20241105
+   @date      20241219
    @repo      https://github.com/MoonModules/StarLight
    @Authors   https://github.com/MoonModules/StarLight/commits/main
    @Copyright © 2024 Github StarLight Commit Authors
@@ -2865,8 +2865,8 @@ class PaintbrushEffect: public Effect {
       byte z2;
       int length;
       if (leds.projectionDimension == _3D) {
-        z1 = beatsin8(oscillatorOffset*3 + audioSync->fftResults[0]/16, 0, (depth-1), audioSync->fftResults[bin], *aux1Chaos);
-        z2 = beatsin8(oscillatorOffset*4 + audioSync->fftResults[0]/16, 0, (depth-1), audioSync->fftResults[bin], *aux1Chaos);
+        z1 = beatsin8(oscillatorOffset*5 + audioSync->fftResults[0]/16, 0, (depth-1), audioSync->fftResults[bin], *aux1Chaos);
+        z2 = beatsin8(oscillatorOffset*6 + audioSync->fftResults[0]/16, 0, (depth-1), audioSync->fftResults[bin], *aux1Chaos);
 
         length = sqrt((x2-x1) * (x2-x1) + (y2-y1) * (y2-y1) + (z2-z1) * (z2-z1));
       } else 
