@@ -62,7 +62,7 @@ void SysModule::addPresets(JsonObject parentVar) {
         for (JsonPair pidPair: modulePresets[presetValue].as<JsonObject>()) {
           for (JsonPair idPair: pidPair.value().as<JsonObject>()) {
             ppf("load %s.%s: %s\n", pidPair.key().c_str(), idPair.key().c_str(), idPair.value().as<String>().c_str());
-            if (pidPair.key() != "name") {
+            if (pidPair.key() != "name") { //preset name
               JsonVariant jv = idPair.value();
               if (jv.is<JsonArray>()) {
                 uint8_t rowNr = 0;
@@ -137,7 +137,7 @@ void SysModule::addPresets(JsonObject parentVar) {
       modulePresets[presetIndex].to<JsonObject>();//empty
       mdl->walkThroughModel([modulePresets, presetIndex, &result](JsonObject parentVar, JsonObject var) {
         Variable variable = Variable(var);
-        if (!variable.readOnly() &&  strncmp(variable.id(), "preset", 32) != 0 ) { //exclude preset
+        if (!variable.readOnly() && var["id"] != "preset" && var["id"] != "assignPreset" && var["id"] != "clearPreset" && !var["value"].isNull()) { //exclude preset
           ppf("save %s.%s: %s\n", variable.pid(), variable.id(), variable.valueString().c_str());
           modulePresets[presetIndex][variable.pid()][variable.id()] = var["value"];
 
@@ -150,7 +150,7 @@ void SysModule::addPresets(JsonObject parentVar) {
               variable.getOption(option, var["value"][0]); //only one for now
             else
               variable.getOption(option, var["value"]);
-            ppf("add option %s.%s[0] %s\n", variable.pid(), variable.id(), option);
+            ppf("add select %s.%s[0] %s\n", variable.pid(), variable.id(), option); //only one for now
             result += option; //concat
             result.catSep(", ");
           }

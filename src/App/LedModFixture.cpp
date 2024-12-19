@@ -647,7 +647,7 @@ void LedModFixture::addPin(uint8_t pin) {
           after = strtok(nullptr, "-");
           const uint16_t startLed = strtol(before, nullptr, 10);
           const uint16_t nrOfLeds = strtol(after, nullptr, 10) - strtol(before, nullptr, 10) + 1;
-          print->fFormat(details, sizeof(details), "%d-%d", min(prevIndexP, startLed), max((uint16_t)(indexP - 1), nrOfLeds)); //careful: LedModEffects:loop uses this to assign to FastLed
+          print->fFormat(details, sizeof(details), "%d-%d", min(prevIndexP, startLed), max((uint16_t)(indexP - 1), nrOfLeds)); //careful: LedModEffects:loop uses this to assign to FastLED
           ppf("pins extend leds %d: %s\n", pin, details);
           //tbd: more check
 
@@ -657,7 +657,7 @@ void LedModFixture::addPin(uint8_t pin) {
       }
       else {//allocate new pin
         //tbd: check if free
-        print->fFormat(details, sizeof(details), "%d-%d", prevIndexP, indexP - 1); //careful: LedModEffects:loop uses this to assign to FastLed
+        print->fFormat(details, sizeof(details), "%d-%d", prevIndexP, indexP - 1); //careful: LedModEffects:loop uses this to assign to FastLED
         // ppf("allocatePin %d: %s\n", pin, details);
         pinsM->allocatePin(pin, "Leds", details);
       }
@@ -1115,7 +1115,7 @@ void LedModFixture::addPixelsPost() {
         case 48: FastLED.addLeds<STARLIGHT_CHIPSET, 48>(ledsP, startLed, nrOfLeds).setCorrection(TypicalLEDStrip); break;
       #endif //CONFIG_IDF_TARGET_ESP32S3
 
-      default: ppf("FastLedPin assignment: pin not supported %d\n", sortedPin.pin);
+      default: ppf("FastLEDPin assignment: pin not supported %d\n", sortedPin.pin);
       } //switch pinNr
     } //sortedPins
   }

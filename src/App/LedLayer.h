@@ -137,7 +137,7 @@ class SharedData {
   Type * readWrite(int length = 1) {
     if (!dataAllocated) return nullptr;
     size_t newIndex = index + length * sizeof(Type);
-    if (newIndex > bytesAllocated) {
+    if (newIndex > bytesAllocated) { //newIndex is index for next allocation
       size_t newSize = bytesAllocated + (1 + ( newIndex - bytesAllocated)/32) * 32; // add a multitude of 32 bytes
       ppf("sharedData.readWrite add more %d->%d %d->%d\n", index, newIndex, bytesAllocated, newSize);
       if (bytesAllocated == 0)
