@@ -1,7 +1,7 @@
 /*
    @title     StarBase
    @file      SysModWeb.cpp
-   @date      20241105
+   @date      20241219
    @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
    @Authors   https://github.com/ewowi/StarBase/commits/main
    @Copyright © 2024 Github StarBase Commit Authors
@@ -639,7 +639,6 @@ void SysModWeb::clientsToJson(JsonArray array, bool nameOnly, const char * filte
 
 bool SysModWeb::captivePortal(WebRequest *request)
 {
-  ppf("captivePortal %d %d\n", net->localIP()[3], request->client()->localIP()[3]);
 
   if (ON_STA_FILTER(request)) return false; //only serve captive in AP mode
   String hostH;
@@ -647,7 +646,7 @@ bool SysModWeb::captivePortal(WebRequest *request)
   hostH = request->getHeader("Host")->value();
 
   if (!isIp(hostH) && hostH.indexOf(mdns->cmDNS) < 0) { //&& hostH.indexOf("wled.me") < 0
-    ppf("Captive portal\n");
+    ppf("captivePortal %d %d\n", net->localIP()[3], request->client()->localIP()[3]);
     WebResponse *response = request->beginResponse(302);
     response->addHeader(F("Location"), F("http://4.3.2.1"));
     request->send(response);
@@ -772,6 +771,7 @@ void SysModWeb::serveJson(WebRequest *request) {
       serializeInfo(root);
     }
     else {
+      root["state"] = ""; root["info"] = ""; //init otherwise result is {}
       serializeState(root["state"]);
       serializeInfo(root["info"]);
     }

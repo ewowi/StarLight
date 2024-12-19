@@ -1,6 +1,6 @@
 {
-  "name": "StarBase",
-  "version": "0.0.0",
+  "name": "starbase",
+  "version": "0.6.0",
   "description": "Tools for StarBase",
   "main": "tools/cdata.js",
   "directories": {

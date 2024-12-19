@@ -1,7 +1,7 @@
 /*
    @title     StarBase
    @file      UserModLive.h
-   @date      20241105
+   @date      20241219
    @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
    @Authors   https://github.com/ewowi/StarBase/commits/main
    @Copyright © 2024 Github StarBase Commit Authors, asmParser © https://github.com/hpwit/ASMParser
@@ -393,7 +393,8 @@ static float _time(float j) {
       }
 
       ppf("Before parsing of %s\n", fileName);
-      ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+      ppf("Heap %s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
+      ppf("Stack %d of %d B (async %d of %d B) %d\n", sys->sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize(), sys->sysTools_get_webserver_maxStackUsage(), CONFIG_ASYNC_TCP_STACK_SIZE, uxTaskGetStackHighWaterMark(xTaskGetCurrentTaskHandle()));
 
       Executable executable = parser.parseScript(&scScript);
       executable.name = string(fileName);

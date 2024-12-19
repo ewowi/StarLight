@@ -1,7 +1,7 @@
 /*
    @title     StarBase
    @file      SysModUI.h
-   @date      20241105
+   @date      20241219
    @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
    @Authors   https://github.com/ewowi/StarBase/commits/main
    @Copyright © 2024 Github StarBase Commit Authors
@@ -37,17 +37,17 @@ public:
   //order: order%4 determines the column (WIP)
   Variable initAppMod(Variable parent, const char * id, int order = 0) {
     Variable variable = initVarAndValue<const char *>(parent, id, "appmod", (const char *)nullptr);
-    if (order) variable.defaultOrder(order + 1000);
+    if (order) variable.order(order); //add 1000 to be sure it will be predefined
     return variable;
   }
   Variable initSysMod(Variable parent, const char * id, int order = 0) {
     const Variable variable = initVarAndValue<const char *>(parent, id, "sysmod", (const char *)nullptr);
-    if (order) variable.defaultOrder(order + 1000);
+    if (order) variable.order(order); //add 1000 to be sure it will be predefined
     return variable;
   }
   Variable initUserMod(Variable parent, const char * id, int order = 0) {
     const Variable variable = initVarAndValue<const char *>(parent, id, "usermod", (const char *)nullptr);
-    if (order) variable.defaultOrder(order + 1000);
+    if (order) variable.order(order); //add 1000 to be sure it will be predefined
     return variable;
   }
 

@@ -1,7 +1,7 @@
 /*
    @title     StarBase
    @file      SysModSystem.cpp
-   @date      20241105
+   @date      20241219
    @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
    @Authors   https://github.com/ewowi/StarBase/commits/main
    @Copyright © 2024 Github StarBase Commit Authors
@@ -38,6 +38,8 @@ SysModSystem::SysModSystem() :SysModule("System") {};
 
 void SysModSystem::setup() {
   SysModule::setup();
+
+  ppf("Stack %d of %d B (async %d of %d B) %d\n", sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize(), sysTools_get_webserver_maxStackUsage(), CONFIG_ASYNC_TCP_STACK_SIZE, uxTaskGetStackHighWaterMark(xTaskGetCurrentTaskHandle()));
   
   const Variable parentVar = ui->initSysMod(Variable(), name, 2000);
   parentVar.var["s"] = true; //setup

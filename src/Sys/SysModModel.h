@@ -1,7 +1,7 @@
 /*
    @title     StarBase
    @file      SysModModel.h
-   @date      20241105
+   @date      20241219
    @repo      https://github.com/ewowi/StarBase, submit changes to this file as PRs to ewowi/StarBase
    @Authors   https://github.com/ewowi/StarBase/commits/main
    @Copyright © 2024 Github StarBase Commit Authors
@@ -237,8 +237,7 @@ class Variable {
   const char *id() const {return var["id"];}
   const char *type() const {return var["type"];}
 
-  JsonVariant value() const {return var["value"];}
-  JsonVariant value(uint8_t rowNr) const {return var["value"][rowNr];}
+  JsonVariant value(uint8_t rowNr = UINT8_MAX) const {return (rowNr==UINT8_MAX)?var["value"].as<JsonVariant>(): var["value"][rowNr].as<JsonVariant>();}
 
   String valueString(uint8_t rowNr = UINT8_MAX);
 
@@ -248,9 +247,10 @@ class Variable {
   bool readOnly() const {return var["ro"];}
   void readOnly(bool value) {var["ro"] = value;}
 
-  JsonArray children() const {return var["n"];}
+  //children (n) of variable
+  JsonArray children();
 
-  void defaultOrder(int value) const {if (order() > -1000) order(- value); } //set default order (in range >=1000). Don't use auto generated order as order can be changed in the ui (WIP)
+  // void defaultOrder(int value) const {order(value); } //set default order (in range >=1000). Don't use auto generated order as order can be changed in the ui (WIP)
 
   //recursively remove all value[rowNr] from children of var
   void removeValuesForRow(uint8_t rowNr);
@@ -265,8 +265,6 @@ class Variable {
 
   void preDetails();
   void postDetails(uint8_t rowNr);
-  void preDetails2();
-  void postDetails2(uint8_t rowNr);
 
   //checks if var has fun of type eventType implemented by calling it and checking result (for onUI on RO var, also onSetValue is called)
   //onChange: sends dash var change to udp (if init),  sets pointer if pointer var and run onChange
@@ -290,62 +288,41 @@ class Variable {
   void setValueJV(JsonVariant value, uint8_t rowNr = UINT8_MAX);
 
   template <typename Type>
-  void setValue(Type value, uint8_t rowNr = UINT8_MAX) {
-    bool changed = false;
+  void setValue(Type newValue, uint8_t rowNr = UINT8_MAX) {
 
-    if (rowNr == UINT8_MAX) { //normal situation
-      if (var["value"].isNull() || var["value"].as<Type>() != value) { //const char * will be JsonString so comparison works
-        if (!var["value"].isNull() && !readOnly()) var["oldValue"] = var["value"];
-        var["value"] = value;
-        //trick to remove null values
-        if (var["value"].isNull() || var["value"].as<uint16_t>() == UINT16_MAX) {
+    if (value(rowNr).isNull() || value(rowNr).as<Type>() != newValue) { //new or changed
+
+      if (!value().isNull() && !readOnly()) var["oldValue"] = value(); //save oldValue
+
+      //save newValue, cleanup null values
+      if (rowNr == UINT8_MAX) {
+        var["value"] = newValue;
+
+        if (value().isNull() || value().as<uint16_t>() == UINT16_MAX) {
+          ppf("setValue value removed %s.%s %s->%s\n", pid(), id(), valueString().c_str(), var["oldValue"].as<String>().c_str());
           var.remove("value");
-          // ppf("dev setValue value removed %s %s\n", id(), var["oldValue"].as<String>().c_str());
         }
-        else {
-          //only print if ! read only
-          // if (!readOnly())
-          //   ppf("setValue changed %s.%s %s -> %s\n", pid(), id(), var["oldValue"].as<String>().c_str(), valueString().c_str());
-          // else
-          //   ppf("setValue changed %s %s\n", id(), var["value"].as<String>().c_str());
-          JsonVariant value = var["value"];
-          web->addResponse(var, "value", value);
-          changed = true;
+
+      } else {
+        var["value"][rowNr] = newValue;
+
+        //cleanup Array
+        size_t size = value().size();
+        while (size > 0 && (value(size-1).isNull() || value(size-1).as<uint16_t>() == UINT16_MAX)) {
+          ppf("setValue value removed %s.%s[%d] %s->%s\n", pid(), id(), size - 1, valueString().c_str(), var["oldValue"].as<String>().c_str());
+          var["value"].remove(size-1);
+          size = value().size();
         }
-      }
-    }
-    else {
-      //if we deal with multiple rows, value should be an array, if not we create one
-
-      if (var["value"].isNull() || !var["value"].is<JsonArray>()) {
-        // ppf("setValue var %s[%d] value %s not array, creating\n", id(), rowNr, var["value"].as<String>().c_str());
-        var["value"].to<JsonArray>();
-      }
-
-      if (var["value"].is<JsonArray>()) {
-        JsonArray valueArray = valArray();
-        //set the right value in the array (if array did not contain values yet, all values before rownr are set to false)
-        bool notSame = true; //rowNr >= size
-
-        if (rowNr < valueArray.size())
-          notSame = valueArray[rowNr].isNull() || valueArray[rowNr].as<Type>() != value;
-
-        if (notSame) {
-          // if (rowNr >= valueArray.size())
-          //   ppf("notSame %d %d\n", rowNr, valueArray.size());
-          valueArray[rowNr] = value; //if valueArray[<rowNr] not exists it will be created
-          // ppf("  assigned %d %d %s\n", rowNr, valueArray.size(), valueArray[rowNr].as<String>().c_str());
-          JsonVariant value = var["value"];
-          web->addResponse(var, "value", value); //send the whole array to UI as response is in format value:<value> !!
-          changed = true;
+        if (size == 0) {
+          ppf("setValue value array removed %s.%s[] %s->%s\n", pid(), id(), valueString().c_str(), var["oldValue"].as<String>().c_str());
+          var.remove("value");
         }
       }
-      else {
-        ppf("setValue %s.%s could not create value array\n", pid(), id());
-      }
+
+      web->addResponse(var, "value", value());
+      triggerEvent(onChange, rowNr);
     }
 
-    if (changed) triggerEvent(onChange, rowNr);
   }
 
   //Set value with argument list
@@ -396,9 +373,6 @@ public:
   //adds a variable to the model
   Variable initVar(Variable parent, const char * id, const char * type, bool readOnly = true, const VarEvent &varEvent = nullptr);
 
-  //scan all vars in the model and remove vars where var["o"] is negative or positive, if ro then remove ro values
-  void cleanUpModel(bool oPos = true, bool ro = false);
-
   //sets the value of var with id
   template <typename Type>
   void setValue(const char * pid, const char * id, Type value, uint8_t rowNr = UINT8_MAX) {
@@ -443,9 +417,6 @@ public:
 
     return round(exp(minv + scale*((float)value-minp)));
   }
-
-private:
-  bool cleanUpModelDone = false;
 
 };
 
