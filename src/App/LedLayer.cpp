@@ -160,7 +160,7 @@ void LedsLayer::setPixelColor(const int indexV, const CRGB& color) {
       case m_onePixel: {
         uint16_t indexP = mappingTable[indexV].indexP;
         //temp fix for cube202020 (some curtains are bgr)
-        // if (indexV > 2400) {
+        // if (indexP > 2800) {
         //   fix->ledsP[indexP].r = color.b;
         //   fix->ledsP[indexP].g = color.g;
         //   fix->ledsP[indexP].b = color.r;
@@ -171,6 +171,11 @@ void LedsLayer::setPixelColor(const int indexV, const CRGB& color) {
       case m_morePixels:
         if (mappingTable[indexV].indexes < mappingTableIndexes.size())
           for (uint16_t indexP: mappingTableIndexes[mappingTable[indexV].indexes]) {
+            // if (indexP > 2800) {
+            //   fix->ledsP[indexP].r = color.b;
+            //   fix->ledsP[indexP].g = color.g;
+            //   fix->ledsP[indexP].b = color.r;
+            // } else
             fix->ledsP[indexP] = fix->pixelsToBlend[indexP]?blend(color, fix->ledsP[indexP], fix->globalBlend): color;
           }
         else
@@ -203,7 +208,7 @@ CRGB LedsLayer::getPixelColor(const int indexV) const {
         return fix->ledsP[mappingTable[indexV].indexP]; 
         break;
       case m_morePixels:
-        return fix->ledsP[mappingTableIndexes[mappingTable[indexV].indexes][0]]; //any would do as they are all the same
+        return fix->ledsP[mappingTableIndexes[mappingTable[indexV].indexes][0]]; //any will do as they are all the same
         break;
       default: // m_color:
         return CRGB((mappingTable[indexV].rgb14 >> 9) << 3, 

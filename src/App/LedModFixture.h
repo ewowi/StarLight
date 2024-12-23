@@ -149,6 +149,7 @@ public:
   bool3State showTicker = false;
   char tickerTape[20] = "";
   bool3State showDriver = true;
+  uint16_t maxPowerWatt = 10; //default 10W, save for usb ports
 
   //temporary here  
   uint16_t indexP = 0;
