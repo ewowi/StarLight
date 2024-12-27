@@ -114,10 +114,7 @@ class MainNav {
       </div>`
       this.#createHTMLFun(this.#activeModuleJson, gId("Module.main"))
     }
-    //done after innerHTML as it needs to find the nodes. tbd: createHTMLFun adds to dom directly
-    if (this.#setDefaultValuesFun) {
-      this.#setDefaultValuesFun(this.#activeModuleJson)
-    }
+
   } //set activeModuleJson(moduleJson)
 
   /**
@@ -174,11 +171,10 @@ class MainNav {
    * Update the UI
    */
   //updateUI is made after all modules have been fetched, how to adapt to add one module?
-  updateUI(moduleJson, createHTMLFun, setDefaultValuesFun) {
+  updateUI(moduleJson, createHTMLFun) {
 
     //functions called when selecting a module
     this.#createHTMLFun = createHTMLFun
-    this.#setDefaultValuesFun = setDefaultValuesFun
 
     this.#updateMainMenu();
     this.#updateSecondaryMenu();
@@ -201,5 +197,4 @@ class MainNav {
 
   //stores the function to execute to display one module
   #createHTMLFun = null;
-  #setDefaultValuesFun = null;
 }

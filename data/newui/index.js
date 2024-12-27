@@ -80,7 +80,7 @@ class Controller {
     // every 10th second send binarydata
     window.setInterval(function(){
       let buffer = [0,1,2,3,4]
-      buffer[0] = Math.round(Math.random())
+      buffer[0] = Math.round(Math.random() * 2) //0, 1 or 2
       
       // console.log(buffer)
       // let buffer = new Uint8Array([0,1,2,3,4,5,6,7,8]);
@@ -93,28 +93,77 @@ class Controller {
           controller.modules.previewBoard(canvasNode, buffer);
         }
       }
-      else if (buffer[0] == 1) {
+      else {
         //LEDs specific
         let canvasNode = gId("Fixture.preview");
+        let previewVar = controller.modules.findVar("Fixture", "preview");
         if (canvasNode) {
           // console.log(buffer, canvasNode);
-          let previewVar = controller.modules.findVar("Fixture", "preview");
-          if (previewVar.file) {
-            buffer[1] = 0
-            buffer[2] = 0
-            buffer[3] = 0
-            for (let i = 0; i < previewVar.file.nrOfLeds; i++) {
-              buffer[4+i*3] = Math.random() * 256
-              buffer[4+i*3+1] = Math.random() * 256
-              buffer[4+i*3+2] = Math.random() * 256
-            }
+          if (previewVar) {
+            
+            if (buffer[0] == 1) { //preview definition
 
-            userFun(buffer);
-          }
-        }
-        //end LEDs specific
+              if (!previewVar.file) {
 
-      }
+                let headerBytesFixture = 16
+
+                let width = 10
+                let height = 10
+                let depth = 10
+
+                buffer[0] = 1; //userfun 1
+                buffer[1] = 0;
+                buffer[2] = width%256;
+                buffer[3] = 0;
+                buffer[4] = height%256;
+                buffer[5] = 0;
+                buffer[6] = depth%256;
+                buffer[7] = Math.floor(width * height * depth/256);
+                buffer[8] = width * height * depth%256;
+                buffer[9] = 1 //ledSize;
+                buffer[10] = 0 //ledShape;
+                buffer[11] = 1 //ledFactor;
+                let previewBufferIndex = headerBytesFixture;
+
+                for (let z=0; z<depth;z++)
+
+                  for (let x=0; x<width;x++)
+                    for (let y=0; y<height;y++) {
+                      buffer[previewBufferIndex++] = x
+                      buffer[previewBufferIndex++] = y
+                      buffer[previewBufferIndex++] = z
+                    }
+              
+                buffer[12] = Math.floor(previewBufferIndex/256); //last slot filled
+                buffer[13] = previewBufferIndex%256; //last slot filled
+            
+                userFun(buffer);
+              }
+            } else if (buffer[0] == 2) { //preview data
+              if (previewVar.file) {
+                let headerBytesPreview = 5
+                let bytesPerPixel = 3
+    
+                buffer[1] = 0 //255:indicates follow up package otherwise viewRotation.x
+                buffer[2] = 0 //viewRotation.y
+                buffer[3] = 0 //viewRotation.z
+                buffer[4] = bytesPerPixel;
+                previewBufferIndex = headerBytesPreview;
+    
+                //3 bytes per pixel
+                for (let i = 0; i < 1000; i++) {
+                  buffer[previewBufferIndex++] = Math.random() * 256
+                  buffer[previewBufferIndex++] = Math.random() * 256
+                  buffer[previewBufferIndex++] = Math.random() * 256
+                }
+    
+                userFun(buffer);
+              }
+            } //if buffer
+          } // if previewVar
+        } //if canvasNode
+      } //not buffer = 0
+      //end LEDs specific
     }, 100);
 
   }
