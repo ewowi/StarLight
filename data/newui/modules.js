@@ -29,28 +29,14 @@ class Modules {
       return Math.abs(a.o) - Math.abs(b.o); //o is order nr (ignore negatives for the time being)
     });
 
-    //all variables of module
+    //all child variables of module
     for (let variable of moduleJson.n) {
       let variableClass = varJsonToClass(variable);
       variableClass.createHTML(gId(`m.${moduleJson.id}`))
     }
 
-    gId(`m.${moduleJson.id}`).innerHTML += '<pre>' + JSON.stringify(moduleJson, null, 2) + '</pre>'
-  }
-
-  //done after innerHTML as it needs to find the nodes. tbd: createHTMLFun adds to dom directly
-  setDefaultValues(moduleJson) {
-    return;
-    // console.log("setDefaultValues", moduleJson)
-    controller.modules.walkThroughModel(function(parent, variable) { //this.walkThroughModel not working for some reason???
-      
-      // if (Array.isArray(variable.value)) variable.value = variable.value[0] //temp hack to deal with table values
-
-      if (variable.value != null) {
-        let variableClass = varJsonToClass(variable);
-        variableClass.receiveData({"value":variable.value}); //receiveData knows how the value should be assigned to the node
-      }
-    }, moduleJson)
+    //show module.json (disabled for now)
+    // gId(`m.${moduleJson.id}`).innerHTML += '<pre>' + JSON.stringify(moduleJson, null, 2) + '</pre>'
   }
 
   //temporary to test issue above
@@ -64,7 +50,7 @@ class Modules {
     this.model.push(moduleJson);
 
     //updateUI is made after all modules have been fetched, how to adapt to add one module?
-    controller.mainNav.updateUI(moduleJson, this.createHTML, this.setDefaultValues); //moduleFun returns the html to show in the module panel of the UI
+    controller.mainNav.updateUI(moduleJson, this.createHTML); //moduleFun returns the html to show in the module panel of the UI
     //still doesn't maker sense  to call updateUI for every module ...
   }
 
@@ -82,7 +68,7 @@ class Modules {
     }
   }
 
-  //loop through the model hierarchy and generateData data for each variable in the model
+  //loop through the model hierarchy and generateData data for each variable in the model (for Live Server)
   generateData() {
     this.walkThroughModel(function(parent, variable) {
       if (parent) { //no need to send modules
@@ -101,6 +87,7 @@ class Modules {
         return variable; //this stops the walkThrough
     })
   }
+
   findParentVar(pid, id) {
     // console.log("findVar", id, parent, model);
     return this.walkThroughModel(function(parent, variable) {
@@ -284,7 +271,7 @@ class Variable {
 
     //set the default value for this class
     if (this.variable.value) {
-      console.log("init value", this.pidid(rowNr), this.variable.value)
+      // console.log("init value", this.pidid(rowNr), this.variable.value)
       if (rowNr == UINT8_MAX)
         this.receiveValue(this.variable.value)
       else 
@@ -384,7 +371,7 @@ class Variable {
       }
 
       if (properties.comment) {
-        console.log("receive comment for", this.pidid(), properties.comment)
+        // console.log("receive comment for", this.pidid(), properties.comment)
         if (parentClass.variable.type != "table")
           this.receiveComment(properties.comment)
         else {
@@ -392,8 +379,20 @@ class Variable {
         }
       }
 
-      if (properties.file)
-        this.receiveFile(properties.file)
+      if (properties.file) {
+        //not used ATM
+        let url;
+        if (window.location.href.includes("127.0.0.1"))
+          url = "/misc/" //get the files from the misc folder in the repo (Live Server)
+        else 
+          url = `http://${window.location.hostname}/file/`
+
+        fetchAndExecute(url, properties.file, this.variable, function(variable, text) {
+          variable.file = JSON.parse(text); //assuming it is json, should we call this file?
+          variable.file.new = true;
+          console.log("receiveData file fetched", variable.id, variable.file);
+        }); 
+      }
     } //if node
   }
 
@@ -472,7 +471,7 @@ class CheckboxVariable extends Variable {
     let node = gId(this.pidid(rowNr))
     
     if (node && value != null) {
-      console.log("rv2", this.pidid(rowNr), value)
+      // console.log("rv2", this.pidid(rowNr), value)
       // console.log("CheckboxVariable receiveValue", this.pidid(rowNr), value)
       node.checked = value
       node.indeterminate = (value == -1); //tbd: gen -1

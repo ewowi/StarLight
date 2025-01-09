@@ -265,15 +265,13 @@ static float _time(float j) {
   }
 
   void UserModLive::addExternalVal(string result, string name, void * ptr) {
-    if (findLink(name, externalType::value) == -1) //allready added earlier
-      addExternal(name, externalType::value, ptr);
-    scScript += "external " + result + " " + name + ";\n";
+    if (findLink(name, externalType::value) == -1) //not allready added earlier
+      addExternalVariable(name, result, "", ptr);
   }
 
   void UserModLive::addExternalFun(string result, string name, string parameters, void * ptr) {
-    if (findLink(name, externalType::function) == -1) //allready added earlier
-      addExternal(name, externalType::function, ptr);
-    scScript += "external " + result + " " + name + parameters + ";\n";
+    if (findLink(name, externalType::function) == -1) //not allready added earlier
+      addExternalFunction(name, result, parameters, ptr);
   }
 
   // void UserModLive::addExternalFun(string name, std::function<void(int)> fun) {
@@ -381,6 +379,7 @@ static float _time(float j) {
 
       if (post) scScript += post;
 
+      //print the script
       size_t scripLines = 0;
       size_t lastIndex = 0;
       for (size_t i = 0; i < scScript.length(); i++)
@@ -391,6 +390,7 @@ static float _time(float j) {
           lastIndex = i + 1;
         }
       }
+      ppf("\n");
 
       ppf("Before parsing of %s\n", fileName);
       ppf("Heap %s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());

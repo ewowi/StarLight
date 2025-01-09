@@ -79,8 +79,8 @@ textarea {
 }
 
 canvas {
-	width: 100%;
-	height: 100%;
+	width: 300;
+	height: 300;
 	border-radius: 12px;
 	border: 1px solid black;
 	background: transparent;

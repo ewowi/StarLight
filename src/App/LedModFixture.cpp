@@ -28,8 +28,8 @@
 #ifdef STARBASE_USERMOD_LIVE
   #include "User/UserModLive.h"
   static void _addPixelsPre() {fix->addPixelsPre();}
-  static void _addPixel(uint16_t a1, uint16_t a2, uint16_t a3) {fix->addPixel({a1, a2, a3});}
-  static void _addPin(uint8_t a1) {fix->addPin(a1);}
+  static void _addPixel(uint16_t x, uint16_t y, uint16_t z) {fix->addPixel({x, y, z});}
+  static void _addPin(uint8_t pinNr) {fix->addPin(pinNr);}
   static void _addPixelsPost() {fix->addPixelsPost();}
   uint16_t mapResult = UINT16_MAX; //for STARLIGHT_LIVE_MAPPING but script with this can also run when live mapping is disabled
 
@@ -344,7 +344,15 @@
     #if STARLIGHT_PHYSICAL_DRIVER || STARLIGHT_VIRTUAL_DRIVER
       fix->setMaxPowerBrightnessFactor = 90; //0..255
     #else
-      FastLED.setMaxPowerInMilliWatts(10000); // 5v, 2000mA
+      ui->initNumber(parentVar, "maxPower", &maxPowerWatt, 0, UINT8_MAX, false, [this](EventArguments) { switch (eventType) {
+      case onUI:
+        variable.setComment("in Watts");
+        return true;
+        case onChange:
+          FastLED.setMaxPowerInMilliWatts(maxPowerWatt * 1000); // 5v, 2000mA
+          return true;
+        default: return false;
+      }});
     #endif
 
     addPresets(parentVar.var);
@@ -415,10 +423,10 @@
 
           liveM->addDefaultExternals();
 
-          liveM->addExternalFun("void", "addPixelsPre", "()", (void *)_addPixelsPre);
-          liveM->addExternalFun("void", "addPixel", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_addPixel);
-          liveM->addExternalFun("void", "addPin", "(uint8_t a1)", (void *)_addPin);
-          liveM->addExternalFun("void", "addPixelsPost", "()", (void *)_addPixelsPost);
+          liveM->addExternalFun("void", "addPixelsPre", "", (void *)_addPixelsPre);
+          liveM->addExternalFun("void", "addPixel", "uint16_t,uint16_t,uint16_t", (void *)_addPixel);
+          liveM->addExternalFun("void", "addPin", "uint8_t", (void *)_addPin);
+          liveM->addExternalFun("void", "addPixelsPost", "", (void *)_addPixelsPost);
 
           liveM->addExternalVal("uint16_t", "mapResult", &mapResult); //for STARLIGHT_LIVE_MAPPING but script with this can also run when live mapping is disabled
           liveM->addExternalVal("uint8_t", "colorOrder", &fix->colorOrder);

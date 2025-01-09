@@ -5,7 +5,8 @@
   "height": 32,
   "depth": 1,
   "ledSize": 5,
-  "shape": 0,
+  "ledShape": 0,
+  "ledFactor": 10,
   "outputs": [
     {
       "pin": 2,

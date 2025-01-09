@@ -3288,7 +3288,7 @@ class MarioTestEffect: public Effect {
   static uint8_t _beatSin8(uint8_t bpm, uint8_t lowest, uint8_t highest) {return beatsin8(bpm, lowest, highest);}
   static uint8_t _inoise8(uint16_t x, uint16_t y, uint16_t z) {return inoise8(x, y, z);}
   static uint8_t _random8() {return random8();}
-  static uint8_t _random16(uint8_t r) {return random16(r);}
+  static uint8_t _random16(uint8_t lim) {return random16(lim);}
 
   //StarLight functions
   static LedsLayer *gLeds = nullptr;
@@ -3348,17 +3348,17 @@ class LiveEffect: public Effect {
 
                 liveM->addDefaultExternals();
 
-                liveM->addExternalFun("CRGB", "hsv", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)hsv);
-                liveM->addExternalFun("CRGB", "rgb", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)rgb);
-                liveM->addExternalFun("uint8_t", "beatSin8", "(uint8_t a1, uint8_t a2, uint8_t a3)", (void *)_beatSin8);
-                liveM->addExternalFun("uint8_t", "inoise8", "(uint16_t a1, uint16_t a2, uint16_t a3)", (void *)_inoise8);
-                liveM->addExternalFun("uint8_t", "random8", "()", (void *)_random8);
-                liveM->addExternalFun("uint16_t", "random16", "(uint16_t a1)", (void *)_random16);
-                liveM->addExternalFun("uint8_t", "sin8", "(uint8_t a1)",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
-                liveM->addExternalFun("uint8_t", "cos8", "(uint8_t a1)",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
-                liveM->addExternalFun("void", "sPC", "(uint16_t a1, CRGB a2)", (void *)sPCLive);
-                liveM->addExternalFun("void", "sCFP", "(uint16_t a1, uint8_t a2, uint8_t a3)", (void *)sCFPLive);
-                liveM->addExternalFun("void", "fadeToBlackBy", "(uint8_t a1)", (void *)_fadeToBlackBy);
+                liveM->addExternalFun("CRGB", "hsv", "uint8_t,uint8_t,uint8_t", (void *)hsv);
+                liveM->addExternalFun("CRGB", "rgb", "uint8_t,uint8_t,uint8_t", (void *)rgb);
+                liveM->addExternalFun("uint8_t", "beatSin8", "uint8_t,uint8_t,uint8_t", (void *)_beatSin8);
+                liveM->addExternalFun("uint8_t", "inoise8", "uint16_t,uint16_t,uint16_t", (void *)_inoise8);
+                liveM->addExternalFun("uint8_t", "random8", "", (void *)_random8);
+                liveM->addExternalFun("uint16_t", "random16", "uint16_t", (void *)_random16);
+                liveM->addExternalFun("uint8_t", "sin8", "uint8_t",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
+                liveM->addExternalFun("uint8_t", "cos8", "uint8_t",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
+                liveM->addExternalFun("void", "sPC", "uint16_t,CRGB", (void *)sPCLive);
+                liveM->addExternalFun("void", "sCFP", "uint16_t,uint8_t,uint8_t", (void *)sCFPLive);
+                liveM->addExternalFun("void", "fadeToBlackBy", "uint8_t", (void *)_fadeToBlackBy);
 
                 //WLED nostalgia
                 liveM->addExternalVal("uint8_t", "speedControl", &speedControl);
