@@ -22,6 +22,7 @@ cp ./tools/* ../../ewowi/StarBase/tools
 cp ./misc/* ../../ewowi/StarBase/misc
 cp ./data/* ../../ewowi/StarBase/data
 cp ./data/newui/* ../../ewowi/StarBase/data/newui
+cp ./data/svelte/* ../../ewowi/StarBase/data/svelte
 cp ./platformio.ini ../../ewowi/StarBase
 cp ./src/* ../../ewowi/StarBase/src
 

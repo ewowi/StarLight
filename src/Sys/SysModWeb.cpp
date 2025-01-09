@@ -25,6 +25,7 @@
 
 #include "html_ui.h"
 #include "html_newui.h"
+#include "WWWData.h"
 
 #include "AsyncJson.h"
 
@@ -192,6 +193,33 @@ void SysModWeb::connectedChanged() {
 
     server.on("/", HTTP_GET, [this](WebRequest *request) {serveIndex(request);});
     server.on("/newui", HTTP_GET, [this](WebRequest *request) {serveNewUI(request);});
+
+    //StarBase modified version from https://github.com/theelims/ESP32-sveltekit/blob/main/lib/framework/ESP32SvelteKit.cpp
+
+    #ifdef EMBED_WWW
+      // Serve static resources from PROGMEM
+      ESP_LOGV("ESP32SvelteKit", "Registering routes from PROGMEM static resources");
+      WWWData::registerRoutes(
+          [this](const String &uri, const String &contentType, const uint8_t *content, size_t len)
+          {
+              server.on(uri.c_str(), HTTP_GET, [this, content, len, contentType](WebRequest *request) {
+                WebResponse *response;
+                response = request->beginResponse_P(200, contentType.c_str(), content, len);
+                response->addHeader("Content-Encoding","gzip");
+                // response.addHeader("Cache-Control", "public, immutable, max-age=31536000"); //from svelte
+                // setStaticContentCacheHeaders(response);
+                request->send(response);
+              });
+
+              // Set default end-point for all non matching requests
+              // this is easier than using webServer.onNotFound()
+              // if (uri.equals("/index.html"))
+              // {
+              //     _server->defaultEndpoint->setHandler(handler);
+              // }
+          });
+
+    #endif
 
     //serve json calls
     server.on("/json", HTTP_GET, [this](WebRequest *request) {serveJson(request);});
