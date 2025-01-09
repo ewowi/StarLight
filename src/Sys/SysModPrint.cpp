@@ -66,7 +66,7 @@ void SysModPrint::setup() {
       options.add("Serial");
       options.add("UI");
 
-      web->clientsToJson(options, true); //ip only
+      // web->clientsToJson(options, true); //ip only
       return true;
     }
     default: return false;

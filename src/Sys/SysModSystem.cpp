@@ -39,7 +39,7 @@ SysModSystem::SysModSystem() :SysModule("System") {};
 void SysModSystem::setup() {
   SysModule::setup();
 
-  ppf("Stack %d of %d B (async %d of %d B) %d\n", sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize(), sysTools_get_webserver_maxStackUsage(), CONFIG_ASYNC_TCP_STACK_SIZE, uxTaskGetStackHighWaterMark(xTaskGetCurrentTaskHandle()));
+  ppf("Stack %d of %d B (async %d B) %d\n", sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize(), sysTools_get_webserver_maxStackUsage(), uxTaskGetStackHighWaterMark(xTaskGetCurrentTaskHandle()));
   
   const Variable parentVar = ui->initSysMod(Variable(), name, 2000);
   parentVar.var["s"] = true; //setup
@@ -90,7 +90,7 @@ void SysModSystem::setup() {
 
   ui->initButton(parentVar, "reboot", false, [](EventArguments) { switch (eventType) {
     case onChange:
-      web->ws.closeAll(1012);
+      // web->ws.closeAll(1012);
 
       // mdls->reboot(); //not working yet
       // long dly = millis();
@@ -150,16 +150,6 @@ void SysModSystem::setup() {
       return true;
     case onLoop1s:
       variable.setValue(sysTools_get_arduino_maxStackUsage());
-      return true;
-    default: return false;
-  }});
-
-  ui->initProgress(parentVar, "TCPStack", 0, 0, CONFIG_ASYNC_TCP_STACK_SIZE, true, [this](EventArguments) { switch (eventType) {
-    case onChange:
-      web->addResponse(variable.var, "comment", "%d of %d B", sysTools_get_webserver_maxStackUsage(), CONFIG_ASYNC_TCP_STACK_SIZE);
-      return true;
-    case onLoop1s:
-      variable.setValue(sysTools_get_webserver_maxStackUsage());
       return true;
     default: return false;
   }});

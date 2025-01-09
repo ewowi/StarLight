@@ -13,37 +13,10 @@
 #include "SysModule.h"
 #include "SysModPrint.h"
 
-#ifdef STARBASE_USE_Psychic
-  #include <PsychicHttp.h>
-#else
-  #include <ESPAsyncWebServer.h>
-#endif
-
-
-#ifdef STARBASE_USE_Psychic
-  #define WebRequest PsychicRequest
-  #define WebClient PsychicWebSocketClient
-  #define WebServer PsychicHttpServer
-  #define WebSocket PsychicWebSocketHandler 
-  #define WebResponse PsychicResponse
-#else
-  #define WebRequest AsyncWebServerRequest
-  #define WebClient AsyncWebSocketClient
-  #define WebServer AsyncWebServer
-  #define WebSocket AsyncWebSocket 
-  #define WebResponse AsyncWebServerResponse
-#endif
 
 class SysModWeb:public SysModule {
 
 public:
-  #ifdef STARBASE_USE_Psychic
-    WebSocket ws = WebSocket();
-    WebServer server = WebServer();
-  #else
-    WebSocket ws = WebSocket("/ws");
-    WebServer server = WebServer(80);
-  #endif
 
   SemaphoreHandle_t wsMutex = xSemaphoreCreateMutex();
 
@@ -73,38 +46,12 @@ public:
 
   void connectedChanged() override;
 
-  void wsEvent(WebSocket * ws, WebClient * client, AwsEventType type, void * arg, byte *data, size_t len);
-  
   //send json to client or all clients
-  void sendDataWs(JsonVariant json = JsonVariant(), WebClient * client = nullptr);
-  void sendDataWs(std::function<void(AsyncWebSocketMessageBuffer *)> fill, size_t len, bool isBinary, WebClient * client = nullptr);
-  void sendBuffer(AsyncWebSocketMessageBuffer * wsBuf, bool isBinary, WebClient * client = nullptr, bool lossless = true);
-
+  
   //add an url to the webserver to listen to
-  void serveIndex(WebRequest *request);
-  void serveNewUI(WebRequest *request);
   //mdl and WLED style state and info
   void serializeState(JsonVariant root);
   void serializeInfo(JsonVariant root);
-  void serveJson(WebRequest *request);
-
-
-  // curl -F 'data=@fixture1.json' 192.168.1.213/upload
-  void serveUpload(WebRequest *request, const String& fileName, size_t index, byte *data, size_t len, bool final);
-  // curl -s -F "update=@/Users/ewoudwijma/Developer/GitHub/ewowi/StarBase/.pio/build/esp32dev/firmware.bin" 192.168.1.102/update /dev/null &
-  // curl -s -F "update=@/Users/ewoudwijma/Downloads/StarLight_24110513_esp32devICVLD.bin" 192.168.1.245/update /dev/null &
-  void serveUpdate(WebRequest *request, const String& fileName, size_t index, byte *data, size_t len, bool final);
-  void serveFiles(WebRequest *request);
-
-  //processJsonUrl handles requests send in javascript using fetch and from a browser or curl
-  //try this !!!: 
-  //curl -X POST "http://4.3.2.1/json" -d '{"Pins.pin19":false}' -H "Content-Type: application/json"
-  //curl -X POST "http://4.3.2.1/json" -d '{"Fixture.brightness":20, "v":true}' -H "Content-Type: application/json"
-  //curl -X POST "http://192.168.1.125/json" -d '{"leyers.effect":2}' -H "Content-Type: application/json"
-  //curl -X POST "http://192.168.1.152/json" -d '{"nrOfLeds":2000}' -H "Content-Type: application/json"
-
-  //handle "v" and processJson (on /json)
-  void jsonHandler(WebRequest *request, JsonVariant json);
 
   //Is this an IP?
   bool isIp(const String& str) {
@@ -116,8 +63,6 @@ public:
     }
     return true;
   }
-
-  bool captivePortal(WebRequest *request);
 
   template <typename Type>
   void addResponse(const JsonObject var, const char * key, Type value, const uint8_t rowNr = UINT8_MAX) {
@@ -146,17 +91,11 @@ public:
     addResponse(var, key, JsonString(value));
   }
 
-  void clientsToJson(JsonArray array, bool nameOnly = false, const char * filter = nullptr);
+  // void clientsToJson(JsonArray array, bool nameOnly = false, const char * filter = nullptr);
 
   //gets the right responseDoc, depending on which task you are in, alternative for requestJSONBufferLock
   JsonDocument * getResponseDoc();
   JsonObject getResponseObject();
-  void sendResponseObject(WebClient * client = nullptr);
-
-  void printClient(const char * text, WebClient * client) {
-    ppf("%s client: %d ip:%s q:%d l:%d s:%d (#:%d)\n", text, client?client->id():-1, client?client->remoteIP().toString().c_str():"", client->queueIsFull(), client->queueLen(), client->status(), client->server()->count());
-    //status: { WS_DISCONNECTED, WS_CONNECTED, WS_DISCONNECTING }
-  }
 
 private:
   bool modelUpdated = false;

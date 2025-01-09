@@ -113,21 +113,21 @@
       case onUI:
         if (bytesPerPixel) {
           mappingStatus = 1; //rebuild the fixture - so it is send to ui
-          if (web->ws.getClients().length())
+          // if (web->ws.getClients().length())
             doSendFixtureDefinition = true; //send fixture definition to ui
         }
         return true;
       case onLoop: {
-        if (!web->isBusy && mappingStatus == 0 && bytesPerPixel && !doSendFixtureDefinition && web->ws.getClients().length()) { //not remapping and clients exists
-          variable.var["interval"] = max(nrOfLeds * web->ws.count()/200, 16U)*10; //interval in ms * 10, not too fast //from cs to ms
+        if (!web->isBusy && mappingStatus == 0 && bytesPerPixel && !doSendFixtureDefinition) { //} && web->ws.getClients().length()) { //not remapping and clients exists
+          variable.var["interval"] = max(nrOfLeds/200, 16)*10; //interval in ms * 10, not too fast //from cs to ms web->ws.count()
 
           #define headerBytesPreview 5
           // ppf("(%d %d %d,%d,%d)", len, headerBytesPreview + nrOfLeds * bytesPerPixel, fixSize.x, fixSize.y, fixSize.z);
           size_t len = min(headerBytesPreview + nrOfLeds * bytesPerPixel, PACKAGE_SIZE);
-          AsyncWebSocketMessageBuffer *wsBuf= web->ws.makeBuffer(len); //global wsBuf causes crash in audio sync module!!!
-          if (wsBuf) {
-            wsBuf->lock();
-            byte* buffer = wsBuf->get();
+          // AsyncWebSocketMessageBuffer *wsBuf= web->ws.makeBuffer(len); //global wsBuf causes crash in audio sync module!!!
+          byte* buffer = (byte*)malloc(len); // wsBuf->get();
+          if (buffer) {
+            // wsBuf->lock();
             //new values
             buffer[0] = 2; //userFun id
             //rotations
@@ -160,7 +160,7 @@
 
               if (previewBufferIndex + bytesPerPixel > PACKAGE_SIZE) {
                 //send the buffer and create a new one
-                web->sendBuffer(wsBuf, true);
+                // web->sendBuffer(wsBuf, true);
                 delay(10);
                 buffer[0] = 2; //userFun id
                 buffer[1] = UINT8_MAX; //indicates follow up package
@@ -194,10 +194,11 @@
               }
             } //loop
 
-            web->sendBuffer(wsBuf, true);
+          //   web->sendBuffer(wsBuf, true);
 
-            wsBuf->unlock();
-            web->ws._cleanBuffers();
+          //   wsBuf->unlock();
+          //   web->ws._cleanBuffers();
+            free(buffer);
           }
 
         }
@@ -248,7 +249,7 @@
         if (sys->safeMode) return true; //do not process fixture in safeMode do this if the fixture crashes at boot, then change fixture to working fixture and reboot
 
         doAllocPins = true;
-        if (web->ws.getClients().length())
+        // if (web->ws.getClients().length())
           doSendFixtureDefinition = true;
 
         //remap all leds
@@ -555,12 +556,12 @@ void LedModFixture::addPixelsPre() {
     prevIndexP = 0; //for allocPins
 
     if (bytesPerPixel && doSendFixtureDefinition) {
-      for (auto &client:web->ws.getClients()) while (client->queueLen() > 3) delay(10); //ui refresh, wait a bit
+      // for (auto &client:web->ws.getClients()) while (client->queueLen() > 3) delay(10); //ui refresh, wait a bit
       size_t len = min(nrOfLeds * 6 + headerBytesFixture, PACKAGE_SIZE);
-      wsBuf = web->ws.makeBuffer(len);
-      if (wsBuf) {
-        wsBuf->lock();
-        byte* buffer = wsBuf->get();
+      // wsBuf = web->ws.makeBuffer(len);
+      byte* buffer = (byte*)malloc(len);// wsBuf->get();
+      if (buffer) {
+      //   wsBuf->lock();
         buffer[0] = 1; //userfun 1
         buffer[1] = fixSize.x/256;
         buffer[2] = fixSize.x%256;
@@ -591,14 +592,14 @@ void LedModFixture::addPixel(Coord3D pixel) {
 
       if (bytesPerPixel && doSendFixtureDefinition) {
         //send pixel to ui ...
-        if (wsBuf && indexP < nrOfLeds ) { //max index to process && indexP * 6 + headerBytesFixture + 5 < 2 * 8192
-          byte* buffer = wsBuf->get();
+        if (buffer && indexP < nrOfLeds ) { //max index to process && indexP * 6 + headerBytesFixture + 5 < 2 * 8192 wsBuf && 
+          // byte* buffer = wsBuf->get();
           if (previewBufferIndex + ((fixSize.x > 1)?2:0 + (fixSize.y > 1)?2:0 + (fixSize.z > 1)?2:0) > PACKAGE_SIZE) { //2, 4, or 6 bytes (1D, 2D, 3D)
             //add previewBufferIndex to package
             buffer[12] = previewBufferIndex/256; //first empty slot
             buffer[13] = previewBufferIndex%256;
             //send the buffer and create a new one
-            web->sendBuffer(wsBuf, true, nullptr, false);
+            // web->sendBuffer(wsBuf, true, nullptr, false);
             delay(50);
             ppf("buffer sent i:%d p:%d r:%d r6:%d (1:%d m:%u)\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6, buffer[1], millis());
 
@@ -684,18 +685,19 @@ void LedModFixture::addPixelsPost() {
   } else if (nrOfLeds <= STARLIGHT_MAXLEDS) {
 
     if (bytesPerPixel && doSendFixtureDefinition) {
-      if (wsBuf) {
-        byte* buffer = wsBuf->get();
+      if (buffer) {
+        // byte* buffer = wsBuf->get();
         buffer[12] = previewBufferIndex/256; //last slot filled
         buffer[13] = previewBufferIndex%256; //last slot filled
-        web->sendBuffer(wsBuf, true, nullptr, false);
+        // web->sendBuffer(wsBuf, true, nullptr, false);
 
         ppf("last buffer sent i:%d p:%d r:%d r6:%d (1:%d m:%u)\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6, buffer[1], millis());
 
         // ppf("addPixelsPost before unlock and clean:%d\n", indexP);
-        wsBuf->unlock();
-        web->ws._cleanBuffers();
+        // wsBuf->unlock();
+        // web->ws._cleanBuffers();
         // delay(50);
+        free(buffer);
       }
 
       // ppf("addPixelsPost after unlock and clean:%d\n", indexP);
