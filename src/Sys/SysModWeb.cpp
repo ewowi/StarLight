@@ -25,9 +25,9 @@
 
 #include "html_ui.h"
 #include "html_newui.h"
-#include "WWWData.h"
+// #include "WWWData.h"
 
-#include <ArduinoOTA.h>
+// #include <ArduinoOTA.h>
 
 //https://techtutorialsx.com/2018/08/24/esp32-web-server-serving-html-from-file-system/
 //https://randomnerdtutorials.com/esp32-async-web-server-espasyncwebserver-library/

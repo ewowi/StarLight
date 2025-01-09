@@ -12,6 +12,7 @@
 #pragma once
 
 #include <WLED-sync.h> // https://github.com/netmindz/WLED-sync
+#include <FastLED.h>
 
 #include "SysModules.h"
 

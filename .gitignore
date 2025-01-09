@@ -1,7 +1,6 @@
 .pio
 node_modules
 dist
-WWWData.h
 .vscode
 .DS_Store
 .idea
