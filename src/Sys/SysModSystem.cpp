@@ -14,7 +14,6 @@
 #include "SysModUI.h"
 #include "SysModWeb.h"
 #include "SysModModel.h"
-#include "SysModNetwork.h"
 #include "User/UserModMDNS.h"
 
 // #include <Esp.h>
@@ -235,7 +234,7 @@ void SysModSystem::loop() {
 void SysModSystem::loop10s() {
   //heartbeat
   if (sys->now < 60000)
-    ppf("❤️ http://%s\n", net->localIP().toString().c_str());
+    ppf("❤️ http://%s\n", WiFi.localIP().toString().c_str());
   else
     ppf("❤️");
 }

@@ -17,7 +17,9 @@
 #include "Sys/SysModSystem.h"
 #include "Sys/SysModFiles.h"
 #include "Sys/SysModModel.h"
-#include "Sys/SysModNetwork.h"
+#ifdef STARBASE_MAIN
+  #include "Sys/SysModNetwork.h"
+#endif
 #include "Sys/SysModPins.h"
 #include "Sys/SysModInstances.h"
 #include "User/UserModMDNS.h"
@@ -28,7 +30,9 @@ SysModUI *ui;
 SysModSystem *sys;
 SysModFiles *files;
 SysModModel *mdl;
-SysModNetwork *net;
+#ifdef STARBASE_MAIN
+  SysModNetwork *net;
+#endif
 SysModPins *pinsM;
 SysModInstances *instances;
 UserModMDNS *mdns;
@@ -83,7 +87,9 @@ void setupStar() {
   print = new SysModPrint();
   files = new SysModFiles();
   mdl = new SysModModel();
-  net = new SysModNetwork();
+  #ifdef STARBASE_MAIN
+    net = new SysModNetwork();
+  #endif
   web = new SysModWeb();
   ui = new SysModUI();
   sys = new SysModSystem();
@@ -133,7 +139,9 @@ void setupStar() {
   mdls->add(pinsM);
   mdls->add(print);
   mdls->add(web);
-  mdls->add(net);
+  #ifdef STARBASE_MAIN
+    mdls->add(net);
+    #endif
   #ifdef STARLIGHT
     #ifdef STARLIGHT_USERMOD_DDP
       mdls->add(ddpmod);

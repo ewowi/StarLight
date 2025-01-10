@@ -56,7 +56,7 @@ public:
         keyValueOption.add(0);
         keyValueOption.add("no sync");
         for (InstanceInfo &instance : instances->instances) {
-          if (instance.ip != net->localIP()) {
+          if (instance.ip != WiFi.localIP()) {
             char option[64] = { 0 };
             strlcpy(option, instance.name, sizeof(option));
             strlcat(option, " ", sizeof(option));

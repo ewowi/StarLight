@@ -15,7 +15,6 @@
 #include "SysModFiles.h"
 #include "SysModules.h"
 #include "SysModPins.h"
-#include "SysModNetwork.h" //for localIP
 
 #include "User/UserModMDNS.h"
 // got multiple definition error here ??? see workaround below
@@ -231,7 +230,7 @@ void SysModWeb::serializeInfo(JsonVariant root) {
     // docInfo["wifi"]["rssi"] = WiFi.RSSI();// mdl->getValue("rssi"); (ro)
 
     root["mac"] = JsonString(mdns->escapedMac.c_str());
-    root["ip"] = JsonString(net->localIP().toString().c_str());
+    root["ip"] = JsonString(WiFi.localIP().toString().c_str());
     // print->printJson("serveJson", root);
 }
 

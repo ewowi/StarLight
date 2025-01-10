@@ -65,9 +65,9 @@ public:
 
     if(!mdls->isConnected) return;
 
-    targetIp[0] = net->localIP()[0];
-    targetIp[1] = net->localIP()[1];
-    targetIp[2] = net->localIP()[2];
+    targetIp[0] = WiFi.localIP()[0];
+    targetIp[1] = WiFi.localIP()[1];
+    targetIp[2] = WiFi.localIP()[2];
 
     if(!targetIp) return;
 

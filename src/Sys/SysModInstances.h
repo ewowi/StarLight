@@ -15,7 +15,6 @@
   #include "../User/UserModE131.h"
 #endif
 #include "SysModSystem.h"
-#include "SysModNetwork.h" //for localIP
 #include "SysModules.h"
 
 struct DMX {
@@ -259,7 +258,7 @@ public:
           //do not set this initially!!!
           if (rowNr != UINT8_MAX) {
             //if this instance update directly, otherwise send over network
-            if (instances[rowNr].ip == net->localIP()) {
+            if (instances[rowNr].ip == WiFi.localIP()) {
               variable.setValue(insVariable.getValue(rowNr).as<uint8_t>()); //this will call sendDataWS (tbd...), do not set for rowNr
             } else {
               sendMessageUDP(instances[rowNr].ip, variable.var, insVariable.getValue(rowNr));
@@ -474,7 +473,7 @@ public:
 
           starMessage.sysData.type = 0; //WLED
 
-          if (starMessage.header.ip0 == net->localIP()[0]) { // checksum - no other type of message
+          if (starMessage.header.ip0 == WiFi.localIP()[0]) { // checksum - no other type of message
             updateInstance(starMessage);
             found = true;
           }
@@ -487,7 +486,7 @@ public:
 
           // ppf("Star instance %s received: size: %d\n", instanceUDP.remoteIP().toString().c_str(), packetSize);
 
-          if (starMessage.header.ip0 == net->localIP()[0]) { // checksum - no other type of message
+          if (starMessage.header.ip0 == WiFi.localIP()[0]) { // checksum - no other type of message
             updateInstance(starMessage);
             found = true;
           }
@@ -502,7 +501,7 @@ public:
           if (error)
             ppf("handleNotifications i:%d no json l: %d e:%s\n", instanceUDP.remoteIP()[3], strnlen(buffer, packetSize), error.c_str());
           else {
-            if (instanceUDP.remoteIP()[3] != net->localIP()[3]) { //only others
+            if (instanceUDP.remoteIP()[3] != WiFi.localIP()[3]) { //only others
 
               InstanceInfo *instance = findInstance(instanceUDP.remoteIP()); //if not exist, created
               char group1[32];
@@ -555,7 +554,7 @@ public:
     if(!mdls->isConnected) return;
     if (!udp2Connected) return;
 
-    IPAddress localIP = net->localIP();
+    IPAddress localIP = WiFi.localIP();
     if (!localIP || localIP == IPAddress(255,255,255,255)) localIP = IPAddress(4,3,2,1);
 
     UDPStarMessage starMessage;
@@ -611,7 +610,7 @@ public:
 
     //other way around: first set instance variables, then fill starMessage
     for (InstanceInfo &instance: instances) {
-      if (instance.ip == net->localIP()) {
+      if (instance.ip == WiFi.localIP()) {
         instance.jsonData.to<JsonObject>(); //clear
 
         //send dash values
@@ -726,7 +725,7 @@ public:
         strlcpy(instance.name, udpStarMessage.header.name, sizeof(instance.name));
         instance.version = udpStarMessage.header.version;
 
-        if (instance.ip == net->localIP()) {
+        if (instance.ip == WiFi.localIP()) {
           esp_wifi_get_mac((wifi_interface_t)ESP_IF_WIFI_STA, instance.sysData.macAddress);
           // ppf("macaddress %02X:%02X:%02X:%02X:%02X:%02X\n", instance.macAddress[0], instance.macAddress[1], instance.macAddress[2], instance.macAddress[3], instance.macAddress[4], instance.macAddress[5]);
         }
@@ -734,7 +733,7 @@ public:
         if (udpStarMessage.sysData.type >= 1) {//StarBase, StarLight and forks only
           instance.sysData = udpStarMessage.sysData;
 
-          if (instance.ip != net->localIP()) { //send from localIP will be done after updateInstance
+          if (instance.ip != WiFi.localIP()) { //send from localIP will be done after updateInstance
             char group1[32];
             char group2[32];
             if (groupOfName(instance.name, group1) && groupOfName(mdl->getValue("System", "name"), group2) && strncmp(group1, group2, sizeof(group1)) == 0) {
