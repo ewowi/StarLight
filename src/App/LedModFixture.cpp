@@ -125,7 +125,7 @@
           // ppf("(%d %d %d,%d,%d)", len, headerBytesPreview + nrOfLeds * bytesPerPixel, fixSize.x, fixSize.y, fixSize.z);
           size_t len = min(headerBytesPreview + nrOfLeds * bytesPerPixel, PACKAGE_SIZE);
           // AsyncWebSocketMessageBuffer *wsBuf= web->ws.makeBuffer(len); //global wsBuf causes crash in audio sync module!!!
-          byte* buffer = (byte*)malloc(len); // wsBuf->get();
+          buffer = (byte*)malloc(len); // wsBuf->get();
           if (buffer) {
             // wsBuf->lock();
             //new values
@@ -559,7 +559,7 @@ void LedModFixture::addPixelsPre() {
       // for (auto &client:web->ws.getClients()) while (client->queueLen() > 3) delay(10); //ui refresh, wait a bit
       size_t len = min(nrOfLeds * 6 + headerBytesFixture, PACKAGE_SIZE);
       // wsBuf = web->ws.makeBuffer(len);
-      byte* buffer = (byte*)malloc(len);// wsBuf->get();
+      buffer = (byte*)malloc(len);// wsBuf->get();
       if (buffer) {
       //   wsBuf->lock();
         buffer[0] = 1; //userfun 1
