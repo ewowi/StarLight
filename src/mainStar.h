@@ -77,7 +77,9 @@ UserModMDNS *mdns;
   UserModAudioSync *audioSync;
 #endif
 
-SET_LOOP_TASK_STACK_SIZE(16 * 1024); // 16KB
+#ifdef STARBASE_USERMOD_LIVE
+  SET_LOOP_TASK_STACK_SIZE(16 * 1024); // 16KB, otherwise 8K, to allow multiple scripts loaded at boot
+#endif
 
 //setup all modules
 void setupStar() {

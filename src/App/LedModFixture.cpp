@@ -504,21 +504,27 @@
       }//Live Fixture
     } //if fileName
     else {
-      ppf("mapInitAlloc: Filename for fixture %d not found show default 16x16 panel\n", fixtureNr);
+      nrOfLeds = fixSize.x * fixSize.y * fixSize.z;
+      ppf("mapInitAlloc: Filename for fixture %d not found show default %dx%dx%d panel\n", fixtureNr, fixSize.x, fixSize.y, fixSize.z);
 
       //first count then setup
-      for (pass = 1; pass <=2; pass++)
-      {
-        addPixelsPre();
+      //pass1: set nrOfLeds and use available fixSize
 
-        for (uint16_t y = 0; y < 16; y++) {
-          for (uint16_t x = 0; x < 16; x++) {
+      pass = 2;
+      addPixelsPre();
+
+      for (uint16_t z = 0; z < fixSize.z; z++) {
+        for (uint16_t y = 0; y < fixSize.y; y++) {
+          for (uint16_t x = 0; x < fixSize.x; x++) {
             addPixel({x,y,0});
           }
         }
-
-        addPixelsPost();
       }
+
+      if (currPin != UINT8_MAX)
+        addPin(currPin); //make sure 
+
+      addPixelsPost();
     }
 
   } //mapInitAlloc
@@ -1131,7 +1137,8 @@ void LedModFixture::addPixelsPost() {
   }
 
   void LedModFixture::driverShow() {
-    FastLED.show();
+    if (FastLED.count())
+      FastLED.show();
   }
 
 #endif
