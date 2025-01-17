@@ -531,7 +531,9 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
     //process effect change initiated outside library (ESK)
     if (processEffectNr != UINT16_MAX) {
-      Variable("layers","effect").setValue(processEffectNr, 0);
+      Variable variable = Variable("layers","effect");
+      variable.setValue(processEffectNr, 0);
+      variable.setValue(processEffectNr, 0); //twice to init var["value"]correctly - workaround !!!
       processEffectNr = UINT16_MAX;
     }
 
