@@ -17,8 +17,6 @@
 class SysModSystem:public SysModule {
 
 public:
-  char build[64] = "";
-  char chipInfo[64] = "";
   bool3State safeMode = false;
 
   Toki toki = Toki(); //Minimal millisecond accurate timekeeping.
@@ -32,12 +30,7 @@ public:
   void loop10s() override;
 
   //from esp32Tools
-  bool sysTools_normal_startup();              // FALSE if unusual startup code --> use next function to get more info
-  String sysTools_getRestartReason();          // long string including restart codes from system, Core#0 and Core#1 (if availeable)
-  String sysTools_restart2String(int reasoncode);  // helper for SysModSystem::addRestartReasonsSelect. Returns "(#) ReasonText"
-  String sysTools_reset2String(int resetCode);     // helper for SysModSystem::addResetReasonsSelect. Returns "shortResetReasonText (#)"
   int sysTools_get_arduino_maxStackUsage();    // to query max used stack of the arduino task. returns "-1" if unknown
-  int sysTools_get_webserver_maxStackUsage();  // to query max used stack of the webserver task. returns "-1" if unknown
 
   //tbd: utility function ... (pka prepareHostname)
   void removeInvalidCharacters(char* hostname, const char *in)

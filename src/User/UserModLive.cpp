@@ -394,7 +394,7 @@ static float _time(float j) {
 
       ppf("Before parsing of %s\n", fileName);
       ppf("Heap %s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
-      ppf("Stack %d of %d B (async %d B) %d\n", sys->sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize(), sys->sysTools_get_webserver_maxStackUsage(), uxTaskGetStackHighWaterMark(xTaskGetCurrentTaskHandle()));
+      ppf("Stack %d of %d B %d\n", sys->sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize(), uxTaskGetStackHighWaterMark(xTaskGetCurrentTaskHandle()));
 
       Executable executable = parser.parseScript(&scScript);
       executable.name = string(fileName);

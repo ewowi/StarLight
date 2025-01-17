@@ -18,38 +18,6 @@
 #include "SysModules.h"
 
 SysModPrint::SysModPrint() :SysModule("Print") {
-
-#if ARDUINO_USB_CDC_ON_BOOT || !defined(CONFIG_IDF_TARGET_ESP32S2)
-  Serial.begin(115200);
-#else
-  Serial.begin(115200, SERIAL_8N1, RX, TX);   // workaround for Lolin S2 mini - this board uses non-standard pins for RX and TX
-#endif
-  delay(500);
-  // un-comment the next lines for redirecting kernel error messages to Serial
-  #if CORE_DEBUG_LEVEL
-  #if ARDUINO_USB_CDC_ON_BOOT
-  Serial0.setDebugOutput(false);
-  #endif
-  Serial.setDebugOutput(true);
-  #endif
-
-  // softhack007: USB CDC needs a bit more time to initialize
-#if ARDUINO_USB_CDC_ON_BOOT || ARDUINO_USB_MODE
-  unsigned waitCounter = 0;
-  do {
-    delay(1000);
-    waitCounter ++;
-  } while ((!Serial) && (waitCounter < 8));  // wait until Serial is ready / connected
-  delay(3000); // this extra delay avoids repeating disconnects on -s2 "Disconnected (ClearCommError failed"
-  Serial.println("   **** COMMODORE BASIC V2 ****   ");
-#endif
-  if (!sys->sysTools_normal_startup() && Serial) { // only print if Serial is connected, and startup was not normal
-    Serial.print("\nWARNING - possible crash: ");
-    Serial.println(sys->sysTools_getRestartReason());
-    Serial.println("");
-  }
-  Serial.println("Ready.\n");
-  if (Serial) Serial.flush(); // drain output buffer
 };
 
 void SysModPrint::setup() {
