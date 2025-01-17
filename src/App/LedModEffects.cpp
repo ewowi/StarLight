@@ -50,17 +50,17 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     effects.push_back(new DripEffect);
     effects.push_back(new FireEffect);
     effects.push_back(new FireworksEffect);
-    effects.push_back(new FlowEffect);
+    effects.push_back(new FlowEffect); //10
     effects.push_back(new FrizzlesEffect);
     effects.push_back(new GameOfLifeEffect); //2D & 3D
     effects.push_back(new HeartBeatEffect);
     effects.push_back(new JuggleEffect);
     effects.push_back(new LinesEffect);
-    effects.push_back(new LissajousEffect);
+    effects.push_back(new LissajousEffect); //16
     effects.push_back(new MarioTestEffect);
     effects.push_back(new Noise2DEffect);
     effects.push_back(new OctopusEffect);
-    effects.push_back(new ParticleTestEffect); //2D & 3D
+    effects.push_back(new ParticleTestEffect); //2D & 3D 20
     effects.push_back(new PopCornEffect); //contains wledaudio: useaudio, conditional compile
     effects.push_back(new PixelMapEffect);
     effects.push_back(new PraxisEffect);
@@ -68,7 +68,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     effects.push_back(new RainbowEffect);
     effects.push_back(new RainbowWithGlitterEffect);
     effects.push_back(new RingRandomFlowEffect);
-    effects.push_back(new RipplesEffect);
+    effects.push_back(new RipplesEffect); //28
     effects.push_back(new RubiksCubeEffect);
     effects.push_back(new RunningEffect);
     effects.push_back(new ScrollingTextEffect);

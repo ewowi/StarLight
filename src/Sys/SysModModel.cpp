@@ -264,24 +264,24 @@
         // ppf("voor v1 call %s.%s[%d] %d %d %d\n", pid(), id(), rowNr, funNr, eventType, mdl->varEvents.size());
         result = mdl->varEvents[funNr](*this, rowNr, eventType);
 
-        //all ppf here:
-        if (result && !readOnly()) { //send rowNr = 0 if no rowNr
-          //only print vars with a value and not onSetValue as that changes a lot due to instances clients etc (tbd)
-          //don't print if onSetValue or oldValue is null
-          if (eventType != onSetValue && (!var["oldValue"].isNull() || ((rowNr != UINT8_MAX) && !var["oldValue"][rowNr].isNull()))) {
-            ppf("%sEvent %s.%s", eventType==onSetValue?"val":eventType==onUI?"ui":eventType==onChange?"ch":eventType==onAdd?"add":eventType==onDelete?"del":"other", pid(), id());
-            if (rowNr != UINT8_MAX) {
-              ppf("[%d] (", rowNr);
-              if (eventType == onChange) ppf("%s ->", var["oldValue"][rowNr].as<String>().c_str());
-              ppf("%s)\n", valueString().c_str());
-            }
-            else {
-              ppf(" (");
-              if (eventType == onChange) ppf("%s ->", var["oldValue"].as<String>().c_str());
-              ppf("%s)\n", valueString().c_str());
-            }
-          }
-        } //varEvent exists
+        //all ppf here: (uncomment for debugging)
+        // if (result && !readOnly()) { //send rowNr = 0 if no rowNr
+        //   //only print vars with a value and not onSetValue as that changes a lot due to instances clients etc (tbd)
+        //   //don't print if onSetValue or oldValue is null
+        //   if (eventType != onSetValue && (!var["oldValue"].isNull() || ((rowNr != UINT8_MAX) && !var["oldValue"][rowNr].isNull()))) {
+        //     ppf("%sEvent %s.%s", eventType==onSetValue?"val":eventType==onUI?"ui":eventType==onChange?"ch":eventType==onAdd?"add":eventType==onDelete?"del":"other", pid(), id());
+        //     if (rowNr != UINT8_MAX) {
+        //       ppf("[%d] (", rowNr);
+        //       if (eventType == onChange) ppf("%s ->", var["oldValue"][rowNr].as<String>().c_str());
+        //       ppf("%s)\n", valueString().c_str());
+        //     }
+        //     else {
+        //       ppf(" (");
+        //       if (eventType == onChange) ppf("%s ->", var["oldValue"].as<String>().c_str());
+        //       ppf("%s)\n", valueString().c_str());
+        //     }
+        //   }
+        // } //varEvent exists
       }
       else if (funNr == UINT8_MAX)
         result = publish(eventType, rowNr);

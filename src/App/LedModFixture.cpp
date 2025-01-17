@@ -1137,8 +1137,8 @@ void LedModFixture::addPixelsPost() {
   }
 
   void LedModFixture::driverShow() {
-    if (FastLED.count())
-      FastLED.show();
+    // if (FastLED.count())
+    //   FastLED.show();
   }
 
 #endif

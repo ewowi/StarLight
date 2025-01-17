@@ -299,7 +299,7 @@ class Variable {
         var["value"] = newValue;
 
         if (value().isNull() || value().as<uint16_t>() == UINT16_MAX) {
-          ppf("setValue value removed %s.%s %s->%s\n", pid(), id(), valueString().c_str(), var["oldValue"].as<String>().c_str());
+          // ppf("setValue value removed %s.%s %s->%s\n", pid(), id(), valueString().c_str(), var["oldValue"].as<String>().c_str());
           var.remove("value");
         }
 
@@ -309,7 +309,7 @@ class Variable {
         //cleanup Array
         size_t size = value().size();
         while (size > 0 && (value(size-1).isNull() || value(size-1).as<uint16_t>() == UINT16_MAX)) {
-          ppf("setValue value removed %s.%s[%d] %s->%s\n", pid(), id(), size - 1, valueString().c_str(), var["oldValue"].as<String>().c_str());
+          // ppf("setValue value removed %s.%s[%d] %s->%s\n", pid(), id(), size - 1, valueString().c_str(), var["oldValue"].as<String>().c_str());
           var["value"].remove(size-1);
           size = value().size();
         }
