@@ -620,66 +620,6 @@ class HeartBeatEffect: public Effect {
   }
 }; // HeartBeatEffect
 
-class FreqMatrixEffect: public Effect {
-  const char * name() override {return "FreqMatrix";}
-  uint8_t dim() override {return _1D;}
-  const char * tags() override {return "♪💡";}
-
-  void setup(LedsLayer &leds, Variable parentVar) override {
-    leds.fadeToBlackBy(16);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(255));
-    ui->initSlider(parentVar, "soundEffect", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "lowBin", leds.effectData.write<uint8_t>(18));
-    ui->initSlider(parentVar, "highBin", leds.effectData.write<uint8_t>(48));
-    ui->initSlider(parentVar, "sensivity", leds.effectData.write<uint8_t>(30), 10, 100);
-  }
-
-  void loop(LedsLayer &leds) override {
-    //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t fx = leds.effectData.read<uint8_t>();
-    uint8_t lowBin = leds.effectData.read<uint8_t>();
-    uint8_t highBin = leds.effectData.read<uint8_t>();
-    uint8_t sensitivity10 = leds.effectData.read<uint8_t>();
-
-    //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
-    uint8_t *aux0 = leds.effectData.readWrite<uint8_t>();
-
-    uint8_t secondHand = (speed < 255) ? (micros()/(256-speed)/500 % 16) : 0;
-    if((speed > 254) || (*aux0 != secondHand)) {   // WLEDMM allow run run at full speed
-      *aux0 = secondHand;
-
-      // Pixel brightness (value) based on volume * sensitivity * intensity
-      // uint_fast8_t sensitivity10 = map(sensitivity, 0, 31, 10, 100); // reduced resolution slider // WLEDMM sensitivity * 10, to avoid losing precision
-      int pixVal = audioSync->sync.volumeSmth * (float)fx * (float)sensitivity10 / 2560.0f; // WLEDMM 2560 due to sensitivity * 10
-      if (pixVal > 255) pixVal = 255;  // make a brightness from the last avg
-
-      CRGB color = CRGB::Black;
-
-      if (audioSync->sync.FFT_MajorPeak > MAX_FREQUENCY) audioSync->sync.FFT_MajorPeak = 1;
-      // MajorPeak holds the freq. value which is most abundant in the last sample.
-      // With our sampling rate of 10240Hz we have a usable freq range from roughtly 80Hz to 10240/2 Hz
-      // we will treat everything with less than 65Hz as 0
-
-      if ((audioSync->sync.FFT_MajorPeak > 80.0f) && (audioSync->sync.volumeSmth > 0.25f)) { // WLEDMM
-        // Pixel color (hue) based on major frequency
-        int upperLimit = 80 + 42 * highBin;
-        int lowerLimit = 80 + 3 * lowBin;
-        //uint8_t i =  lowerLimit!=upperLimit ? map(FFT_MajorPeak, lowerLimit, upperLimit, 0, 255) : FFT_MajorPeak;  // (original formula) may under/overflow - so we enforce uint8_t
-        int freqMapped =  lowerLimit!=upperLimit ? map(audioSync->sync.FFT_MajorPeak, lowerLimit, upperLimit, 0, 255) : audioSync->sync.FFT_MajorPeak;  // WLEDMM preserve overflows
-        uint8_t i = abs(freqMapped) & 0xFF;  // WLEDMM we embrace overflow ;-) by "modulo 256"
-
-        color = CHSV(i, 240, (uint8_t)pixVal); // implicit conversion to RGB supplied by FastLED
-      }
-
-      // shift the pixels one pixel up
-      leds.setPixelColor(0, color);
-      for (int i = leds.size.x - 1; i > 0; i--) leds.setPixelColor(i, leds.getPixelColor(i-1));
-    }
-  }
-
-};
-
 #define maxNumPopcorn 21 // max 21 on 16 segment ESP8266
 #define NUM_COLORS       3 /* number of colors per segment */
 
@@ -760,167 +700,6 @@ class PopCornEffect: public Effect {
     }
   }
 }; //PopCorn
-
-class NoiseMeterEffect: public Effect {
-  const char * name() override {return "NoiseMeter";}
-  uint8_t dim() override {return _1D;}
-  const char * tags() override {return "♪💡";}
-  
-  void setup(LedsLayer &leds, Variable parentVar) override {
-    Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "fadeRate", leds.effectData.write<uint8_t>(248), 200, 254);
-    ui->initSlider(parentVar, "width", leds.effectData.write<uint8_t>(128));
-  }
-
-  void loop(LedsLayer &leds) override {
-    //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t fadeRate = leds.effectData.read<uint8_t>();
-    uint8_t width = leds.effectData.read<uint8_t>();
-
-    //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
-    uint8_t *aux0 = leds.effectData.readWrite<uint8_t>();
-    uint8_t *aux1 = leds.effectData.readWrite<uint8_t>();
-
-    leds.fadeToBlackBy(fadeRate);
-
-    float tmpSound2 = audioSync->sync.volumeRaw * 2.0 * (float)width / 255.0;
-    int maxLen = map(tmpSound2, 0, 255, 0, leds.size.x); // map to pixels availeable in current segment              // Still a bit too sensitive.
-    // if (maxLen <0) maxLen = 0;
-    // if (maxLen >leds.size.x) maxLen = leds.size.x;
-
-    for (int i=0; i<maxLen; i++) {                                    // The louder the sound, the wider the soundbar. By Andrew Tuline.
-      uint8_t index = inoise8(i * audioSync->sync.volumeSmth + (*aux0), (*aux1) + i * audioSync->sync.volumeSmth);  // Get a value from the noise function. I'm using both x and y axis.
-      leds.setPixelColor(i, ColorFromPalette(leds.palette, index));//, 255, PALETTE_SOLID_WRAP));
-    }
-
-    *aux0+=beatsin8(5,0,10);
-    *aux1+=beatsin8(4,0,10);
-  }
-}; //NoiseMeter
-
-class AudioRingsEffect: public RingEffect {
-  const char * name() override {return "AudioRings";}
-  uint8_t dim() override {return _1D;}
-  const char * tags() override {return "♫💫";}
-
-  void setup(LedsLayer &leds, Variable parentVar) override {
-    Effect::setup(leds, parentVar);
-    ui->initCheckBox(parentVar, "inWards", leds.effectData.write<bool3State>(true));
-    ui->initSlider(parentVar, "rings", leds.effectData.write<uint8_t>(7), 1, 50);
-  }
-
-  void loop(LedsLayer &leds) override {
-    //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    bool3State inWards = leds.effectData.read<bool3State>();
-    uint8_t nrOfRings = leds.effectData.read<uint8_t>();
-
-    for (int i = 0; i < nrOfRings; i++) {
-
-      uint8_t band = map(i, 0, nrOfRings-1, 0, 15);
-
-      byte val;
-      if (inWards) {
-        val = audioSync->fftResults[band];
-      }
-      else {
-        val = audioSync->fftResults[15 - band];
-      }
-  
-      // Visualize leds to the beat
-      CRGB color = ColorFromPalette(leds.palette, val, val);
-//      CRGB color = ColorFromPalette(currentPalette, val, 255, currentBlending);
-//      color.nscale8_video(val);
-      setRing(leds, i, color);
-//        setRingFromFtt((i * 2), i); 
-    }
-
-    setRingFromFtt(leds, 2, 7); // set outer ring to bass
-    setRingFromFtt(leds, 0, 8); // set outer ring to bass
-
-  }
-  void setRingFromFtt(LedsLayer &leds, int index, int ring) {
-    byte val = audioSync->fftResults[index];
-    // Visualize leds to the beat
-    CRGB color = ColorFromPalette(leds.palette, val);
-    color.nscale8_video(val);
-    setRing(leds, ring, color);
-  }
-};
-
-class DJLightEffect: public Effect {
-  const char * name() override {return "DJLight";}
-  uint8_t dim() override {return _1D;}
-  const char * tags() override {return "♫💡";}
-
-  void setup(LedsLayer &leds, Variable parentVar) override {
-    leds.fill_solid(CRGB::Black);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(255));
-    ui->initCheckBox(parentVar, "candyFactory", leds.effectData.write<bool3State>(true));
-    ui->initSlider(parentVar, "fade", leds.effectData.write<uint8_t>(4), 0, 10);
-  }
-
-  void loop(LedsLayer &leds) override {
-    //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    bool3State candyFactory = leds.effectData.read<bool3State>();
-    uint8_t fade = leds.effectData.read<uint8_t>();
-
-    //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
-    uint8_t *aux0 = leds.effectData.readWrite<uint8_t>();
-
-    const int mid = leds.size.x / 2;
-
-    uint8_t *fftResult = audioSync->fftResults;
-    float volumeSmth   = audioSync->volumeSmth;
-
-    uint8_t secondHand = (speed < 255) ? (micros()/(256-speed)/500 % 16) : 0;
-    if((speed > 254) || (*aux0 != secondHand)) {   // WLEDMM allow run run at full speed
-      *aux0 = secondHand;
-
-      CRGB color = CRGB(0,0,0);
-      // color = CRGB(fftResult[15]/2, fftResult[5]/2, fftResult[0]/2);   // formula from 0.13.x (10Khz): R = 3880-5120, G=240-340, B=60-100
-      if (!candyFactory) {
-        color = CRGB(fftResult[12]/2, fftResult[3]/2, fftResult[1]/2);    // formula for 0.14.x  (22Khz): R = 3015-3704, G=216-301, B=86-129
-      } else {
-        // candy factory: an attempt to get more colors
-        color = CRGB(fftResult[11]/2 + fftResult[12]/4 + fftResult[14]/4, // red  : 2412-3704 + 4479-7106 
-                    fftResult[4]/2 + fftResult[3]/4,                     // green: 216-430
-                    fftResult[0]/4 + fftResult[1]/4 + fftResult[2]/4);   // blue:  46-216
-        if ((color.getLuma() < 96) && (volumeSmth >= 1.5f)) {             // enhance "almost dark" pixels with yellow, based on not-yet-used channels 
-          unsigned yello_g = (fftResult[5] + fftResult[6] + fftResult[7]) / 3;
-          unsigned yello_r = (fftResult[7] + fftResult[8] + fftResult[9] + fftResult[10]) / 4;
-          color.green += (uint8_t) yello_g / 2;
-          color.red += (uint8_t) yello_r / 2;
-        }
-      }
-
-      if (volumeSmth < 1.0f) color = CRGB(0,0,0); // silence = black
-
-      // make colors less "pastel", by turning up color saturation in HSV space
-      if (color.getLuma() > 32) {                                      // don't change "dark" pixels
-        CHSV hsvColor = rgb2hsv_approximate(color);
-        hsvColor.v = min(max(hsvColor.v, (uint8_t)48), (uint8_t)204);  // 48 < brightness < 204
-        if (candyFactory)
-          hsvColor.s = max(hsvColor.s, (uint8_t)204);                  // candy factory mode: strongly turn up color saturation (> 192)
-        else
-          hsvColor.s = max(hsvColor.s, (uint8_t)108);                  // normal mode: turn up color saturation to avoid pastels
-        color = hsvColor;
-      }
-      //if (color.getLuma() > 12) color.maximizeBrightness();          // for testing
-
-      //leds.setPixelColor(mid, color.fadeToBlackBy(map(fftResult[4], 0, 255, 255, 4)));     // 0.13.x  fade -> 180hz-260hz
-      uint8_t fadeVal = map(fftResult[3], 0, 255, 255, 4);                                      // 0.14.x  fade -> 216hz-301hz
-      if (candyFactory) fadeVal = constrain(fadeVal, 0, 176);  // "candy factory" mode - avoid complete fade-out
-      leds.setPixelColor(mid, color.fadeToBlackBy(fadeVal));
-
-      for (int i = leds.size.x - 1; i > mid; i--)   leds.setPixelColor(i, leds.getPixelColor(i-1)); // move to the left
-      for (int i = 0; i < mid; i++)            leds.setPixelColor(i, leds.getPixelColor(i+1)); // move to the right
-
-      leds.fadeToBlackBy(fade);
-
-    }
-  }
-}; //DJLight
 
 
 
@@ -1363,6 +1142,150 @@ class FireEffect: public Effect {
   }
   
 }; // Fire Effect
+
+/*
+ * Exploding fireworks effect
+ * adapted from: http://www.anirama.com/1000leds/1d-fireworks/
+ * adapted for 2D WLED by blazoncek (Blaz Kristan (AKA blazoncek))
+ * simplified for StarLight by ewowi in Nov 24
+ */
+class FireworksEffect: public Effect {
+  const char * name() override {return "Fireworks";}
+  uint8_t dim() override {return _2D;}
+  const char * tags() override {return "💡";}
+
+  void setup(LedsLayer &leds, Variable parentVar) override {
+    leds.fadeToBlackBy(16);
+    Effect::setup(leds, parentVar);
+    ui->initSlider(parentVar, "gravity", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "firingSide", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "numSparks", leds.effectData.write<uint8_t>(128));
+    // PROGMEM = "Fireworks 1D@Gravity,Firing side;!,!;!;12;pal=11,ix=128";
+  }
+
+  void loop(LedsLayer &leds) override {
+
+    //Binding of controls. Keep before binding of vars and keep in same order as in setup()
+    uint8_t gravityC = leds.effectData.read<uint8_t>();
+    uint8_t firingSide = leds.effectData.read<uint8_t>();
+    uint8_t numSparks = leds.effectData.read<uint8_t>();
+
+    float *dying_gravity = leds.effectData.readWrite<float>();
+    uint16_t *aux0Flare = leds.effectData.readWrite<uint16_t>();
+    Spark* sparks = leds.effectData.readWrite<Spark>(255);
+    Spark* flare = sparks; //first spark is flare data
+
+    const uint16_t cols = leds.size.x;
+    const uint16_t rows = leds.size.y;
+
+    //allocate segment data
+
+    // if (dataSize != SEGENV.aux1) { //reset to flare if sparks were reallocated (it may be good idea to reset segment if bounds change)
+    //   *dying_gravity = 0.0f;
+    //   (*aux0Flare) = 0;
+    //   SEGENV.aux1 = dataSize;
+    // }
+
+    leds.fadeToBlackBy(252); //fade_out(252);
+
+    float gravity = -0.0004f - (gravityC/800000.0f); // m/s/s
+    gravity *= rows;
+
+    if ((*aux0Flare) < 2) { //FLARE
+      if ((*aux0Flare) == 0) { //init flare
+        flare->pos = 0;
+        flare->posX = random16(2,cols-3);
+        uint16_t peakHeight = 75 + random8(180); //0-255
+        peakHeight = (peakHeight * (rows -1)) >> 8;
+        flare->vel = sqrtf(-2.0f * gravity * peakHeight);
+        flare->velX = (random8(9)-4)/32.f;
+        flare->col = 255; //brightness
+        (*aux0Flare) = 1;
+      }
+
+      // launch
+      if (flare->vel > 12 * gravity) {
+        // flare
+        leds.setPixelColor(int(flare->posX), rows - uint16_t(flare->pos) - 1, CRGB(flare->col, flare->col, flare->col));
+        flare->pos  += flare->vel;
+        flare->posX += flare->velX;
+        flare->pos  = constrain(flare->pos, 0, rows-1);
+        flare->posX = constrain(flare->posX, 0, cols-1);
+        flare->vel  += gravity;
+        flare->col  -= 2;
+      } else {
+        (*aux0Flare) = 2;  // ready to explode
+      }
+    } else if ((*aux0Flare) < 4) {
+      /*
+      * Explode!
+      *
+      * Explosion happens where the flare ended.
+      * Size is proportional to the height.
+      */
+      uint8_t nSparks = flare->pos + random8(4);
+      // nSparks = std::max(nSparks, 4U);  // This is not a standard constrain; numSparks is not guaranteed to be at least 4
+      nSparks = std::min(nSparks, numSparks);
+
+      // initialize sparks
+      if ((*aux0Flare) == 2) {
+        for (int i = 1; i < nSparks; i++) {
+          sparks[i].pos  = flare->pos;
+          sparks[i].posX = flare->posX;
+          sparks[i].vel  = (float(random16(20001)) / 10000.0f) - 0.9f; // from -0.9 to 1.1
+          // sparks[i].vel *= rows<32 ? 0.5f : 1; // reduce velocity for smaller strips
+          sparks[i].velX  = (float(random16(20001)) / 10000.0f) - 0.9f; // from -0.9 to 1.1
+          // sparks[i].velX = (float(random16(10001)) / 10000.0f) - 0.5f; // from -0.5 to 0.5
+          sparks[i].col  = 345;//abs(sparks[i].vel * 750.0); // set colors before scaling velocity to keep them bright
+          //sparks[i].col = constrain(sparks[i].col, 0, 345);
+          sparks[i].colIndex = random8();
+          sparks[i].vel  *= flare->pos/rows; // proportional to height
+          sparks[i].velX *= flare->posX/cols; // proportional to width
+          sparks[i].vel  *= -gravity *50;
+        }
+        //sparks[1].col = 345; // this will be our known spark
+        *dying_gravity = gravity/2;
+        (*aux0Flare) = 3;
+      }
+
+      if (sparks[1].col > 4) {//&& sparks[1].pos > 0) { // as long as our known spark is lit, work with all the sparks
+        for (int i = 1; i < nSparks; i++) {
+          sparks[i].pos  += sparks[i].vel;
+          sparks[i].posX += sparks[i].velX;
+          sparks[i].vel  += *dying_gravity;
+          sparks[i].velX += *dying_gravity;
+          if (sparks[i].col > 3) sparks[i].col -= 4;
+
+          if (sparks[i].pos > 0 && sparks[i].pos < rows) {
+            if (!(sparks[i].posX >= 0 && sparks[i].posX < cols)) continue;
+            uint16_t prog = sparks[i].col;
+            CRGB spColor = ColorFromPalette(leds.palette, sparks[i].colIndex);
+            CRGB c = CRGB::Black; //HeatColor(sparks[i].col);
+            if (prog > 300) { //fade from white to spark color
+              c = CRGB(blend(spColor, CRGB::White, (prog - 300)*5));
+            } else if (prog > 45) { //fade from spark color to black
+              c = CRGB(blend(CRGB::Black, spColor, prog - 45));
+              uint8_t cooling = (300 - prog) >> 5;
+              c.g = qsub8(c.g, cooling);
+              c.b = qsub8(c.b, cooling * 2);
+            }
+            leds.setPixelColor(sparks[i].posX, rows - sparks[i].pos - 1, c);
+          }
+        }
+        leds.blur2d(16);
+        *dying_gravity *= .8f; // as sparks burn out they fall slower
+      } else {
+        (*aux0Flare) = 6 + random8(10); //wait for this many frames
+      }
+    } else {
+      (*aux0Flare)--;
+      if ((*aux0Flare) < 4) {
+        (*aux0Flare) = 0; //back to flare
+      }
+    }
+  }
+
+}; //FireworksEffect
 
 //Lissajous inspired by WLED, Andrew Tuline 
 class LissajousEffect: public Effect {
@@ -2502,6 +2425,227 @@ public:
 
 #ifdef STARLIGHT_USERMOD_AUDIOSYNC
 
+class AudioRingsEffect: public RingEffect {
+  const char * name() override {return "AudioRings";}
+  uint8_t dim() override {return _1D;}
+  const char * tags() override {return "♫💫";}
+
+  void setup(LedsLayer &leds, Variable parentVar) override {
+    Effect::setup(leds, parentVar);
+    ui->initCheckBox(parentVar, "inWards", leds.effectData.write<bool3State>(true));
+    ui->initSlider(parentVar, "rings", leds.effectData.write<uint8_t>(7), 1, 50);
+  }
+
+  void loop(LedsLayer &leds) override {
+    //Binding of controls. Keep before binding of vars and keep in same order as in setup()
+    bool3State inWards = leds.effectData.read<bool3State>();
+    uint8_t nrOfRings = leds.effectData.read<uint8_t>();
+
+    for (int i = 0; i < nrOfRings; i++) {
+
+      uint8_t band = map(i, 0, nrOfRings-1, 0, 15);
+
+      byte val;
+      if (inWards) {
+        val = audioSync->fftResults[band];
+      }
+      else {
+        val = audioSync->fftResults[15 - band];
+      }
+  
+      // Visualize leds to the beat
+      CRGB color = ColorFromPalette(leds.palette, val, val);
+//      CRGB color = ColorFromPalette(currentPalette, val, 255, currentBlending);
+//      color.nscale8_video(val);
+      setRing(leds, i, color);
+//        setRingFromFtt((i * 2), i); 
+    }
+
+    setRingFromFtt(leds, 2, 7); // set outer ring to bass
+    setRingFromFtt(leds, 0, 8); // set outer ring to bass
+
+  }
+  void setRingFromFtt(LedsLayer &leds, int index, int ring) {
+    byte val = audioSync->fftResults[index];
+    // Visualize leds to the beat
+    CRGB color = ColorFromPalette(leds.palette, val);
+    color.nscale8_video(val);
+    setRing(leds, ring, color);
+  }
+};
+
+class DJLightEffect: public Effect {
+  const char * name() override {return "DJLight";}
+  uint8_t dim() override {return _1D;}
+  const char * tags() override {return "♫💡";}
+
+  void setup(LedsLayer &leds, Variable parentVar) override {
+    leds.fill_solid(CRGB::Black);
+    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(255));
+    ui->initCheckBox(parentVar, "candyFactory", leds.effectData.write<bool3State>(true));
+    ui->initSlider(parentVar, "fade", leds.effectData.write<uint8_t>(4), 0, 10);
+  }
+
+  void loop(LedsLayer &leds) override {
+    //Binding of controls. Keep before binding of vars and keep in same order as in setup()
+    uint8_t speed = leds.effectData.read<uint8_t>();
+    bool3State candyFactory = leds.effectData.read<bool3State>();
+    uint8_t fade = leds.effectData.read<uint8_t>();
+
+    //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
+    uint8_t *aux0 = leds.effectData.readWrite<uint8_t>();
+
+    const int mid = leds.size.x / 2;
+
+    uint8_t *fftResult = audioSync->fftResults;
+    float volumeSmth   = audioSync->volumeSmth;
+
+    uint8_t secondHand = (speed < 255) ? (micros()/(256-speed)/500 % 16) : 0;
+    if((speed > 254) || (*aux0 != secondHand)) {   // WLEDMM allow run run at full speed
+      *aux0 = secondHand;
+
+      CRGB color = CRGB(0,0,0);
+      // color = CRGB(fftResult[15]/2, fftResult[5]/2, fftResult[0]/2);   // formula from 0.13.x (10Khz): R = 3880-5120, G=240-340, B=60-100
+      if (!candyFactory) {
+        color = CRGB(fftResult[12]/2, fftResult[3]/2, fftResult[1]/2);    // formula for 0.14.x  (22Khz): R = 3015-3704, G=216-301, B=86-129
+      } else {
+        // candy factory: an attempt to get more colors
+        color = CRGB(fftResult[11]/2 + fftResult[12]/4 + fftResult[14]/4, // red  : 2412-3704 + 4479-7106 
+                    fftResult[4]/2 + fftResult[3]/4,                     // green: 216-430
+                    fftResult[0]/4 + fftResult[1]/4 + fftResult[2]/4);   // blue:  46-216
+        if ((color.getLuma() < 96) && (volumeSmth >= 1.5f)) {             // enhance "almost dark" pixels with yellow, based on not-yet-used channels 
+          unsigned yello_g = (fftResult[5] + fftResult[6] + fftResult[7]) / 3;
+          unsigned yello_r = (fftResult[7] + fftResult[8] + fftResult[9] + fftResult[10]) / 4;
+          color.green += (uint8_t) yello_g / 2;
+          color.red += (uint8_t) yello_r / 2;
+        }
+      }
+
+      if (volumeSmth < 1.0f) color = CRGB(0,0,0); // silence = black
+
+      // make colors less "pastel", by turning up color saturation in HSV space
+      if (color.getLuma() > 32) {                                      // don't change "dark" pixels
+        CHSV hsvColor = rgb2hsv_approximate(color);
+        hsvColor.v = min(max(hsvColor.v, (uint8_t)48), (uint8_t)204);  // 48 < brightness < 204
+        if (candyFactory)
+          hsvColor.s = max(hsvColor.s, (uint8_t)204);                  // candy factory mode: strongly turn up color saturation (> 192)
+        else
+          hsvColor.s = max(hsvColor.s, (uint8_t)108);                  // normal mode: turn up color saturation to avoid pastels
+        color = hsvColor;
+      }
+      //if (color.getLuma() > 12) color.maximizeBrightness();          // for testing
+
+      //leds.setPixelColor(mid, color.fadeToBlackBy(map(fftResult[4], 0, 255, 255, 4)));     // 0.13.x  fade -> 180hz-260hz
+      uint8_t fadeVal = map(fftResult[3], 0, 255, 255, 4);                                      // 0.14.x  fade -> 216hz-301hz
+      if (candyFactory) fadeVal = constrain(fadeVal, 0, 176);  // "candy factory" mode - avoid complete fade-out
+      leds.setPixelColor(mid, color.fadeToBlackBy(fadeVal));
+
+      for (int i = leds.size.x - 1; i > mid; i--)   leds.setPixelColor(i, leds.getPixelColor(i-1)); // move to the left
+      for (int i = 0; i < mid; i++)            leds.setPixelColor(i, leds.getPixelColor(i+1)); // move to the right
+
+      leds.fadeToBlackBy(fade);
+
+    }
+  }
+}; //DJLight
+
+class FreqMatrixEffect: public Effect {
+  const char * name() override {return "FreqMatrix";}
+  uint8_t dim() override {return _1D;}
+  const char * tags() override {return "♪💡";}
+
+  void setup(LedsLayer &leds, Variable parentVar) override {
+    leds.fadeToBlackBy(16);
+    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(255));
+    ui->initSlider(parentVar, "soundEffect", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "lowBin", leds.effectData.write<uint8_t>(18));
+    ui->initSlider(parentVar, "highBin", leds.effectData.write<uint8_t>(48));
+    ui->initSlider(parentVar, "sensivity", leds.effectData.write<uint8_t>(30), 10, 100);
+  }
+
+  void loop(LedsLayer &leds) override {
+    //Binding of controls. Keep before binding of vars and keep in same order as in setup()
+    uint8_t speed = leds.effectData.read<uint8_t>();
+    uint8_t fx = leds.effectData.read<uint8_t>();
+    uint8_t lowBin = leds.effectData.read<uint8_t>();
+    uint8_t highBin = leds.effectData.read<uint8_t>();
+    uint8_t sensitivity10 = leds.effectData.read<uint8_t>();
+
+    //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
+    uint8_t *aux0 = leds.effectData.readWrite<uint8_t>();
+
+    uint8_t secondHand = (speed < 255) ? (micros()/(256-speed)/500 % 16) : 0;
+    if((speed > 254) || (*aux0 != secondHand)) {   // WLEDMM allow run run at full speed
+      *aux0 = secondHand;
+
+      // Pixel brightness (value) based on volume * sensitivity * intensity
+      // uint_fast8_t sensitivity10 = map(sensitivity, 0, 31, 10, 100); // reduced resolution slider // WLEDMM sensitivity * 10, to avoid losing precision
+      int pixVal = audioSync->sync.volumeSmth * (float)fx * (float)sensitivity10 / 2560.0f; // WLEDMM 2560 due to sensitivity * 10
+      if (pixVal > 255) pixVal = 255;  // make a brightness from the last avg
+
+      CRGB color = CRGB::Black;
+
+      if (audioSync->sync.FFT_MajorPeak > MAX_FREQUENCY) audioSync->sync.FFT_MajorPeak = 1;
+      // MajorPeak holds the freq. value which is most abundant in the last sample.
+      // With our sampling rate of 10240Hz we have a usable freq range from roughtly 80Hz to 10240/2 Hz
+      // we will treat everything with less than 65Hz as 0
+
+      if ((audioSync->sync.FFT_MajorPeak > 80.0f) && (audioSync->sync.volumeSmth > 0.25f)) { // WLEDMM
+        // Pixel color (hue) based on major frequency
+        int upperLimit = 80 + 42 * highBin;
+        int lowerLimit = 80 + 3 * lowBin;
+        //uint8_t i =  lowerLimit!=upperLimit ? map(FFT_MajorPeak, lowerLimit, upperLimit, 0, 255) : FFT_MajorPeak;  // (original formula) may under/overflow - so we enforce uint8_t
+        int freqMapped =  lowerLimit!=upperLimit ? map(audioSync->sync.FFT_MajorPeak, lowerLimit, upperLimit, 0, 255) : audioSync->sync.FFT_MajorPeak;  // WLEDMM preserve overflows
+        uint8_t i = abs(freqMapped) & 0xFF;  // WLEDMM we embrace overflow ;-) by "modulo 256"
+
+        color = CHSV(i, 240, (uint8_t)pixVal); // implicit conversion to RGB supplied by FastLED
+      }
+
+      // shift the pixels one pixel up
+      leds.setPixelColor(0, color);
+      for (int i = leds.size.x - 1; i > 0; i--) leds.setPixelColor(i, leds.getPixelColor(i-1));
+    }
+  }
+
+};
+
+class NoiseMeterEffect: public Effect {
+  const char * name() override {return "NoiseMeter";}
+  uint8_t dim() override {return _1D;}
+  const char * tags() override {return "♪💡";}
+  
+  void setup(LedsLayer &leds, Variable parentVar) override {
+    Effect::setup(leds, parentVar);
+    ui->initSlider(parentVar, "fadeRate", leds.effectData.write<uint8_t>(248), 200, 254);
+    ui->initSlider(parentVar, "width", leds.effectData.write<uint8_t>(128));
+  }
+
+  void loop(LedsLayer &leds) override {
+    //Binding of controls. Keep before binding of vars and keep in same order as in setup()
+    uint8_t fadeRate = leds.effectData.read<uint8_t>();
+    uint8_t width = leds.effectData.read<uint8_t>();
+
+    //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
+    uint8_t *aux0 = leds.effectData.readWrite<uint8_t>();
+    uint8_t *aux1 = leds.effectData.readWrite<uint8_t>();
+
+    leds.fadeToBlackBy(fadeRate);
+
+    float tmpSound2 = audioSync->sync.volumeRaw * 2.0 * (float)width / 255.0;
+    int maxLen = map(tmpSound2, 0, 255, 0, leds.size.x); // map to pixels availeable in current segment              // Still a bit too sensitive.
+    // if (maxLen <0) maxLen = 0;
+    // if (maxLen >leds.size.x) maxLen = leds.size.x;
+
+    for (int i=0; i<maxLen; i++) {                                    // The louder the sound, the wider the soundbar. By Andrew Tuline.
+      uint8_t index = inoise8(i * audioSync->sync.volumeSmth + (*aux0), (*aux1) + i * audioSync->sync.volumeSmth);  // Get a value from the noise function. I'm using both x and y axis.
+      leds.setPixelColor(i, ColorFromPalette(leds.palette, index));//, 255, PALETTE_SOLID_WRAP));
+    }
+
+    *aux0+=beatsin8(5,0,10);
+    *aux1+=beatsin8(4,0,10);
+  }
+}; //NoiseMeter
+
 class WaverlyEffect: public Effect {
   const char * name() override {return "Waverly";}
   uint8_t dim() override {return _2D;}
@@ -2889,151 +3033,6 @@ class PaintbrushEffect: public Effect {
   }
 
 }; //PaintBrushEffect
-
-/*
- * Exploding fireworks effect
- * adapted from: http://www.anirama.com/1000leds/1d-fireworks/
- * adapted for 2D WLED by blazoncek (Blaz Kristan (AKA blazoncek))
- * simplified for StarLight by ewowi in Nov 24
- */
-class FireworksEffect: public Effect {
-  const char * name() override {return "Fireworks";}
-  uint8_t dim() override {return _2D;}
-  const char * tags() override {return "💡";}
-
-  void setup(LedsLayer &leds, Variable parentVar) override {
-    leds.fadeToBlackBy(16);
-    Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "gravity", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "firingSide", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "numSparks", leds.effectData.write<uint8_t>(128));
-    // PROGMEM = "Fireworks 1D@Gravity,Firing side;!,!;!;12;pal=11,ix=128";
-  }
-
-  void loop(LedsLayer &leds) override {
-
-    //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t gravityC = leds.effectData.read<uint8_t>();
-    uint8_t firingSide = leds.effectData.read<uint8_t>();
-    uint8_t numSparks = leds.effectData.read<uint8_t>();
-
-    float *dying_gravity = leds.effectData.readWrite<float>();
-    uint16_t *aux0Flare = leds.effectData.readWrite<uint16_t>();
-    Spark* sparks = leds.effectData.readWrite<Spark>(255);
-    Spark* flare = sparks; //first spark is flare data
-
-    const uint16_t cols = leds.size.x;
-    const uint16_t rows = leds.size.y;
-
-    //allocate segment data
-
-    // if (dataSize != SEGENV.aux1) { //reset to flare if sparks were reallocated (it may be good idea to reset segment if bounds change)
-    //   *dying_gravity = 0.0f;
-    //   (*aux0Flare) = 0;
-    //   SEGENV.aux1 = dataSize;
-    // }
-
-    leds.fadeToBlackBy(252); //fade_out(252);
-
-    float gravity = -0.0004f - (gravityC/800000.0f); // m/s/s
-    gravity *= rows;
-
-    if ((*aux0Flare) < 2) { //FLARE
-      if ((*aux0Flare) == 0) { //init flare
-        flare->pos = 0;
-        flare->posX = random16(2,cols-3);
-        uint16_t peakHeight = 75 + random8(180); //0-255
-        peakHeight = (peakHeight * (rows -1)) >> 8;
-        flare->vel = sqrtf(-2.0f * gravity * peakHeight);
-        flare->velX = (random8(9)-4)/32.f;
-        flare->col = 255; //brightness
-        (*aux0Flare) = 1;
-      }
-
-      // launch
-      if (flare->vel > 12 * gravity) {
-        // flare
-        leds.setPixelColor(int(flare->posX), rows - uint16_t(flare->pos) - 1, CRGB(flare->col, flare->col, flare->col));
-        flare->pos  += flare->vel;
-        flare->posX += flare->velX;
-        flare->pos  = constrain(flare->pos, 0, rows-1);
-        flare->posX = constrain(flare->posX, 0, cols-1);
-        flare->vel  += gravity;
-        flare->col  -= 2;
-      } else {
-        (*aux0Flare) = 2;  // ready to explode
-      }
-    } else if ((*aux0Flare) < 4) {
-      /*
-      * Explode!
-      *
-      * Explosion happens where the flare ended.
-      * Size is proportional to the height.
-      */
-      uint8_t nSparks = flare->pos + random8(4);
-      // nSparks = std::max(nSparks, 4U);  // This is not a standard constrain; numSparks is not guaranteed to be at least 4
-      nSparks = std::min(nSparks, numSparks);
-
-      // initialize sparks
-      if ((*aux0Flare) == 2) {
-        for (int i = 1; i < nSparks; i++) {
-          sparks[i].pos  = flare->pos;
-          sparks[i].posX = flare->posX;
-          sparks[i].vel  = (float(random16(20001)) / 10000.0f) - 0.9f; // from -0.9 to 1.1
-          // sparks[i].vel *= rows<32 ? 0.5f : 1; // reduce velocity for smaller strips
-          sparks[i].velX  = (float(random16(20001)) / 10000.0f) - 0.9f; // from -0.9 to 1.1
-          // sparks[i].velX = (float(random16(10001)) / 10000.0f) - 0.5f; // from -0.5 to 0.5
-          sparks[i].col  = 345;//abs(sparks[i].vel * 750.0); // set colors before scaling velocity to keep them bright
-          //sparks[i].col = constrain(sparks[i].col, 0, 345);
-          sparks[i].colIndex = random8();
-          sparks[i].vel  *= flare->pos/rows; // proportional to height
-          sparks[i].velX *= flare->posX/cols; // proportional to width
-          sparks[i].vel  *= -gravity *50;
-        }
-        //sparks[1].col = 345; // this will be our known spark
-        *dying_gravity = gravity/2;
-        (*aux0Flare) = 3;
-      }
-
-      if (sparks[1].col > 4) {//&& sparks[1].pos > 0) { // as long as our known spark is lit, work with all the sparks
-        for (int i = 1; i < nSparks; i++) {
-          sparks[i].pos  += sparks[i].vel;
-          sparks[i].posX += sparks[i].velX;
-          sparks[i].vel  += *dying_gravity;
-          sparks[i].velX += *dying_gravity;
-          if (sparks[i].col > 3) sparks[i].col -= 4;
-
-          if (sparks[i].pos > 0 && sparks[i].pos < rows) {
-            if (!(sparks[i].posX >= 0 && sparks[i].posX < cols)) continue;
-            uint16_t prog = sparks[i].col;
-            CRGB spColor = ColorFromPalette(leds.palette, sparks[i].colIndex);
-            CRGB c = CRGB::Black; //HeatColor(sparks[i].col);
-            if (prog > 300) { //fade from white to spark color
-              c = CRGB(blend(spColor, CRGB::White, (prog - 300)*5));
-            } else if (prog > 45) { //fade from spark color to black
-              c = CRGB(blend(CRGB::Black, spColor, prog - 45));
-              uint8_t cooling = (300 - prog) >> 5;
-              c.g = qsub8(c.g, cooling);
-              c.b = qsub8(c.b, cooling * 2);
-            }
-            leds.setPixelColor(sparks[i].posX, rows - sparks[i].pos - 1, c);
-          }
-        }
-        leds.blur2d(16);
-        *dying_gravity *= .8f; // as sparks burn out they fall slower
-      } else {
-        (*aux0Flare) = 6 + random8(10); //wait for this many frames
-      }
-    } else {
-      (*aux0Flare)--;
-      if ((*aux0Flare) < 4) {
-        (*aux0Flare) = 0; //back to flare
-      }
-    }
-  }
-
-}; //FireworksEffect
-
 
 class FunkyPlankEffect: public Effect {
   const char * name() override {return "Funky Plank";}

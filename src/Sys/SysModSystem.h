@@ -58,18 +58,7 @@ public:
 private:
   unsigned long loopCounter = 0;
 
-  void addResetReasonsSelect(JsonArray select);
-  void addRestartReasonsSelect(JsonArray select);
-
-  // from esp32Tools: helper fuctions
-  int getCoreResetReason(int core);
-  String resetCode2Info(int reason);
-  esp_reset_reason_t getRestartReason();
-  String restartCode2InfoLong(esp_reset_reason_t reason);
-  String restartCode2Info(esp_reset_reason_t reason);
-
   TaskHandle_t loop_taskHandle = nullptr;                   // to store the task handle for later calls
-  TaskHandle_t tcp_taskHandle = nullptr;                   // to store the task handle for later calls
 
 };
 

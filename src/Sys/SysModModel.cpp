@@ -74,7 +74,8 @@
   }
 
   void Variable::preDetails() {
-    print->printJson("preDetails pre", var);
+    ppf("preDetails %s.%s pre ", pid(), id());
+    // print->printJson("preDetails pre", var);
     if (var["oldValue"].isNull()) //no previous effect: during boot
       for (JsonObject varChild: children()) { //for all controls
         varChild.remove("o");
@@ -134,7 +135,7 @@
       }
     } //if new added
     ppf("postDetails %s.%s post ", pid(), id());
-    print->printJson("  Var", var);
+    // print->printJson("  Var", var);
     ppf("\n");
 
     //post update details

@@ -588,7 +588,11 @@ public:
     // 42: 36
     // 43: 0
     starMessage.header.insId = localIP[3]; //WLED: used in map of instances as index!
-    starMessage.header.version = VERSION;
+    #ifdef STARBASE_MAIN
+        starMessage.header.version = VERSION;
+    #else
+        starMessage.header.version = 25011908;
+    #endif
     starMessage.sysData.type = (strncmp(_INIT(TOSTRING(APP)), "StarBase", 9)==0)?1:(strncmp(_INIT(TOSTRING(APP)), "StarLight", 10)==0)?2:(strncmp(_INIT(TOSTRING(APP)), "StarLedsLive", 13)==0)?3:99; //0=WLED, 1=StarBase, 2=StarLight, 3=StarLedsLive, else=StarFork
     starMessage.sysData.uptime = millis()/1000;
     starMessage.sysData.now = millis() + sys->timebase; //similar to now

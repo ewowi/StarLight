@@ -246,7 +246,7 @@ void SysModNetwork::loop10s() {
     }
   } else {
     if (apActive && !mdl->getValue("Network", "AP").as<bool>()) {
-      ppf("IP's found -> stopAP (%s %s)\n", ETH.localIP().toString().c_str(), WiFi.localIP().toString().c_str());
+      ppf("IP's found -> stopAP (%s)\n", localIP().toString().c_str());
       stopAP();
     }
   }
