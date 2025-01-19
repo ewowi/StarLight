@@ -1,0 +1,33 @@
+<!-- 
+  Step 1: hello world
+  * create minimal app: https://svelte.dev/docs/svelte/getting-started
+    * vite-plugin-svelte: copy paste the minimal stuff here in folder svelte
+    * myapp: compare what is here
+    * goto svelte folder
+    * npm install
+    * npm run dev -- --open 
+  * compare with other deployments:
+    * https://github.com/theelims/ESP32-sveltekit : .py to create zipped .html
+    * https://github.com/BCsabaEngine/svelteesp32
+
+  Step2: add as ui.h and implement hamburger
+  * npm install to install the hamburger code 
+  * npm run build (results in data/svelte/dist folder)
+  * or npm run dev -- --open to see the result in the browser
+  * pio build / upload to run build_interface.py which takes the files in dist and creates WWWData.h
+  * WWWData.h is used in SysModWeb to create server.on() handlers for the svelte files 
+  * result at http://<esp32ip>/index.html
+-->
+
+<!doctype html> 
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Star + Vite + Svelte</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="main.ts"></script>
+  </body>
+</html>
