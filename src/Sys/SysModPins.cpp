@@ -68,7 +68,7 @@ void SysModPins::setup() {
       variable.setComment("Pin viewer 🚧");
       return true;
     case onLoop:
-      if (!web->isBusy) {//} && web->ws.getClients().length()) {
+      if (!web->isBusy && false) {//} && web->ws.getClients().length()) { ESK: stop for now
         variable.var["interval"] = 100; //every 100 ms
 
         size_t len = NUM_DIGITAL_PINS + 5;

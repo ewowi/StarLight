@@ -85,14 +85,14 @@
     }
 
     ppf("preDetails %s.%s post ", pid(), id());
-    print->printVar(var);
+    // print->printVar(var);
     ppf("\n");
   }
 
   void Variable::postDetails(uint8_t rowNr) {
 
     ppf("postDetails %s.%s pre ", pid(), id());
-    print->printVar(var);
+    // print->printVar(var);
     ppf("\n");
 
     //check if post init added: parent is already >=0

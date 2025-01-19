@@ -118,7 +118,8 @@
         }
         return true;
       case onLoop: {
-        if (!web->isBusy && mappingStatus == 0 && bytesPerPixel && !doSendFixtureDefinition) { //} && web->ws.getClients().length()) { //not remapping and clients exists
+        //ESK: stop for now
+        if (false && !web->isBusy && mappingStatus == 0 && bytesPerPixel && !doSendFixtureDefinition) { //} && web->ws.getClients().length()) { //not remapping and clients exists
           variable.var["interval"] = max(nrOfLeds/200, 16)*10; //interval in ms * 10, not too fast //from cs to ms web->ws.count()
 
           #define headerBytesPreview 5
@@ -565,7 +566,7 @@ void LedModFixture::addPixelsPre() {
       // for (auto &client:web->ws.getClients()) while (client->queueLen() > 3) delay(10); //ui refresh, wait a bit
       size_t len = min(nrOfLeds * 6 + headerBytesFixture, PACKAGE_SIZE);
       // wsBuf = web->ws.makeBuffer(len);
-      buffer = (byte*)malloc(len);// wsBuf->get();
+      // buffer = (byte*)malloc(len);// wsBuf->get();
       if (buffer) {
       //   wsBuf->lock();
         buffer[0] = 1; //userfun 1
