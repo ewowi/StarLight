@@ -24,7 +24,8 @@ public:
 
   uint8_t doInitEffectRowNr = UINT8_MAX;
 
-  uint16_t processEffectNr = UINT16_MAX; //process effect change initiated outside library (ESK)
+  uint16_t processEffectNr = UINT16_MAX; //process change initiated outside library (ESK)
+  uint16_t processProjectionNr = UINT16_MAX; //process change initiated outside library (ESK)
 
   LedModEffects();
 
