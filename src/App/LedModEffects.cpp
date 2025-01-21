@@ -97,7 +97,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     #ifdef STARLIGHT_LIVE_MAPPING
       projections.push_back(new LiveMappingProjection);
     #else
-      projections.push_back(new NoneProjection);
+      projections.push_back(new NoneProjection); //0
     #endif
     projections.push_back(new DefaultProjection);
     projections.push_back(new PinwheelProjection);
@@ -115,7 +115,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     #ifdef STARBASE_USERMOD_MPU6050
       projections.push_back(new AccelerationProjection);
     #endif
-    projections.push_back(new CheckerboardProjection);
+    projections.push_back(new CheckerboardProjection); //12
     projections.push_back(new RotateProjection);
     projections.push_back(new RippleYZ);
   }; //constructor

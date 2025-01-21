@@ -12,8 +12,11 @@
 #pragma once
 #include "SysModule.h"
 
-#define ppf(x...) print->printf(x)
-// #define ppf(x...) //to have no print code compiled, difference is only 6308 bytes 
+#ifdef STARBASE_PPF
+  #define ppf(x...) STARBASE_PPF // #define ppf(x...) //to have no print code compiled, difference is only 6308 bytes 
+#else
+  #define ppf(x...) print->printf(x)
+#endif
 // Flash: [======    ]  62.8% (used 1194250 bytes from 1900544 bytes)
 // Flash: [======    ]  63.2% (used 1200558 bytes from 1900544 bytes)
 

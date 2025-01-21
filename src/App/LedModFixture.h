@@ -162,7 +162,7 @@ public:
   uint16_t previewBufferIndex = 0;
   unsigned long start = millis();
   uint8_t pass = 0; //'class global' so addPixel/Pin functions know which pass it is in
-  byte* buffer; // AsyncWebSocketMessageBuffer * wsBuf; //buffer for preview create fixture
+  byte* buffer = nullptr; // AsyncWebSocketMessageBuffer * wsBuf; //buffer for preview create fixture
   void addPixelsPre();
   void addPixel(Coord3D pixel);
   void addPin(uint8_t pin);
