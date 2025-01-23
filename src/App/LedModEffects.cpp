@@ -529,20 +529,6 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       }
     }
 
-    //process change initiated outside library (ESK)
-    if (processEffectNr != UINT16_MAX) {
-      Variable variable = Variable("layers","effect");
-      variable.setValue(processEffectNr, 0);
-      variable.setValue(processEffectNr, 0); //twice to init var["value"]correctly - workaround !!!
-      processEffectNr = UINT16_MAX;
-    }
-    if (processProjectionNr != UINT16_MAX) {
-      Variable variable = Variable("layers","projection");
-      variable.setValue(processProjectionNr, 0);
-      variable.setValue(processProjectionNr, 0); //twice to init var["value"]correctly - workaround !!!
-      processProjectionNr = UINT16_MAX;
-    }
-
   } //loop
 
   void LedModEffects::initEffect(LedsLayer &leds, uint8_t rowNr) {
