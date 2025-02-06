@@ -573,7 +573,7 @@ void SysModModel::setup() {
       variable.setComment("Delete unused variables");
       return true;
     case onChange:
-      walkThroughModel([this](JsonObject parentVar, JsonObject var) {
+      walkThroughJson([this](JsonObject parentVar, JsonObject var) {
 
         Variable parentVariable = Variable(parentVar);
         Variable variable = Variable(var);
@@ -586,7 +586,7 @@ void SysModModel::setup() {
           for (JsonArray::iterator it=vars.begin(); it!=vars.end(); ++it) if ((*it)["id"] == var["id"]) vars.remove(it); //use iterator to make .remove work!!!
         }
         return JsonObject(); //don't stop
-      });
+      }, model->as<JsonArray>(), "n");
       return true;
     default: return false;
   }});
@@ -611,7 +611,7 @@ void SysModModel::loop20ms() {
 
     // files->writeObjectToFile("/model.json", model);
 
-    walkThroughModel([](JsonObject parentVar, JsonObject var) {
+    walkThroughJson([](JsonObject parentVar, JsonObject var) {
 
       Variable variable = Variable(var);
 
@@ -623,7 +623,7 @@ void SysModModel::loop20ms() {
       }
 
       return JsonObject(); //don't stop
-    });
+    }, model->as<JsonArray>(), "n");
 
     StarJson starJson("/model.json", FILE_WRITE); //open fileName for deserialize
     //comment exclusions out in case of generating model.json for github
@@ -645,10 +645,10 @@ void SysModModel::loop20ms() {
 }
 
 void SysModModel::loop1s() {
-  walkThroughModel([](JsonObject parentVar, JsonObject var) {
+  walkThroughJson([](JsonObject parentVar, JsonObject var) {
     Variable(var).triggerEvent(onLoop1s);
     return JsonObject(); //don't stop
-  });
+  }, model->as<JsonArray>(), "n");
 }
 
 Variable SysModModel::initVar(Variable parent, const char * id, const char * type, bool readOnly, const VarEvent &varEvent) {
@@ -742,19 +742,21 @@ bool Variable::publish(uint8_t eventType, uint8_t rowNr) {
 }
 
 
-JsonObject SysModModel::walkThroughModel(std::function<JsonObject(JsonObject, JsonObject)> fun, JsonObject parentVar) {
-  for (JsonObject var : parentVar.isNull()?model->as<JsonArray>(): parentVar["n"]) {
-    // ppf(" %s", var["id"].as<String>());
+
+JsonObject SysModModel::walkThroughJson(std::function<JsonObject(JsonObject, JsonObject)> fun, JsonVariant parentVar, const char *detail) {
+  for (JsonObject var : parentVar.is<JsonArray>()?parentVar.as<JsonArray>(): parentVar[detail].as<JsonArray>()) {
     JsonObject foundVar = fun(parentVar, var);
     if (!foundVar.isNull()) return foundVar;
 
-    if (!var["n"].isNull()) {
-      foundVar = walkThroughModel(fun, var);
+    if (!var[detail].isNull()) {
+      foundVar = walkThroughJson(fun, var, detail);
       if (!foundVar.isNull()) return foundVar;
     }
   }
   return JsonObject(); //don't stop
 }
+
+
 
 JsonObject SysModModel::findVar(const char * pid, const char * id, JsonObject parentVar) {
   for (JsonObject var : parentVar.isNull()?model->as<JsonArray>():parentVar["n"]) {
@@ -779,10 +781,10 @@ JsonObject SysModModel::findModule(const char * pid, const char * id) {
 
   for (JsonObject moduleVar : model->as<JsonArray>()) {
     bool pididFound = false;
-    walkThroughModel([&pididFound, pid, id](JsonObject parentVar, JsonObject var) {
+    walkThroughJson([&pididFound, pid, id](JsonObject parentVar, JsonObject var) {
       pididFound = var["pid"] == pid && var["id"] == id;
       return pididFound?var:JsonObject(); //stop if found
-    }, moduleVar);
+    }, moduleVar, "n");
     if (pididFound) return moduleVar;
   }
 

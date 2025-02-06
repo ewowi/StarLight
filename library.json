@@ -1,24 +1,24 @@
 {
-  "name": "StarBase",
+  "name": "StarLight",
   "version": "0.6.0",
-  "description": "StarBase is a computer program that outputs StarBase or some variant on a display device",
+  "description": "StarLight is a computer program that outputs StarLight or some variant on a display device",
   "keywords": "planet, happiness, people",
   "repository":
   {
     "type": "git",
-    "url": "https://github.com/ewowi/StarBase.git"
+    "url": "https://github.com/MoonModules/StarLight.git"
   },
   "authors":
   [
     {
       "name": "Ewoud Wijma",
       "email": "moonmodules@icloud.com",
-      "url": "https://www.starmod.org/",
+      "url": "https://www.moonmodules.org/",
       "maintainer": true
     }
   ],
   "license": "GPL-3.0",
-  "homepage": "https://www.starmod.org/",
+  "homepage": "https://www.moonmodules.org/",
   "frameworks": "arduino",
   "platforms": [
     "espressif32"

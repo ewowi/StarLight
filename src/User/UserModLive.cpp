@@ -249,19 +249,18 @@ static float _time(float j) {
 
   } //setup
 
+  //Live Scripts defaults
   void UserModLive::addDefaultExternals() {
 
     scScript = "";
 
-    //Live Scripts defaults
-
-    addExternalFun("float", "atan2", "(float a1, float a2)",(void*)_atan2);
-    addExternalFun("float", "hypot", "(float a1, float a2)",(void*)_hypot);
-    addExternalFun("float", "sin", "(float a1)", (void *)_sin);
-    addExternalFun("float", "cos", "(float a1)", (void *)_cos);
-    addExternalFun("float", "time", "(float a1)", (void *)_time);
-    addExternalFun("float", "triangle", "(float a1)", (void *)_triangle);
-    addExternalFun("uint32_t", "millis", "()", (void *)millis);
+    addExternalFun("float", "atan2", "float,float",(void*)_atan2);
+    addExternalFun("float", "hypot", "float,float",(void*)_hypot);
+    addExternalFun("float", "sin", "float", (void *)_sin);
+    addExternalFun("float", "cos", "float", (void *)_cos);
+    addExternalFun("float", "time", "float", (void *)_time);
+    addExternalFun("float", "triangle", "float", (void *)_triangle);
+    addExternalFun("uint32_t", "millis", "", (void *)millis);
   }
 
   void UserModLive::addExternalVal(string result, string name, void * ptr) {
@@ -438,7 +437,7 @@ static float _time(float j) {
   uint8_t UserModLive::findExecutable(const char *fileName) {
     uint8_t exeID = 0;
     for (Executable &exec: scriptRuntime._scExecutables) {
-      if (exec.name.compare(string(fileName)) == 0)
+      if (exec.name.compare(string(fileName)) == 0 && exec.isExeExists()) //successfully compiled
         return exeID++;
     }
     return UINT8_MAX;

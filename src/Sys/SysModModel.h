@@ -397,7 +397,7 @@ public:
   }
 
   //returns the var defined by id (parent to recursively call findVar)
-  JsonObject walkThroughModel(std::function<JsonObject(JsonObject, JsonObject)> fun, JsonObject parentVar = JsonObject());
+  JsonObject walkThroughJson(std::function<JsonObject(JsonObject, JsonObject)> fun, JsonVariant parentVar, const char *detail);
   JsonObject findVar(const char * pid, const char * id, JsonObject parentVar = JsonObject());
   JsonObject findModule(const char * pid, const char * id);
   void findVars(const char * id, bool value, FindFun fun, JsonObject parentVar = JsonObject());

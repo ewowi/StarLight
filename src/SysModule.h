@@ -62,6 +62,14 @@ class StarString {
     return *this;
   }
 
+  bool operator==(const char *rhs) {
+    return strcmp(s, rhs) == 0;
+  }
+
+  bool contains(const char *rhs) {
+    return strstr(s, rhs) != NULL;
+  }
+
   void catSep(const char* s) {
     strlcpy(sep, s, sizeof(sep));
   }
