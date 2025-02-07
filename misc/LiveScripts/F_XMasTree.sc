@@ -1,7 +1,7 @@
 //F_XMasTree.sc
 
-define PI 3.141592654
-define ledCount 100
+#define PI 3.141592654
+#define ledCount 100
 
 void main()
 {

@@ -1,9 +1,9 @@
 //F_panel080-048.sc
 
-define horizontalPanels 5
-define verticalPanels 3
-define panelWidth 16
-define panelHeight 16
+#define horizontalPanels 5
+#define verticalPanels 3
+#define panelWidth 16
+#define panelHeight 16
 
 //int pins[2] = {14,12}; //for esp32 (wrover)
 int pins[2] = {9,10}; //for esp32-S3

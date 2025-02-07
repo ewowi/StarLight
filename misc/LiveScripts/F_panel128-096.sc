@@ -1,9 +1,9 @@
 //F_panel128-096.sc
 
-define horizontalPanels 8
-define verticalPanels 6
-define panelWidth 16
-define panelHeight 16
+#define horizontalPanels 8
+#define verticalPanels 6
+#define panelWidth 16
+#define panelHeight 16
 
 //for virtual driver, max 6 pins supported atm
 //int pins[6] = {14,12,13,25,33,32}; //for esp32

@@ -1,7 +1,7 @@
 //F_Troy3232.sc
 
-define width 32
-define height 32
+#define width 32
+#define height 32
 
 void main()
 {

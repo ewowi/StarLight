@@ -3,9 +3,9 @@
 //externals generated
 
 //how to deal with external defines?
-define OUTPUT            0x03 
-define LOW               0x0
-define HIGH              0x1
+#define OUTPUT            0x03 
+#define LOW               0x0
+#define HIGH              0x1
 
 uint8_t blinkPin = 2; //tbd make blinkPin an ui control
 

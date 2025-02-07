@@ -1,8 +1,8 @@
 //F_Cube888.sc
 
-define width 8
-define height 8
-define depth 8
+#define width 8
+#define height 8
+#define depth 8
 
 void main()
 {

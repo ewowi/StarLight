@@ -1,9 +1,9 @@
 //F_panel4x32x8.sc
 
-define horizontalPanels 1
-define verticalPanels 4
-define panelWidth 32
-define panelHeight 8
+#define horizontalPanels 1
+#define verticalPanels 4
+#define panelWidth 32
+#define panelHeight 8
 
 void main() {
 

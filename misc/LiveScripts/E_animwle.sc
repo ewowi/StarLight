@@ -2,8 +2,8 @@
 
 // WIP, By Yves but time and triangle is now external, not working yet
 
-define maxIterations 15
-define scale 0.5
+#define maxIterations 15
+#define scale 0.5
 
 uint32_t __deltamillis[1];
 

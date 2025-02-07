@@ -1,6 +1,6 @@
 //E_octo.sc
 
-define PI 3.1415926535
+#define PI 3.1415926535
 int nb_branches;
 uint8_t C_X;
 uint8_t C_Y;

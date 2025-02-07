@@ -87,7 +87,7 @@ external uint8_t cos8(uint8_t a1);
 external void sPC(uint16_t a1, CRGB a2);
 external void sCFP(uint16_t a1, uint8_t a2, uint8_t a3);
 external void fadeToBlackBy(uint8_t a1);
-define width 32
-define height 32
-define NUM_LEDS 1024
+#define width 32
+#define height 32
+#define NUM_LEDS 1024
 */

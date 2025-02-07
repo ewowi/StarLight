@@ -1,8 +1,8 @@
 //F_Cube202020.sc
 
-define width 20
-define height 20
-define depth 10
+#define width 20
+#define height 20
+#define depth 10
 
 //int pins[16] = {22,21,19,18,5,4,2,15,13,12,14,27,26,25,33,32}; //optionally: 0,1,3,11,23 PHYSICAL_DRIVER on esp32-wrover (PSRAM)
 int pins[10] = {22,21,14,18,5,4,2,15,13,12}; //optionally: 0,1,3,11,23 PHYSICAL_DRIVER on esp32-wrover (PSRAM)

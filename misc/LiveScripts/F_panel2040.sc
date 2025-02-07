@@ -1,8 +1,8 @@
 //F_panel2040.sc
 
-define width 20
-define height 40
-define depth 1
+#define width 20
+#define height 40
+#define depth 1
 
 void main()
 {

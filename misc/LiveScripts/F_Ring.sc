@@ -1,8 +1,8 @@
 //F_Ring.sc
 
-define PI 3.141592654
-define radius 200
-define ledCount 100
+#define PI 3.141592654
+#define radius 200
+#define ledCount 100
 
 void main()
 {
