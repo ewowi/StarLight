@@ -113,98 +113,8 @@
       case onUI:
         if (bytesPerPixel) {
           mappingStatus = 1; //rebuild the fixture - so it is send to ui
-          // if (web->ws.getClients().length())
-            doSendFixtureDefinition = true; //send fixture definition to ui
         }
         return true;
-      case onLoop: {
-        //ESK: stop for now
-        if (false && !web->isBusy && mappingStatus == 0 && bytesPerPixel && !doSendFixtureDefinition) { //} && web->ws.getClients().length()) { //not remapping and clients exists
-          variable.var["interval"] = max(nrOfLeds/200, 16)*10; //interval in ms * 10, not too fast //from cs to ms web->ws.count()
-
-          #define headerBytesPreview 5
-          // ppf("(%d %d %d,%d,%d)", len, headerBytesPreview + nrOfLeds * bytesPerPixel, fixSize.x, fixSize.y, fixSize.z);
-          size_t len = min(headerBytesPreview + nrOfLeds * bytesPerPixel, PACKAGE_SIZE);
-          // AsyncWebSocketMessageBuffer *wsBuf= web->ws.makeBuffer(len); //global wsBuf causes crash in audio sync module!!!
-          buffer = (byte*)malloc(len); // wsBuf->get();
-          if (buffer) {
-            // wsBuf->lock();
-            //new values
-            buffer[0] = 2; //userFun id
-            //rotations
-            if (viewRotation == 0) {
-              buffer[1] = 0;
-              buffer[2] = 0;
-              buffer[3] = 0;
-            } else if (viewRotation == 1) { //tilt
-              buffer[1] = beat8(1);//, 0, 255);
-              buffer[2] = 0;//beatsin8(4, 250, 5);
-              buffer[3] = 0;//beatsin8(6, 255, 5);
-            } else if (viewRotation == 2) { //pan
-              buffer[1] = 0;//beatsin8(4, 250, 5);
-              buffer[2] = beat8(1);//, 0, 255);
-              buffer[3] = 0;//beatsin8(6, 255, 5);
-            } else if (viewRotation == 3) { //roll
-              buffer[1] = 0;//beatsin8(4, 250, 5);
-              buffer[2] = 0;//beatsin8(6, 255, 5);
-              buffer[3] = beat8(1);//, 0, 255);
-            } else if (viewRotation == 4) {
-              buffer[1] = head.x;
-              buffer[2] = head.y;
-              buffer[3] = head.z;
-            }
-            buffer[4] = bytesPerPixel;
-            uint16_t previewBufferIndex = headerBytesPreview;
-
-            // send leds preview to clients
-            for (size_t indexP = 0; indexP < nrOfLeds; indexP++) {
-
-              if (previewBufferIndex + bytesPerPixel > PACKAGE_SIZE) {
-                //send the buffer and create a new one
-                // web->sendBuffer(wsBuf, true);
-                delay(10);
-                buffer[0] = 2; //userFun id
-                buffer[1] = UINT8_MAX; //indicates follow up package
-                buffer[2] = indexP/256; //fixSize.x%256;
-                buffer[3] = indexP%256; //fixSize.x%256;
-                buffer[4] = bytesPerPixel;
-                // ppf("@");
-                // ppf("new buffer created i:%d p:%d r:%d r6:%d\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6);
-                previewBufferIndex = headerBytesPreview;
-              }
-
-              uint16_t indexP2 = indexP;
-              //causes too much flickering for some reason, so leave it for now
-              // #ifdef STARLIGHT_LIVE_MAPPING
-              //   indexP2 = mapLed(indexP);
-              // #endif
-
-              if (bytesPerPixel == 1) {
-                //encode rgb in 8 bits: 3 for red, 3 for green, 2 for blue (0xE0 = 01110000)
-                buffer[previewBufferIndex++] = (ledsP[indexP2].red & 0xE0) | ((ledsP[indexP2].green & 0xE0)>>3) | (ledsP[indexP2].blue >> 6);
-              }
-              else if (bytesPerPixel == 2) {
-                //encode rgb in 16 bits: 5 for red, 6 for green, 5 for blue
-                buffer[previewBufferIndex++] = (ledsP[indexP2].red & 0xF8) | (ledsP[indexP2].green >> 5); // Take 5 bits of Red component and 3 bits of G component
-                buffer[previewBufferIndex++] = ((ledsP[indexP2].green & 0x1C) << 3) | (ledsP[indexP2].blue  >> 3); // Take remaining 3 Bits of G component and 5 bits of Blue component
-              }
-              else {
-                buffer[previewBufferIndex++] = ledsP[indexP2].red;
-                buffer[previewBufferIndex++] = ledsP[indexP2].green;
-                buffer[previewBufferIndex++] = ledsP[indexP2].blue;
-              }
-            } //loop
-
-          //   web->sendBuffer(wsBuf, true);
-
-          //   wsBuf->unlock();
-          //   web->ws._cleanBuffers();
-            free(buffer);
-          }
-
-        }
-
-        return true;}
       default: return false;
     }});
 
@@ -250,8 +160,6 @@
         if (sys->safeMode) return true; //do not process fixture in safeMode do this if the fixture crashes at boot, then change fixture to working fixture and reboot
 
         doAllocPins = true;
-        // if (web->ws.getClients().length())
-          doSendFixtureDefinition = true;
 
         //remap all leds
         // for (std::vector<LedsLayer *>::iterator leds=layers.begin(); leds!=layers.end(); ++leds) {
@@ -561,29 +469,6 @@ void LedModFixture::addPixelsPre() {
 
     indexP = 0;
     prevIndexP = 0; //for allocPins
-
-    if (bytesPerPixel && doSendFixtureDefinition) {
-      // for (auto &client:web->ws.getClients()) while (client->queueLen() > 3) delay(10); //ui refresh, wait a bit
-      size_t len = min(nrOfLeds * 6 + headerBytesFixture, PACKAGE_SIZE);
-      // wsBuf = web->ws.makeBuffer(len);
-      // buffer = (byte*)malloc(len);// wsBuf->get();
-      if (buffer) {
-      //   wsBuf->lock();
-        buffer[0] = 1; //userfun 1
-        buffer[1] = fixSize.x/256;
-        buffer[2] = fixSize.x%256;
-        buffer[3] = fixSize.y/256;
-        buffer[4] = fixSize.y%256;
-        buffer[5] = fixSize.z/256;
-        buffer[6] = fixSize.z%256;
-        buffer[7] = nrOfLeds/256;
-        buffer[8] = nrOfLeds%256;
-        buffer[9] = ledSize;
-        buffer[10] = ledShape;
-        buffer[11] = ledFactor;
-        previewBufferIndex = headerBytesFixture;
-      }
-    }
   }
 }
 
@@ -597,38 +482,15 @@ void LedModFixture::addPixel(Coord3D pixel) {
 
     if (indexP < STARLIGHT_MAXLEDS) {
 
-      if (bytesPerPixel && doSendFixtureDefinition) {
-        //send pixel to ui ...
-        if (buffer && indexP < nrOfLeds ) { //max index to process && indexP * 6 + headerBytesFixture + 5 < 2 * 8192 wsBuf && 
-          // byte* buffer = wsBuf->get();
-          if (previewBufferIndex + ((fixSize.x > 1)?2:0 + (fixSize.y > 1)?2:0 + (fixSize.z > 1)?2:0) > PACKAGE_SIZE) { //2, 4, or 6 bytes (1D, 2D, 3D)
-            //add previewBufferIndex to package
-            buffer[12] = previewBufferIndex/256; //first empty slot
-            buffer[13] = previewBufferIndex%256;
-            //send the buffer and create a new one
-            // web->sendBuffer(wsBuf, true, nullptr, false);
-            delay(50);
-            ppf("buffer sent i:%d p:%d r:%d r6:%d (1:%d m:%u)\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6, buffer[1], millis());
-
-            buffer[0] = 1; //userfun 1
-            buffer[1] = UINT8_MAX;
-            buffer[2] = indexP/256; //fixSize.x%256;
-            buffer[3] = indexP%256; //fixSize.x%256;
-            previewBufferIndex = headerBytesFixture;
-          }
-
-          if (fixSize.x > 1) {
-            if (fixSize.x * ledFactor > 255) buffer[previewBufferIndex++] = pixel.x/256;
-            buffer[previewBufferIndex++] = pixel.x%256;
-          }
-          if (fixSize.y > 1) {
-            if (fixSize.y * ledFactor > 255) buffer[previewBufferIndex++] = pixel.y/256;
-            buffer[previewBufferIndex++] = pixel.y%256;
-          }
-          if (fixSize.z > 1) {
-            if (fixSize.z * ledFactor > 255) buffer[previewBufferIndex++] = pixel.z/256;
-            buffer[previewBufferIndex++] = pixel.z%256;
-          }
+      if (bytesPerPixel) {
+        if (indexP == 0) { //code for new fixture
+          ledsP[indexP].r = fix->ledFactor;
+          ledsP[indexP].g = fix->ledSize;
+          ledsP[indexP].b = 100; //code for fixChange
+        } else {
+          ledsP[indexP].r = pixel.x;
+          ledsP[indexP].g = pixel.y;
+          ledsP[indexP].b = pixel.z;
         }
       }
 
@@ -684,32 +546,12 @@ void LedModFixture::addPin(uint8_t pin) {
 }
 
 void LedModFixture::addPixelsPost() {
-  ppf("addPixelsPost(%d) indexP:%d b:%d dsfd:%d %d ms\n", pass, indexP, bytesPerPixel, doSendFixtureDefinition, millis() - start);
+  ppf("addPixelsPost(%d) indexP:%d b:%d dsfd: %d ms\n", pass, indexP, bytesPerPixel, millis() - start);
   //after processing each led
   if (pass == 1) {
     fixSize = fixSize / ledFactor + Coord3D{1,1,1};
     ppf("addPixelsPost(%d) size s:%d,%d,%d #:%d %d ms\n", pass, fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
   } else if (nrOfLeds <= STARLIGHT_MAXLEDS) {
-
-    if (bytesPerPixel && doSendFixtureDefinition) {
-      if (buffer) {
-        // byte* buffer = wsBuf->get();
-        buffer[12] = previewBufferIndex/256; //last slot filled
-        buffer[13] = previewBufferIndex%256; //last slot filled
-        // web->sendBuffer(wsBuf, true, nullptr, false);
-
-        ppf("last buffer sent i:%d p:%d r:%d r6:%d (1:%d m:%u)\n", indexP, previewBufferIndex, (nrOfLeds - indexP), (nrOfLeds - indexP) * 6, buffer[1], millis());
-
-        // ppf("addPixelsPost before unlock and clean:%d\n", indexP);
-        // wsBuf->unlock();
-        // web->ws._cleanBuffers();
-        // delay(50);
-        free(buffer);
-      }
-
-      // ppf("addPixelsPost after unlock and clean:%d\n", indexP);
-    }
-    doSendFixtureDefinition = false; // it's now done
 
     uint8_t rowNr = 0;
 

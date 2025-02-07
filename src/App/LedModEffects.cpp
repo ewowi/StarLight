@@ -425,7 +425,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     random16_set_seed(sys->now);
 
     //set new frame
-    if (sys->now - frameMillis >= 1000.0/fix->fps - 1 && fix->mappingStatus == 0) { //floorf to make it no wait to go beyond 1000 fps ;-)
+    if (sys->now - frameMillis >= 1000.0/fix->fps - 1 && fix->mappingStatus == 0 && fix->ledsP[0].b != 100) { //floorf to make it no wait to go beyond 1000 fps ;-), ledsP[0].b: fixChange
 
       //reset pixelsToBlend if multiple leds effects
       // ppf(" %d-%d", fix->pixelsToBlend.size(), fix->nrOfLeds);
@@ -487,6 +487,8 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           }
         }
       }
+
+      if (fix->ledsP[0].b == 100) fix->ledsP[0].b--; //if fixChange pattern created then change that (as this is not a fixChange)
 
       frameCounter++;
     }
