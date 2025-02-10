@@ -108,6 +108,7 @@ public:
 
   //Fixture definition
   uint8_t ledFactor = 1;
+  float maxFactor = 1.0;
   uint8_t ledSize = 4; //mm
   uint8_t ledShape = 0; //0 = sphere, 1 = TetrahedronGeometry
 

@@ -484,13 +484,18 @@ void LedModFixture::addPixel(Coord3D pixel) {
 
       if (bytesPerPixel) {
         if (indexP == 0) { //code for new fixture
-          ledsP[indexP].r = fix->ledFactor;
+          Coord3D fixSize2 = (fixSize - Coord3D{1,1,1}) * ledFactor;
+
+          maxFactor = max(max(max(fixSize2.x, fixSize2.y), fixSize2.z) / 256.0, 1.0);
+          // if (maxFactor < 1) maxFactor = 1;
+          ledsP[indexP].r = fix->ledFactor * maxFactor;
           ledsP[indexP].g = fix->ledSize;
           ledsP[indexP].b = 100; //code for fixChange
+          ESP_LOGD("", "maxFactor %d,%d,%d %d * %f = %d", fixSize2.x, fixSize2.y, fixSize2.z, fix->ledFactor, maxFactor, ledsP[indexP].r);
         } else {
-          ledsP[indexP].r = pixel.x;
-          ledsP[indexP].g = pixel.y;
-          ledsP[indexP].b = pixel.z;
+          ledsP[indexP].r = pixel.x / maxFactor;
+          ledsP[indexP].g = pixel.y / maxFactor;
+          ledsP[indexP].b = pixel.z / maxFactor;
         }
       }
 
@@ -776,6 +781,10 @@ void LedModFixture::addPixelsPost() {
 
       uint16_t startLed = sortedPin.startLed;
       uint16_t nrOfLeds = sortedPin.nrOfLeds;
+      if (nrOfLeds > 1024) {
+        ESP_LOGW("", "driverInit: led %d: nrOfLeds %d > 1024, set to 1024", startLed, nrOfLeds);
+        nrOfLeds = 1024;  //max it to not overload the pin
+      }
       uint16_t pin = sortedPin.pin;
 
       switch (sortedPin.pin) {
