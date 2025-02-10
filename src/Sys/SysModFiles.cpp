@@ -149,13 +149,31 @@ File SysModFiles::open(const char * path, const char * mode, const bool create) 
   return LittleFS.open(path, mode, create);
 }
 
+File SysModFiles::walkThroughFiles(File folder, std::function<File(File, File)> fun) {
+	folder.rewindDirectory();
+	while (true)
+	{
+		File file = folder.openNextFile();
+    if (!file) break;
+
+
+    if (file.isDirectory()) {
+      file = walkThroughFiles(file, fun);
+      if (file) return file;
+    } else {
+      ESP_LOGD("", "walkThroughFiles %s", file.name());
+      file = fun(folder, file);
+      if (file) return file;
+    }
+    file.close();
+  }
+  return File(); //empty file / don't stop
+}
+
 // https://techtutorialsx.com/2019/02/24/esp32-arduino-listing-files-in-a-spiffs-file-system-specific-path/
 void SysModFiles::dirToJson(JsonArray array, bool nameOnly, const char * filter) {
   File root = LittleFS.open("/");
-  File file = root.openNextFile();
-
-  while (file) {
-
+  walkThroughFiles(root, [this, &array, nameOnly, filter](File folder, File file) {
     if (filter == nullptr || strnstr(file.name(), filter, 32) != nullptr) {
       if (nameOnly) {
         array.add(JsonString(file.name()));
@@ -170,11 +188,8 @@ void SysModFiles::dirToJson(JsonArray array, bool nameOnly, const char * filter)
       }
       // ppf("FILE: %s %d\n", file.name(), file.size());
     }
-
-    file.close();
-    file = root.openNextFile();
-  }
-
+    return File(); //continue
+  });
   root.close();
 }
 

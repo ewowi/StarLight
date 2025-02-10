@@ -135,7 +135,7 @@ void SysModule::addPresets(JsonObject parentVar) {
     if (!m["n"].isNull()) {
       // print->printJson("walk for", m["n"]); ppf("\n");
       modulePresets[presetIndex].to<JsonObject>();//empty
-      mdl->walkThroughJson([modulePresets, presetIndex, &result](JsonObject parentVar, JsonObject var) {
+      mdl->walkThroughJson(m, [modulePresets, presetIndex, &result](JsonObject parentVar, JsonObject var) {
         Variable variable = Variable(var);
         if (!variable.readOnly() && var["id"] != "preset" && var["id"] != "assignPreset" && var["id"] != "clearPreset" && !var["value"].isNull()) { //exclude preset
           ppf("save %s.%s: %s\n", variable.pid(), variable.id(), variable.valueString().c_str());
@@ -156,7 +156,7 @@ void SysModule::addPresets(JsonObject parentVar) {
           }
         }
         return JsonObject(); //don't stop
-      }, m, "n"); //walk using m["n"]
+      }, "n"); //walk using m["n"]
     }
 
     if (result.length() == 0) result.format("Preset %d", presetIndex); //if no text found then default text

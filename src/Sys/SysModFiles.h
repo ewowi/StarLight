@@ -37,6 +37,7 @@ public:
 
   File open(const char * path, const char * mode, const bool create = false);
 
+  File walkThroughFiles(File folder, std::function<File(File, File)> fun);
   //get the file names and size in an array
   void dirToJson(JsonArray array, bool nameOnly = false, const char * filter = nullptr);
 
