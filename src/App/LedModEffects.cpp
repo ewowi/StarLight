@@ -164,6 +164,8 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           buf += effect->tags();
           options.add(buf.getString()); //copy!
         }
+        // add live effects from FS
+        files->dirToJson(options, true, "E_"); //only files containing E_(ffects), alphabetically
         return true; }
       case onChange:
 

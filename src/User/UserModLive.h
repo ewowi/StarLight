@@ -16,8 +16,7 @@ class UserModLive: public SysModule {
 
 public:
 
-  char fileName[32] = ""; //running sc file
-  std::string scScript; //externals etc generated (would prefer String for esp32...)
+  char path[64] = ""; //running sc file
 
   UserModLive() :SysModule("LiveScripts") {};
 
@@ -42,14 +41,14 @@ public:
   void loop1s() override;
 
   //return the id of the executable
-  uint8_t compile(const char *fileName, const char *post = nullptr);
+  uint8_t compile(const char *path, const char *post = nullptr);
 
-  uint8_t findExecutable(const char *fileName);
+  uint8_t findExecutable(const char *path);
   
   void executeTask(uint8_t exeID, const char *function = "main", int val = UINT16_MAX);
   void executeBackgroundTask(uint8_t exeID, const char *function = "main");
 
-  void killAndDelete(const char *fileName = nullptr);
+  void killAndDelete(const char *path = nullptr);
   void killAndDelete(uint8_t exeID);
 };
 

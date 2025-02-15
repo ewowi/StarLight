@@ -150,9 +150,9 @@
         files->dirToJson(options, true, "F_"); //only files containing F(ixture), alphabetically
 
         // ui needs to load the file also initially
-        char fileName[32] = "";
-        if (files->seqNrToName(fileName, variable.value())) {
-          web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName));
+        char path[64] = "";
+        if (files->seqNrToName(path, variable.value())) {
+          web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(path));
         }
         return true; }
       case onChange: {

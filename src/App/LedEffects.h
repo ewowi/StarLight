@@ -3279,16 +3279,6 @@ class MarioTestEffect: public Effect {
 
   #include "../User/UserModLive.h"
 
-  //FastLed functions
-  static CRGB hsv(uint8_t h, uint8_t s, uint8_t v) {return CHSV(h, s, v);}
-  static CRGB rgb(uint8_t r, uint8_t g, uint8_t b) {return CRGB(r, g, b);}
-  static uint8_t _sin8(uint8_t theta) {return sin8(theta);}
-  static uint8_t _cos8(uint8_t theta) {return cos8(theta);}
-  static uint8_t _beatSin8(uint8_t bpm, uint8_t lowest, uint8_t highest) {return beatsin8(bpm, lowest, highest);}
-  static uint8_t _inoise8(uint16_t x, uint16_t y, uint16_t z) {return inoise8(x, y, z);}
-  static uint8_t _random8() {return random8();}
-  static uint8_t _random16(uint8_t lim) {return random16(lim);}
-
   //StarLight functions
   static LedsLayer *gLeds = nullptr;
   static void _fadeToBlackBy(uint8_t fadeBy) {if (gLeds) gLeds->fadeToBlackBy(fadeBy);}
@@ -3314,7 +3304,7 @@ class LiveEffect: public Effect {
         // variable.setComment("Fixture to display effect on");
         JsonArray options = variable.setOptions();
         options.add("None");
-        files->dirToJson(options, true, "E_"); //only files containing F(ixture), alphabetically
+        files->dirToJson(options, true, "E_"); //only files containing E_(effect), alphabetically
 
         return true; }
       case onChange: {
@@ -3329,14 +3319,14 @@ class LiveEffect: public Effect {
 
           fileNr--;  //-1 as none is no file
 
-          char fileName[32] = "";
+          char path[64] = "";
 
-          if (files->seqNrToName(fileName, fileNr, ".sc")) { // get the fixture.json
+          if (files->seqNrToName(path, fileNr, "E_")) { // get the effect.sc
 
-            if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
-              ppf("script.onChange Live Fixture %s\n", fileName);
+            ppf("script.onChange Live Fixture %s\n", path);
+            if (strnstr(path, ".sc", sizeof(path)) != nullptr) { //check if sc script (or bin...)
 
-              uint8_t newExeID = liveM->findExecutable(fileName);
+              uint8_t newExeID = liveM->findExecutable(path);
               if (newExeID == UINT8_MAX) {
                 ppf("kill old live effect script\n");
                 liveM->killAndDelete(leds.liveEffectID);
@@ -3347,14 +3337,16 @@ class LiveEffect: public Effect {
 
                 liveM->addDefaultExternals();
 
-                liveM->addExternalFun("CRGB", "hsv", "uint8_t,uint8_t,uint8_t", (void *)hsv);
-                liveM->addExternalFun("CRGB", "rgb", "uint8_t,uint8_t,uint8_t", (void *)rgb);
-                liveM->addExternalFun("uint8_t", "beatSin8", "uint8_t,uint8_t,uint8_t", (void *)_beatSin8);
+                liveM->addExternalFun("uint8_t", "beatSin8", "uint8_t,uint8_t,uint8_t", (void *)beatsin8);
+                uint8_t (*_inoise8)(uint16_t, uint16_t, uint16_t)=inoise8;
                 liveM->addExternalFun("uint8_t", "inoise8", "uint16_t,uint16_t,uint16_t", (void *)_inoise8);
+                uint8_t (*_random8)()=random8;
                 liveM->addExternalFun("uint8_t", "random8", "", (void *)_random8);
+                uint16_t (*_random16)(uint16_t)=random16;
                 liveM->addExternalFun("uint16_t", "random16", "uint16_t", (void *)_random16);
-                liveM->addExternalFun("uint8_t", "sin8", "uint8_t",(void*)_sin8); //using int here causes value must be between 0 and 16 error!!!
-                liveM->addExternalFun("uint8_t", "cos8", "uint8_t",(void*)_cos8); //using int here causes value must be between 0 and 16 error!!!
+                liveM->addExternalFun("uint8_t", "sin8", "uint8_t",(void*)sin8); //using int here causes value must be between 0 and 16 error!!!
+                liveM->addExternalFun("uint8_t", "cos8", "uint8_t",(void*)cos8); //using int here causes value must be between 0 and 16 error!!!
+                //gLeds functions
                 liveM->addExternalFun("void", "sPC", "uint16_t,CRGB", (void *)sPCLive);
                 liveM->addExternalFun("void", "sCFP", "uint16_t,uint8_t,uint8_t", (void *)sCFPLive);
                 liveM->addExternalFun("void", "fadeToBlackBy", "uint8_t", (void *)_fadeToBlackBy);
@@ -3371,16 +3363,15 @@ class LiveEffect: public Effect {
                 liveM->addExternalVal("uint16_t", "depth", &leds.size.z);
 
                 liveM->addExternalVal("uint32_t", "now", &sys->now);
+                liveM->addExternalVal("uint16_t", "NUM_LEDS", &fix->nrOfLeds);
 
-                liveM->scScript += "define NUM_LEDS " + std::to_string(fix->nrOfLeds) + "\n"; //NUM_LEDS is used in arrays -> must be define e.g. uint8_t rMapRadius[NUM_LEDS];
-
-                leds.liveEffectID = liveM->compile(fileName, "void main(){setup();while(2>1){loop();sync();}}");
+                leds.liveEffectID = liveM->compile(path, "void main(){setup();while(2>1){loop();sync();}}");
               }
 
               if (leds.liveEffectID != UINT8_MAX)
                 liveM->executeBackgroundTask(leds.liveEffectID);
               else 
-                ppf("mapInitAlloc Live Effect not created (compilation error?) %s\n", fileName);
+                ppf("mapInitAlloc Live Effect not created (compilation error?) %s\n", path);
             }
           }
         }
@@ -3399,6 +3390,8 @@ class LiveEffect: public Effect {
     ui->initSlider(parentVar, "Custom 1", &custom1Control);
     ui->initSlider(parentVar, "Custom 2", &custom2Control);
     ui->initSlider(parentVar, "Custom 3", &custom3Control);
+
+    // Variable("effect", "script").setValue(1, 0); //trigger onChange and run first effect
   } //setup
 
   void loop(LedsLayer &leds) override {

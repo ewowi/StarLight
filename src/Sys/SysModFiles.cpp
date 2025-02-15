@@ -161,7 +161,7 @@ File SysModFiles::walkThroughFiles(File folder, std::function<File(File, File)> 
       file = walkThroughFiles(file, fun);
       if (file) return file;
     } else {
-      ESP_LOGD("", "walkThroughFiles %s", file.name());
+      // ESP_LOGD("", "walkThroughFiles %s", file.name());
       file = fun(folder, file);
       if (file) return file;
     }
@@ -173,10 +173,10 @@ File SysModFiles::walkThroughFiles(File folder, std::function<File(File, File)> 
 // https://techtutorialsx.com/2019/02/24/esp32-arduino-listing-files-in-a-spiffs-file-system-specific-path/
 void SysModFiles::dirToJson(JsonArray array, bool nameOnly, const char * filter) {
   File root = LittleFS.open("/");
-  walkThroughFiles(root, [this, &array, nameOnly, filter](File folder, File file) {
+  walkThroughFiles(root, [&](File folder, File file) {
     if (filter == nullptr || strnstr(file.name(), filter, 32) != nullptr) {
       if (nameOnly) {
-        array.add(JsonString(file.name()));
+        array.add(JsonString(file.path()));
       }
       else {
         JsonArray row = array.add<JsonArray>();
@@ -190,33 +190,32 @@ void SysModFiles::dirToJson(JsonArray array, bool nameOnly, const char * filter)
     }
     return File(); //continue
   });
+
   root.close();
 }
 
-bool SysModFiles::seqNrToName(char * fileName, size_t seqNr, const char * filter) {
-
-  File root = LittleFS.open("/");
-  File file = root.openNextFile();
+bool SysModFiles::seqNrToName(char * path, size_t seqNr, const char * filter) {
 
   size_t counter = 0;
-  while (file) {
+  File root = LittleFS.open("/");
+  bool found = false;
+  walkThroughFiles(root, [&](File folder, File file) {
     if (filter == nullptr || strnstr(file.name(), filter, 32) != nullptr) {
       if (counter == seqNr) {
         // ppf("seqNrToName: %d %s %d\n", seqNr, file.name(), file.size());
-        root.close();
-        strlcat(fileName, "/", 32); //add root prefix
-        strlcat(fileName, file.name(), 32);
+        // strlcat(fileName, "/", 64); //add root prefix
+        strlcat(path, file.path(), 64);
         file.close();
-        return true;
+        found = true;
+        return root; //stop
       }
       counter++;
     }
-    file.close();
-    file = root.openNextFile();
-  }
-
+    return File(); //continue
+  });
   root.close();
-  return false;
+
+  return found;
 }
 
 bool SysModFiles::nameToSeqNr(const char * fileName, size_t *seqNr, const char * filter) {

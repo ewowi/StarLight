@@ -26,6 +26,8 @@
 
 // #define __RUN_CORE 0
 
+#define USE_FASTLED //as ESPLiveScript.h calls hsv !
+
 #include "ESPLiveScript.h" //note: contains declarations AND definitions, therefore can only be included once!
 
   static long previousCycleCount;
@@ -57,10 +59,6 @@ Parser parser = Parser();
   #endif
 }
 
-static float _hypot(float x,float y) {return hypot(x,y);}
-static float _atan2(float x,float y) { return atan2(x,y);}
-static float _sin(float j) {return sin(j);}
-static float _cos(float j) {return cos(j);}
 static float _triangle(float j) {return 1.0 - fabs(fmod(2 * j, 2.0) - 1.0);}
 static float _time(float j) {
   float myVal = sys->now;
@@ -90,14 +88,14 @@ static float _time(float j) {
 
         ppf("%s.script.onChange f:%d\n", name, fileNr);
 
-        char fileName[32] = "";
+        char path[64] = "";
 
         if (fileNr > 0 && fileNr != UINT8_MAX) { //not None and setup done
           fileNr--;  //-1 as none is no file
-          files->seqNrToName(fileName, fileNr, ".sc");
-          ppf("script.onChange f:%d n:%s\n", fileNr, fileName);
+          files->seqNrToName(path, fileNr, ".sc");
+          ppf("script.onChange f:%d n:%s\n", fileNr, path);
 
-          uint8_t exeID = liveM->findExecutable(fileName);
+          uint8_t exeID = liveM->findExecutable(path);
           if (exeID == UINT8_MAX) {
 
             addDefaultExternals();
@@ -107,13 +105,13 @@ static float _time(float j) {
             addExternalFun("void", "digitalWrite", "(int a1, int a2)", (void *)&digitalWrite);
             addExternalFun("void", "delay", "(int a1)", (void *)&delay);
 
-            exeID = compile(fileName, "void main(){setup();while(2>1){loop();sync();}}");
+            exeID = compile(path, "void main(){setup();while(2>1){loop();sync();}}");
           }
 
           if (exeID != UINT8_MAX)
             liveM->executeBackgroundTask(exeID);
           else 
-            ppf("mapInitAlloc task not created (compilation error?) %s\n", fileName);
+            ppf("mapInitAlloc task not created (compilation error?) %s\n", path);
         }
         else {
           // kill();
@@ -252,15 +250,17 @@ static float _time(float j) {
   //Live Scripts defaults
   void UserModLive::addDefaultExternals() {
 
-    scScript = "";
-
-    addExternalFun("float", "atan2", "float,float",(void*)_atan2);
-    addExternalFun("float", "hypot", "float,float",(void*)_hypot);
+    addExternalFun("uint32_t", "millis", "", (void *)millis);
+    float (*_sin)(float) = sin;
     addExternalFun("float", "sin", "float", (void *)_sin);
+    float (*_cos)(float) = cos;
     addExternalFun("float", "cos", "float", (void *)_cos);
+    float (*_atan2)(float, float) = atan2;
+    addExternalFun("float", "atan2", "float,float",(void*)_atan2);
+    float (*_hypot)(float, float) = hypot;
+    addExternalFun("float", "hypot", "float,float",(void*)_hypot);
     addExternalFun("float", "time", "float", (void *)_time);
     addExternalFun("float", "triangle", "float", (void *)_triangle);
-    addExternalFun("uint32_t", "millis", "", (void *)millis);
   }
 
   void UserModLive::addExternalVal(string result, string name, void * ptr) {
@@ -355,25 +355,26 @@ static float _time(float j) {
     scriptRuntime._scExecutables[exeID].executeAsTask(string(function));
   }
 
-  uint8_t UserModLive::compile(const char * fileName, const char * post) {
-    ppf("live compile n:%s o:%s \n", fileName, this->fileName);
+  uint8_t UserModLive::compile(const char * path, const char * post) {
+    ppf("live compile n:%s o:%s \n", path, this->path);
 
-    File f = files->open(fileName, FILE_READ);
+    File f = files->open(path, FILE_READ);
     if (!f) {
-      ppf("UserModLive setup script open %s for %s failed\n", fileName, FILE_READ);
+      ppf("UserModLive setup script open %s for %s failed\n", path, FILE_READ);
       return UINT8_MAX;
     } else {
 
-      unsigned preScriptNrOfLines = 0;
-
-      for (size_t i = 0; i < scScript.length(); i++)
-      {
-        if (scScript[i] == '\n')
-          preScriptNrOfLines++;
+      if (strstr(path, ".sc.bin") != nullptr) {
+        Binary bin2;
+        loadBinary((char *)path, LittleFS, &bin2);
+        Executable ex;
+        ex.createExecutableFromBinary(&bin2);
+        ppf("UserModLive setup script %s binary\n", path);
+        scriptRuntime.addExe(ex);
+        return scriptRuntime._scExecutables.size() - 1;;
       }
-      ppf("preScript of %s has %d lines\n", fileName, preScriptNrOfLines+1); //+1 to subtract the line from parser error line reported
 
-      scScript += string(f.readString().c_str()); // add sc file
+      std::string scScript = string(f.readString().c_str()); // add sc file
       f.close();
 
       if (post) scScript += post;
@@ -391,14 +392,22 @@ static float _time(float j) {
       }
       ppf("\n");
 
-      ppf("Before parsing of %s\n", fileName);
+      ppf("Before parsing of %s\n", path);
       ppf("Heap %s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
       ppf("Stack %d of %d B %d\n", sys->sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize(), uxTaskGetStackHighWaterMark(xTaskGetCurrentTaskHandle()));
 
       Executable executable = parser.parseScript(&scScript);
-      executable.name = string(fileName);
+      executable.name = string(path);
+      Binary bin = parser.parseScriptBinary(&scScript);
+      if (!bin.error.error) {
+        char binName[32];
+        strcpy(binName, path);
+        strcat(binName, ".bin");
+        saveBinary(binName, LittleFS, &bin);
+        freeBinary(&bin);
+      }
 
-      ppf("parsing %s done\n", fileName);
+      ppf("parsing %s done\n", path);
       ppf("%s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
 
       scriptRuntime.addExe(executable);
@@ -434,10 +443,10 @@ static float _time(float j) {
       killAndDelete(scriptRuntime._scExecutables[exeID].name.c_str());
   }
 
-  uint8_t UserModLive::findExecutable(const char *fileName) {
+  uint8_t UserModLive::findExecutable(const char *path) {
     uint8_t exeID = 0;
     for (Executable &exec: scriptRuntime._scExecutables) {
-      if (exec.name.compare(string(fileName)) == 0 && exec.isExeExists()) //successfully compiled
+      if (exec.name.compare(string(path)) == 0 && exec.isExeExists()) //successfully compiled
         return exeID++;
     }
     return UINT8_MAX;
