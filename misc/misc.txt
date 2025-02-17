@@ -27,6 +27,12 @@ cp ./platformio.ini ../../ewowi/StarBase
 cp ./src/* ../../ewowi/StarBase/src
 
 
+Copy StarAsAService from MoonLight to Star
+cd ~/Developer/GitHub/MoonModules/MoonLight/.pio/libdeps/esp32-s3-devkitc-1-n16r8v/StarLight
+cp ./src/App/* ~/Developer/GitHub/MoonModules/StarLight/src/App
+cp ./src/Sys/* ~/Developer/GitHub/MoonModules/StarLight/src/Sys
+cp ./src/User/* ~/Developer/GitHub/MoonModules/StarLight/src/User
+
 search range-based for loop
 ===========================
     ^(?=.*\bfor\b)(?=.*\b:\b).*$

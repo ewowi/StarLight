@@ -3299,90 +3299,6 @@ class LiveEffect: public Effect {
 
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initSelect(parentVar, "script", UINT8_MAX, false , [&leds](EventArguments) { switch (eventType) {
-      case onUI: {
-        // variable.setComment("Fixture to display effect on");
-        JsonArray options = variable.setOptions();
-        options.add("None");
-        files->dirToJson(options, true, "E_"); //only files containing E_(effect), alphabetically
-
-        return true; }
-      case onChange: {
-
-        //set script
-        uint8_t fileNr = variable.value(rowNr);
-
-        ppf("effect.script[%d].onChange %s (f:%d)\n", rowNr, variable.valueString().c_str(), fileNr);
-
-        gLeds = &leds; //set the leds class for the Live Scripts Module
-        if (fileNr > 0 && fileNr != UINT8_MAX) { //not None and live setup done (before )
-
-          fileNr--;  //-1 as none is no file
-
-          char path[64] = "";
-
-          if (files->seqNrToName(path, fileNr, "E_")) { // get the effect.sc
-
-            ppf("script.onChange Live Fixture %s\n", path);
-            if (strnstr(path, ".sc", sizeof(path)) != nullptr) { //check if sc script (or bin...)
-
-              uint8_t newExeID = liveM->findExecutable(path);
-              if (newExeID == UINT8_MAX) {
-                ppf("kill old live effect script\n");
-                liveM->killAndDelete(leds.liveEffectID);
-              }
-              leds.liveEffectID = newExeID;
-
-              if (leds.liveEffectID == UINT8_MAX) {
-
-                liveM->addDefaultExternals();
-
-                liveM->addExternalFun("uint8_t", "beatSin8", "uint8_t,uint8_t,uint8_t", (void *)beatsin8);
-                uint8_t (*_inoise8)(uint16_t, uint16_t, uint16_t)=inoise8;
-                liveM->addExternalFun("uint8_t", "inoise8", "uint16_t,uint16_t,uint16_t", (void *)_inoise8);
-                uint8_t (*_random8)()=random8;
-                liveM->addExternalFun("uint8_t", "random8", "", (void *)_random8);
-                uint16_t (*_random16)(uint16_t)=random16;
-                liveM->addExternalFun("uint16_t", "random16", "uint16_t", (void *)_random16);
-                liveM->addExternalFun("uint8_t", "sin8", "uint8_t",(void*)sin8); //using int here causes value must be between 0 and 16 error!!!
-                liveM->addExternalFun("uint8_t", "cos8", "uint8_t",(void*)cos8); //using int here causes value must be between 0 and 16 error!!!
-                //gLeds functions
-                liveM->addExternalFun("void", "sPC", "uint16_t,CRGB", (void *)sPCLive);
-                liveM->addExternalFun("void", "sCFP", "uint16_t,uint8_t,uint8_t", (void *)sCFPLive);
-                liveM->addExternalFun("void", "fadeToBlackBy", "uint8_t", (void *)_fadeToBlackBy);
-
-                //WLED nostalgia
-                liveM->addExternalVal("uint8_t", "speedControl", &speedControl);
-                liveM->addExternalVal("uint8_t", "intensityControl", &intensityControl);
-                liveM->addExternalVal("uint8_t", "custom1Control", &custom1Control);
-                liveM->addExternalVal("uint8_t", "custom2Control", &custom2Control);
-                liveM->addExternalVal("uint8_t", "custom3Control", &custom3Control);
-
-                liveM->addExternalVal("uint16_t", "width", &leds.size.x);
-                liveM->addExternalVal("uint16_t", "height", &leds.size.y);
-                liveM->addExternalVal("uint16_t", "depth", &leds.size.z);
-
-                liveM->addExternalVal("uint32_t", "now", &sys->now);
-                liveM->addExternalVal("uint16_t", "NUM_LEDS", &fix->nrOfLeds);
-
-                leds.liveEffectID = liveM->compile(path, "void main(){setup();while(2>1){loop();sync();}}");
-              }
-
-              if (leds.liveEffectID != UINT8_MAX)
-                liveM->executeBackgroundTask(leds.liveEffectID);
-              else 
-                ppf("mapInitAlloc Live Effect not created (compilation error?) %s\n", path);
-            }
-          }
-        }
-        else {
-          // liveM->kill();
-          leds.fadeToBlackBy(255);
-        }
-
-        return true; }
-      default: return false; 
-    }}); //script
 
     //WLED nostalgia
     ui->initSlider(parentVar, "speed", &speedControl);
@@ -3391,13 +3307,83 @@ class LiveEffect: public Effect {
     ui->initSlider(parentVar, "Custom 2", &custom2Control);
     ui->initSlider(parentVar, "Custom 3", &custom3Control);
 
-    // Variable("effect", "script").setValue(1, 0); //trigger onChange and run first effect
+    uint16_t effectNr = parentVar.value(mdl->setValueRowNr); //effect.value[0]
+    uint8_t fileNr = effectNr - eff->effects.size() + 1;
+
+    ppf("effect.script[%d].onChange %s (f:%d)\n", mdl->setValueRowNr, parentVar.valueString().c_str(), fileNr);
+
+    gLeds = &leds; //set the leds class for the Live Scripts Module
+    if (fileNr > 0 && fileNr != UINT8_MAX) { //not None and live setup done (before )
+
+      fileNr--;  //-1 as none is no file
+
+      char path[64] = "";
+
+      if (files->seqNrToName(path, fileNr, "E_")) { // get the effect.sc
+
+        ppf("script.onChange Live Fixture %s\n", path);
+        if (strnstr(path, ".sc", sizeof(path)) != nullptr) { //check if sc script (or bin...)
+
+          uint8_t newExeID = liveM->findExecutable(path);
+          if (newExeID == UINT8_MAX) {
+            ppf("kill old live effect script\n");
+            liveM->killAndDelete(leds.liveEffectID);
+          }
+          leds.liveEffectID = newExeID;
+
+          if (leds.liveEffectID == UINT8_MAX) {
+
+            liveM->addDefaultExternals();
+
+            liveM->addExternalFun("uint8_t", "beatSin8", "uint8_t,uint8_t,uint8_t", (void *)beatsin8);
+            uint8_t (*_inoise8)(uint16_t, uint16_t, uint16_t)=inoise8;
+            liveM->addExternalFun("uint8_t", "inoise8", "uint16_t,uint16_t,uint16_t", (void *)_inoise8);
+            uint8_t (*_random8)()=random8;
+            liveM->addExternalFun("uint8_t", "random8", "", (void *)_random8);
+            uint16_t (*_random16)(uint16_t)=random16;
+            liveM->addExternalFun("uint16_t", "random16", "uint16_t", (void *)_random16);
+            liveM->addExternalFun("uint8_t", "sin8", "uint8_t",(void*)sin8); //using int here causes value must be between 0 and 16 error!!!
+            liveM->addExternalFun("uint8_t", "cos8", "uint8_t",(void*)cos8); //using int here causes value must be between 0 and 16 error!!!
+            //gLeds functions
+            liveM->addExternalFun("void", "sPC", "uint16_t,CRGB", (void *)sPCLive);
+            liveM->addExternalFun("void", "sCFP", "uint16_t,uint8_t,uint8_t", (void *)sCFPLive);
+            liveM->addExternalFun("void", "fadeToBlackBy", "uint8_t", (void *)_fadeToBlackBy);
+
+            //WLED nostalgia
+            liveM->addExternalVal("uint8_t", "speedControl", &speedControl);
+            liveM->addExternalVal("uint8_t", "intensityControl", &intensityControl);
+            liveM->addExternalVal("uint8_t", "custom1Control", &custom1Control);
+            liveM->addExternalVal("uint8_t", "custom2Control", &custom2Control);
+            liveM->addExternalVal("uint8_t", "custom3Control", &custom3Control);
+
+            liveM->addExternalVal("uint16_t", "width", &leds.size.x);
+            liveM->addExternalVal("uint16_t", "height", &leds.size.y);
+            liveM->addExternalVal("uint16_t", "depth", &leds.size.z);
+
+            liveM->addExternalVal("uint32_t", "now", &sys->now);
+
+            liveM->scScript += "#define NUM_LEDS " + std::to_string(fix->nrOfLeds) + "\n"; //NUM_LEDS is used in arrays -> must be define e.g. uint8_t rMapRadius[NUM_LEDS];
+
+            leds.liveEffectID = liveM->compile(path, "void main(){setup();while(2>1){loop();sync();}}");
+          }
+
+          if (leds.liveEffectID != UINT8_MAX)
+            liveM->executeBackgroundTask(leds.liveEffectID);
+          else 
+            ppf("mapInitAlloc Live Effect not created (compilation error?) %s\n", path);
+        }
+      }
+    }
+    else {
+      // liveM->kill();
+      leds.fadeToBlackBy(255);
+    }
   } //setup
 
   void loop(LedsLayer &leds) override {
-
     liveM->syncWithSync(); //waits until next frame is calculated
   }
+
 };
 
 #endif //STARBASE_USERMOD_LIVE

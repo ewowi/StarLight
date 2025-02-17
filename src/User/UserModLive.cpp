@@ -250,6 +250,8 @@ static float _time(float j) {
   //Live Scripts defaults
   void UserModLive::addDefaultExternals() {
 
+    scScript = "";
+
     addExternalFun("uint32_t", "millis", "", (void *)millis);
     float (*_sin)(float) = sin;
     addExternalFun("float", "sin", "float", (void *)_sin);
@@ -364,7 +366,7 @@ static float _time(float j) {
       return UINT8_MAX;
     } else {
 
-      if (strstr(path, ".sc.bin") != nullptr) {
+      if (strnstr(path, ".sc.bin", 6) != nullptr) {
         Binary bin2;
         loadBinary((char *)path, LittleFS, &bin2);
         Executable ex;
@@ -374,7 +376,16 @@ static float _time(float j) {
         return scriptRuntime._scExecutables.size() - 1;;
       }
 
-      std::string scScript = string(f.readString().c_str()); // add sc file
+      unsigned preScriptNrOfLines = 0;
+
+      for (size_t i = 0; i < scScript.length(); i++)
+      {
+        if (scScript[i] == '\n')
+          preScriptNrOfLines++;
+      }
+      ppf("preScript of %s has %d lines\n", path, preScriptNrOfLines+1); //+1 to subtract the line from parser error line reported
+
+      scScript += string(f.readString().c_str()); // add sc file
       f.close();
 
       if (post) scScript += post;

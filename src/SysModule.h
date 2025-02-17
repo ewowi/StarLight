@@ -67,7 +67,7 @@ class StarString {
   }
 
   bool contains(const char *rhs) {
-    return strstr(s, rhs) != NULL;
+    return strnstr(s, rhs, sizeof(s)) != nullptr;
   }
 
   void catSep(const char* s) {

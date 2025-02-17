@@ -90,7 +90,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     #endif
 
     #ifdef STARBASE_USERMOD_LIVE
-      effects.push_back(new LiveEffect);
+      liveEffect = new LiveEffect;
     #endif
 
     //load projections
@@ -190,32 +190,33 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
           #ifdef STARBASE_USERMOD_LIVE
             //kill Live Script if moving to other effect
-            // if (leds->effectNr < effects.size()) {
-            //   Effect* effect = effects[leds->effectNr];
-              if (leds->effect && strncmp(leds->effect->name(), "Live Effect", 12) == 0) {
-                liveM->killAndDelete(leds->liveEffectID);
-                leds->liveEffectID = UINT8_MAX;
-              }
-            // }
+            if (leds->effect && leds->liveEffectID != UINT8_MAX && strnstr(leds->effect->name(), "Live Effect", 11) != nullptr) {
+              ESP_LOGD("", "effect.onChange kill effect %d", leds->liveEffectID);
+              liveM->killAndDelete(leds->liveEffectID);
+              leds->liveEffectID = UINT8_MAX;
+            }
           #endif
 
           uint16_t effectNr = variable.getValue(rowNr);
 
           if (effectNr < effects.size()) {
             leds->effect = effects[effectNr];
-            ppf("setEffect effect[%d]: %s\n", rowNr, leds->effect->name());
-            strlcat(fix->tickerTape, leds->effect->name(), sizeof(fix->tickerTape));
+          }
+          else 
+            leds->effect = liveEffect;
 
-            if (leds->effect->dim() != leds->effectDimension) {
-              leds->effectDimension = leds->effect->dim();
-              leds->triggerMapping();
-              //initEffect is called after mapping done to make sure dimensions are right before controls are done...
-              doInitEffectRowNr = rowNr;
-            }
-            else {
-              initEffect(*leds, rowNr);
-            }
-          } // effectNr < size
+          ppf("setEffect effect[%d]: %s\n", rowNr, leds->effect->name());
+          strlcat(fix->tickerTape, leds->effect->name(), sizeof(fix->tickerTape));
+
+          if (leds->effect->dim() != leds->effectDimension) {
+            leds->effectDimension = leds->effect->dim();
+            leds->triggerMapping();
+            //initEffect is called after mapping done to make sure dimensions are right before controls are done...
+            doInitEffectRowNr = rowNr;
+          }
+          else {
+            initEffect(*leds, rowNr);
+          }
 
         }
         return true;
@@ -536,10 +537,11 @@ inline uint16_t getRGBWsize(uint16_t nleds){
   } //loop
 
   void LedModEffects::initEffect(LedsLayer &leds, uint8_t rowNr) {
-      ppf("initEffect leds[%d] effect:%s a:%d (%d,%d,%d)\n", rowNr, leds.effect->name(), leds.effectData.bytesAllocated, leds.size.x, leds.size.y, leds.size.z);
+      ESP_LOGD("", "leds[%d] effect:%s a:%d (%d,%d,%d)", rowNr, leds.effect->name(), leds.effectData.bytesAllocated, leds.size.x, leds.size.y, leds.size.z);
 
       leds.effectData.clear(); //delete effectData memory so it can be rebuild
-      leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right to avoid control defaults to be removed
+      if (strnstr(leds.effect->name(), "Live Effect", 11) == nullptr) //not needed for Live script, will hang instead
+        leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right to avoid control defaults to be removed
 
       Variable variable = Variable("layers", "effect");
       variable.preDetails();

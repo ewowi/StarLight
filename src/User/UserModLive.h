@@ -17,6 +17,7 @@ class UserModLive: public SysModule {
 public:
 
   char path[64] = ""; //running sc file
+  std::string scScript; //externals etc generated (would prefer String for esp32...)
 
   UserModLive() :SysModule("LiveScripts") {};
 

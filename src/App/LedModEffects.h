@@ -20,6 +20,7 @@ public:
   unsigned long frameCounter = 0;
 
   std::vector<Effect *> effects;
+  Effect *liveEffect = nullptr;
   std::vector<Projection *> projections;
 
   uint8_t doInitEffectRowNr = UINT8_MAX;
