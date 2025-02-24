@@ -66,14 +66,22 @@ struct SortedPin {
   uint8_t pin;
 };
 
+struct LedsPExtended {
+  uint8_t type = 0; //0=normal, 1=definition
+  uint8_t ledFactor = 1;
+  uint8_t ledSize = 4; //mm
+  CRGB ledsP[STARLIGHT_MAXLEDS];
+};
+
 class LedModFixture: public SysModule {
 
 public:
 
-  CRGB ledsP[STARLIGHT_MAXLEDS];
+  LedsPExtended ledsPExtended;
+  CRGB *ledsP = ledsPExtended.ledsP;
 
   // CRGB *leds = nullptr;
-    // if (!leds)
+  // if (!leds)
   //   leds = (CRGB*)calloc(nrOfLeds, sizeof(CRGB));
   // else
   //   leds = (CRGB*)reallocarray(leds, nrOfLeds, sizeof(CRGB));
@@ -107,9 +115,7 @@ public:
   uint16_t nrOfLeds = 64; //amount of physical leds
 
   //Fixture definition
-  uint8_t ledFactor = 1;
   float maxFactor = 1.0;
-  uint8_t ledSize = 4; //mm
   uint8_t ledShape = 0; //0 = sphere, 1 = TetrahedronGeometry
 
   //clockless driver (check FastLED support...)

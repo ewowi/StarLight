@@ -237,6 +237,16 @@ class Variable {
   const char *id() const {return var["id"];}
   const char *type() const {return var["type"];}
 
+  // template <typename Type>
+  // void operator=(Type rhs) {
+  //   this->setValue(rhs);
+  //   // return *this;
+  // };
+
+  // JsonVariant operator=(const Variable& rhs) {
+  //   return this->getValue();
+  // };
+
   JsonVariant value(uint8_t rowNr = UINT8_MAX) const {return (rowNr==UINT8_MAX)?var["value"].as<JsonVariant>(): var["value"][rowNr].as<JsonVariant>();}
 
   String valueString(uint8_t rowNr = UINT8_MAX);

@@ -105,7 +105,7 @@ void PhysMap::addIndexP(LedsLayer &leds, uint16_t indexP) {
 }
 
 void LedsLayer::triggerMapping() {
-    doMap = true; //specify which leds to remap
+    doMapAndOrInit = true; //specify which leds to remap
     fix->mappingStatus = 1; //start mapping
 }
 
@@ -328,7 +328,7 @@ void LedsLayer::fill_rainbow(const uint8_t initialhue, const uint8_t deltahue) {
   }
 
   void LedsLayer::addPixelsPre(const uint8_t rowNr) {
-    if (doMap) {
+    if (doMapAndOrInit) {
       fill_solid(CRGB::Black);
 
       ppf("addPixelsPre clear leds[x] effect:%s pro:%s\n", effect?effect->name():"None", projection?projection->name():"None");
@@ -372,11 +372,11 @@ void LedsLayer::fill_rainbow(const uint8_t initialhue, const uint8_t deltahue) {
   }
 
   void LedsLayer::addPixel(Coord3D pixel, const uint8_t rowNr) {
-    if (projection && doMap) { //only real projections: add pixel in leds mappingTable
-      // ppf("addPixel %d %d", pixel, fix->factor);
-      if (pixel >= start * fix->ledFactor && pixel <= end * fix->ledFactor ) { //if pixel between start and end pos
+    if (projection && doMapAndOrInit) { //only real projections: add pixel in leds mappingTable
+      // ppf(" addPixel %d,%d,%d %d", pixel.x, pixel.y, pixel.z, fix->ledsPExtended.ledFactor);
+      if (pixel >= start * fix->ledsPExtended.ledFactor && pixel <= end * fix->ledsPExtended.ledFactor ) { //if pixel between start and end pos
 
-        pixel = pixel / fix->ledFactor - start; //pixel relative to start (also rounded to a 1x1 grid space in case of factor 10)
+        pixel = pixel / fix->ledsPExtended.ledFactor - start; //pixel relative to start (also rounded to a 1x1 grid space in case of factor 10)
 
         // Setup changes leds.size, mapped
         mdl->getValueRowNr = rowNr; //run projection functions in the right rowNr context
@@ -407,11 +407,11 @@ void LedsLayer::fill_rainbow(const uint8_t initialhue, const uint8_t deltahue) {
         } //pixel.x != UINT16_MAX
 
       } //if x,y,z between start and end
-    } //if projection && doMap
+    } //if projection && doMapAndOrInit
   } //addPixel
 
   void LedsLayer::addPixelsPost(const uint8_t rowNr) {
-    if (doMap) {
+    if (doMapAndOrInit) {
       ppf("addPixelsPost leds[%d] effect:%s pro:%s\n", rowNr, effect?effect->name():"None", projection?projection->name():"None");
 
       uint16_t nrOfLogical = 0;
@@ -468,8 +468,6 @@ void LedsLayer::fill_rainbow(const uint8_t initialhue, const uint8_t deltahue) {
       mdl->setValue("layers", "size", JsonString(buf.getString()), rowNr);
 
       ppf("addPixelsPost leds[%d].size = so:%d + m:(%d of %d) * %d + d:(%d + %d) B\n", rowNr, sizeof(LedsLayer), mappingTableSizeUsed, mappingTable.size(), sizeof(PhysMap), effectData.bytesAllocated, projectionData.bytesAllocated); //44 -> 164
-
-      doMap = false;
-    } //doMap
+    } //doMapAndOrInit
 
   }

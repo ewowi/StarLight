@@ -204,7 +204,7 @@ bool SysModFiles::seqNrToName(char * path, size_t seqNr, const char * filter) {
       if (counter == seqNr) {
         // ppf("seqNrToName: %d %s %d\n", seqNr, file.name(), file.size());
         // strlcat(fileName, "/", 64); //add root prefix
-        strlcat(path, file.path(), 64);
+        strlcpy(path, file.path(), 64);
         file.close();
         found = true;
         return root; //stop

@@ -23,8 +23,6 @@ public:
   Effect *liveEffect = nullptr;
   std::vector<Projection *> projections;
 
-  uint8_t doInitEffectRowNr = UINT8_MAX;
-
   LedModEffects();
 
   void setup() override;

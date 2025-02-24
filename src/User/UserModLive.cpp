@@ -366,7 +366,7 @@ static float _time(float j) {
       return UINT8_MAX;
     } else {
 
-      if (strnstr(path, ".sc.bin", 6) != nullptr) {
+      if (strstr(path, ".sc.bin") != nullptr) {
         Binary bin2;
         loadBinary((char *)path, LittleFS, &bin2);
         Executable ex;
@@ -405,7 +405,8 @@ static float _time(float j) {
 
       ppf("Before parsing of %s\n", path);
       ppf("Heap %s:%d f:%d / t:%d (l:%d) B [%d %d]\n", __FUNCTION__, __LINE__, ESP.getFreeHeap(), ESP.getHeapSize(), ESP.getMaxAllocHeap(), esp_get_free_heap_size(), esp_get_free_internal_heap_size());
-      ppf("Stack %d of %d B %d\n", sys->sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize(), uxTaskGetStackHighWaterMark(xTaskGetCurrentTaskHandle()));
+      TaskHandle_t t = xTaskGetCurrentTaskHandle();
+      ppf("Stack %d of %d B %d (%s)\n", sys->sysTools_get_arduino_maxStackUsage(), getArduinoLoopTaskStackSize(), uxTaskGetStackHighWaterMark(t), pcTaskGetName(t));
 
       Executable executable = parser.parseScript(&scScript);
       executable.name = string(path);

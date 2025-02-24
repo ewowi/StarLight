@@ -219,7 +219,7 @@ public:
   std::vector<std::vector<uint16_t>> mappingTableIndexes;
   uint16_t mappingTableIndexesSizeUsed = 0;
   
-  bool doMap = true; //so a mapping will be made
+  bool doMapAndOrInit = true; //so a mapping will be made
 
   CRGBPalette16 palette;
 
@@ -248,7 +248,7 @@ public:
   ~LedsLayer() {
     ppf("LedsLayer destructor\n");
     fadeToBlackBy();
-    doMap = true; // so loop is not running while deleting
+    doMapAndOrInit = true; // so loop is not running while deleting
     for (std::vector<uint16_t> mappingTableIndex: mappingTableIndexes) {
       mappingTableIndex.clear();
     }

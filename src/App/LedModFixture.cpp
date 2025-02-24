@@ -167,7 +167,7 @@
           leds->triggerMapping();
         }
 
-        // char fileName[32] = "";
+        // char fileName[64] = "";
         // if (files->seqNrToName(fileName, fixtureNr)) {
         //   //send to preview a message to get file fileName
         //   web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName));
@@ -273,6 +273,7 @@
     //use lastMappingMillis and not loop1s as doMap needs to start asap, not wait for next second
     if (mappingStatus == 1 && sys->now - lastMappingMillis >= 1000) { //not more then once per second (for E131)
       lastMappingMillis = sys->now;
+
       mapInitAlloc();
     }
 
@@ -308,20 +309,20 @@
     for (int i = 0; i < STARLIGHT_MAXLEDS; i++)
       ledsP[i] = CRGB::Black;
 
-    char fileName[32] = "";
+    char path[64] = "";
 
-    if (files->seqNrToName(fileName, fixtureNr, "F_")) { // get the fix->json
-      ledFactor = 1; //back to default
-      ledSize = 4; //back to default
+    if (files->seqNrToName(path, fixtureNr, "F_")) { // get the fix->json
+      ledsPExtended.ledFactor = 1; //back to default
+      ledsPExtended.ledSize = 4; //back to default
       ledShape = 0; //back to default
 
     #ifdef STARBASE_USERMOD_LIVE
-      if (strnstr(fileName, ".sc", sizeof(fileName)) != nullptr) {
+      if (strnstr(path, ".sc", sizeof(path)) != nullptr) {
 
-        ppf("mapInitAlloc Live Fixture %s\n", fileName);
+        ppf("mapInitAlloc Live Fixture %s\n", path);
 
-        uint8_t newExeID = liveM->findExecutable(fileName);
-        ppf("mapInitAlloc Live Fixture %s n:%d o:%d =:%d\n", fileName, newExeID, liveFixtureID, newExeID != liveFixtureID);
+        uint8_t newExeID = liveM->findExecutable(path);
+        ppf("mapInitAlloc Live Fixture %s n:%d o:%d =:%d\n", path, newExeID, liveFixtureID, newExeID != liveFixtureID);
         if (newExeID == UINT8_MAX) {
           ppf("kill old live fixture script\n");
           liveM->killAndDelete(liveFixtureID);
@@ -339,18 +340,18 @@
           liveM->addExternalFun("void", "addPixelsPost", "", (void *)_addPixelsPost);
 
           liveM->addExternalVal("uint16_t", "mapResult", &mapResult); //for STARLIGHT_LIVE_MAPPING but script with this can also run when live mapping is disabled
-          liveM->addExternalVal("uint8_t", "colorOrder", &fix->colorOrder);
-          liveM->addExternalVal("uint8_t", "ledFactor", &fix->ledFactor);
-          liveM->addExternalVal("uint8_t", "ledSize", &fix->ledSize);
-          liveM->addExternalVal("uint8_t", "ledShape", &fix->ledShape);
+          liveM->addExternalVal("uint8_t", "colorOrder", &colorOrder);
+          liveM->addExternalVal("uint8_t", "ledFactor", &ledsPExtended.ledFactor);
+          liveM->addExternalVal("uint8_t", "ledSize", &ledsPExtended.ledSize);
+          liveM->addExternalVal("uint8_t", "ledShape", &ledShape);
 
           //for virtual driver (but keep enabled to avoid compile errors when used in non virtual context
-          liveM->addExternalVal("uint8_t", "clockPin", &fix->clockPin);
-          liveM->addExternalVal("uint8_t", "latchPin", &fix->latchPin);
-          liveM->addExternalVal("uint8_t", "clockFreq", &fix->clockFreq);
-          liveM->addExternalVal("uint8_t", "dmaBuffer", &fix->dmaBuffer);
+          liveM->addExternalVal("uint8_t", "clockPin", &clockPin);
+          liveM->addExternalVal("uint8_t", "latchPin", &latchPin);
+          liveM->addExternalVal("uint8_t", "clockFreq", &clockFreq);
+          liveM->addExternalVal("uint8_t", "dmaBuffer", &dmaBuffer);
 
-          liveFixtureID = liveM->compile(fileName, "void c(){addPixelsPre();main();addPixelsPost();}");
+          liveFixtureID = liveM->compile(path, "void c(){addPixelsPre();main();addPixelsPost();}");
         }
 
         if (liveFixtureID != UINT8_MAX) {
@@ -361,7 +362,7 @@
           liveM->executeTask(liveFixtureID, "c");
         }
         else
-          ppf("mapInitAlloc Live Fixture not created (compilation error?) %s\n", fileName);
+          ppf("mapInitAlloc Live Fixture not created (compilation error?) %s\n", path);
 
       } else 
     #endif
@@ -372,14 +373,14 @@
         //second pass: create mappings
         for (pass = 1; pass <=2; pass++)
         {
-          StarJson starJson(fileName); //open fileName for deserialize
+          StarJson starJson(path); //open fileName for deserialize
 
           bool first = true;
 
           if (pass == 1) { // mappings
             //what to deserialize
-            starJson.lookFor("factor", &ledFactor);
-            starJson.lookFor("ledSize", &ledSize);
+            starJson.lookFor("factor", &ledsPExtended.ledFactor);
+            starJson.lookFor("ledSize", &ledsPExtended.ledSize);
             starJson.lookFor("shape", &ledShape);
             starJson.lookFor("pin", &currPin);
           }
@@ -441,17 +442,23 @@
 #define headerBytesFixture 16 // so 680 pixels will fit in a PACKAGE_SIZE package ?
 
 void LedModFixture::addPixelsPre() {
-  ppf("addPixelsPre(%d) f:%d s:%d s:%d\n", pass, ledFactor, ledSize, ledShape);
+  ppf("addPixelsPre(%d) f:%d s:%d s:%d\n", pass, ledsPExtended.ledFactor, ledsPExtended.ledSize, ledShape);
 
   if (pass == 1) {
     fixSize = {0, 0, 0}; //start counting
     nrOfLeds = 0; //start counting
   } else if (nrOfLeds <= STARLIGHT_MAXLEDS) {
 
+    Coord3D fixSize2 = (fixSize - Coord3D{1,1,1}) * ledsPExtended.ledFactor; //back to uncorrected
+    maxFactor = max(max(max(fixSize2.x, fixSize2.y), fixSize2.z) / 256.0, 1.0);
+    ledsPExtended.type = 1; //definition, stop effects loop
+    ledsPExtended.ledFactor *= maxFactor;
+    ESP_LOGD("", "maxFactor %d,%d,%d %f => %d", fixSize2.x, fixSize2.y, fixSize2.z, maxFactor, ledsPExtended.ledFactor);
+
     // reset leds
     uint8_t rowNr = 0;
     for (LedsLayer *leds: layers) {
-      if (leds->doMap) {
+      if (leds->doMapAndOrInit) {
         leds->addPixelsPre(rowNr);
       }
       rowNr++;
@@ -473,7 +480,7 @@ void LedModFixture::addPixelsPre() {
 }
 
 void LedModFixture::addPixel(Coord3D pixel) {
-  // ppf("led{%d} %d,%d,%d\n", pass, pixel.x,pixel.y,pixel.z); //start.x, start.y, start.z, end.x, end.y, end.z start %d,%d,%d end %d,%d,%d
+  // ppf("led{%d} %d %d,%d,%d\n", pass, indexP, pixel.x,pixel.y,pixel.z); //start.x, start.y, start.z, end.x, end.y, end.z start %d,%d,%d end %d,%d,%d
   if (pass == 1) {
     // ppf(".");
     fixSize = fixSize.maximum(pixel);
@@ -482,22 +489,9 @@ void LedModFixture::addPixel(Coord3D pixel) {
 
     if (indexP < STARLIGHT_MAXLEDS) {
 
-      if (bytesPerPixel) {
-        if (indexP == 0) { //code for new fixture
-          Coord3D fixSize2 = (fixSize - Coord3D{1,1,1}) * ledFactor;
-
-          maxFactor = max(max(max(fixSize2.x, fixSize2.y), fixSize2.z) / 256.0, 1.0);
-          // if (maxFactor < 1) maxFactor = 1;
-          ledsP[indexP].r = fix->ledFactor * maxFactor;
-          ledsP[indexP].g = fix->ledSize;
-          ledsP[indexP].b = 100; //code for fixChange
-          ESP_LOGD("", "maxFactor %d,%d,%d %d * %f = %d", fixSize2.x, fixSize2.y, fixSize2.z, fix->ledFactor, maxFactor, ledsP[indexP].r);
-        } else {
-          ledsP[indexP].r = pixel.x / maxFactor;
-          ledsP[indexP].g = pixel.y / maxFactor;
-          ledsP[indexP].b = pixel.z / maxFactor;
-        }
-      }
+      ledsP[indexP].r = pixel.x / maxFactor;
+      ledsP[indexP].g = pixel.y / maxFactor;
+      ledsP[indexP].b = pixel.z / maxFactor;
 
       uint8_t rowNr = 0;
       for (LedsLayer *leds: layers) {
@@ -554,14 +548,13 @@ void LedModFixture::addPixelsPost() {
   ppf("addPixelsPost(%d) indexP:%d b:%d dsfd: %d ms\n", pass, indexP, bytesPerPixel, millis() - start);
   //after processing each led
   if (pass == 1) {
-    fixSize = fixSize / ledFactor + Coord3D{1,1,1};
+    fixSize = fixSize / ledsPExtended.ledFactor + Coord3D{1,1,1};
     ppf("addPixelsPost(%d) size s:%d,%d,%d #:%d %d ms\n", pass, fixSize.x, fixSize.y, fixSize.z, nrOfLeds);
   } else if (nrOfLeds <= STARLIGHT_MAXLEDS) {
 
     uint8_t rowNr = 0;
-
     for (LedsLayer *leds: layers) {
-      if (leds->doMap) {
+      if (leds->doMapAndOrInit) {
         leds->addPixelsPost(rowNr);
       }
       rowNr++;
@@ -583,16 +576,6 @@ void LedModFixture::addPixelsPost() {
 
   if (pass == 2) {
     mappingStatus = 0; //not mapping
-
-    //reinit the effect after an effect change causing a mapping change
-    uint8_t rowNr = 0;
-    for (LedsLayer *leds: layers) {
-      if (eff->doInitEffectRowNr == rowNr) {
-        eff->doInitEffectRowNr = UINT8_MAX;
-        eff->initEffect(*leds, rowNr);
-      }
-      rowNr++;
-    }
 
     //https://github.com/FastLED/FastLED/wiki/Multiple-Controller-Examples
 

@@ -186,11 +186,11 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         if (rowNr < fix->layers.size()) {
           LedsLayer *leds = fix->layers[rowNr];
 
-          // leds->doMap = true; //stop the effects loop already here
+          // leds->doMapAndOrInit = true; //stop the effects loop already here
 
           #ifdef STARBASE_USERMOD_LIVE
             //kill Live Script if moving to other effect
-            if (leds->effect && leds->liveEffectID != UINT8_MAX && strnstr(leds->effect->name(), "Live Effect", 11) != nullptr) {
+            if (leds->effect && leds->liveEffectID != UINT8_MAX && strstr(leds->effect->name(), "Live Effect") != nullptr) {
               ESP_LOGD("", "effect.onChange kill effect %d", leds->liveEffectID);
               liveM->killAndDelete(leds->liveEffectID);
               leds->liveEffectID = UINT8_MAX;
@@ -211,11 +211,9 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           if (leds->effect->dim() != leds->effectDimension) {
             leds->effectDimension = leds->effect->dim();
             leds->triggerMapping();
-            //initEffect is called after mapping done to make sure dimensions are right before controls are done...
-            doInitEffectRowNr = rowNr;
           }
           else {
-            initEffect(*leds, rowNr);
+            leds->doMapAndOrInit = true;
           }
 
         }
@@ -250,7 +248,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         if (rowNr < fix->layers.size()) {
           LedsLayer *leds = fix->layers[rowNr];
 
-          // leds->doMap = true; //stop the effects loop already here
+          // leds->doMapAndOrInit = true; //stop the effects loop already here
 
           uint8_t proValue = variable.getValue(rowNr);
 
@@ -428,7 +426,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     random16_set_seed(sys->now);
 
     //set new frame
-    if (sys->now - frameMillis >= 1000.0/fix->fps - 1 && fix->mappingStatus == 0 && fix->ledsP[0].b != 100) { //floorf to make it no wait to go beyond 1000 fps ;-), ledsP[0].b: fixChange
+    if (sys->now - frameMillis >= 1000.0/fix->fps - 1 && fix->mappingStatus == 0 && fix->ledsPExtended.type == 0) { //floorf to make it no wait to go beyond 1000 fps ;-), ledsPExtended.type: not fixChange
 
       //reset pixelsToBlend if multiple leds effects
       // ppf(" %d-%d", fix->pixelsToBlend.size(), fix->nrOfLeds);
@@ -444,7 +442,13 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       //  run the next frame of the effect
       for (uint8_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
         LedsLayer *leds = fix->layers[rowNr];
-        if (leds->effect && !leds->doMap) { // don't run effect while remapping or non existing effect (default UINT16_MAX)
+
+        if (leds->doMapAndOrInit) {
+          initEffect(*leds, rowNr);
+          leds->doMapAndOrInit = false;
+        }
+
+        if (leds->effect ) { // && !leds->doMapAndOrInit don't run effect while remapping or non existing effect (default UINT16_MAX)
           // ppf(" %s %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->effect->name(), leds->start.x, leds->start.y, leds->start.z, leds->end.x, leds->end.y, leds->end.z, leds->size.x, leds->size.y, leds->size.z );
 
           leds->effectData.begin(); //sets the effectData pointer back to 0 so loop effect can go through it
@@ -491,8 +495,6 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         }
       }
 
-      if (fix->ledsP[0].b == 100) fix->ledsP[0].b--; //if fixChange pattern created then change that (as this is not a fixChange)
-
       frameCounter++;
     }
     else {
@@ -519,11 +521,11 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
         if (newCoord) {
           token = strtok(nullptr, ",");
-          if (token != nullptr) newCoord->x = strtol(token, nullptr, 10) / fix->ledFactor; else newCoord->x = 0; //should never happen
+          if (token != nullptr) newCoord->x = strtol(token, nullptr, 10) / fix->ledsPExtended.ledFactor; else newCoord->x = 0; //should never happen
           token = strtok(nullptr, ",");
-          if (token != nullptr) newCoord->y = strtol(token, nullptr, 10) / fix->ledFactor; else newCoord->y = 0;
+          if (token != nullptr) newCoord->y = strtol(token, nullptr, 10) / fix->ledsPExtended.ledFactor; else newCoord->y = 0;
           token = strtok(nullptr, ",");
-          if (token != nullptr) newCoord->z = strtol(token, nullptr, 10) / fix->ledFactor; else newCoord->z = 0;
+          if (token != nullptr) newCoord->z = strtol(token, nullptr, 10) / fix->ledsPExtended.ledFactor; else newCoord->z = 0;
 
           mdl->setValue("layers", isStart?"start":isEnd?"end":"middle", *newCoord, 0); //assuming row 0 for the moment
 
@@ -540,8 +542,9 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       ESP_LOGD("", "leds[%d] effect:%s a:%d (%d,%d,%d)", rowNr, leds.effect->name(), leds.effectData.bytesAllocated, leds.size.x, leds.size.y, leds.size.z);
 
       leds.effectData.clear(); //delete effectData memory so it can be rebuild
-      if (strnstr(leds.effect->name(), "Live Effect", 11) == nullptr) //not needed for Live script, will hang instead
+      if (strstr(leds.effect->name(), "Live Effect") == nullptr) { //not needed for Live script, will hang instead
         leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right to avoid control defaults to be removed
+      }
 
       Variable variable = Variable("layers", "effect");
       variable.preDetails();
@@ -551,6 +554,4 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       mdl->setValueRowNr = UINT8_MAX;
 
       leds.effectData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
-
-
   }
