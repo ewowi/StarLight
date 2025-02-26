@@ -31,7 +31,7 @@
   
   // #define NUM_LEDS_PER_STRIP 256 // for I2S_MAPPING_MODE_OPTION_MAPPING_IN_MEMORY ...
 
-  #define CORE_DEBUG_LEVEL 0 //surpress ESP_LOGE compile error, increase to 6 when debugging
+  // #define CORE_DEBUG_LEVEL 0 //surpress ESP_LOGE compile error, increase to 6 when debugging
   //catch errors from library, enable when debugging
   // #define ICVD_LOGD(tag, format, ...) ppf(format, ##__VA_ARGS__)
   // #define ICVD_LOGE(tag, format, ...) ppf(format, ##__VA_ARGS__)
@@ -50,7 +50,7 @@
     #define I2S_MAPPING_MODE (I2S_MAPPING_MODE_OPTION_NONE) //works but mapping using StarLight mappingTable needed
   #endif
 
-  #define TAG "StarLight" // for S3 (todo also for non s3...)
+  // #define TAG "StarLight" // for S3 (todo also for non s3...)
 
   #include "I2SClocklessVirtualLedDriver.h"
   static I2SClocklessVirtualLedDriver driver;
@@ -117,7 +117,6 @@ public:
   //Fixture definition
   float maxFactor = 1.0;
   uint8_t ledShape = 0; //0 = sphere, 1 = TetrahedronGeometry
-
   //clockless driver (check FastLED support...)
   uint8_t colorOrder = 3; //GRB is default for WS2812 (not for FastLED yet: see pio.ini)
 
@@ -133,7 +132,6 @@ public:
   unsigned long lastMappingMillis = 0;
   uint8_t viewRotation = 0;
   uint8_t bri = 10;
-  uint8_t bytesPerPixel = 2;
 
   uint8_t gammaRed = 255;
   uint8_t gammaGreen = 176;
@@ -150,7 +148,7 @@ public:
 
   uint8_t globalBlend = 128;
 
-  uint16_t fps = 200;
+  uint16_t fps = 2000;
   uint16_t realFps = 200;
   bool3State showTicker = false;
   char tickerTape[20] = "";

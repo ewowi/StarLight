@@ -1,3 +1,12 @@
+esptool
+
+- https://shop.m5stack.com/blogs/news/how-to-erase-esp32-flash-memory?srsltid=AfmBOopyd2_efiD5Y50M71sPVnPy8oYu3_uAaYattS2Zr1HCqx8I91x0
+- pip install esptool  
+- esptool.py --chip auto -p /dev/cu.usbmodem11301 erase_flash
+- esptool.py --port /dev/cu.usbmodem11301 write_flash 0x1000 MoonBase_esp32-s3-devkitc-1-n16r8v_0-5-2.bin
+- https://espressif.github.io/esptool-js/ (chrome)
+
+
 Release steps 
 - update dates in files
 - check all lib_deps on right version

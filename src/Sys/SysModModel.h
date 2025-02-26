@@ -222,6 +222,8 @@ typedef std::function<void(Variable)> FindFun;
 typedef std::function<uint8_t(EventArguments)> VarEvent;
 typedef std::function<void(EventArguments)> VarFunction; // void: no return
 
+static uint8_t operatorRowNr = UINT8_MAX;
+
 class Variable {
   public:
 
@@ -237,15 +239,37 @@ class Variable {
   const char *id() const {return var["id"];}
   const char *type() const {return var["type"];}
 
-  // template <typename Type>
-  // void operator=(Type rhs) {
-  //   this->setValue(rhs);
-  //   // return *this;
-  // };
+  //setValue
+  template <typename Type>
+  void operator=(Type rhs) {
+    ESP_LOGD("", "Variable.setValue operator= %s.%s Type", pid(), id());
+    uint8_t rowNr = operatorRowNr;
+    operatorRowNr = UINT8_MAX;
+    this->setValue(rhs, rowNr);
+    // return *this;
+  };
 
-  // JsonVariant operator=(const Variable& rhs) {
-  //   return this->getValue();
-  // };
+  // getValue
+  template <typename Type>
+  Type& operator=( Variable& rhs) {
+    if (std::is_same<Type, Variable>::value) {
+      ESP_LOGD("", "Variable assignment operator= %s.%s Variable", rhs.pid(), rhs.id());
+      return rhs;// *this;
+    }
+    else {
+      ESP_LOGD("", "Variable.getValue operator= %s.%s Variable", rhs.pid(), rhs.id());
+      uint8_t rowNr = operatorRowNr;
+      operatorRowNr = UINT8_MAX;
+      return rhs.getValue(rowNr);
+    }
+  };
+
+  //Variable[rowNr]
+  // template <typename Type>
+  Variable& operator[](const uint8_t rowNr) {
+    operatorRowNr = rowNr;
+    return *this;
+  }
 
   JsonVariant value(uint8_t rowNr = UINT8_MAX) const {return (rowNr==UINT8_MAX)?var["value"].as<JsonVariant>(): var["value"][rowNr].as<JsonVariant>();}
 
@@ -314,6 +338,8 @@ class Variable {
         }
 
       } else {
+        if (!var["value"].is<JsonArray>()) var["value"].to<JsonArray>(); //make sure it is an array (could not be after initVar)
+
         var["value"][rowNr] = newValue;
 
         //cleanup Array

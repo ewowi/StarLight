@@ -111,9 +111,7 @@
 
     currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](EventArguments) { switch (eventType) {
       case onUI:
-        if (bytesPerPixel) {
-          mappingStatus = 1; //rebuild the fixture - so it is send to ui
-        }
+        mappingStatus = 1; //rebuild the fixture - so it is send to ui
         return true;
       default: return false;
     }});
@@ -128,17 +126,6 @@
         #ifdef STARLIGHT_USERMOD_AUDIOSYNC
           options.add("Moving heads GEQ");
         #endif
-        return true; }
-      default: return false; 
-    }});
-
-    ui->initSelect(currentVar, "PixelBytes", &bytesPerPixel, false, [this](EventArguments) { switch (eventType) {
-      case onUI: {
-        JsonArray options = variable.setOptions();
-        options.add("None");
-        options.add("1-byte RGB");
-        options.add("2-byte RGB");
-        options.add("3-byte RGB");
         return true; }
       default: return false; 
     }});
@@ -293,6 +280,7 @@
 
   void LedModFixture::loop1s() {
     memmove(tickerTape, tickerTape+1, strlen(tickerTape)); //no memory leak ?
+    // ESP_LOGD("", "realFps %d", realFps);
   }
 
   void LedModFixture::mapInitAlloc() {
@@ -545,7 +533,7 @@ void LedModFixture::addPin(uint8_t pin) {
 }
 
 void LedModFixture::addPixelsPost() {
-  ppf("addPixelsPost(%d) indexP:%d b:%d dsfd: %d ms\n", pass, indexP, bytesPerPixel, millis() - start);
+  ppf("addPixelsPost(%d) indexP:%d dsfd: %d ms\n", pass, indexP, millis() - start);
   //after processing each led
   if (pass == 1) {
     fixSize = fixSize / ledsPExtended.ledFactor + Coord3D{1,1,1};
