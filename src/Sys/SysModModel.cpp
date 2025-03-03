@@ -261,7 +261,7 @@
     //call varEvent if exists
     if (!var["fun"].isNull()) { //isNull needed here!
       size_t funNr = var["fun"];
-      if (funNr < mdl->varEvents.size()) {
+      if (funNr != UINT8_MAX && funNr < mdl->varEvents.size()) {
         // ppf("voor v1 call %s.%s[%d] %d %d %d\n", pid(), id(), rowNr, funNr, eventType, mdl->varEvents.size());
         result = mdl->varEvents[funNr](*this, rowNr, eventType);
 
@@ -284,10 +284,11 @@
         //   }
         // } //varEvent exists
       }
-      else if (funNr == UINT8_MAX)
-        result = publish(eventType, rowNr);
+      // else if (funNr == UINT8_MAX)
       else
-        ppf("dev triggerEvent function nr %s.%s outside bounds %d >= %d\n", pid(), id(), funNr, mdl->varEvents.size());
+        ESP_LOGE("", "dev triggerEvent function nr %s.%s outside bounds %d >= %d\n", pid(), id(), funNr, mdl->varEvents.size());
+
+      result = result || publish(eventType, rowNr);
     } //varEvent exists
 
 
@@ -723,17 +724,17 @@ Variable SysModModel::initVar(Variable parent, const char * id, const char * typ
 }
 
 void Variable::subscribe(uint8_t eventType, const VarFunction &varFunction) {
-  ppf("subscribe %d %s.%s\n", eventType, pid(), id());
+  ESP_LOGD("", "subscribe %d %s.%s\n", eventType, pid(), id());
   mdl->varEventsPS.push_back({*this, eventType, varFunction}); //add new function
-  var["fun"] = UINT8_MAX; //to trigger response from ui
+  // var["fun"] = UINT8_MAX; //to trigger response from ui
 }
 
 bool Variable::publish(uint8_t eventType, uint8_t rowNr) {
   bool found = false;
   for (VarEventPS &varEventPS: mdl->varEventsPS) {
     if (eventType == varEventPS.eventType && strncmp(pid(), varEventPS.variable.pid(), 32) == 0 && strncmp(id(), varEventPS.variable.id(), 32) == 0) {
-      if (strcmp(id(), "effect") == 0 && eventType!= onLoop1s)
-        ppf("publish %s.%s[%d] %d=%d %s.%s\n", pid(), id(), rowNr, eventType, varEventPS.eventType , varEventPS.variable.pid(), varEventPS.variable.id());
+      // if (strcmp(id(), "effect") == 0 && eventType!= onLoop1s)
+      //   ppf("publish %s.%s[%d] %d=%d %s.%s\n", pid(), id(), rowNr, eventType, varEventPS.eventType , varEventPS.variable.pid(), varEventPS.variable.id());
       varEventPS.varFunction(*this, rowNr, eventType);
       found = true;
     }

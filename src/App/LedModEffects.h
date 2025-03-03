@@ -30,8 +30,6 @@ public:
   //this loop is run as often as possible so coding should also be as efficient as possible (no findVar etc)
   void loop() override;
 
-  void initEffect(LedsLayer &leds, uint8_t rowNr);
-
   // void loop10s() override;
 
 private:

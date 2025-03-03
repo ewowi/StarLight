@@ -36,16 +36,16 @@ class SolidEffect: public Effect {
   const char * tags() override {return "💡";}
 
   void setup(LedsLayer &leds, Variable parentVar) override {
-    ui->initSlider(parentVar, "red", leds.effectData.write<uint8_t>(182));
-    ui->initSlider(parentVar, "green", leds.effectData.write<uint8_t>(15));
-    ui->initSlider(parentVar, "blue", leds.effectData.write<uint8_t>(98));
+    ui->initSlider(parentVar, "red", leds.effectControls.write<uint8_t>(182));
+    ui->initSlider(parentVar, "green", leds.effectControls.write<uint8_t>(15));
+    ui->initSlider(parentVar, "blue", leds.effectControls.write<uint8_t>(98));
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t red = leds.effectData.read<uint8_t>();
-    uint8_t green = leds.effectData.read<uint8_t>();
-    uint8_t blue = leds.effectData.read<uint8_t>();
+    uint8_t red = leds.effectControls.read<uint8_t>();
+    uint8_t green = leds.effectControls.read<uint8_t>();
+    uint8_t blue = leds.effectControls.read<uint8_t>();
 
     CRGB color = CRGB(red, green, blue);
     leds.fill_solid(color);
@@ -59,14 +59,14 @@ class RainbowEffect: public Effect {
 
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "scale", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(128));
+    ui->initSlider(parentVar, "scale", leds.effectControls.write<uint8_t>(128));
   }
 
   void loop(LedsLayer &leds) override {
     // UI Variables
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t scale = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t scale = leds.effectControls.read<uint8_t>();
 
     uint16_t counter = (sys->now * ((speed >> 2) +2)) & 0xFFFF;
     counter = counter >> 8;
@@ -87,11 +87,11 @@ class RainbowWithGlitterEffect: public Effect {
 
   void setup(LedsLayer &leds, Variable parentVar) override {
     //no palette control is created
-    ui->initCheckBox(parentVar, "glitter", leds.effectData.write<bool3State>(false));
+    ui->initCheckBox(parentVar, "glitter", leds.effectControls.write<bool3State>(false));
   }
 
   void loop(LedsLayer &leds) override {
-    bool3State glitter = leds.effectData.read<bool3State>();
+    bool3State glitter = leds.effectControls.read<bool3State>();
 
     // built-in FastLED rainbow, plus some random sparkly glitter
     // FastLED's built-in rainbow generator
@@ -117,14 +117,14 @@ class FlowEffect: public Effect {
   
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "zones", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(128));
+    ui->initSlider(parentVar, "zones", leds.effectControls.write<uint8_t>(128));
   }
 
   void loop(LedsLayer &leds) override {
     // UI Variables
-    uint8_t speed   = leds.effectData.read<uint8_t>();
-    uint8_t zonesUI = leds.effectData.read<uint8_t>();
+    uint8_t speed   = leds.effectControls.read<uint8_t>();
+    uint8_t zonesUI = leds.effectControls.read<uint8_t>();
 
     uint16_t counter = 0;
     if (speed != 0) {
@@ -159,12 +159,12 @@ class SinelonEffect: public Effect {
   const char * tags() override {return "⚡";}
   
   void setup(LedsLayer &leds, Variable parentVar) override {
-    ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(60));
+    ui->initSlider(parentVar, "BPM", leds.effectControls.write<uint8_t>(60));
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t bpm = leds.effectData.read<uint8_t>();
+    uint8_t bpm = leds.effectControls.read<uint8_t>();
 
     leds.fadeToBlackBy(20);
 
@@ -232,20 +232,20 @@ class RunningEffect: public Effect {
   const char * tags() override {return "💫";}
 
   void setup(LedsLayer &leds, Variable parentVar) override {
-    ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(60), 0, 255, false, [](EventArguments) { switch (eventType) {
+    ui->initSlider(parentVar, "BPM", leds.effectControls.write<uint8_t>(60), 0, 255, false, [](EventArguments) { switch (eventType) {
       case onUI:
         variable.setComment("in BPM!");
         return true;
       default: return false;
     }});
     //tbd: check if memory is freed!
-    ui->initSlider(parentVar, "fade", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "fade", leds.effectControls.write<uint8_t>(128));
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t bpm = leds.effectData.read<uint8_t>();
-    uint8_t fade = leds.effectData.read<uint8_t>();
+    uint8_t bpm = leds.effectControls.read<uint8_t>();
+    uint8_t fade = leds.effectControls.read<uint8_t>();
 
     leds.fadeToBlackBy(fade); //physical leds
     int pos = map(beat16( bpm), 0, UINT16_MAX, 0, leds.size.x-1 ); //instead of call%leds.size.x
@@ -302,14 +302,14 @@ class BouncingBallsEffect: public Effect {
 
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "gravity", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "balls", leds.effectData.write<uint8_t>(8), 1, 16);
+    ui->initSlider(parentVar, "gravity", leds.effectControls.write<uint8_t>(128));
+    ui->initSlider(parentVar, "balls", leds.effectControls.write<uint8_t>(8), 1, 16);
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t grav = leds.effectData.read<uint8_t>();
-    uint8_t numBalls = leds.effectData.read<uint8_t>();
+    uint8_t grav = leds.effectControls.read<uint8_t>();
+    uint8_t numBalls = leds.effectControls.read<uint8_t>();
 
     //binding of loop persistent values (pointers)
     Ball *balls = leds.effectData.readWrite<Ball>(maxNumBalls); //array
@@ -321,7 +321,7 @@ class BouncingBallsEffect: public Effect {
     // const bool hasCol2 = SEGCOLOR(2);
     const unsigned long time = sys->now;
 
-    //not necessary as effectData is cleared at setup(LedsLayer &leds)
+    //not necessary as effectControls is cleared at setup(LedsLayer &leds)
     // if (call == 0) {
     //   for (size_t i = 0; i < maxNumBalls; i++) balls[i].lastBounceTime = time;
     // }
@@ -432,14 +432,14 @@ class RainEffect: public Effect {
   
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128), 1, 255);
-    ui->initSlider(parentVar, "intensity", leds.effectData.write<uint8_t>(64), 1, 128);
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(128), 1, 255);
+    ui->initSlider(parentVar, "intensity", leds.effectControls.write<uint8_t>(64), 1, 128);
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t intensity = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t intensity = leds.effectControls.read<uint8_t>();
 
     //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
     uint16_t *aux0 = leds.effectData.readWrite<uint16_t>();
@@ -496,18 +496,18 @@ class DripEffect: public Effect {
   
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "gravity", leds.effectData.write<uint8_t>(128), 1, 255);
-    ui->initSlider(parentVar, "drips", leds.effectData.write<uint8_t>(4), 1, 6);
-    ui->initSlider(parentVar, "swell", leds.effectData.write<uint8_t>(4), 1, 6);
-    ui->initCheckBox(parentVar, "invert", leds.effectData.write<bool3State>(false));
+    ui->initSlider(parentVar, "gravity", leds.effectControls.write<uint8_t>(128), 1, 255);
+    ui->initSlider(parentVar, "drips", leds.effectControls.write<uint8_t>(4), 1, 6);
+    ui->initSlider(parentVar, "swell", leds.effectControls.write<uint8_t>(4), 1, 6);
+    ui->initCheckBox(parentVar, "invert", leds.effectControls.write<bool3State>(false));
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t grav = leds.effectData.read<uint8_t>();
-    uint8_t drips = leds.effectData.read<uint8_t>();
-    uint8_t swell = leds.effectData.read<uint8_t>();
-    bool3State invert = leds.effectData.read<bool3State>();
+    uint8_t grav = leds.effectControls.read<uint8_t>();
+    uint8_t drips = leds.effectControls.read<uint8_t>();
+    uint8_t swell = leds.effectControls.read<uint8_t>();
+    bool3State invert = leds.effectControls.read<bool3State>();
 
     //binding of loop persistent values (pointers)
     Spark* drops = leds.effectData.readWrite<Spark>(maxNumDrops);
@@ -582,14 +582,14 @@ class HeartBeatEffect: public Effect {
   
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(15), 0, 31);
-    ui->initSlider(parentVar, "intensity", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(15), 0, 31);
+    ui->initSlider(parentVar, "intensity", leds.effectControls.write<uint8_t>(128));
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t intensity = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t intensity = leds.effectControls.read<uint8_t>();
 
     //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
     bool3State *isSecond = leds.effectData.readWrite<bool3State>();
@@ -630,19 +630,19 @@ class PopCornEffect: public Effect {
   
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "corns", leds.effectData.write<uint8_t>(maxNumPopcorn/2), 1, maxNumPopcorn);
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(128));
+    ui->initSlider(parentVar, "corns", leds.effectControls.write<uint8_t>(maxNumPopcorn/2), 1, maxNumPopcorn);
     #ifdef STARLIGHT_USERMOD_AUDIOSYNC
-      ui->initCheckBox(parentVar, "useaudio", leds.effectData.write<bool3State>(false));
+      ui->initCheckBox(parentVar, "useaudio", leds.effectControls.write<bool3State>(false));
     #endif
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t numPopcorn = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t numPopcorn = leds.effectControls.read<uint8_t>();
     #ifdef STARLIGHT_USERMOD_AUDIOSYNC
-      bool3State useaudio = leds.effectData.read<bool3State>();
+      bool3State useaudio = leds.effectControls.read<bool3State>();
     #endif
 
     //binding of loop persistent values (pointers)
@@ -713,9 +713,9 @@ class LinesEffect: public Effect {
   const char * tags() override {return "💫";}
 
   void setup(LedsLayer &leds, Variable parentVar) override {
-    ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(32));
-    // ui->initCheckBox(parentVar, "vertical", leds.effectData.write<bool3State>(true));
-    ui->initCheckBox(parentVar, "panelTest", leds.effectData.write<bool3State>(false));
+    ui->initSlider(parentVar, "BPM", leds.effectControls.write<uint8_t>(32));
+    // ui->initCheckBox(parentVar, "vertical", leds.effectControls.write<bool3State>(true));
+    ui->initCheckBox(parentVar, "panelTest", leds.effectControls.write<bool3State>(false));
   }
 
   void loop(LedsLayer &leds) override {
@@ -734,9 +734,10 @@ class LinesEffect: public Effect {
 
 
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t bpm = leds.effectData.read<uint8_t>();
-    // bool3State vertical = leds.effectData.read<bool3State>();
-    bool3State panelTest = leds.effectData.read<bool3State>();
+    uint8_t bpm = leds.effectControls.read<uint8_t>();
+    // bool3State vertical = leds.effectControls.read<bool3State>();
+    bool3State panelTest = leds.effectControls.read<bool3State>();
+
     int   *frameNr = leds.effectData.readWrite<int>();
 
     leds.fadeToBlackBy(100);
@@ -774,20 +775,20 @@ class BlackHoleEffect: public Effect {
   const char * tags() override {return "💡";}
   
   void setup(LedsLayer &leds, Variable parentVar) override {
-    ui->initSlider(parentVar, "fade", leds.effectData.write<uint8_t>(16), 0, 32);
-    ui->initSlider(parentVar, "outX", leds.effectData.write<uint8_t>(16), 0, 32);
-    ui->initSlider(parentVar, "outY", leds.effectData.write<uint8_t>(16), 0, 32);
-    ui->initSlider(parentVar, "inX", leds.effectData.write<uint8_t>(16), 0, 32);
-    ui->initSlider(parentVar, "inY", leds.effectData.write<uint8_t>(16), 0, 32);
+    ui->initSlider(parentVar, "fade", leds.effectControls.write<uint8_t>(16), 0, 32);
+    ui->initSlider(parentVar, "outX", leds.effectControls.write<uint8_t>(16), 0, 32);
+    ui->initSlider(parentVar, "outY", leds.effectControls.write<uint8_t>(16), 0, 32);
+    ui->initSlider(parentVar, "inX", leds.effectControls.write<uint8_t>(16), 0, 32);
+    ui->initSlider(parentVar, "inY", leds.effectControls.write<uint8_t>(16), 0, 32);
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t fade = leds.effectData.read<uint8_t>();
-    uint8_t outX = leds.effectData.read<uint8_t>();
-    uint8_t outY = leds.effectData.read<uint8_t>();
-    uint8_t inX = leds.effectData.read<uint8_t>();
-    uint8_t inY = leds.effectData.read<uint8_t>();
+    uint8_t fade = leds.effectControls.read<uint8_t>();
+    uint8_t outX = leds.effectControls.read<uint8_t>();
+    uint8_t outY = leds.effectControls.read<uint8_t>();
+    uint8_t inX = leds.effectControls.read<uint8_t>();
+    uint8_t inY = leds.effectControls.read<uint8_t>();
 
     uint16_t x, y;
 
@@ -822,16 +823,16 @@ class DNAEffect: public Effect {
   
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(16), 0, 32);
-    ui->initSlider(parentVar, "blur", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "phases", leds.effectData.write<uint8_t>(64));
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(16), 0, 32);
+    ui->initSlider(parentVar, "blur", leds.effectControls.write<uint8_t>(128));
+    ui->initSlider(parentVar, "phases", leds.effectControls.write<uint8_t>(64));
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t blur = leds.effectData.read<uint8_t>();
-    uint8_t phases = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t blur = leds.effectControls.read<uint8_t>();
+    uint8_t phases = leds.effectControls.read<uint8_t>();
 
     const int cols = leds.size.x;
     const int rows = leds.size.y;
@@ -879,14 +880,14 @@ class DistortionWavesEffect: public Effect {
   const char * tags() override {return "💡";}
   
   void setup(LedsLayer &leds, Variable parentVar) override {
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(4), 0, 8);
-    ui->initSlider(parentVar, "scale", leds.effectData.write<uint8_t>(4), 0, 8);
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(4), 0, 8);
+    ui->initSlider(parentVar, "scale", leds.effectControls.write<uint8_t>(4), 0, 8);
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>(); 
-    uint8_t scale = leds.effectData.read<uint8_t>(); 
+    uint8_t speed = leds.effectControls.read<uint8_t>(); 
+    uint8_t scale = leds.effectControls.read<uint8_t>(); 
 
     uint8_t  w = 2;
 
@@ -943,28 +944,28 @@ class OctopusEffect: public Effect {
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar); //palette
     bool3State *setup = leds.effectData.write<bool3State>(true);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(16), 1, 32);
-    ui->initSlider(parentVar, "offsetX", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (EventArguments) { switch (eventType) {
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(16), 1, 32);
+    ui->initSlider(parentVar, "offsetX", leds.effectControls.write<uint8_t>(128), 0, 255, false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
-    ui->initSlider(parentVar, "offsetY", leds.effectData.write<uint8_t>(128), 0, 255, false, [setup] (EventArguments) { switch (eventType) {
+    ui->initSlider(parentVar, "offsetY", leds.effectControls.write<uint8_t>(128), 0, 255, false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
-    ui->initSlider(parentVar, "legs", leds.effectData.write<uint8_t>(4), 1, 8);
+    ui->initSlider(parentVar, "legs", leds.effectControls.write<uint8_t>(4), 1, 8);
 
-    ui->initCheckBox(parentVar, "radialWave", leds.effectData.write<bool3State>(false));
+    ui->initCheckBox(parentVar, "radialWave", leds.effectControls.write<bool3State>(false));
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
     bool3State   *setup = leds.effectData.readWrite<bool3State>();
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t offsetX = leds.effectData.read<uint8_t>();
-    uint8_t offsetY = leds.effectData.read<uint8_t>();
-    uint8_t legs = leds.effectData.read<uint8_t>();
-    bool radialWave = leds.effectData.read<bool3State>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t offsetX = leds.effectControls.read<uint8_t>();
+    uint8_t offsetY = leds.effectControls.read<uint8_t>();
+    uint8_t legs = leds.effectControls.read<uint8_t>();
+    bool radialWave = leds.effectControls.read<bool3State>();
 
     // Effect Variables
     Coord3D  *prevLedSize = leds.effectData.readWrite<Coord3D>();
@@ -1016,7 +1017,7 @@ class OctopusEffect: public Effect {
           }
         }
       }
-    } //if (leds.effectData.success())
+    } //if (leds.effectControls.success())
   }
   
 }; // Octopus
@@ -1070,20 +1071,20 @@ class FireEffect: public Effect {
   void setup(LedsLayer &leds, Variable parentVar) {
     Effect::setup(leds, parentVar); //palette
 
-    ui->initCheckBox(parentVar, "usePalette",    leds.effectData.write<bool3State>(false));
-    ui->initSlider(parentVar, "flareRows", leds.effectData.write<uint8_t>(2), 0, 5);    /* number of rows (from bottom) allowed to flare */
-    ui->initSlider(parentVar, "maxFlare", leds.effectData.write<uint8_t>(8), 0, 18);     /* max number of simultaneous flares */
-    ui->initSlider(parentVar, "flareChance", leds.effectData.write<uint8_t>(50), 0, 100); /* chance (%) of a new flare (if there's room) */
-    ui->initSlider(parentVar, "flareDecay", leds.effectData.write<uint8_t>(14), 0, 28);  /* decay rate of flare radiation; 14 is good */
+    ui->initCheckBox(parentVar, "usePalette",    leds.effectControls.write<bool3State>(false));
+    ui->initSlider(parentVar, "flareRows", leds.effectControls.write<uint8_t>(2), 0, 5);    /* number of rows (from bottom) allowed to flare */
+    ui->initSlider(parentVar, "maxFlare", leds.effectControls.write<uint8_t>(8), 0, 18);     /* max number of simultaneous flares */
+    ui->initSlider(parentVar, "flareChance", leds.effectControls.write<uint8_t>(50), 0, 100); /* chance (%) of a new flare (if there's room) */
+    ui->initSlider(parentVar, "flareDecay", leds.effectControls.write<uint8_t>(14), 0, 28);  /* decay rate of flare radiation; 14 is good */
   }
 
   void loop(LedsLayer &leds) {
 
-    bool3State usePalette = leds.effectData.read<bool3State>();
-    uint8_t flareRows = leds.effectData.read<uint8_t>();
-    uint8_t maxFlare = leds.effectData.read<uint8_t>();
-    uint8_t flareChance = leds.effectData.read<uint8_t>();
-    uint8_t flareDecay = leds.effectData.read<uint8_t>();
+    bool3State usePalette = leds.effectControls.read<bool3State>();
+    uint8_t flareRows = leds.effectControls.read<uint8_t>();
+    uint8_t maxFlare = leds.effectControls.read<uint8_t>();
+    uint8_t flareChance = leds.effectControls.read<uint8_t>();
+    uint8_t flareDecay = leds.effectControls.read<uint8_t>();
 
     // Effect Variables
     uint8_t *nflare = leds.effectData.readWrite<uint8_t>();
@@ -1157,18 +1158,18 @@ class FireworksEffect: public Effect {
   void setup(LedsLayer &leds, Variable parentVar) override {
     leds.fadeToBlackBy(16);
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "gravity", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "firingSide", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "numSparks", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "gravity", leds.effectControls.write<uint8_t>(128));
+    ui->initSlider(parentVar, "firingSide", leds.effectControls.write<uint8_t>(128));
+    ui->initSlider(parentVar, "numSparks", leds.effectControls.write<uint8_t>(128));
     // PROGMEM = "Fireworks 1D@Gravity,Firing side;!,!;!;12;pal=11,ix=128";
   }
 
   void loop(LedsLayer &leds) override {
 
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t gravityC = leds.effectData.read<uint8_t>();
-    uint8_t firingSide = leds.effectData.read<uint8_t>();
-    uint8_t numSparks = leds.effectData.read<uint8_t>();
+    uint8_t gravityC = leds.effectControls.read<uint8_t>();
+    uint8_t firingSide = leds.effectControls.read<uint8_t>();
+    uint8_t numSparks = leds.effectControls.read<uint8_t>();
 
     float *dying_gravity = leds.effectData.readWrite<float>();
     uint16_t *aux0Flare = leds.effectData.readWrite<uint16_t>();
@@ -1301,18 +1302,18 @@ class LissajousEffect: public Effect {
     // uint8_t *speed = ; 
     // bool *smooth = ; 
 
-    ui->initSlider(parentVar, "xFrequency", leds.effectData.write<uint8_t>(64));
-    ui->initSlider(parentVar, "fadeRate", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128));
-    ui->initCheckBox(parentVar, "smooth", leds.effectData.write<bool3State>(false)); //true: not working at the moment
+    ui->initSlider(parentVar, "xFrequency", leds.effectControls.write<uint8_t>(64));
+    ui->initSlider(parentVar, "fadeRate", leds.effectControls.write<uint8_t>(128));
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(128));
+    ui->initCheckBox(parentVar, "smooth", leds.effectControls.write<bool3State>(false)); //true: not working at the moment
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t xFrequency = leds.effectData.read<uint8_t>();
-    uint8_t fadeRate = leds.effectData.read<uint8_t>();
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    bool3State smooth = leds.effectData.read<bool3State>(); 
+    uint8_t xFrequency = leds.effectControls.read<uint8_t>();
+    uint8_t fadeRate = leds.effectControls.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    bool3State smooth = leds.effectControls.read<bool3State>(); 
 
     leds.fadeToBlackBy(fadeRate);
 
@@ -1354,16 +1355,16 @@ class FrizzlesEffect: public Effect {
 
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "BPM", leds.effectData.write<uint8_t>(60));
-    ui->initSlider(parentVar, "intensity", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "blur", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "BPM", leds.effectControls.write<uint8_t>(60));
+    ui->initSlider(parentVar, "intensity", leds.effectControls.write<uint8_t>(128));
+    ui->initSlider(parentVar, "blur", leds.effectControls.write<uint8_t>(128));
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t bpm = leds.effectData.read<uint8_t>();
-    uint8_t intensity = leds.effectData.read<uint8_t>();
-    uint8_t blur = leds.effectData.read<uint8_t>();
+    uint8_t bpm = leds.effectControls.read<uint8_t>();
+    uint8_t intensity = leds.effectControls.read<uint8_t>();
+    uint8_t blur = leds.effectControls.read<uint8_t>();
 
     leds.fadeToBlackBy(16);
 
@@ -1384,9 +1385,9 @@ class ScrollingTextEffect: public Effect {
   const char * tags() override {return "💫";}
   
   void setup(LedsLayer &leds, Variable parentVar) override {
-    ui->initText(parentVar, "text", leds.effectData.write<String>("StarLight")->c_str());
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(128));
-    ui->initSelect(parentVar, "font", leds.effectData.write<uint8_t>(0), false, [](EventArguments) { switch (eventType) {
+    ui->initText(parentVar, "text", leds.effectControls.write<String>("StarLight")->c_str());
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(128));
+    ui->initSelect(parentVar, "font", leds.effectControls.write<uint8_t>(0), false, [](EventArguments) { switch (eventType) {
       case onUI: {
         JsonArray options = variable.setOptions();
         options.add("4x6");
@@ -1402,9 +1403,9 @@ class ScrollingTextEffect: public Effect {
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    String text = leds.effectData.read<String>();
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t font = leds.effectData.read<uint8_t>();
+    String text = leds.effectControls.read<String>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t font = leds.effectControls.read<uint8_t>();
 
     // text might be nullified by selecting other effects and if effect is selected, controls are run afterwards  
     // tbd: this should be removed and effect.onChange (setEffect) must make sure this cannot happen!!
@@ -1424,14 +1425,14 @@ class Noise2DEffect: public Effect {
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
 
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(8), 0, 15);
-    ui->initSlider(parentVar, "scale", leds.effectData.write<uint8_t>(64), 2, 255);
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(8), 0, 15);
+    ui->initSlider(parentVar, "scale", leds.effectControls.write<uint8_t>(64), 2, 255);
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t scale = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t scale = leds.effectControls.read<uint8_t>();
 
     for (int y = 0; y < leds.size.y; y++) {
       for (int x = 0; x < leds.size.x; x++) {
@@ -1525,8 +1526,8 @@ class GameOfLifeEffect: public Effect {
     Effect::setup(leds, parentVar);
     bool3State *setup       = leds.effectData.write<bool3State>(true);
     bool3State *ruleChanged = leds.effectData.write<bool3State>(true);
-    ui->initCoord3D(parentVar, "backgroundColor", leds.effectData.write<Coord3D>({0,0,0}), 0, 255);
-    ui->initSelect (parentVar, "ruleset", leds.effectData.write<uint8_t>(1), false, [ruleChanged](EventArguments) { switch (eventType) {
+    ui->initCoord3D(parentVar, "backgroundColor", leds.effectControls.write<Coord3D>({0,0,0}), 0, 255);
+    ui->initSelect (parentVar, "ruleset", leds.effectControls.write<uint8_t>(1), false, [ruleChanged](EventArguments) { switch (eventType) {
       case onUI: {
         JsonArray options = variable.setOptions();
         options.add("Custom B/S");
@@ -1542,35 +1543,35 @@ class GameOfLifeEffect: public Effect {
       default: return false;
     }});
 
-    ui->initText(parentVar, "customRuleString", leds.effectData.write<String>("B/S")->c_str(), UINT16_MAX, false, [ruleChanged](EventArguments) { switch (eventType) {
+    ui->initText(parentVar, "customRuleString", leds.effectControls.write<String>("B/S")->c_str(), UINT16_MAX, false, [ruleChanged](EventArguments) { switch (eventType) {
       case onChange: {*ruleChanged = true; return true;}
       default: return false;
     }});
-    ui->initSlider  (parentVar, "GameSpeed (FPS)",      leds.effectData.write<uint8_t>(20), 0, 100);
-    ui->initSlider  (parentVar, "startingLifeDensity", leds.effectData.write<uint8_t>(32), 10, 90);
-    ui->initSlider  (parentVar, "mutationChance",       leds.effectData.write<uint8_t>(2), 0, 100);
-    ui->initCheckBox(parentVar, "wrap",                  leds.effectData.write<bool3State>(true));
-    ui->initCheckBox(parentVar, "disablePause",         leds.effectData.write<bool3State>(false));
-    ui->initCheckBox(parentVar, "colorByAge",          leds.effectData.write<bool3State>(false));
-    ui->initCheckBox(parentVar, "infinite",              leds.effectData.write<bool3State>(false));
-    ui->initSlider  (parentVar, "blur",                  leds.effectData.write<uint8_t>(128), 0, 255);
+    ui->initSlider  (parentVar, "GameSpeed (FPS)",      leds.effectControls.write<uint8_t>(20), 0, 100);
+    ui->initSlider  (parentVar, "startingLifeDensity", leds.effectControls.write<uint8_t>(32), 10, 90);
+    ui->initSlider  (parentVar, "mutationChance",       leds.effectControls.write<uint8_t>(2), 0, 100);
+    ui->initCheckBox(parentVar, "wrap",                  leds.effectControls.write<bool3State>(true));
+    ui->initCheckBox(parentVar, "disablePause",         leds.effectControls.write<bool3State>(false));
+    ui->initCheckBox(parentVar, "colorByAge",          leds.effectControls.write<bool3State>(false));
+    ui->initCheckBox(parentVar, "infinite",              leds.effectControls.write<bool3State>(false));
+    ui->initSlider  (parentVar, "blur",                  leds.effectControls.write<uint8_t>(128), 0, 255);
   }
 
   void loop(LedsLayer &leds) override {
     // UI Variables
     bool3State *setup       = leds.effectData.readWrite<bool3State>();
     bool3State *ruleChanged = leds.effectData.readWrite<bool3State>();
-    Coord3D bgC             = leds.effectData.read<Coord3D>();
-    byte ruleset            = leds.effectData.read<byte>();
-    String customRuleString = leds.effectData.read<String>();
-    uint8_t speed           = leds.effectData.read<uint8_t>();
-    byte lifeChance         = leds.effectData.read<byte>();
-    uint8_t mutation        = leds.effectData.read<uint8_t>();
-    bool3State wrap         = leds.effectData.read<bool3State>();
-    bool3State disablePause = leds.effectData.read<bool3State>();
-    bool3State colorByAge   = leds.effectData.read<bool3State>();
-    bool3State infinite     = leds.effectData.read<bool3State>();
-    uint8_t blur            = leds.effectData.read<uint8_t>();
+    Coord3D bgC             = leds.effectControls.read<Coord3D>();
+    byte ruleset            = leds.effectControls.read<byte>();
+    String customRuleString = leds.effectControls.read<String>();
+    uint8_t speed           = leds.effectControls.read<uint8_t>();
+    byte lifeChance         = leds.effectControls.read<byte>();
+    uint8_t mutation        = leds.effectControls.read<uint8_t>();
+    bool3State wrap         = leds.effectControls.read<bool3State>();
+    bool3State disablePause = leds.effectControls.read<bool3State>();
+    bool3State colorByAge   = leds.effectControls.read<bool3State>();
+    bool3State infinite     = leds.effectControls.read<bool3State>();
+    uint8_t blur            = leds.effectControls.read<uint8_t>();
 
     // Effect Variables
     const uint16_t dataSize = ((leds.size.x * leds.size.y * leds.size.z + 7) / 8);
@@ -1580,10 +1581,10 @@ class GameOfLifeEffect: public Effect {
     uint16_t *oscillatorCRC    = leds.effectData.readWrite<uint16_t>();
     uint16_t *spaceshipCRC     = leds.effectData.readWrite<uint16_t>();
     uint16_t *cubeGliderCRC    = leds.effectData.readWrite<uint16_t>();
-    bool3State     *soloGlider       = leds.effectData.readWrite<bool3State>();
+    bool3State *soloGlider     = leds.effectData.readWrite<bool3State>();
     uint16_t *generation       = leds.effectData.readWrite<uint16_t>();
-    bool3State     *birthNumbers     = leds.effectData.readWrite<bool3State>(9);
-    bool3State     *surviveNumbers   = leds.effectData.readWrite<bool3State>(9);
+    bool3State *birthNumbers   = leds.effectData.readWrite<bool3State>(9);
+    bool3State *surviveNumbers = leds.effectData.readWrite<bool3State>(9);
     CRGB     *prevPalette      = leds.effectData.readWrite<CRGB>();
     byte     *cells            = leds.effectData.readWrite<byte>(dataSize);
     byte     *futureCells      = leds.effectData.readWrite<byte>(dataSize);
@@ -1983,12 +1984,12 @@ class RubiksCubeEffect: public Effect {
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
     bool3State *setup = leds.effectData.write<bool3State>(true);
-    ui->initSlider  (parentVar, "turnsPerSecond", leds.effectData.write<uint8_t>(1), 0, 20);   
-    ui->initSlider  (parentVar, "cubeSize",       leds.effectData.write<uint8_t>(2), 1, 8, false, [setup] (EventArguments) { switch (eventType) {
+    ui->initSlider  (parentVar, "turnsPerSecond", leds.effectControls.write<uint8_t>(1), 0, 20);   
+    ui->initSlider  (parentVar, "cubeSize",       leds.effectControls.write<uint8_t>(2), 1, 8, false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
-    ui->initCheckBox(parentVar, "randomTurning", leds.effectData.write<bool3State>(false), false, [setup] (EventArguments) { switch (eventType) {
+    ui->initCheckBox(parentVar, "randomTurning", leds.effectControls.write<bool3State>(false), false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {if (!variable.value().as<bool3State>()) *setup = true; return true;}
       default: return false;
     }});
@@ -1997,9 +1998,9 @@ class RubiksCubeEffect: public Effect {
   void loop(LedsLayer &leds) override {
     // UI control variables
     bool3State *setup        = leds.effectData.readWrite<bool3State>();
-    uint8_t turnsPerSecond   = leds.effectData.read<uint8_t>();
-    uint8_t cubeSize         = leds.effectData.read<uint8_t>();
-    bool3State randomTurning = leds.effectData.read<bool3State>();
+    uint8_t turnsPerSecond   = leds.effectControls.read<uint8_t>();
+    uint8_t cubeSize         = leds.effectControls.read<uint8_t>();
+    bool3State randomTurning = leds.effectControls.read<bool3State>();
 
     // Effect variables
     unsigned long *step    = leds.effectData.readWrite<unsigned long>();
@@ -2164,37 +2165,37 @@ class ParticleTestEffect: public Effect {
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
     bool3State *setup = leds.effectData.write<bool3State>(true);
-    ui->initSlider  (parentVar, "speed", leds.effectData.write<uint8_t>(15), 0, 30);
-    ui->initSlider  (parentVar, "number of Particles", leds.effectData.write<uint8_t>(10), 1, 255, false, [setup] (EventArguments) { switch (eventType) {
+    ui->initSlider  (parentVar, "speed", leds.effectControls.write<uint8_t>(15), 0, 30);
+    ui->initSlider  (parentVar, "number of Particles", leds.effectControls.write<uint8_t>(10), 1, 255, false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
-    ui->initCheckBox(parentVar, "barriers", leds.effectData.write<bool3State>(0) , false, [setup] (EventArguments) { switch (eventType) {
+    ui->initCheckBox(parentVar, "barriers", leds.effectControls.write<bool3State>(0) , false, [setup] (EventArguments) { switch (eventType) {
       case onChange: {*setup = true; return true;}
       default: return false;
     }});
     #ifdef STARBASE_USERMOD_MPU6050
-      ui->initCheckBox(parentVar, "gyro", leds.effectData.write<bool3State>(0));
+      ui->initCheckBox(parentVar, "gyro", leds.effectControls.write<bool3State>(0));
     #endif
-    ui->initCheckBox(parentVar, "randomGravity",          leds.effectData.write<bool3State>(1));
-    ui->initSlider  (parentVar, "gravityChangeInterval", leds.effectData.write<uint8_t>(5), 1, 10);
-    // ui->initCheckBox(parentVar, "Debug Print",             leds.effectData.write<bool3State>(0));
+    ui->initCheckBox(parentVar, "randomGravity",          leds.effectControls.write<bool3State>(1));
+    ui->initSlider  (parentVar, "gravityChangeInterval", leds.effectControls.write<uint8_t>(5), 1, 10);
+    // ui->initCheckBox(parentVar, "Debug Print",             leds.effectControls.write<bool3State>(0));
   }
 
   void loop(LedsLayer &leds) override {
     // UI Variables
     bool3State   *setup        = leds.effectData.readWrite<bool3State>();
-    uint8_t speed        = leds.effectData.read<uint8_t>();
-    uint8_t numParticles = leds.effectData.read<uint8_t>();
-    bool3State barriers        = leds.effectData.read<bool3State>();
+    uint8_t speed        = leds.effectControls.read<uint8_t>();
+    uint8_t numParticles = leds.effectControls.read<uint8_t>();
+    bool3State barriers        = leds.effectControls.read<bool3State>();
     #ifdef STARBASE_USERMOD_MPU6050
-      bool3State gyro = leds.effectData.read<bool3State>();
+      bool3State gyro = leds.effectControls.read<bool3State>();
     #else
       bool gyro = false;
     #endif
-    bool3State randomGravity = leds.effectData.read<bool3State>();
-    uint8_t gravityChangeInterval = leds.effectData.read<uint8_t>();
-    // bool3State debugPrint    = leds.effectData.read<bool3State>();
+    bool3State randomGravity = leds.effectControls.read<bool3State>();
+    uint8_t gravityChangeInterval = leds.effectControls.read<uint8_t>();
+    // bool3State debugPrint    = leds.effectControls.read<bool3State>();
     bool debugPrint = false;
 
     // Effect Variables
@@ -2308,19 +2309,19 @@ class StarFieldEffect: public Effect {  // Inspired by Daniel Shiffman's Coding 
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
     bool3State *setup = leds.effectData.write<bool3State>(true);
-    ui->initSlider(parentVar, "speed",           leds.effectData.write<uint8_t>(20), 0, 30); // 0 - 30 updates per second
-    ui->initSlider(parentVar, "number of Stars", leds.effectData.write<uint8_t>(16), 1, 255);
-    ui->initSlider(parentVar, "blur",            leds.effectData.write<uint8_t>(128), 0, 255);
-    ui->initCheckBox(parentVar, "usePalette",    leds.effectData.write<bool3State>(false));
+    ui->initSlider(parentVar, "speed",           leds.effectControls.write<uint8_t>(20), 0, 30); // 0 - 30 updates per second
+    ui->initSlider(parentVar, "number of Stars", leds.effectControls.write<uint8_t>(16), 1, 255);
+    ui->initSlider(parentVar, "blur",            leds.effectControls.write<uint8_t>(128), 0, 255);
+    ui->initCheckBox(parentVar, "usePalette",    leds.effectControls.write<bool3State>(false));
   }
 
   void loop(LedsLayer &leds) override {
     // UI Variables
     bool3State   *setup = leds.effectData.readWrite<bool3State>();
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t numStars = leds.effectData.read<uint8_t>();
-    uint8_t blur = map(leds.effectData.read<uint8_t>(), 0, 255, 255, 0);
-    bool3State usePalette = leds.effectData.read<bool3State>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t numStars = leds.effectControls.read<uint8_t>();
+    uint8_t blur = map(leds.effectControls.read<uint8_t>(), 0, 255, 255, 0);
+    bool3State usePalette = leds.effectControls.read<bool3State>();
 
     // Effect Variables
     unsigned long *step = leds.effectData.readWrite<unsigned long>();
@@ -2382,25 +2383,25 @@ public:
 
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    //ui->initSlider(parentVar, "hueSpeed", leds.effectData.write<uint8_t>(20), 1, 100); // (14), 1, 255)
-    //ui->initSlider(parentVar, "saturation", leds.effectData.write<uint8_t>(255), 0, 255);
-    ui->initSlider(parentVar, "macroMutatorFreq", leds.effectData.write<uint8_t>(3), 0, 15); // (14), 1, 255)
-    ui->initSlider(parentVar, "macroMutatorMin", leds.effectData.write<uint8_t>(250), 250, 255); // (125), 1, 2500)
-    ui->initSlider(parentVar, "macroMutatorMax", leds.effectData.write<uint8_t>(255), 0, 255); // (1), 1, 2500)
-    ui->initSlider(parentVar, "microMutatorFreq", leds.effectData.write<uint8_t>(4), 0, 15); // (128), 1, 255)
-    ui->initSlider(parentVar, "microMutatorMin", leds.effectData.write<uint8_t>(200), 0, 255); // (550), 0, 2500)
-    ui->initSlider(parentVar, "microMutatorMax", leds.effectData.write<uint8_t>(255), 0, 255); // (900), 0, 2500)
+    //ui->initSlider(parentVar, "hueSpeed", leds.effectControls.write<uint8_t>(20), 1, 100); // (14), 1, 255)
+    //ui->initSlider(parentVar, "saturation", leds.effectControls.write<uint8_t>(255), 0, 255);
+    ui->initSlider(parentVar, "macroMutatorFreq", leds.effectControls.write<uint8_t>(3), 0, 15); // (14), 1, 255)
+    ui->initSlider(parentVar, "macroMutatorMin", leds.effectControls.write<uint8_t>(250), 250, 255); // (125), 1, 2500)
+    ui->initSlider(parentVar, "macroMutatorMax", leds.effectControls.write<uint8_t>(255), 0, 255); // (1), 1, 2500)
+    ui->initSlider(parentVar, "microMutatorFreq", leds.effectControls.write<uint8_t>(4), 0, 15); // (128), 1, 255)
+    ui->initSlider(parentVar, "microMutatorMin", leds.effectControls.write<uint8_t>(200), 0, 255); // (550), 0, 2500)
+    ui->initSlider(parentVar, "microMutatorMax", leds.effectControls.write<uint8_t>(255), 0, 255); // (900), 0, 2500)
   }
 
   void loop(LedsLayer &leds) override {
-    //uint8_t huespeed = leds.effectData.read<uint8_t>();
-    //uint8_t saturation = leds.effectData.read<uint8_t>(); I will revisit this when I have a display
-    uint8_t macroMutatorFreq = leds.effectData.read<uint8_t>();
-    uint8_t macroMutatorMin = leds.effectData.read<uint8_t>();
-    uint8_t macroMutatorMax = leds.effectData.read<uint8_t>();
-    uint8_t microMutatorFreq = leds.effectData.read<uint8_t>();
-    uint8_t microMutatorMin = leds.effectData.read<uint8_t>();
-    uint8_t microMutatorMax = leds.effectData.read<uint8_t>();
+    //uint8_t huespeed = leds.effectControls.read<uint8_t>();
+    //uint8_t saturation = leds.effectControls.read<uint8_t>(); I will revisit this when I have a display
+    uint8_t macroMutatorFreq = leds.effectControls.read<uint8_t>();
+    uint8_t macroMutatorMin = leds.effectControls.read<uint8_t>();
+    uint8_t macroMutatorMax = leds.effectControls.read<uint8_t>();
+    uint8_t microMutatorFreq = leds.effectControls.read<uint8_t>();
+    uint8_t microMutatorMin = leds.effectControls.read<uint8_t>();
+    uint8_t microMutatorMax = leds.effectControls.read<uint8_t>();
 
     uint16_t macro_mutator = beatsin16(macroMutatorFreq, macroMutatorMin << 8, macroMutatorMax << 8); // beatsin16(14, 65350, 65530);
     uint16_t micro_mutator = beatsin16(microMutatorFreq, microMutatorMin, microMutatorMax); // beatsin16(2, 550, 900);
@@ -2432,14 +2433,14 @@ class AudioRingsEffect: public RingEffect {
 
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initCheckBox(parentVar, "inWards", leds.effectData.write<bool3State>(true));
-    ui->initSlider(parentVar, "rings", leds.effectData.write<uint8_t>(7), 1, 50);
+    ui->initCheckBox(parentVar, "inWards", leds.effectControls.write<bool3State>(true));
+    ui->initSlider(parentVar, "rings", leds.effectControls.write<uint8_t>(7), 1, 50);
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    bool3State inWards = leds.effectData.read<bool3State>();
-    uint8_t nrOfRings = leds.effectData.read<uint8_t>();
+    bool3State inWards = leds.effectControls.read<bool3State>();
+    uint8_t nrOfRings = leds.effectControls.read<uint8_t>();
 
     for (int i = 0; i < nrOfRings; i++) {
 
@@ -2481,16 +2482,16 @@ class DJLightEffect: public Effect {
 
   void setup(LedsLayer &leds, Variable parentVar) override {
     leds.fill_solid(CRGB::Black);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(255));
-    ui->initCheckBox(parentVar, "candyFactory", leds.effectData.write<bool3State>(true));
-    ui->initSlider(parentVar, "fade", leds.effectData.write<uint8_t>(4), 0, 10);
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(255));
+    ui->initCheckBox(parentVar, "candyFactory", leds.effectControls.write<bool3State>(true));
+    ui->initSlider(parentVar, "fade", leds.effectControls.write<uint8_t>(4), 0, 10);
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    bool3State candyFactory = leds.effectData.read<bool3State>();
-    uint8_t fade = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    bool3State candyFactory = leds.effectControls.read<bool3State>();
+    uint8_t fade = leds.effectControls.read<uint8_t>();
 
     //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
     uint8_t *aux0 = leds.effectData.readWrite<uint8_t>();
@@ -2556,20 +2557,20 @@ class FreqMatrixEffect: public Effect {
 
   void setup(LedsLayer &leds, Variable parentVar) override {
     leds.fadeToBlackBy(16);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(255));
-    ui->initSlider(parentVar, "soundEffect", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "lowBin", leds.effectData.write<uint8_t>(18));
-    ui->initSlider(parentVar, "highBin", leds.effectData.write<uint8_t>(48));
-    ui->initSlider(parentVar, "sensivity", leds.effectData.write<uint8_t>(30), 10, 100);
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(255));
+    ui->initSlider(parentVar, "soundEffect", leds.effectControls.write<uint8_t>(128));
+    ui->initSlider(parentVar, "lowBin", leds.effectControls.write<uint8_t>(18));
+    ui->initSlider(parentVar, "highBin", leds.effectControls.write<uint8_t>(48));
+    ui->initSlider(parentVar, "sensivity", leds.effectControls.write<uint8_t>(30), 10, 100);
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t fx = leds.effectData.read<uint8_t>();
-    uint8_t lowBin = leds.effectData.read<uint8_t>();
-    uint8_t highBin = leds.effectData.read<uint8_t>();
-    uint8_t sensitivity10 = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t fx = leds.effectControls.read<uint8_t>();
+    uint8_t lowBin = leds.effectControls.read<uint8_t>();
+    uint8_t highBin = leds.effectControls.read<uint8_t>();
+    uint8_t sensitivity10 = leds.effectControls.read<uint8_t>();
 
     //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
     uint8_t *aux0 = leds.effectData.readWrite<uint8_t>();
@@ -2616,14 +2617,14 @@ class NoiseMeterEffect: public Effect {
   
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "fadeRate", leds.effectData.write<uint8_t>(248), 200, 254);
-    ui->initSlider(parentVar, "width", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "fadeRate", leds.effectControls.write<uint8_t>(248), 200, 254);
+    ui->initSlider(parentVar, "width", leds.effectControls.write<uint8_t>(128));
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t fadeRate = leds.effectData.read<uint8_t>();
-    uint8_t width = leds.effectData.read<uint8_t>();
+    uint8_t fadeRate = leds.effectControls.read<uint8_t>();
+    uint8_t width = leds.effectControls.read<uint8_t>();
 
     //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
     uint8_t *aux0 = leds.effectData.readWrite<uint8_t>();
@@ -2653,20 +2654,20 @@ class WaverlyEffect: public Effect {
   
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "fadeRate", leds.effectData.write<uint8_t>(128));
-    ui->initSlider(parentVar, "amplification", leds.effectData.write<uint8_t>(30));
-    ui->initCheckBox(parentVar, "noClouds", leds.effectData.write<bool3State>(false));
-    // ui->initCheckBox(parentVar, "soundPressure", leds.effectData.write<bool3State>(false));
-    // ui->initCheckBox(parentVar, "AGCDebug", leds.effectData.write<bool3State>(false));
+    ui->initSlider(parentVar, "fadeRate", leds.effectControls.write<uint8_t>(128));
+    ui->initSlider(parentVar, "amplification", leds.effectControls.write<uint8_t>(30));
+    ui->initCheckBox(parentVar, "noClouds", leds.effectControls.write<bool3State>(false));
+    // ui->initCheckBox(parentVar, "soundPressure", leds.effectControls.write<bool3State>(false));
+    // ui->initCheckBox(parentVar, "AGCDebug", leds.effectControls.write<bool3State>(false));
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t fadeRate = leds.effectData.read<uint8_t>();
-    uint8_t amplification = leds.effectData.read<uint8_t>();
-    bool3State noClouds = leds.effectData.read<bool3State>();
-    // bool3State soundPressure = leds.effectData.read<bool3State>();
-    // bool3State agcDebug = leds.effectData.read<bool3State>();
+    uint8_t fadeRate = leds.effectControls.read<uint8_t>();
+    uint8_t amplification = leds.effectControls.read<uint8_t>();
+    bool3State noClouds = leds.effectControls.read<bool3State>();
+    // bool3State soundPressure = leds.effectControls.read<bool3State>();
+    // bool3State agcDebug = leds.effectControls.read<bool3State>();
 
     leds.fadeToBlackBy(fadeRate);
     //netmindz: cannot find these in audio sync
@@ -2699,10 +2700,10 @@ class GEQEffect: public Effect {
   void setup(LedsLayer &leds, Variable parentVar) override {
     leds.fadeToBlackBy(16);
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "fadeOut", leds.effectData.write<uint8_t>(255));
-    ui->initSlider(parentVar, "ripple", leds.effectData.write<uint8_t>(128));
-    ui->initCheckBox(parentVar, "colorBars", leds.effectData.write<bool3State>(false));
-    ui->initCheckBox(parentVar, "smoothBars", leds.effectData.write<bool3State>(true));
+    ui->initSlider(parentVar, "fadeOut", leds.effectControls.write<uint8_t>(255));
+    ui->initSlider(parentVar, "ripple", leds.effectControls.write<uint8_t>(128));
+    ui->initCheckBox(parentVar, "colorBars", leds.effectControls.write<bool3State>(false));
+    ui->initCheckBox(parentVar, "smoothBars", leds.effectControls.write<bool3State>(true));
 
     // Nice an effect can register it's own DMX channel, but not a fan of repeating the range and type of the param
 
@@ -2721,10 +2722,10 @@ class GEQEffect: public Effect {
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t fadeOut = leds.effectData.read<uint8_t>();
-    uint8_t ripple = leds.effectData.read<uint8_t>();
-    bool3State colorBars = leds.effectData.read<bool3State>();
-    bool3State smoothBars = leds.effectData.read<bool3State>();
+    uint8_t fadeOut = leds.effectControls.read<uint8_t>();
+    uint8_t ripple = leds.effectControls.read<uint8_t>();
+    bool3State colorBars = leds.effectControls.read<bool3State>();
+    bool3State smoothBars = leds.effectControls.read<bool3State>();
 
     //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
     uint16_t *previousBarHeight = leds.effectData.readWrite<uint16_t>(leds.size.x); //array
@@ -2814,25 +2815,25 @@ class LaserGEQEffect: public Effect {
   void setup(LedsLayer &leds, Variable parentVar) override {
     leds.fadeToBlackBy(16);
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(10), 1, 10);
-    ui->initSlider(parentVar, "frontFill", leds.effectData.write<uint8_t>(228));
-    ui->initSlider(parentVar, "horizon", leds.effectData.write<uint8_t>(0), 0, leds.size.x-1); //leds.size.x-1 is not always set here
-    ui->initSlider(parentVar, "depth", leds.effectData.write<uint8_t>(176));
-    ui->initSlider(parentVar, "numBands", leds.effectData.write<uint8_t>(16), 2, 16); // constrain NUM_BANDS between 2(for split) and cols (for small width segments)
-    ui->initCheckBox(parentVar, "borders", leds.effectData.write<bool3State>(true));
-    ui->initCheckBox(parentVar, "softHack", leds.effectData.write<bool3State>(true));
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(10), 1, 10);
+    ui->initSlider(parentVar, "frontFill", leds.effectControls.write<uint8_t>(228));
+    ui->initSlider(parentVar, "horizon", leds.effectControls.write<uint8_t>(0), 0, leds.size.x-1); //leds.size.x-1 is not always set here
+    ui->initSlider(parentVar, "depth", leds.effectControls.write<uint8_t>(176));
+    ui->initSlider(parentVar, "numBands", leds.effectControls.write<uint8_t>(16), 2, 16); // constrain NUM_BANDS between 2(for split) and cols (for small width segments)
+    ui->initCheckBox(parentVar, "borders", leds.effectControls.write<bool3State>(true));
+    ui->initCheckBox(parentVar, "softHack", leds.effectControls.write<bool3State>(true));
     // "GEQ 3D ☾@Speed,Front Fill,Horizon,Depth,Num Bands,Borders,Soft,;!,,Peaks;!;2f;sx=255,ix=228,c1=255,c2=255,c3=15,pal=11";
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t frontFill = leds.effectData.read<uint8_t>();
-    uint8_t horizon = leds.effectData.read<uint8_t>();
-    uint8_t depth = leds.effectData.read<uint8_t>();
-    uint8_t numBands = leds.effectData.read<uint8_t>();
-    bool3State borders = leds.effectData.read<bool3State>();
-    bool3State softHack = leds.effectData.read<bool3State>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t frontFill = leds.effectControls.read<uint8_t>();
+    uint8_t horizon = leds.effectControls.read<uint8_t>();
+    uint8_t depth = leds.effectControls.read<uint8_t>();
+    uint8_t numBands = leds.effectControls.read<uint8_t>();
+    bool3State borders = leds.effectControls.read<bool3State>();
+    bool3State softHack = leds.effectControls.read<bool3State>();
 
     uint16_t *projector = leds.effectData.readWrite<uint16_t>();
     int8_t *projector_dir = leds.effectData.readWrite<int8_t>();
@@ -2962,26 +2963,26 @@ class PaintbrushEffect: public Effect {
   void setup(LedsLayer &leds, Variable parentVar) override {
     leds.fadeToBlackBy(16);
     Effect::setup(leds, parentVar);
-    ui->initSlider(parentVar, "oscillatorOffset", leds.effectData.write<uint8_t>(16 *  160/255), 0, 16);
-    ui->initSlider(parentVar, "# of lines", leds.effectData.write<uint8_t>(255), 2, 255);
-    ui->initSlider(parentVar, "fadeRate", leds.effectData.write<uint8_t>(40), 0, 128);
-    ui->initSlider(parentVar, "minLength", leds.effectData.write<uint8_t>(0));
-    ui->initCheckBox(parentVar, "colorChaos", leds.effectData.write<bool3State>(false));
-    ui->initCheckBox(parentVar, "antiAliasing", leds.effectData.write<bool3State>(true));
-    ui->initCheckBox(parentVar, "phaseChaos", leds.effectData.write<bool3State>(false));
+    ui->initSlider(parentVar, "oscillatorOffset", leds.effectControls.write<uint8_t>(16 *  160/255), 0, 16);
+    ui->initSlider(parentVar, "# of lines", leds.effectControls.write<uint8_t>(255), 2, 255);
+    ui->initSlider(parentVar, "fadeRate", leds.effectControls.write<uint8_t>(40), 0, 128);
+    ui->initSlider(parentVar, "minLength", leds.effectControls.write<uint8_t>(0));
+    ui->initCheckBox(parentVar, "colorChaos", leds.effectControls.write<bool3State>(false));
+    ui->initCheckBox(parentVar, "antiAliasing", leds.effectControls.write<bool3State>(true));
+    ui->initCheckBox(parentVar, "phaseChaos", leds.effectControls.write<bool3State>(false));
     // "Paintbrush ☾@Oscillator Offset,# of lines,Fade Rate,,Min Length,Color Chaos,Anti-aliasing,Phase Chaos;!,,Peaks;!;2f;sx=160,ix=255,c1=80,c2=255,c3=0,pal=72,o1=0,o2=1,o3=0";
   }
 
   void loop(LedsLayer &leds) override {
 
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t oscillatorOffset = leds.effectData.read<uint8_t>();
-    uint8_t numLines = leds.effectData.read<uint8_t>();
-    uint8_t fadeRate = leds.effectData.read<uint8_t>();
-    uint8_t minLength = leds.effectData.read<uint8_t>();
-    bool3State color_chaos = leds.effectData.read<bool3State>();
-    bool3State soft = leds.effectData.read<bool3State>();
-    bool3State phase_chaos = leds.effectData.read<bool3State>();
+    uint8_t oscillatorOffset = leds.effectControls.read<uint8_t>();
+    uint8_t numLines = leds.effectControls.read<uint8_t>();
+    uint8_t fadeRate = leds.effectControls.read<uint8_t>();
+    uint8_t minLength = leds.effectControls.read<uint8_t>();
+    bool3State color_chaos = leds.effectControls.read<bool3State>();
+    bool3State soft = leds.effectControls.read<bool3State>();
+    bool3State phase_chaos = leds.effectControls.read<bool3State>();
 
     //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
     uint16_t *aux0Hue = leds.effectData.readWrite<uint16_t>();
@@ -3041,14 +3042,14 @@ class FunkyPlankEffect: public Effect {
 
   void setup(LedsLayer &leds, Variable parentVar) override {
     leds.fill_solid(CRGB::Black);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(255));
-    ui->initSlider(parentVar, "bands", leds.effectData.write<uint8_t>(NUM_GEQ_CHANNELS), 1, NUM_GEQ_CHANNELS);
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(255));
+    ui->initSlider(parentVar, "bands", leds.effectControls.write<uint8_t>(NUM_GEQ_CHANNELS), 1, NUM_GEQ_CHANNELS);
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t num_bands = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t num_bands = leds.effectControls.read<uint8_t>();
 
     //binding of loop persistent values (pointers) tbd: aux0,1,step etc can be renamed to meaningful names
     uint8_t *aux0 = leds.effectData.readWrite<uint8_t>();
@@ -3102,14 +3103,14 @@ class VUMeterEffect: public Effect {
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar); //palette
     leds.fill_solid(CRGB::Black);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(255));
-    ui->initSlider(parentVar, "bands", leds.effectData.write<uint8_t>(NUM_GEQ_CHANNELS), 1, NUM_GEQ_CHANNELS);
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(255));
+    ui->initSlider(parentVar, "bands", leds.effectControls.write<uint8_t>(NUM_GEQ_CHANNELS), 1, NUM_GEQ_CHANNELS);
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t num_bands = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t num_bands = leds.effectControls.read<uint8_t>();
     leds.fadeToBlackBy(200);
 
     uint8_t nHorizontal = 4;
@@ -3139,14 +3140,14 @@ class RipplesEffect: public Effect {
   const char * tags() override {return "💫";}
   
   void setup(LedsLayer &leds, Variable parentVar) override {
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(50), 0, 99);
-    ui->initSlider(parentVar, "interval", leds.effectData.write<uint8_t>(128));
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(50), 0, 99);
+    ui->initSlider(parentVar, "interval", leds.effectControls.write<uint8_t>(128));
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
-    uint8_t interval = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
+    uint8_t interval = leds.effectControls.read<uint8_t>();
 
     float ripple_interval = 1.3f * ((255.0f - interval)/128.0f) * sqrtf(leds.size.y);
     float time_interval = sys->now/(100.0 - speed)/((256.0f-128.0f)/20.0f);
@@ -3172,12 +3173,12 @@ class SphereMoveEffect: public Effect {
   const char * tags() override {return "💫";}
   
   void setup(LedsLayer &leds, Variable parentVar) override {
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(50), 0, 99);
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(50), 0, 99);
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t speed = leds.effectData.read<uint8_t>();
+    uint8_t speed = leds.effectControls.read<uint8_t>();
 
     leds.fill_solid(CRGB::Black);
 
@@ -3211,16 +3212,16 @@ class PixelMapEffect: public Effect {
   const char * tags() override {return "💫";}
   
   void setup(LedsLayer &leds, Variable parentVar) override {
-    ui->initSlider(parentVar, "x", leds.effectData.write<uint8_t>(0), 0, leds.size.x - 1);
-    ui->initSlider(parentVar, "y", leds.effectData.write<uint8_t>(0), 0, leds.size.y - 1);
-    ui->initSlider(parentVar, "z", leds.effectData.write<uint8_t>(0), 0, leds.size.z - 1);
+    ui->initSlider(parentVar, "x", leds.effectControls.write<uint8_t>(0), 0, leds.size.x - 1);
+    ui->initSlider(parentVar, "y", leds.effectControls.write<uint8_t>(0), 0, leds.size.y - 1);
+    ui->initSlider(parentVar, "z", leds.effectControls.write<uint8_t>(0), 0, leds.size.z - 1);
   }
 
   void loop(LedsLayer &leds) override {
     //Binding of controls. Keep before binding of vars and keep in same order as in setup()
-    uint8_t x = leds.effectData.read<uint8_t>();
-    uint8_t y = leds.effectData.read<uint8_t>();
-    uint8_t z = leds.effectData.read<uint8_t>();
+    uint8_t x = leds.effectControls.read<uint8_t>();
+    uint8_t y = leds.effectControls.read<uint8_t>();
+    uint8_t z = leds.effectControls.read<uint8_t>();
 
     leds.fill_solid(CRGB::Black);
 
@@ -3235,15 +3236,15 @@ class MarioTestEffect: public Effect {
   const char * tags() override {return "💫";}
   
   void setup(LedsLayer &leds, Variable parentVar) override {
-    ui->initCheckBox(parentVar, "background", leds.effectData.write<bool3State>(false));
-    ui->initSlider(parentVar, "offsetX", leds.effectData.write<uint8_t>(leds.size.x/2 - 8), 0, leds.size.x - 16);
-    ui->initSlider(parentVar, "offsetY", leds.effectData.write<uint8_t>(leds.size.y/2 - 8), 0, leds.size.y - 16);
+    ui->initCheckBox(parentVar, "background", leds.effectControls.write<bool3State>(false));
+    ui->initSlider(parentVar, "offsetX", leds.effectControls.write<uint8_t>(leds.size.x/2 - 8), 0, leds.size.x - 16);
+    ui->initSlider(parentVar, "offsetY", leds.effectControls.write<uint8_t>(leds.size.y/2 - 8), 0, leds.size.y - 16);
   }
 
   void loop(LedsLayer &leds) override {
-    bool3State background = leds.effectData.read<bool3State>();
-    uint8_t offsetX = leds.effectData.read<uint8_t>();
-    uint8_t offsetY = leds.effectData.read<uint8_t>();
+    bool3State background = leds.effectControls.read<bool3State>();
+    uint8_t offsetX = leds.effectControls.read<uint8_t>();
+    uint8_t offsetY = leds.effectControls.read<uint8_t>();
 
     const uint8_t mario[16][16] = {
       {0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0},
@@ -3404,13 +3405,13 @@ class BasicTemplate: public Effect { // add effects.push_back(new Name); to LedM
   void setup(LedsLayer &leds, Variable parentVar) override {
     Effect::setup(leds, parentVar);
     bool3State *setup = leds.effectData.write<bool3State>(true);
-    ui->initSlider(parentVar, "speed", leds.effectData.write<uint8_t>(1), 0, 30); // 0 - 30 updates per second
+    ui->initSlider(parentVar, "speed", leds.effectControls.write<uint8_t>(1), 0, 30); // 0 - 30 updates per second
   }
 
   void loop(LedsLayer &leds) override {
     // UI Variables
     bool3State   *setup = leds.effectData.readWrite<bool3State>();
-    uint8_t speed = leds.effectData.read<uint8_t>(); // Updates per second
+    uint8_t speed = leds.effectControls.read<uint8_t>(); // Updates per second
 
     // Effect Variables
     unsigned long *step  = leds.effectData.readWrite<unsigned long>();

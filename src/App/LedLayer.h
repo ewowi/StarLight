@@ -127,7 +127,7 @@ class SharedData {
     begin();
   }
 
-  //sets the effectData pointer back to 0 so loop effect can go through it
+  //sets the SharedData pointer back to 0 so loop effect can go through it
   void begin() {
     index = 0;
   }
@@ -147,11 +147,11 @@ class SharedData {
       if (data != nullptr) { //only if alloc is successful
         memset(data, 0, newSize); //init data with 0
         if (alertIfChanged)
-          ppf("dev sharedData.readWrite reallocating, this should not happen ! %d -> %d\n", bytesAllocated, newSize);
+          ESP_LOGE("", "dev sharedData.readWrite reallocating, this should not happen ! %d -> %d\n", bytesAllocated, newSize);
         bytesAllocated = newSize;
       }
       else {
-        ppf("dev sharedData.readWrite, alloc not successful %d->%d %d->%d\n", index, newIndex, bytesAllocated, newSize);
+        ESP_LOGE("", "dev sharedData.readWrite, alloc not successful %d->%d %d->%d\n", index, newIndex, bytesAllocated, newSize);
         dataAllocated = false;
       }
     }
@@ -211,6 +211,7 @@ public:
   uint8_t proPanSpeed = 128;
   uint8_t proRollSpeed = 128;
 
+  SharedData effectControls;
   SharedData effectData;
   SharedData projectionData;
 
@@ -219,7 +220,7 @@ public:
   std::vector<std::vector<uint16_t>> mappingTableIndexes;
   uint16_t mappingTableIndexesSizeUsed = 0;
   
-  bool doMapAndOrInit = true; //so a mapping will be made
+  bool doMap = true; //so a mapping will be made
 
   CRGBPalette16 palette;
 
@@ -248,7 +249,7 @@ public:
   ~LedsLayer() {
     ppf("LedsLayer destructor\n");
     fadeToBlackBy();
-    doMapAndOrInit = true; // so loop is not running while deleting
+    doMap = true; // so loop is not running while deleting
     for (std::vector<uint16_t> mappingTableIndex: mappingTableIndexes) {
       mappingTableIndex.clear();
     }

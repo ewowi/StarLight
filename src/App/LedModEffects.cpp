@@ -186,7 +186,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         if (rowNr < fix->layers.size()) {
           LedsLayer *leds = fix->layers[rowNr];
 
-          // leds->doMapAndOrInit = true; //stop the effects loop already here
+          // leds->doMap = true; //stop the effects loop already here
 
           #ifdef STARBASE_USERMOD_LIVE
             //kill Live Script if moving to other effect
@@ -208,12 +208,23 @@ inline uint16_t getRGBWsize(uint16_t nleds){
           ppf("setEffect effect[%d]: %s\n", rowNr, leds->effect->name());
           strlcat(fix->tickerTape, leds->effect->name(), sizeof(fix->tickerTape));
 
+          leds->effectControls.clear(); //delete effectControls memory so it can be rebuild
+          leds->effectData.clear(); //delete effectData memory so it can be rebuild
+          if (strstr(leds->effect->name(), "Live Effect") == nullptr) { //not needed for Live script, will hang instead
+            leds->effect->loop(*leds); leds->effectControls.begin(); leds->effectData.begin(); //do a loop to set effectControls right to avoid control defaults to be removed
+          }
+    
+          variable.preDetails();
+          mdl->setValueRowNr = rowNr;
+          leds->effect->setup(*leds, variable); //if changed then run setup (like call==0 in WLED) and set all defaults in effectControls
+          variable.postDetails(rowNr);
+          mdl->setValueRowNr = UINT8_MAX;
+    
+          leds->effectControls.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
+    
           if (leds->effect->dim() != leds->effectDimension) {
             leds->effectDimension = leds->effect->dim();
             leds->triggerMapping();
-          }
-          else {
-            leds->doMapAndOrInit = true;
           }
 
         }
@@ -248,7 +259,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
         if (rowNr < fix->layers.size()) {
           LedsLayer *leds = fix->layers[rowNr];
 
-          // leds->doMapAndOrInit = true; //stop the effects loop already here
+          // leds->doMap = true; //stop the effects loop already here
 
           uint8_t proValue = variable.getValue(rowNr);
 
@@ -260,7 +271,7 @@ inline uint16_t getRGBWsize(uint16_t nleds){
 
             ppf("initProjection leds[%d] projection:%s a:%d\n", rowNr, leds->projection?leds->projection->name():"None", leds->projectionData.bytesAllocated);
 
-            leds->projectionData.clear(); //delete effectData memory so it can be rebuild
+            leds->projectionData.clear(); //delete projectionData memory so it can be rebuild
             leds->projectionData.read<uint8_t>(); leds->projectionData.begin(); //allocate minimum amount for projectionData (chunk of 32 bytes) to avoid control defaults to be removed
 
             variable.preDetails(); //set all positive var N orders to negative
@@ -443,14 +454,10 @@ inline uint16_t getRGBWsize(uint16_t nleds){
       for (uint8_t rowNr = 0; rowNr < fix->layers.size(); rowNr++) {
         LedsLayer *leds = fix->layers[rowNr];
 
-        if (leds->doMapAndOrInit) {
-          initEffect(*leds, rowNr);
-          leds->doMapAndOrInit = false;
-        }
-
-        if (leds->effect ) { // && !leds->doMapAndOrInit don't run effect while remapping or non existing effect (default UINT16_MAX)
+        if (leds->effect && !leds->doMap) { //don't run effect while remapping or non existing effect (default UINT16_MAX)
           // ppf(" %s %d,%d,%d - %d,%d,%d (%d,%d,%d)", leds->effect->name(), leds->start.x, leds->start.y, leds->start.z, leds->end.x, leds->end.y, leds->end.z, leds->size.x, leds->size.y, leds->size.z );
 
+          leds->effectControls.begin(); //sets the effectControls pointer back to 0 so loop effect can go through it
           leds->effectData.begin(); //sets the effectData pointer back to 0 so loop effect can go through it
 
           mdl->getValueRowNr = rowNr;
@@ -537,21 +544,3 @@ inline uint16_t getRGBWsize(uint16_t nleds){
     }
 
   } //loop
-
-  void LedModEffects::initEffect(LedsLayer &leds, uint8_t rowNr) {
-      ESP_LOGD("", "leds[%d] effect:%s a:%d (%d,%d,%d)", rowNr, leds.effect->name(), leds.effectData.bytesAllocated, leds.size.x, leds.size.y, leds.size.z);
-
-      leds.effectData.clear(); //delete effectData memory so it can be rebuild
-      if (strstr(leds.effect->name(), "Live Effect") == nullptr) { //not needed for Live script, will hang instead
-        leds.effect->loop(leds); leds.effectData.begin(); //do a loop to set effectData right to avoid control defaults to be removed
-      }
-
-      Variable variable = Variable("layers", "effect");
-      variable.preDetails();
-      mdl->setValueRowNr = rowNr;
-      leds.effect->setup(leds, variable); //if changed then run setup once (like call==0 in WLED) and set all defaults in effectData
-      variable.postDetails(rowNr);
-      mdl->setValueRowNr = UINT8_MAX;
-
-      leds.effectData.alertIfChanged = true; //find out when it is changing, eg when projections change, in that case controls are lost...solution needed for that...
-  }

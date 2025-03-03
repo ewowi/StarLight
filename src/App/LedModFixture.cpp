@@ -109,13 +109,6 @@
     currentVar.var["log"] = true; //logarithmic
     currentVar.var["dash"] = true; //these values override model.json???
 
-    currentVar = ui->initCanvas(parentVar, "preview", UINT16_MAX, false, [this](EventArguments) { switch (eventType) {
-      case onUI:
-        mappingStatus = 1; //rebuild the fixture - so it is send to ui
-        return true;
-      default: return false;
-    }});
-
     ui->initSelect(currentVar, "rotation", &viewRotation, false, [this](EventArguments) { switch (eventType) {
       case onUI: {
         JsonArray options = variable.setOptions();
@@ -136,11 +129,6 @@
         JsonArray options = variable.setOptions();
         files->dirToJson(options, true, "F_"); //only files containing F(ixture), alphabetically
 
-        // ui needs to load the file also initially
-        char path[64] = "";
-        if (files->seqNrToName(path, variable.value())) {
-          web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(path));
-        }
         return true; }
       case onChange: {
 
@@ -153,12 +141,6 @@
         for (LedsLayer *leds: layers) {
           leds->triggerMapping();
         }
-
-        // char fileName[64] = "";
-        // if (files->seqNrToName(fileName, fixtureNr)) {
-        //   //send to preview a message to get file fileName
-        //   web->addResponse(mdl->findVar("Fixture", "preview"), "file", JsonString(fileName));
-        // }
         return true; }
       default: return false; 
     }}); //fixture
@@ -446,7 +428,7 @@ void LedModFixture::addPixelsPre() {
     // reset leds
     uint8_t rowNr = 0;
     for (LedsLayer *leds: layers) {
-      if (leds->doMapAndOrInit) {
+      if (leds->doMap) {
         leds->addPixelsPre(rowNr);
       }
       rowNr++;
@@ -542,7 +524,7 @@ void LedModFixture::addPixelsPost() {
 
     uint8_t rowNr = 0;
     for (LedsLayer *leds: layers) {
-      if (leds->doMapAndOrInit) {
+      if (leds->doMap) {
         leds->addPixelsPost(rowNr);
       }
       rowNr++;

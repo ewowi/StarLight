@@ -156,7 +156,7 @@ void SysModWeb::loop20ms() {
 }
 
 void SysModWeb::loop1s() {
-  // sendResponseObject(); //this sends all the loopTask responses once per second !!!
+  sendResponseObject(); //this sends all the loopTask responses once per second !!!
 }
 
 void SysModWeb::reboot() {
@@ -199,6 +199,38 @@ JsonDocument * SysModWeb::getResponseDoc() {
 
 JsonObject SysModWeb::getResponseObject() {
   return getResponseDoc()->as<JsonObject>();
+}
+
+void SysModWeb::sendResponseObject() {
+  JsonObject responseObject = getResponseObject();
+  if (responseObject.size()) {
+    // if (strncmp(pcTaskGetTaskName(nullptr), "loopTask", 8) != 0) {
+    //   ppf("send ");
+    //   char sep[3] = "";
+    //   for (JsonPair pair: responseObject) {
+    //     ppf("%s%s", sep, pair.key().c_str());
+    //     strlcpy(sep, ", ", sizeof(sep));
+    //     if (pair.value().is<JsonObject>()) {
+    //       char sep[3] = "";
+    //       ppf("{");
+    //       for (JsonPair pair: pair.value().as<JsonObject>()) {
+    //         ppf("%s%s", sep, pair.key().c_str());
+    //         strlcpy(sep, ", ", sizeof(sep));
+    //       }
+    //       ppf("}");
+    //     }
+    //   }
+    //   ppf("\n");
+    // }
+
+    // size_t len = measureJson(responseObject);
+
+    // serializeJson(responseObject, wsBuf->get(), len);
+
+    // print->printJson("sendResponseObject", responseObject);
+
+    getResponseDoc()->to<JsonObject>(); //recreate!
+  }
 }
 
 void SysModWeb::serializeState(JsonVariant root) {

@@ -96,6 +96,7 @@ public:
   //gets the right responseDoc, depending on which task you are in, alternative for requestJSONBufferLock
   JsonDocument * getResponseDoc();
   JsonObject getResponseObject();
+  void sendResponseObject();
 
 private:
   bool modelUpdated = false;
