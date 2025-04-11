@@ -2,8 +2,8 @@
 
 April 2025: 
 
-**Development has moved to [ewowi/MoonBase](https://github.com/ewowi/MoonBase). See [Star-Mod-Base-Light-Moon-Svelte-Live](https://moonmodules.org/Star-Mod-Base-Light-Moon-Svelte-Live)
-**
+**Development has moved to [ewowi/MoonBase](https://github.com/ewowi/MoonBase)**. 
+**See [Star-Mod-Base-Light-Moon-Svelte-Live](https://moonmodules.org/Star-Mod-Base-Light-Moon-Svelte-Live)**
 
 Januari 2025: 
 
