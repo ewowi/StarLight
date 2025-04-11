@@ -1,5 +1,10 @@
 # StarLight
 
+April 2025: 
+
+**Development has moved to [ewowi/MoonBase](https://github.com/ewowi/MoonBase). See [Star-Mod-Base-Light-Moon-Svelte-Live](https://moonmodules.org/Star-Mod-Base-Light-Moon-Svelte-Live)
+**
+
 Januari 2025: 
 
 * StarBase and StarLight will change to "StarLight as a service", meaning UI, Network, File, Web modules will be stripped from it. Currently this is done in the [StarAsAService](https://github.com/MoonModules/StarLight/tree/StarAsAService) branch
